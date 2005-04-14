@@ -137,7 +137,7 @@ namespace SourceHook
 		{
 			out.vtblindex = MFI_GetVtblOffset(*(void**)&mfp);
 			out.isVirtual = out.vtblindex >= 0 ? true : false;
-			out.thisptr = reinterpret_cast<MSVC_MemFunPtr2*>(&mfp)->delta;
+			out.thisptroffs = reinterpret_cast<MSVC_MemFunPtr2*>(&mfp)->delta;
 			out.vtbloffs = 0;
 		}
 	};
@@ -165,6 +165,7 @@ namespace SourceHook
 			out.vtblindex = MFI_GetVtblOffset(*(void**)&mfp);
 			out.isVirtual = out.vtblindex >= 0 ? true : false;
 			// This pointer
+			/*
 			union {
 				MFP func;
 				GenericClass* (T::*ProbeFunc)();
@@ -176,7 +177,6 @@ namespace SourceHook
 				MicrosoftVirtualMFP s;
 			} u2;
 
-			printf("%d %d", sizeof(mfp), sizeof(u.ProbeFunc));
 			// Check that the horrible_cast<>s will work
 			typedef int ERROR_CantUsehorrible_cast[sizeof(mfp)==sizeof(u.s)
 				&& sizeof(mfp)==sizeof(u.ProbeFunc)
@@ -186,6 +186,8 @@ namespace SourceHook
 			u2.virtfunc = &GenericVirtualClass::GetThis;
 			u.s.codeptr = u2.s.codeptr;
 			out.thisptroffs = (reinterpret_cast<T*>(NULL)->*u.ProbeFunc)();
+			*/
+			out.thisptroffs = -1;
 			out.vtbloffs = 0;
 		}
 	};
