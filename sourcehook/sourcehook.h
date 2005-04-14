@@ -314,7 +314,7 @@ namespace SourceHook
 			param->vtbl_idx = mfi.vtblindex; \
 			param->vtbl_offs = mfi.vtbloffs; \
 			param->thisptr_offs = mfi.thisptroffs; \
-			if (param->thisptr_offs) \
+			if (param->thisptr_offs < 0) \
 				return 2; /*No virtual inheritance supported*/ \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
 			param->hookfunc_vtbl_idx = mfi.vtblindex; \
