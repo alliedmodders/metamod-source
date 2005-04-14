@@ -280,7 +280,8 @@ namespace SourceHook
 *	@param ifacetype The type of the interface
 *	@param ifaceptr The interface pointer
 */
-#define SH_GET_CALLCLASS(ifacetype, ifaceptr) g_SHPtr->GetCallClass(iface, sizeof(ifacetype))
+#define SH_GET_CALLCLASS(ifacetype, ifaceptr) reinterpret_cast<ifacetype*>(g_SHPtr->GetCallClass(ifaceptr, sizeof(ifacetype)))
+#define SH_RELEASE_CALLCLASS(ptr) g_SHPtr->ReleaseCallClass(reinterpret_cast<void*>(ptr))
 
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	SourceHook::SH_FHAdd##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
