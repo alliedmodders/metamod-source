@@ -1,0 +1,112 @@
+#ifndef _INCLUDE_ISMM_PLUGIN_H
+#define _INCLUDE_ISMM_PLUGIN_H
+
+#include <interface.h>
+#include <sourcehook/sourcehook.h>
+#include "ISmmAPI.h"
+
+#define PLAPI_VERSION	003
+#define PLAPI_NAME		"ISmmPlugin"
+
+struct factories
+{
+	CreateInterfaceFn engine;
+	CreateInterfaceFn server;
+	CreateInterfaceFn physics;
+	CreateInterfaceFn fileSystem;
+};
+
+class ISmmAPI;
+typedef unsigned int PluginId;
+
+class ISmmPlugin
+{
+public:
+	/**
+	 * @brief Called on plugin load.
+	 *
+	 * @param id Internal id of plugin.
+	 * @param ismm External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
+	 * @param list Contains a list of factories.  Hook a factory call by setting one equal to your own function.
+	 * @param error Error message buffer
+	 * @param maxlen Size of error message buffer
+	 * @return True on success, return false to request no load.
+	 */
+	virtual bool Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen) =0;
+
+	/* @brief Called on plugin unload.
+	 *
+	 * @param error Error message buffer
+	 * @param maxlen Size of error message buffer
+	 * @return True on success, return false to request no unload.
+	 */
+	virtual bool Unload(char *error, size_t maxlen) =0;
+
+	/* @brief Called on plugin pause.
+	 *
+	 * @param error Error message buffer
+	 * @param maxlen Size of error message buffer
+	 * @return True on success, return false to request no pause.
+	 */
+	virtual bool Pause(char *error, size_t maxlen) =0;
+
+	/* @brief Called on plugin unpause.
+	 *
+	 * @param error Error message buffer
+	 * @param maxlen Size of error message buffer
+	 * @return True on success, return false to request no unpause.
+	 */
+	virtual bool Unpause(char *error, size_t maxlen) =0;
+public:
+	virtual int GetApiVersion() { return PLAPI_VERSION; }
+public:
+	virtual const char *GetAuthor() =0;
+	virtual const char *GetName() =0;
+	virtual const char *GetDescription() =0;
+	virtual const char *GetURL() =0;
+	virtual const char *GetLicense() =0;
+	virtual const char *GetVersion() =0;
+	virtual const char *GetDate() =0;
+	virtual const char *GetLogTag() =0;
+};
+
+#define PL_EXPOSURE	CreateInterface
+#define PL_EXPOSURE_C	"CreateInterface"
+#define PLAPI_MIN_VERSION	002
+
+#define PLUGIN_EXPOSE(name, var) \
+	ISmmAPI *g_SMAPI = NULL; \
+	ISmmPlugin *g_PLID = NULL; \
+	SourceHook::ISourceHook *g_SHPtr = NULL; \
+	SMM_API void *PL_EXPOSURE(const char *name, int *code) { \
+		if (name && !strcmp(name, PLAPI_NAME)) { \
+			return static_cast<void *>(&var); \
+		} \
+		return NULL; \
+	}
+
+#define PLUGIN_GLOBALVARS()	\
+	extern SourceHook::ISourceHook *g_SHPtr; \
+	extern ISmmAPI *g_SMAPI; \
+	extern ISmmPlugin *g_PLID; 
+
+#define PLUGIN_SAVEVARS() \
+	g_SMAPI = ismm; \
+	g_SHPtr = ismm->SourceHook(); \
+	g_PLID = static_cast<ISmmPlugin *>(this);
+
+#define FACTORY_RETURN(mres, value) \
+	g_SMAPI->SetLastMetaReturn(mres); \
+	return value;
+
+#define META_LOG	g_SMAPI->LogMsg
+
+#if !defined SMM_API
+#if defined __WIN32__ || defined _WIN32 || defined WIN32
+	#define SMM_API extern "C" __declspec(dllexport)
+#elif defined __GNUC__
+	#define SMM_API	extern "C"
+#endif
+#endif //!defined SMM_API
+
+#endif //_INCLUDE_ISMM_PLUGIN_H
