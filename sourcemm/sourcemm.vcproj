@@ -25,7 +25,7 @@
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
+				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -136,6 +136,12 @@
 			</File>
 			<File
 				RelativePath=".\sourcemm.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Detect64BitPortabilityProblems="FALSE"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\util.cpp">
@@ -147,9 +153,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
 				RelativePath=".\CHLTVDirector.h">
-			</File>
-			<File
-				RelativePath=".\CISmmAPI.h">
 			</File>
 			<File
 				RelativePath=".\concommands.h">
@@ -165,6 +168,9 @@
 			</File>
 			<File
 				RelativePath=".\CServerGameEnts.h">
+			</File>
+			<File
+				RelativePath=".\CSmmAPI.h">
 			</File>
 			<File
 				RelativePath=".\oslink.h">

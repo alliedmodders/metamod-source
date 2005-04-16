@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 SourceMM Development Team
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -9,7 +9,8 @@
 */
 
 #include "CPlugin.h"
-#include "CISmmAPI.h"
+#include "CSmmAPI.h"
+#include "sourcemm.h"
 
 /** 
  * @brief Implements functions from CPlugin.h
@@ -36,6 +37,7 @@ CPluginManager::~CPluginManager()
 
 CPluginManager::CPlugin::CPlugin() : m_Lib(NULL), m_API(NULL), m_Id(0), m_Source(0)
 {
+	memset(&fac_list, 0, sizeof(factories));
 }
 
 PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen)
@@ -108,17 +110,17 @@ bool CPluginManager::Unpause(PluginId id, char *error, size_t maxlen)
 	return _Unpause(pl, error, maxlen);
 }
 
-bool CPluginManager::Unload(PluginId id, char *error, size_t maxlen)
+bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
 {
 	CPlugin *pl = FindById(id);
 	
 	if (!pl)
 	{
-		snprintf(error, maxlen, "Plugin id not found");
+		snprintf(error, maxlen, "Plugin %d not found", id);
 		return false;
 	}
 
-	return _Unload(pl, error, maxlen);
+	return _Unload(pl, force, error, maxlen);
 }
 
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
@@ -196,14 +198,19 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	return pl;
 }
 
-bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, char *error, size_t maxlen)
+bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *error, size_t maxlen)
 {
 	if (error)
 		*error = '\0';
 	if (pl->m_API && pl->m_Lib)
 	{
-		if (pl->m_API->Unload(error, maxlen))
+		//Note, we'll always tell the plugin it will be unloading...
+		if (pl->m_API->Unload(error, maxlen) || force)
 		{
+			//Make sure to detach it from sourcehook!
+			g_SourceHook.UnloadPlugin(pl->m_Id);
+
+			//Clean up the DLL
 			dlclose(pl->m_Lib);
 			pl->m_Lib = NULL;
 			pl->m_API = NULL;
@@ -218,6 +225,7 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, char *error, size_t ma
 					break;
 				}
 			}
+			//Free its memory
 			delete pl;
 
 			return true;
@@ -250,7 +258,10 @@ bool CPluginManager::_Pause(CPluginManager::CPlugin *pl, char *error, size_t max
 		if (error)
 			snprintf(error, maxlen, "Plugin cannot be paused");
 	} else {
-		return pl->m_API->Pause(error, maxlen);
+		if (pl->m_API->Pause(error, maxlen))
+		{
+			g_SourceHook.PausePlugin(pl->m_Id);
+		}
 	}
 
 	return false;
@@ -266,12 +277,14 @@ bool CPluginManager::_Unpause(CPluginManager::CPlugin *pl, char *error, size_t m
 		if (error)
 			snprintf(error, maxlen, "Plugin cannot be unpaused");
 	} else {
-		return pl->m_API->Unpause(error, maxlen);
+		if (pl->m_API->Unpause(error, maxlen))
+		{
+			g_SourceHook.UnpausePlugin(pl->m_Id);
+		}
 	}
 
 	return false;
 }
-
 
 bool CPluginManager::UnloadAll()
 {
@@ -287,6 +300,10 @@ bool CPluginManager::UnloadAll()
 				if ( (*i)->m_API->Unload(NULL, 0) )
 					status = false;
 
+				//Unlink from SourceHook
+				g_SourceHook.UnloadPlugin( (*i)->m_Id );
+
+				//Free the DLL
 				dlclose( (*i)->m_Lib );
 			}
 			delete (*i);

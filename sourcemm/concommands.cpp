@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 SourceMM Development Team
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -75,7 +75,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			PluginIter i;
 			const char *status="";
 
-			Msg("[Id] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
+			Msg("-Id- %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
@@ -133,15 +133,181 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				return;
 			}
+		} else if (strcmp(command, "pause") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+				if (!pl)
+				{
+					Msg("Plugin %d not found.\n", id);
+					return;
+				}
+				
+				if (pl->m_Status != Pl_Running)
+				{
+					Msg("Plugin %d is not pausable.\n", pl->m_Id);
+					return;
+				}
+
+				char error[255]={0};
+				if (!pl->m_API->Pause(error, sizeof(error)-1))
+				{
+					Msg("Plugin %d refused pause: %s\n", pl->m_Id, error);
+					return;
+				}
+
+				g_SourceHook.PausePlugin(pl->m_Id);
+				Msg("\"%s\" has been paused.\n", pl->m_API->GetName());
+
+				return;
+			} else {
+				Msg("Usage: meta pause <id>\n");
+
+				return;
+			}
+		} else if (strcmp(command, "unpause") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+				if (!pl)
+				{
+					Msg("Plugin %d not found.\n", id);
+					return;
+				}
+				
+				if (pl->m_Status != Pl_Paused)
+				{
+					Msg("Plugin %d is not unpausable.\n", pl->m_Id);
+					return;
+				}
+
+				char error[255]={0};
+				if (!pl->m_API->Pause(error, sizeof(error)-1))
+				{
+					Msg("Plugin %d refused unpause: %s\n", pl->m_Id, error);
+					return;
+				}
+
+				g_SourceHook.UnpausePlugin(pl->m_Id);
+				Msg("\"%s\" has been unpaused.\n", pl->m_API->GetName());
+
+				return;
+			} else {
+				Msg("Usage: meta unpause <id>\n");
+
+				return;
+			}
+		} else if (strcmp(command, "load") == 0) {
+			if (args >= 3)
+			{
+				const char *file = e->Cmd_Argv(2);
+				char full_path[255];
+
+				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
+				{
+					snprintf(full_path, sizeof(full_path)-1, "%s", file);
+				} else {
+					const char *ext = UTIL_GetExtension(file);
+#if defined WIN32 || defined _WIN32
+					ext ? "" : ".dll";
+					snprintf(full_path, sizeof(full_path)-1, "%s\\%s%s", g_ModPath.c_str(), file, ext);
+#else
+					ext ? "" : "_i486.so";
+					snprintf(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
+#endif
+				}
+
+				char error[255]={0};
+				bool already;
+				SourceMM::CPluginManager::CPlugin *pl;
+
+				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error)-1);
+				pl = g_PluginMngr.FindById(id);
+				if (!pl || id < Pl_MinId || (pl->m_Status < Pl_Paused))
+				{
+					Msg("Failed to load plugin %s.  %s\n", file, error);
+					return;
+				}
+
+				if (!already)
+				{
+					Msg("Plugin \"%s\" loaded with id %d.\n", pl->m_API->GetName(), pl->m_Id);
+				} else {
+					Msg("Plugin \"%s\" is already loaded as %d.\n", pl->m_API->GetName(), pl->m_Id);
+				}
+				
+				return;
+			} else {
+				Msg("Usage: meta load <path>\n");
+
+				return;
+			}
+		} else if (strcmp(command, "unload") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				char error[255]={0};
+
+				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
+				{
+					Msg("Unload failed: %s\n", error);
+					return;
+				}
+
+				Msg("Plugin %d unloaded.\n", id);
+
+				return;
+			} else {
+				Msg("Usage: meta unload <id>\n");
+
+				return;
+			}
+		} else if (strcmp(command, "force_unload") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				char error[255]={0};
+
+				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
+				{
+					Msg("Force unload failed: %s\n", error);
+					return;
+				}
+
+				Msg("Plugin %d force unloaded.\n", id);
+
+				return;
+			} else {
+				Msg("Usage: meta force_unload <id>\n");
+
+				return;
+			}
+		} else if (strcmp(command, "clear") == 0) {
+			if (!g_PluginMngr.UnloadAll())
+			{
+				Msg("One or more plugins resisted removal (cleaned anyway).\n");
+				return;
+			} 
+
+			Msg("All plugins unloaded.\n");
+
+			return;
 		}
 	}
 
 	Msg("Metamod:Source Menu\n");
 	Msg("usage: meta <command> [arguments]\n");
+	Msg("   clear     - Unload all plugins forcefully\n");
 	Msg("   credits   - About Metamod:Source\n");
 	Msg("   game      - Information about GameDLL\n");
 	Msg("   info      - Information about a plugin\n");
 	Msg("   list      - List plugins\n");
+	Msg("   load      - Load a plugin\n");
+	Msg("   pause     - Pause a running plugin\n");
 	Msg("   refresh   - Reparse plugins file\n");
+	Msg("   unload    - Unload a loaded plugin\n");
+	Msg("   unpause   - Unpause a paused plugin\n");
 	Msg("   version   - Version information\n");
 }

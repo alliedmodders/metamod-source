@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 SourceMM Development Team
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng

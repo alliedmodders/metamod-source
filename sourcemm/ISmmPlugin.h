@@ -1,5 +1,20 @@
+/* ======== SourceMM ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): David "BAILOPAN" Anderson
+* ============================
+*/
+
 #ifndef _INCLUDE_ISMM_PLUGIN_H
 #define _INCLUDE_ISMM_PLUGIN_H
+
+/**
+ * @brief Plugin API interface
+ * @file ISmmPlugin.h
+ */
 
 #include <interface.h>
 #include <sourcehook/sourcehook.h>
@@ -22,10 +37,12 @@ typedef unsigned int PluginId;
 class ISmmPlugin
 {
 public:
+	virtual int GetApiVersion() { return PLAPI_VERSION; }
+public:
 	/**
 	 * @brief Called on plugin load.
 	 *
-	 * @param id Internal id of plugin.
+	 * @param id Internal id of plugin.  Saved globally by PLUGIN_SAVEVARS()
 	 * @param ismm External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
 	 * @param list Contains a list of factories.  Hook a factory call by setting one equal to your own function.
 	 * @param error Error message buffer
@@ -58,8 +75,6 @@ public:
 	 */
 	virtual bool Unpause(char *error, size_t maxlen) =0;
 public:
-	virtual int GetApiVersion() { return PLAPI_VERSION; }
-public:
 	virtual const char *GetAuthor() =0;
 	virtual const char *GetName() =0;
 	virtual const char *GetDescription() =0;
@@ -76,7 +91,8 @@ public:
 
 #define PLUGIN_EXPOSE(name, var) \
 	ISmmAPI *g_SMAPI = NULL; \
-	ISmmPlugin *g_PLID = NULL; \
+	ISmmPlugin *g_PLAPI = NULL; \
+	PluginId g_PLID = (PluginId)0; \
 	SourceHook::ISourceHook *g_SHPtr = NULL; \
 	SMM_API void *PL_EXPOSURE(const char *name, int *code) { \
 		if (name && !strcmp(name, PLAPI_NAME)) { \
@@ -88,12 +104,14 @@ public:
 #define PLUGIN_GLOBALVARS()	\
 	extern SourceHook::ISourceHook *g_SHPtr; \
 	extern ISmmAPI *g_SMAPI; \
-	extern ISmmPlugin *g_PLID; 
+	extern ISmmPlugin *g_PLAPI; \
+	extern PluginId g_PLID; 
 
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
 	g_SHPtr = ismm->SourceHook(); \
-	g_PLID = static_cast<ISmmPlugin *>(this);
+	g_PLAPI = static_cast<ISmmPlugin *>(this); \
+	g_PLID = id;
 
 #define FACTORY_RETURN(mres, value) \
 	g_SMAPI->SetLastMetaReturn(mres); \

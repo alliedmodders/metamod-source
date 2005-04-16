@@ -1,5 +1,20 @@
+/* ======== SourceMM ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): David "BAILOPAN" Anderson
+* ============================
+*/
+
 #ifndef _INCLUDE_PLUGINMANAGER_H
 #define _INCLUDE_PLUGINMANAGER_H
+
+/**
+ * @brief Plugin Manager interface
+ * @file IPluginManager.h
+ */
 
 #include "ISmmPlugin.h"
 
@@ -53,7 +68,7 @@ public:
 	 * @param maxlen Maximum length of buffer
 	 * @return True on success, false otherwise
 	 */
-	virtual bool Unload(PluginId id, char *error, size_t maxlen) =0;
+	virtual bool Unload(PluginId id, bool force, char *error, size_t maxlen) =0;
 
 	/**
 	 * @brief Pauses a plugin
@@ -69,6 +84,7 @@ public:
 	 * @brief Unpauses a plugin
 	 *
 	 * @param id Id of plugin
+	 * @param force If true, forces the plugin to unload
 	 * @param error String buffer for error messages
 	 * @param maxlen Maximum length of buffer
 	 * @return True on success, false otherwise

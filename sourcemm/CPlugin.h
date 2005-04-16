@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 SourceMM Development Team
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -49,7 +49,7 @@ namespace SourceMM
 		~CPluginManager();
 	public:
 		PluginId Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen);
-		bool Unload(PluginId id, char *error, size_t maxlen);
+		bool Unload(PluginId id, bool force, char *error, size_t maxlen);
 		bool Pause(PluginId id, char *error, size_t maxlen);
 		bool Unpause(PluginId id, char *error, size_t maxlen);
 		bool UnloadAll();
@@ -70,7 +70,7 @@ namespace SourceMM
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
-		bool _Unload(CPlugin *pl, char *error, size_t maxlen);
+		bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen);
 		bool _Pause(CPlugin *pl, char *error, size_t maxlen);
 		bool _Unpause(CPlugin *pl, char *error, size_t maxlen);
 	private:

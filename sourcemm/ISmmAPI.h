@@ -1,5 +1,20 @@
+/* ======== SourceMM ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): David "BAILOPAN" Anderson
+* ============================
+*/
+
 #ifndef _INCLUDE_ISMM_API_H
 #define _INCLUDE_ISMM_API_H
+
+/**
+ * @brief External API interface
+ * @file ISmmAPI.h
+ */
 
 #include <interface.h>
 #include <eiface.h>
@@ -22,6 +37,7 @@ public:
 	virtual CreateInterfaceFn serverFactory(bool syn=true) =0;
 	virtual CGlobalVars *pGlobals() =0;
 	virtual void SetLastMetaReturn(META_RES res) =0;
+	virtual META_RES GetLastMetaReturn() =0;
 };
 
 #endif //_INCLUDE_ISMM_API_H

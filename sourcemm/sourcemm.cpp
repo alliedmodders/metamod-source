@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 SourceMM Development Team
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -16,6 +16,8 @@
 #include "CServerGameClients.h"
 #include "CHLTVDirector.h"
 #include "concommands.h"
+#include "CSmmAPI.h"
+#include "util.h"
 
 /**
  * @brief Implementation of main SourceMM GameDLL functionality
@@ -84,9 +86,7 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 			return NULL;
 		}
 	} else {
-		void *d = (g_GameDll.factory)(name, ret);
-
-		return d;
+		META_INTERFACE_MACRO(server, g_GameDll.factory);
 	}
 }
 
@@ -179,6 +179,7 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 				return false;
 			}
 
+			//Retrieve the pointers we'll need from the GameDLL
 			IServerGameEnts *serverEnts;
 			IServerGameClients *serverClients;
 			IHLTVDirector *serverHLTV;
@@ -346,21 +347,21 @@ int LoadPluginsFromFile(const char *file)
 // the engine's real engineFactory.
 void *EngineFactory(const char *name, int *ret)
 {
-	return (g_Engine.engineFactory)(name, ret);
+	META_INTERFACE_MACRO(engine, g_Engine.engineFactory);
 }
 
 //Wrapper function.  This is called when the GameDLL thinks it's using
 // the engine's real physicsFactory.
 void *PhysicsFactory(const char *name, int *ret)
 {
-	return (g_Engine.physicsFactory)(name, ret);
+	META_INTERFACE_MACRO(physics, g_Engine.physicsFactory);
 }
 
 //Wrapper function.  This is called when the GameDLL thinks it's using
 // the engine's real fileSystemFactory.
 void *FileSystemFactory(const char *name, int *ret)
 {
-	return (g_Engine.fileSystemFactory)(name, ret);
+	META_INTERFACE_MACRO(fileSystem, g_Engine.fileSystemFactory);
 }
 
 void LogMessage(const char *msg, ...)

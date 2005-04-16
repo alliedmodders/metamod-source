@@ -1,5 +1,20 @@
-#include "CISmmAPI.h"
+/* ======== SourceMM ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): David "BAILOPAN" Anderson
+* ============================
+*/
+
+#include "CSmmAPI.h"
 #include "sourcemm.h"
+
+/**
+ * @brief Implementation of main API interface
+ * @file CSmmAPI.cpp
+ */
 
 CSmmAPI g_SmmAPI;
 
