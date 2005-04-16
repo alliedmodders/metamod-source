@@ -1,12 +1,16 @@
 /* ======== SourceHook ========
-* By PM
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): Pavol "PM OnoTo" Marko
 * ============================
 */
 
 /**
-*	@file sourcehook.cpp
-*	@brief Contains the implementation of the SourceHook API
+ * @file sourcehook.cpp
+ * @brief Contains the implementation of the SourceHook API
 */
 
 #include <algorithm>

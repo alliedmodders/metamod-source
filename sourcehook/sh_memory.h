@@ -1,14 +1,11 @@
-/* ======== SourceMod ========
-* Copyright (C) 2004-2005 SourceMod Development Team
+/* ======== SourceHook ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
-* File: shint_memory.h
-*     Memory unprotection
+* License: zlib/libpng
 *
-* License: See LICENSE.txt
-*
-* Author(s): PM, Damaged Soul
-* Contributors: lancevorgin, XAD, theqizmo, Damaged-Soul
+* Author(s): Pavol "PM OnoTo" Marko, Scott "Damaged Soul" Ehlert
+* Contributors: lancevorgin, XAD, theqizmo
 * ============================
 */
 

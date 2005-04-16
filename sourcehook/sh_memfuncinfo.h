@@ -1,12 +1,17 @@
 /* ======== SourceHook ========
-* By PM
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
 *
-* This file provides a way for getting information about a member function.
+* License: zlib/libpng
+*
+* Author(s): Pavol "PM OnoTo" Marko
 * ============================
 */
 
-
+/**
+ * @brief This file provides a way for getting information about a member function.
+ * @file sh_memfuncinfo.h
+ */
 
 #ifndef __SHINT_MEMFUNC_INFO_H__
 #define __SHINT_MEMFUNC_INFO_H__
