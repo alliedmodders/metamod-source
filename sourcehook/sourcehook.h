@@ -17,7 +17,7 @@
 #endif
 
 #ifndef SH_GLOB_PLUGPTR
-#define SH_GLOB_PLUGPTR g_Plug
+#define SH_GLOB_PLUGPTR g_PLID
 #endif
 
 #define SH_ASSERT(x) if (!(x)) __asm { int 3 }
@@ -79,7 +79,7 @@ namespace SourceHook
 	*	SourceHook doesn't really care what this is. As long as the ==, != and = operators work on it
 	*	and every plugin has a unique identifier, everything is ok.
 	*/
-	typedef void* Plugin;
+	typedef int Plugin;
 
 	enum HookManagerAction
 	{
@@ -141,6 +141,7 @@ namespace SourceHook
 			struct Hook
 			{
 				ISHDelegate *handler;			//!< Pointer to the handler
+				bool paused;					//!< If true, the hook should not be executed
 				Plugin plug;					//!< The owner plugin
 			};
 			void *callclass;					//!< Stores a call class for this interface
@@ -397,6 +398,7 @@ namespace SourceHook
 	prev_res = MRES_IGNORED; \
 	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
+		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
 		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
 		prev_res = cur_res; \
@@ -448,6 +450,7 @@ namespace SourceHook
 	prev_res = MRES_IGNORED; \
 	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
+		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
 		reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
 		prev_res = cur_res; \

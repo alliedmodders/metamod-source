@@ -359,7 +359,7 @@ public:
 };
 
 // Sourcehook needs g_Plug and g_SHPtr, it will be customizable in the next release
-void *g_Plug = (void*)1337;
+int g_PLID = 1337;
 SourceHook::ISourceHook *g_SHPtr;
 
 SourceHook::CSourceHookImpl g_SHImpl;
@@ -463,6 +463,19 @@ int main(int argc, char *argv[])
 	printf("TEST2.7: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.8: Calling F16(155) through CC\n");
+	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("TEST2.9: Removing pre hook\n");
+	printf("TEST2.XX.1: Pausing the plugin\n");
+	g_SHImpl.PausePlugin(g_PLID);
+	printf("TEST2.XX.2: Calling F16(155)\n");
+	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
+	printf("TEST2.XX.3: Calling F16(155) through CC\n");
+	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("TEST2.XX.4: Unpausing the plugin\n");
+	g_SHImpl.UnpausePlugin(g_PLID);
+	printf("TEST2.XX.5: Calling F16(155)\n");
+	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
+	printf("TEST2.XX.6: Calling F16(155) through CC\n");
 	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
 	printf("TEST2.9: Removing pre hook\n");
 	SH_REMOVE_HOOK_STATICFUNC(Test, F16, zLOL_Ptr, Test_F16_int_pre_handler, false);

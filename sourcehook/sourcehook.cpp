@@ -87,6 +87,10 @@ namespace SourceHook
 		// Iterate through their hooks
 		// If a hook from an other plugin is found, return true
 		// Return false otherwise
+#define TMP_CHECK_LIST(name) \
+	for (iter3 = iter2->name.begin(); iter3 != iter2->name.end(); ++iter3) \
+		if (iter3->plug == plug) \
+			return true;
 
 		for (HookManInfoList::iterator iter = m_HookMans.begin(); iter != m_HookMans.end(); ++iter)
 		{
@@ -95,15 +99,12 @@ namespace SourceHook
 				for (std::list<HookManagerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end(); ++iter2)
 				{
 					std::list<HookManagerInfo::Iface::Hook>::iterator iter3;
-					for (iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end(); ++iter3)
-						if (iter3->plug == plug)
-							return true;
-					for (iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end(); ++iter3)
-						if (iter3->plug == plug)
-							return true;
+					TMP_CHECK_LIST(hooks_pre);
+					TMP_CHECK_LIST(hooks_post);
 				}
 			}
 		}
+#undef TMP_CHECK_LIST
 		return false;
 	}
 
@@ -255,6 +256,7 @@ namespace SourceHook
 		HookManagerInfo::Iface::Hook hookinfo;
 		hookinfo.handler = handler;
 		hookinfo.plug = plug;
+		hookinfo.paused = false;
 		if (post)
    			ifsiter->hooks_post.push_back(hookinfo);
 		else
@@ -479,6 +481,43 @@ namespace SourceHook
 		return hookmaniter;
 	}
 
+	void CSourceHookImpl::PausePlugin(Plugin plug)
+	{
+		// Go through all hook managers, all interfaces, and set the status of all hooks of this plugin to paused
+		for (HookManInfoList::iterator hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
+			for (std::list<HookManagerInfo::Iface>::iterator ifaceiter = hookmaniter->ifaces.begin();
+				ifaceiter != hookmaniter->ifaces.end(); ++ifaceiter)
+			{
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
+					hookiter != ifaceiter->hooks_pre.end(); ++hookiter)
+					if (plug == hookiter->plug)
+						hookiter->paused = true;
+
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
+					hookiter != ifaceiter->hooks_post.end(); ++hookiter)
+					if (plug == hookiter->plug)
+						hookiter->paused = true;
+			}
+	}
+
+	void CSourceHookImpl::UnpausePlugin(Plugin plug)
+	{
+		// Go through all hook managers, all interfaces, and set the status of all hooks of this plugin to normal
+		for (HookManInfoList::iterator hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
+			for (std::list<HookManagerInfo::Iface>::iterator ifaceiter = hookmaniter->ifaces.begin();
+				ifaceiter != hookmaniter->ifaces.end(); ++ifaceiter)
+			{
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
+					hookiter != ifaceiter->hooks_pre.end(); ++hookiter)
+					if (plug == hookiter->plug)
+						hookiter->paused = false;
+
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
+					hookiter != ifaceiter->hooks_post.end(); ++hookiter)
+					if (plug == hookiter->plug)
+						hookiter->paused = false;
+			}
+	}
 
 	void CSourceHookImpl::SetRes(META_RES res)
 	{

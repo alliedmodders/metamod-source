@@ -118,6 +118,20 @@ namespace SourceHook
 		bool IsPluginInUse(Plugin plug);
 
 		/**
+		*	@brief Pauses all hooks of a plugin
+		*
+		*	@param plug The unique identifier of the plugin
+		*/
+		void PausePlugin(Plugin plug);
+
+		/**
+		*	@brief Unpauses all hooks of a plugin
+		*
+		*	@param plug The unique identifier of the plugin
+		*/
+		void UnpausePlugin(Plugin plug);
+
+		/**
 		*	@brief Return a pointer to a callclass. Generate a new one if required.
 		*
 		*	@param iface The interface pointer
