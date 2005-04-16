@@ -12,6 +12,14 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
+#ifndef SH_GLOB_SHPTR
+#define SH_GLOB_SHPTR g_SHPtr
+#endif
+
+#ifndef SH_GLOB_PLUGPTR
+#define SH_GLOB_PLUGPTR g_Plug
+#endif
+
 #define SH_ASSERT(x) if (!(x)) __asm { int 3 }
 
 // System
@@ -73,26 +81,24 @@ namespace SourceHook
 	*/
 	typedef void* Plugin;
 
-	enum HookerAction
+	enum HookManagerAction
 	{
 		HA_GetInfo = 0,			// -> Only store info
 		HA_Register,			// -> Save the pointer for future reference
-		HA_Unregister,			// -> Clear the saved pointer
-		HA_IfaceAdded,			// -> Request call class
-		HA_IfaceRemoved			// -> Release call class
+		HA_Unregister			// -> Clear the saved pointer
 	};
 
-	struct HookerInfo;
+	struct HookManagerInfo;
 
 	/**
-	*	@brief Pointer to hooker type
+	*	@brief Pointer to hook manager type
 	*
-	*	A "hooker" is a the only thing that knows the actual protoype of the function at compile time.
+	*	A "hook manager" is a the only thing that knows the actual protoype of the function at compile time.
 	*	
-	*	@param hi A pointer to a HookerInfo structure. The hooker should fill it and store it for
+	*	@param hi A pointer to a HookManagerInfo structure. The hook manager should fill it and store it for
 	*				future reference (mainly if something should get hooked to its hookfunc)
 	*/
-	typedef int (*Hooker)(HookerAction ha, HookerInfo *hi);
+	typedef int (*HookManagerPubFunc)(HookManagerAction ha, HookManagerInfo *hi);
 
 	class ISHDelegate
 	{
@@ -126,9 +132,9 @@ namespace SourceHook
 	};
 
 	/**
-	*	@brief This structure contains information about a hooker (hook manager)
+	*	@brief This structure contains information about a hook manager (hook manager)
 	*/
-	struct HookerInfo
+	struct HookManagerInfo
 	{
 		struct Iface
 		{
@@ -148,11 +154,11 @@ namespace SourceHook
 			}
 		};
 		Plugin plug;							//!< The owner plugin
-		const char *proto;						//!< The prototype of the function the hooker is responsible for
+		const char *proto;						//!< The prototype of the function the hook manager is responsible for
 		int vtbl_idx;							//!< The vtable index
 		int vtbl_offs;							//!< The vtable offset
 		int thisptr_offs;						//!< The this-pointer-adjuster
-		Hooker func;							//!< The interface to the hooker
+		HookManagerPubFunc func;				//!< The interface to the hook manager
 
 		int hookfunc_vtbl_idx;					//!< the vtable index of the hookfunc
 		int hookfunc_vtbl_offs;					//!< the vtable offset of the hookfunc
@@ -203,11 +209,11 @@ namespace SourceHook
 		*	@param plug The unique identifier of the plugin that calls this function
 		*	@param iface The interface pointer
 		*	@param ifacesize The size of the class iface points to
-		*	@param myHooker A hooker function that should be capable of handling the function
+		*	@param myHookMan A hook manager function that should be capable of handling the function
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool AddHook(Plugin plug, void *iface, int ifacesize, Hooker myHooker, ISHDelegate *handler, bool post) = 0;
+		virtual bool AddHook(Plugin plug, void *iface, int ifacesize, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
 
 		/**
 		*	@brief Removes a hook.
@@ -216,14 +222,14 @@ namespace SourceHook
 		*
 		*	@param plug The unique identifier of the plugin that calls this function
 		*	@param iface The interface pointer
-		*	@param myHooker A hooker function that should be capable of handling the function
+		*	@param myHookMan A hook manager function that should be capable of handling the function
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool RemoveHook(Plugin plug, void *iface, Hooker myHooker, ISHDelegate *handler, bool post) = 0;
+		virtual bool RemoveHook(Plugin plug, void *iface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
 
 		/**
-		*	@brief Checks whether a plugin has (a) hooker(s) that is/are currently used by other plugins
+		*	@brief Checks whether a plugin has (a) hook manager(s) that is/are currently used by other plugins
 		*
 		*	@param plug The unique identifier of the plugin in question
 		*/
@@ -251,7 +257,7 @@ namespace SourceHook
 		virtual const void *GetOverrideRet() = 0;			//!< Gets the override result. If none is specified, NULL
 		virtual void *GetIfacePtr() = 0;					//!< Gets the interface pointer
 		//////////////////////////////////////////////////////////////////////////
-		// For hookers
+		// For hook managers
 		virtual META_RES &GetCurResRef() = 0;				//!< Gets the pointer to the current meta result
 		virtual META_RES &GetPrevResRef() = 0;				//!< Gets the pointer to the previous meta result
 		virtual META_RES &GetStatusRef() = 0;				//!< Gets the pointer to the status variable
@@ -263,15 +269,15 @@ namespace SourceHook
 
 //////////////////////////////////////////////////////////////////////////
 // Macro interface
-#define SET_META_RESULT(result)		g_SHPtr->SetRes(result)
-#define RETURN_META(result)			do { g_SHPtr->SetRes(result); return; } while(0)
-#define RETURN_META_VALUE(result, value)	do { g_SHPtr->SetRes(result); return (value); } while(0)
+#define SET_META_RESULT(result)		SH_GLOB_SHPTR->SetRes(result)
+#define RETURN_META(result)			do { SH_GLOB_SHPTR->SetRes(result); return; } while(0)
+#define RETURN_META_VALUE(result, value)	do { SH_GLOB_SHPTR->SetRes(result); return (value); } while(0)
 
-#define META_RESULT_STATUS					g_SHPtr->GetStatus()
-#define META_RESULT_PREVIOUS				g_SHPtr->GetPrevRes()
-#define META_RESULT_ORIG_RET(type)			*(const type *)g_SHPtr->GetOrigRet()
-#define META_RESULT_OVERRIDE_RET(type)		*(const type *)g_SHPtr->GetOverrideRet()
-#define META_IFACEPTR						g_SHPtr->GetIfacePtr()
+#define META_RESULT_STATUS					SH_GLOB_SHPTR->GetStatus()
+#define META_RESULT_PREVIOUS				SH_GLOB_SHPTR->GetPrevRes()
+#define META_RESULT_ORIG_RET(type)			*(const type *)SH_GLOB_SHPTR->GetOrigRet()
+#define META_RESULT_OVERRIDE_RET(type)		*(const type *)SH_GLOB_SHPTR->GetOverrideRet()
+#define META_IFACEPTR						SH_GLOB_SHPTR->GetIfacePtr()
 
 
 /**
@@ -280,8 +286,8 @@ namespace SourceHook
 *	@param ifacetype The type of the interface
 *	@param ifaceptr The interface pointer
 */
-#define SH_GET_CALLCLASS(ifacetype, ifaceptr) reinterpret_cast<ifacetype*>(g_SHPtr->GetCallClass(ifaceptr, sizeof(ifacetype)))
-#define SH_RELEASE_CALLCLASS(ptr) g_SHPtr->ReleaseCallClass(reinterpret_cast<void*>(ptr))
+#define SH_GET_CALLCLASS(ifacetype, ifaceptr) reinterpret_cast<ifacetype*>(SH_GLOB_SHPTR->GetCallClass(ifaceptr, sizeof(ifacetype)))
+#define SH_RELEASE_CALLCLASS(ptr) SH_GLOB_SHPTR->ReleaseCallClass(reinterpret_cast<void*>(ptr))
 
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	SourceHook::SH_FHAdd##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
@@ -303,8 +309,8 @@ namespace SourceHook
 //////////////////////////////////////////////////////////////////////////
 #define SH_FHCls(ift, iff, ov) FHCls_##ift##iff##ov
 
-#define SHINT_MAKE_HOOKERPUBFUNC(ifacetype, ifacefunc, overload, funcptr) \
-	static int Hooker(HookerAction action, HookerInfo *param) \
+#define SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr) \
+	static int HookManPubFunc(HookManagerAction action, HookManagerInfo *param) \
 	{ \
 		if (action == HA_GetInfo) \
 		{ \
@@ -314,7 +320,7 @@ namespace SourceHook
 			param->vtbl_idx = mfi.vtblindex; \
 			param->vtbl_offs = mfi.vtbloffs; \
 			param->thisptr_offs = mfi.thisptroffs; \
-			if (param->thisptr_offs) \
+			if (param->thisptr_offs < 0) \
 				return 2; /*No virtual inheritance supported*/ \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
 			param->hookfunc_vtbl_idx = mfi.vtblindex; \
@@ -342,28 +348,28 @@ namespace SourceHook
 		struct SH_FHCls(ifacetype,ifacefunc,overload) \
 		{ \
 			static SH_FHCls(ifacetype,ifacefunc,overload) ms_Inst; \
-			static HookerInfo *ms_HI; \
+			static HookManagerInfo *ms_HI; \
 			static const char *ms_Proto; \
-			SHINT_MAKE_HOOKERPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
+			SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
 
 #define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto) \
 		}; \
 		const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 		SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
-		HookerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
+		HookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
 		bool SH_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 		{ \
-			return g_SHPtr->AddHook(g_Plug, iface, sizeof(ifacetype), \
-				SH_FHCls(ifacetype,ifacefunc,overload)::Hooker, \
+			return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, sizeof(ifacetype), \
+				SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
 				new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
 		} \
 		bool SH_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 		{ \
 			CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD> tmp(handler); \
-			return g_SHPtr->RemoveHook(g_Plug, iface, \
-				SH_FHCls(ifacetype,ifacefunc,overload)::Hooker, &tmp, post); \
+			return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, \
+				SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, &tmp, post); \
 		} \
 	}
 
@@ -371,25 +377,25 @@ namespace SourceHook
 	/* 1) Find the iface ptr */ \
 	/* 1.1) Adjust to original this pointer */ \
 	void *origthis = this - ms_HI->thisptr_offs; \
-	std::list<HookerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
+	std::list<HookManagerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
 		ms_HI->ifaces.end(), origthis); \
 	SH_ASSERT(ifaceiter != ms_HI->ifaces.end()); \
-	HookerInfo::Iface &ci = *ifaceiter; \
+	HookManagerInfo::Iface &ci = *ifaceiter; \
 	/* 2) Declare some vars and set it up */ \
-	std::list<HookerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
-	std::list<HookerInfo::Iface::Hook> &postlist = ci.hooks_post; \
+	std::list<HookManagerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
+	std::list<HookManagerInfo::Iface::Hook> &postlist = ci.hooks_post; \
 	rettype orig_ret, override_ret, plugin_ret; \
-	META_RES &cur_res = g_SHPtr->GetCurResRef(); \
-	META_RES &prev_res = g_SHPtr->GetPrevResRef(); \
-	META_RES &status = g_SHPtr->GetStatusRef(); \
+	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
+	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
+	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	status = MRES_IGNORED; \
-	g_SHPtr->SetIfacePtr(ci.ptr); \
-	g_SHPtr->SetOrigRet(reinterpret_cast<void*>(&orig_ret)); \
-	g_SHPtr->SetOverrideRet(NULL);
+	SH_GLOB_SHPTR->SetIfacePtr(ci.ptr); \
+	SH_GLOB_SHPTR->SetOrigRet(reinterpret_cast<void*>(&orig_ret)); \
+	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (std::list<HookerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		cur_res = MRES_IGNORED; \
 		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
@@ -399,7 +405,7 @@ namespace SourceHook
 		if (cur_res >= MRES_OVERRIDE) \
 		{ \
 			override_ret = plugin_ret; \
-			g_SHPtr->SetOverrideRet(&override_ret); \
+			SH_GLOB_SHPTR->SetOverrideRet(&override_ret); \
 		} \
 	}
 
@@ -424,23 +430,23 @@ namespace SourceHook
 	/* 1) Find the iface ptr */ \
 	/* 1.1) Adjust to original this pointer */ \
 	void *origthis = this - ms_HI->thisptr_offs; \
-	std::list<HookerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
+	std::list<HookManagerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
 		ms_HI->ifaces.end(), origthis); \
 	SH_ASSERT(ifaceiter != ms_HI->ifaces.end()); \
-	HookerInfo::Iface &ci = *ifaceiter; \
+	HookManagerInfo::Iface &ci = *ifaceiter; \
 	/* 2) Declare some vars and set it up */ \
-	std::list<HookerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
-	std::list<HookerInfo::Iface::Hook> &postlist = ci.hooks_post; \
-	META_RES &cur_res = g_SHPtr->GetCurResRef(); \
-	META_RES &prev_res = g_SHPtr->GetPrevResRef(); \
-	META_RES &status = g_SHPtr->GetStatusRef(); \
+	std::list<HookManagerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
+	std::list<HookManagerInfo::Iface::Hook> &postlist = ci.hooks_post; \
+	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
+	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
+	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	status = MRES_IGNORED; \
-	g_SHPtr->SetIfacePtr(ci.ptr); \
-	g_SHPtr->SetOverrideRet(NULL);
+	SH_GLOB_SHPTR->SetIfacePtr(ci.ptr); \
+	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (std::list<HookerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		cur_res = MRES_IGNORED; \
 		reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \

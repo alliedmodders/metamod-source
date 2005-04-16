@@ -83,18 +83,18 @@ namespace SourceHook
 
 	bool CSourceHookImpl::IsPluginInUse(Plugin plug)
 	{
-		// Iterate through all hookers which are in this plugin
+		// Iterate through all hook managers which are in this plugin
 		// Iterate through their hooks
 		// If a hook from an other plugin is found, return true
 		// Return false otherwise
 
-		for (HookerInfoList::iterator iter = m_Hookers.begin(); iter != m_Hookers.end(); ++iter)
+		for (HookManInfoList::iterator iter = m_HookMans.begin(); iter != m_HookMans.end(); ++iter)
 		{
 			if (iter->plug == plug && !iter->ifaces.empty())
 			{
-				for (std::list<HookerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end(); ++iter2)
+				for (std::list<HookManagerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end(); ++iter2)
 				{
-					std::list<HookerInfo::Iface::Hook>::iterator iter3;
+					std::list<HookManagerInfo::Iface::Hook>::iterator iter3;
 					for (iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end(); ++iter3)
 						if (iter3->plug == plug)
 							return true;
@@ -109,41 +109,43 @@ namespace SourceHook
 
 	void CSourceHookImpl::UnloadPlugin(Plugin plug)
 	{
-		// Get a list of hookers that are in this plugin and are used by other plugins
+		// 1) Manually remove all hooks by this plugin
+		std::list<RemoveHookInfo> hookstoremove;
 
-		HookerInfoList tmphookers;
-		bool erase = false;
-		for (HookerInfoList::iterator iter = m_Hookers.begin(); iter != m_Hookers.end();
-			erase ? iter=m_Hookers.erase(iter) : ++iter)
+		for (HookManInfoList::iterator iter = m_HookMans.begin(); iter != m_HookMans.end(); ++iter)
 		{
-			if (iter->plug == plug && !iter->ifaces.empty())
+			for (std::list<HookManagerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end();
+				++iter2)
 			{
-				bool found = false;
-				for (std::list<HookerInfo::Iface>::iterator iter2 = iter->ifaces.begin();
-					iter2 != iter->ifaces.end(); ++iter2)
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end(); ++iter3)
+					if (iter3->plug == plug)
+						hookstoremove.push_back(RemoveHookInfo(iter3->plug, iter2->ptr, iter->func, iter3->handler, false));
+
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end(); ++iter3)
+					if (iter3->plug == plug)
+						hookstoremove.push_back(RemoveHookInfo(iter3->plug, iter2->ptr, iter->func, iter3->handler, true));
+			}
+		}
+
+		for (std::list<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
+			RemoveHook(rmiter->plug, rmiter->iface, rmiter->hpf, rmiter->handler, rmiter->post);
+
+		// 2) Other plugins may use hook managers in this plugin.
+		// Get a list of hook managers that are in this plugin and are used by other plugins
+		// Delete all hook managers that are in this plugin
+
+		HookManInfoList tmphookmans;
+		bool erase = false;
+		for (HookManInfoList::iterator iter = m_HookMans.begin(); iter != m_HookMans.end();
+			erase ? iter=m_HookMans.erase(iter) : ++iter)
+		{
+			if (iter->plug == plug)
+			{
+				if (!iter->ifaces.empty())
 				{
-					for (std::list<HookerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_pre.begin();
-						iter3 != iter2->hooks_pre.end(); ++iter3)
-					{
-						if (iter3->plug != plug)
-						{
-							found = true;
-							break;
-						}
-					}
-					for (iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end(); ++iter3)
-					{
-						if (iter3->plug != plug)
-						{
-							found = true;
-							break;
-						}
-					}
-					if (found)
-					{
-						tmphookers.push_back(*iter);
-						break;
-					}
+					// All hooks by this plugin are already removed
+					// So if there is an iface, it has to be used by an other plugin
+					tmphookmans.push_back(*iter);
 				}
 				erase = true;
 			}
@@ -151,120 +153,106 @@ namespace SourceHook
 				erase = false;
 		}
 		
-		// For each hooker:
-		for (HookerInfoList::iterator iter = tmphookers.begin(); iter != tmphookers.end(); ++iter)
+		// For each hook manager:
+		for (HookManInfoList::iterator iter = tmphookmans.begin(); iter != tmphookmans.end(); ++iter)
 		{
-			// Shutdown all ifaces and remove the hooks from this plugin from their lists
-			for (std::list<HookerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end();
-				erase ? iter2 = iter->ifaces.erase(iter2) : ++iter2)
-			{
-				*(reinterpret_cast<void**>(reinterpret_cast<char*>(iter2->ptr) + iter->vtbl_offs) 
-					+ iter->vtbl_idx) = iter2->orig_entry;
-
-				for (std::list<HookerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end();
-					iter3->plug == plug ? iter3=iter2->hooks_pre.erase(iter3) : ++iter3) {}
-				for (std::list<HookerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end();
-					iter3->plug == plug ? iter3=iter2->hooks_post.erase(iter3) : ++iter3) {}
-				
-				erase = iter2->hooks_pre.empty() && iter2->hooks_post.empty();
-			}
-			
-			if (iter->ifaces.empty())
-			{
-				// Nothing more to do; no more ifaces to re-register
-				continue;
-			}
-
-			// 2) Find a suitable hooker in an other plugin
-			HookerInfoList::iterator newHooker = FindHooker(m_Hookers.begin(), m_Hookers.end(),
+			// Find a suitable hook manager in an other plugin
+			HookManInfoList::iterator newHookMan = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
 				iter->proto, iter->vtbl_offs, iter->vtbl_idx, iter->thisptr_offs);
-			if (newHooker == m_Hookers.end())
+			if (newHookMan == m_HookMans.end())
 			{
 				// This should _never_ happen.
-				// If there is a hook from an other plugin, the plugin must have provided a hooker as well.
+				// If there is a hook from an other plugin, the plugin must have provided a hook manager as well.
 				SH_ASSERT(0);
 			}
 
-			// AddHook should make sure that every plugin only has _one_ hooker for _one_ proto/vi/vo
-			SH_ASSERT(newHooker->plug != plug);
+			// AddHook should make sure that every plugin only has _one_ hook manager for _one_ proto/vi/vo/thisptroffs
+			SH_ASSERT(newHookMan->plug != plug);
 
-			// 3) Register it!
-			newHooker->func(HA_Register, &(*iter));
-			for (std::list<HookerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end();
-				++iter2)
-			{
-				reinterpret_cast<void**>(reinterpret_cast<char*>(iter2->ptr) + iter->vtbl_offs)[iter->vtbl_idx] =
-					reinterpret_cast<void**>(reinterpret_cast<char*>(iter->hookfunc_inst) + iter->hookfunc_vtbl_offs)[iter->hookfunc_vtbl_idx];
-			}
+			// The first hooker should be always used - so the new hook manager has to be empty
+			SH_ASSERT(newHookMan->ifaces.empty());
+
+			// Move the ifaces from the old hook manager to the new one
+			newHookMan->ifaces = iter->ifaces;
+
+			// Unregister the old one, register the new one
+			iter->func(HA_Unregister, NULL);
+			newHookMan->func(HA_Register, &(*newHookMan));
 		}
 	}
 
 	void CSourceHookImpl::CompleteShutdown()
 	{
-		// Go through all hookers and shut down all interfaces
-		for (HookerInfoList::iterator iter = m_Hookers.begin(); iter != m_Hookers.end(); ++iter)
+		std::list<RemoveHookInfo> hookstoremove;
+
+		for (HookManInfoList::iterator iter = m_HookMans.begin(); iter != m_HookMans.end(); ++iter)
 		{
-			for (std::list<HookerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end(); ++iter2)
+			for (std::list<HookManagerInfo::Iface>::iterator iter2 = iter->ifaces.begin(); iter2 != iter->ifaces.end();
+				++iter2)
 			{
-				// Note that we can pass iter->func as "myHooker" because it is only used
-				// to retreive data
-				for (std::list<HookerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end(); ++iter3)
-					RemoveHook(iter3->plug, iter2->ptr, iter->func, iter3->handler, false);
-				for (std::list<HookerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end(); ++iter3)
-					RemoveHook(iter3->plug, iter2->ptr, iter->func, iter3->handler, true);
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_pre.begin(); iter3 != iter2->hooks_pre.end(); ++iter3)
+					hookstoremove.push_back(RemoveHookInfo(iter3->plug, iter2->ptr, iter->func, iter3->handler, false));
+				
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator iter3 = iter2->hooks_post.begin(); iter3 != iter2->hooks_post.end(); ++iter3)
+					hookstoremove.push_back(RemoveHookInfo(iter3->plug, iter2->ptr, iter->func, iter3->handler, true));
 			}
 		}
+
+		for (std::list<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
+			RemoveHook(rmiter->plug, rmiter->iface, rmiter->hpf, rmiter->handler, rmiter->post);
+
+		m_HookMans.clear();
 	}
 
-	bool CSourceHookImpl::AddHook(Plugin plug, void *iface, int ifacesize, Hooker myHooker, ISHDelegate *handler, bool post)
+	bool CSourceHookImpl::AddHook(Plugin plug, void *iface, int ifacesize, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post)
 	{
-		// 1) Get info about the hooker
-		HookerInfo tmp;
-		if (myHooker(HA_GetInfo, &tmp) != 0)
+		// 1) Get info about the hook manager
+		HookManagerInfo tmp;
+		if (myHookMan(HA_GetInfo, &tmp) != 0)
 			return false;
 
-		// Add the proposed hooker to the _end_ of the list if the plugin doesn't have a hooker with this proto/vo/vi registered
-		HookerInfoList::iterator hookeriter;
-		for (hookeriter = m_Hookers.begin(); hookeriter != m_Hookers.end(); ++hookeriter)
+		// Add the proposed hook manager to the _end_ of the list if the plugin doesn't have a hook manager with this proto/vo/vi registered
+		HookManInfoList::iterator hookmaniter;
+		for (hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
 		{
-			if (hookeriter->plug == plug && strcmp(hookeriter->proto, tmp.proto) == 0 &&
-				hookeriter->vtbl_offs == tmp.vtbl_offs && hookeriter->vtbl_idx == tmp.vtbl_idx &&
-				hookeriter->thisptr_offs == tmp.thisptr_offs)
+			if (hookmaniter->plug == plug && strcmp(hookmaniter->proto, tmp.proto) == 0 &&
+				hookmaniter->vtbl_offs == tmp.vtbl_offs && hookmaniter->vtbl_idx == tmp.vtbl_idx &&
+				hookmaniter->thisptr_offs == tmp.thisptr_offs)
 				break;
 		}
-		if (hookeriter == m_Hookers.end())
+		if (hookmaniter == m_HookMans.end())
 		{
-			// No such hooker from this plugin yet, add it!
-			tmp.func = myHooker;
+			// No such hook manager from this plugin yet, add it!
+			tmp.func = myHookMan;
 			tmp.plug = plug;
-			m_Hookers.push_back(tmp);
+			m_HookMans.push_back(tmp);
 		}
 
-		// Then, search for a suitable hooker (from the beginning)
-		HookerInfoList::iterator hooker = FindHooker(m_Hookers.begin(), m_Hookers.end(), tmp.proto, tmp.vtbl_offs, tmp.vtbl_idx, tmp.thisptr_offs);
-		SH_ASSERT(hooker != m_Hookers.end());
+		// Then, search for a suitable hook manager (from the beginning)
+		HookManInfoList::iterator hookman = FindHookMan(m_HookMans.begin(), m_HookMans.end(), tmp.proto, tmp.vtbl_offs, tmp.vtbl_idx, tmp.thisptr_offs);
+		SH_ASSERT(hookman != m_HookMans.end());
 
 		// Tell it to store the pointer if it's not already active
-		if (hooker->ifaces.empty())
-			hooker->func(HA_Register, &(*hooker));
+		if (hookman->ifaces.empty())
+			hookman->func(HA_Register, &(*hookman));
 
-		std::list<HookerInfo::Iface>::iterator ifsiter = std::find(hooker->ifaces.begin(), hooker->ifaces.end(), iface);
+		std::list<HookManagerInfo::Iface>::iterator ifsiter = std::find(hookman->ifaces.begin(), hookman->ifaces.end(), iface);
 
-		if (ifsiter == hooker->ifaces.end())
+		if (ifsiter == hookman->ifaces.end())
 		{
-			HookerInfo::Iface ifs;
+			HookManagerInfo::Iface ifs;
 			ifs.ptr = iface;
 			ifs.callclass = GetCallClass(iface, ifacesize);
-			void *vtableptr = *reinterpret_cast<void**>(reinterpret_cast<char*>(iface) + hooker->vtbl_offs);
-			SetMemAccess(vtableptr, sizeof(void*) * hooker->vtbl_idx, SH_MEM_READ | SH_MEM_WRITE);
-			ifs.orig_entry = (*reinterpret_cast<void***>(reinterpret_cast<char*>(iface) + hooker->vtbl_offs))[hooker->vtbl_idx];
-			(*reinterpret_cast<void***>(reinterpret_cast<char*>(iface) + hooker->vtbl_offs))[hooker->vtbl_idx] =
-				(*reinterpret_cast<void***>(reinterpret_cast<char*>(hooker->hookfunc_inst) + hooker->hookfunc_vtbl_offs))[hooker->hookfunc_vtbl_idx];
-			hooker->ifaces.push_back(ifs);
-			ifsiter = hooker->ifaces.end();
+			void *vtableptr = *reinterpret_cast<void**>(reinterpret_cast<char*>(iface) + hookman->vtbl_offs);
+			SetMemAccess(vtableptr, sizeof(void*) * hookman->vtbl_idx, SH_MEM_READ | SH_MEM_WRITE);
+			ifs.orig_entry = (*reinterpret_cast<void***>(reinterpret_cast<char*>(iface) + hookman->vtbl_offs))[hookman->vtbl_idx];
+			(*reinterpret_cast<void***>(reinterpret_cast<char*>(iface) + hookman->vtbl_offs))[hookman->vtbl_idx] =
+				(*reinterpret_cast<void***>(reinterpret_cast<char*>(hookman->hookfunc_inst) + hookman->hookfunc_vtbl_offs))[hookman->hookfunc_vtbl_idx];
+			hookman->ifaces.push_back(ifs);
+			ifsiter = hookman->ifaces.end();
 			--ifsiter;
 		}
-		HookerInfo::Iface::Hook hookinfo;
+		HookManagerInfo::Iface::Hook hookinfo;
 		hookinfo.handler = handler;
 		hookinfo.plug = plug;
 		if (post)
@@ -288,25 +276,25 @@ namespace SourceHook
 		return true;
 	}
 
-	bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, Hooker myHooker, ISHDelegate *handler, bool post)
+	bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post)
 	{
-		HookerInfo tmp;
-		if (myHooker(HA_GetInfo, &tmp) != 0)
+		HookManagerInfo tmp;
+		if (myHookMan(HA_GetInfo, &tmp) != 0)
 			return false;
 
-		// Find the hooker and the hook
-		HookerInfoList::iterator hooker = FindHooker(m_Hookers.begin(), m_Hookers.end(), 
+		// Find the hook manager and the hook
+		HookManInfoList::iterator hookman = FindHookMan(m_HookMans.begin(), m_HookMans.end(), 
 			tmp.proto, tmp.vtbl_offs, tmp.vtbl_idx, tmp.thisptr_offs);
-		if (hooker == m_Hookers.end())
+		if (hookman == m_HookMans.end())
 			return false;
 
-		for (std::list<HookerInfo::Iface>::iterator ifaceiter = hooker->ifaces.begin(); ifaceiter != hooker->ifaces.end(); ++ifaceiter)
+		for (std::list<HookManagerInfo::Iface>::iterator ifaceiter = hookman->ifaces.begin(); ifaceiter != hookman->ifaces.end(); ++ifaceiter)
 		{
 			if (ifaceiter->ptr == iface)
 			{
-				std::list<HookerInfo::Iface::Hook> &hooks = post ? ifaceiter->hooks_post : ifaceiter->hooks_pre;
+				std::list<HookManagerInfo::Iface::Hook> &hooks = post ? ifaceiter->hooks_post : ifaceiter->hooks_pre;
 				bool erase;
-				for (std::list<HookerInfo::Iface::Hook>::iterator hookiter = hooks.begin();
+				for (std::list<HookManagerInfo::Iface::Hook>::iterator hookiter = hooks.begin();
 					hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
 				{
 					erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler);
@@ -317,16 +305,16 @@ namespace SourceHook
 				{
 					// Deactivate the hook
 					(*reinterpret_cast<void***>(reinterpret_cast<char*>(ifaceiter->ptr) +
-						hooker->vtbl_offs))[hooker->vtbl_idx]= ifaceiter->orig_entry;
+						hookman->vtbl_offs))[hookman->vtbl_idx]= ifaceiter->orig_entry;
 
 					// Release the callclass
 					ReleaseCallClass(ifaceiter->callclass);
 
 					// Remove the iface info
-					hooker->ifaces.erase(ifaceiter);
+					hookman->ifaces.erase(ifaceiter);
 
-					if (hooker->ifaces.empty())
-						hooker->func(HA_Unregister, NULL);
+					if (hookman->ifaces.empty())
+						hookman->func(HA_Unregister, NULL);
 				}
 				// :TODO: Better return value? Or none?
 				return true;
@@ -361,13 +349,13 @@ namespace SourceHook
 		tmp.refcounter = 1;
 
 		// Go through _all_ hooks and apply any needed patches
-		for (HookerInfoList::iterator hooker = m_Hookers.begin(); hooker != m_Hookers.end(); ++hooker)
+		for (HookManInfoList::iterator hookman = m_HookMans.begin(); hookman != m_HookMans.end(); ++hookman)
 		{
-			for (std::list<HookerInfo::Iface>::iterator ifaceiter = hooker->ifaces.begin(); ifaceiter != hooker->ifaces.end(); ++ifaceiter)
+			for (std::list<HookManagerInfo::Iface>::iterator ifaceiter = hookman->ifaces.begin(); ifaceiter != hookman->ifaces.end(); ++ifaceiter)
 			{
 				if (ifaceiter->ptr == iface)
 				{
-					if (!ApplyCallClassPatch(tmp, hooker->vtbl_offs, hooker->vtbl_idx, ifaceiter->orig_entry))
+					if (!ApplyCallClassPatch(tmp, hookman->vtbl_offs, hookman->vtbl_idx, ifaceiter->orig_entry))
 					{
 						FreeCallClass(tmp);
 						return NULL;
@@ -479,16 +467,16 @@ namespace SourceHook
 	}
 
 
-	CSourceHookImpl::HookerInfoList::iterator CSourceHookImpl::FindHooker(HookerInfoList::iterator begin,
-		HookerInfoList::iterator end, const char *proto, int vtblofs, int vtblidx, int thisptrofs)
+	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
+		HookManInfoList::iterator end, const char *proto, int vtblofs, int vtblidx, int thisptrofs)
 	{
-		for (HookerInfoList::iterator hookeriter = m_Hookers.begin(); hookeriter != m_Hookers.end(); ++hookeriter)
+		for (HookManInfoList::iterator hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
 		{
-			if (strcmp(hookeriter->proto, proto) == 0 && hookeriter->vtbl_offs == vtblofs && hookeriter->vtbl_idx == vtblidx &&
-				hookeriter->thisptr_offs == thisptrofs)
+			if (strcmp(hookmaniter->proto, proto) == 0 && hookmaniter->vtbl_offs == vtblofs && hookmaniter->vtbl_idx == vtblidx &&
+				hookmaniter->thisptr_offs == thisptrofs)
 				break;
 		}
-		return hookeriter;
+		return hookmaniter;
 	}
 
 
