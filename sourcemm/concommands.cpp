@@ -227,7 +227,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				pl = g_PluginMngr.FindById(id);
 				if (!pl || id < Pl_MinId || (pl->m_Status < Pl_Paused))
 				{
-					Msg("Failed to load plugin %s.  %s\n", file, error);
+					Msg("Failed to load plugin %s (%s).\n", file, error);
 					return;
 				}
 
@@ -294,6 +294,45 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			Msg("All plugins unloaded.\n");
 
 			return;
+		} else if (strcmp(command, "retry") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				SourceMM::CPluginManager::CPlugin *pl;
+
+				pl = g_PluginMngr.FindById(id);
+
+				if (!pl)
+				{
+					Msg("Plugin %d not found.\n", id);
+					return;
+				}
+
+				if (pl->m_Status >= Pl_Paused)
+				{
+					Msg("Plugin %d is already loaded.\n");
+					return;
+				}
+				
+				PluginId plid;
+				char error[255];
+				bool already;
+
+				plid = g_PluginMngr.Load(pl->m_File.c_str(), Pl_Console, already, error, sizeof(error)-1);
+				if (plid < Pl_MinId)
+				{
+					Msg("Failed to reload plugin %d: (%s).\n", id, error);
+					return;
+				}
+
+				Msg("Plugin %d successfully reloaded as plugin %d.\n", id, plid);
+
+				return;
+			} else {
+				Msg("Usage: meta force_unload <id>\n");
+
+				return;
+			}
 		}
 	}
 
@@ -308,6 +347,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	Msg("  load         - Load a plugin\n");
 	Msg("  pause        - Pause a running plugin\n");
 	Msg("  refresh      - Reparse plugins file\n");
+	Msg("  retry		- Attempt to reload a plugin\n");
 	Msg("  unload       - Unload a loaded plugin\n");
 	Msg("  unpause      - Unpause a paused plugin\n");
 	Msg("  version      - Version information\n");
