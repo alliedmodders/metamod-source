@@ -55,7 +55,7 @@ struct GameDllInfo
 	bool loaded;
 	HINSTANCE lib;
 	CreateInterfaceFn factory;
-	IServerGameDLL *serverGameDLL;
+	IServerGameDLL *serverGameDLL_CC;
 };
 
 /** @brief Stores information about the HL2 Engine pointers */

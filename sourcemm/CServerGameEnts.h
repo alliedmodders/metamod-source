@@ -20,13 +20,26 @@
 
 class CServerGameEnts : public IServerGameEnts
 {
+	IServerGameEnts *m_pOrig;
 public:
-	virtual void SetDebugEdictBase(edict_t *base) { }
-	virtual void MarkEntitiesAsTouching(edict_t *e1, edict_t *e2) { }
-	virtual void FreeContainingEntity(edict_t *e) { }
-	virtual edict_t *BaseEntityToEdict(CBaseEntity *pEnt) { return NULL; }
-	virtual CBaseEntity *EdictToBaseEntity(edict_t *pEdict) { return NULL; }
-	virtual void CheckTransmit(CCheckTransmitInfo *pInfo, const unsigned short *pEdictIndices, int nEdicts) { }
+	CServerGameEnts() : m_pOrig(0) {}
+	void SetOrig(IServerGameEnts *pOrig)
+	{
+		m_pOrig = pOrig;
+	}
+
+	virtual void SetDebugEdictBase(edict_t *base)
+	{ m_pOrig->SetDebugEdictBase(base); }
+	virtual void MarkEntitiesAsTouching(edict_t *e1, edict_t *e2)
+	{ m_pOrig->MarkEntitiesAsTouching(e1, e2); }
+	virtual void FreeContainingEntity(edict_t *e)
+	{ m_pOrig->FreeContainingEntity(e); }
+	virtual edict_t *BaseEntityToEdict(CBaseEntity *pEnt)
+	{ return m_pOrig->BaseEntityToEdict(pEnt); }
+	virtual CBaseEntity *EdictToBaseEntity(edict_t *pEdict)
+	{ return m_pOrig->EdictToBaseEntity(pEdict); }
+	virtual void CheckTransmit(CCheckTransmitInfo *pInfo, const unsigned short *pEdictIndices, int nEdicts)
+	{ m_pOrig->CheckTransmit(pInfo, pEdictIndices, nEdicts); }
 };
 
 #endif //_INCLUDE_CSERVER_GAMEENTS_H

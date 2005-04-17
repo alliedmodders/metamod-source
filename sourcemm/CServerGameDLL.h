@@ -23,36 +23,77 @@
  */
 class CServerGameDLL : public IServerGameDLL
 {
+	IServerGameDLL *m_pOrig;
+	char m_GameDescBuffer[256];
 public:
+	CServerGameDLL() : m_pOrig(0)
+	{
+		m_GameDescBuffer[0] = 0;
+	}
+	void SetOrig(IServerGameDLL *pOrig)
+	{
+		m_pOrig = pOrig;
+		strncpy(m_GameDescBuffer, pOrig->GetGameDescription(), 254);
+		m_GameDescBuffer[255] = 0;
+	}
+
 	virtual bool DLLInit(	CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals);
-	virtual bool GameInit( void ) { return false; }
-	virtual bool LevelInit( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )  { return false; }
-	virtual void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax ) { }
-	virtual void GameFrame( bool simulating ) { }
-	virtual void PreClientUpdate( bool simulating ) { }
-	virtual void LevelShutdown( void ) { }
-	virtual void GameShutdown( void ) { }
-	virtual void DLLShutdown( void ) { }
-	virtual float GetTickInterval( void ) const { return 0.0f; }
-	virtual ServerClass *GetAllServerClasses( void ) { return NULL; }
-	virtual const char *GetGameDescription( void ) { return NULL; }
-	virtual void CreateNetworkStringTables( void ) { }
-	virtual CSaveRestoreData  *SaveInit( int size ) { return NULL; }
-	virtual void SaveWriteFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) { }
-	virtual void SaveReadFields( CSaveRestoreData *, const char *, void *, datamap_t *, typedescription_t *, int ) { }
-	virtual void SaveGlobalState( CSaveRestoreData * ) { }
-	virtual void RestoreGlobalState( CSaveRestoreData * ) { }
-	virtual void PreSave( CSaveRestoreData * ) { }
-	virtual void Save( CSaveRestoreData * ) { }
-	virtual void GetSaveComment( char *comment, int maxlength ) { }
-	virtual void WriteSaveHeaders( CSaveRestoreData * ) { }
-	virtual void ReadRestoreHeaders( CSaveRestoreData * ) { }
-	virtual void Restore( CSaveRestoreData *, bool ) { }
-	virtual bool IsRestoring() { return false; }
-	virtual int CreateEntityTransitionList( CSaveRestoreData *, int ) { return 0; }
-	virtual void BuildAdjacentMapList( void ) { }
-	virtual bool GetUserMessageInfo( int msg_type, char *name, int maxnamelength, int& size ) { return false; }
-	virtual CStandardSendProxies* GetStandardSendProxies() { return NULL; }
+	virtual bool GameInit( void )
+	{ return m_pOrig->GameInit(); }
+	virtual bool LevelInit( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
+	{ return m_pOrig->LevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background); }
+	virtual void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
+	{ m_pOrig->ServerActivate(pEdictList, edictCount, clientMax); }
+	virtual void GameFrame( bool simulating )
+	{ m_pOrig->GameFrame(simulating); }
+	virtual void PreClientUpdate( bool simulating )
+	{ m_pOrig->PreClientUpdate(simulating); }
+	virtual void LevelShutdown( void )
+	{ m_pOrig->LevelShutdown(); }
+	virtual void GameShutdown( void )
+	{ m_pOrig->GameShutdown(); }
+	virtual void DLLShutdown( void )
+	{ m_pOrig->DLLShutdown(); }
+	virtual float GetTickInterval( void ) const
+	{ return m_pOrig->GetTickInterval(); }
+	virtual ServerClass *GetAllServerClasses( void )
+	{ return m_pOrig->GetAllServerClasses(); }
+	virtual const char *GetGameDescription( void )
+	{ return m_GameDescBuffer; }
+	virtual void CreateNetworkStringTables( void )
+	{ m_pOrig->CreateNetworkStringTables(); }
+	virtual CSaveRestoreData  *SaveInit( int size )
+	{ return m_pOrig->SaveInit(size); }
+	virtual void SaveWriteFields( CSaveRestoreData *a1, const char *a2, void *a3, datamap_t *a4, typedescription_t *a5, int a6)
+	{ m_pOrig->SaveWriteFields(a1, a2, a3, a4, a5, a6); }
+	virtual void SaveReadFields( CSaveRestoreData *a1, const char *a2, void *a3, datamap_t *a4, typedescription_t *a5, int a6)
+	{ m_pOrig->SaveReadFields(a1, a2, a3, a4, a5, a6); }
+	virtual void SaveGlobalState( CSaveRestoreData *a1)
+	{ m_pOrig->SaveGlobalState(a1); }
+	virtual void RestoreGlobalState( CSaveRestoreData *a1)
+	{ m_pOrig->RestoreGlobalState(a1); }
+	virtual void PreSave( CSaveRestoreData *a1)
+	{ m_pOrig->PreSave(a1); }
+	virtual void Save( CSaveRestoreData *a1)
+	{ m_pOrig->Save(a1); }
+	virtual void GetSaveComment( char *comment, int maxlength )
+	{ m_pOrig->GetSaveComment(comment, maxlength); }
+	virtual void WriteSaveHeaders( CSaveRestoreData *a1)
+	{ m_pOrig->WriteSaveHeaders(a1); }
+	virtual void ReadRestoreHeaders( CSaveRestoreData *a1)
+	{ m_pOrig->ReadRestoreHeaders(a1); }
+	virtual void Restore( CSaveRestoreData *a1, bool a2)
+	{ m_pOrig->Restore(a1, a2); }
+	virtual bool IsRestoring()
+	{ return m_pOrig->IsRestoring(); }
+	virtual int CreateEntityTransitionList( CSaveRestoreData *a1, int a2)
+	{ return m_pOrig->CreateEntityTransitionList(a1, a2); }
+	virtual void BuildAdjacentMapList( void )
+	{ m_pOrig->BuildAdjacentMapList(); }
+	virtual bool GetUserMessageInfo( int msg_type, char *name, int maxnamelength, int& size )
+	{ return m_pOrig->GetUserMessageInfo(msg_type, name, maxnamelength, size); }
+	virtual CStandardSendProxies* GetStandardSendProxies()
+	{ return m_pOrig->GetStandardSendProxies(); }
 };
 
 #endif //_INCLUDE_CSERVER_GAMEDLL_H

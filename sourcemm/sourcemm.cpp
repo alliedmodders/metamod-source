@@ -24,10 +24,10 @@
  * @file sourcemm.cpp
  */
 
-CServerGameDLL *g_TempGameDLL = NULL;
-CServerGameEnts *g_TempGameEnts = NULL;
-CServerGameClients *g_TempGameClients = NULL;
-CHLTVDirector *g_TempDirector = NULL;
+CServerGameDLL g_TempGameDLL;
+CServerGameEnts g_TempGameEnts;
+CServerGameClients g_TempGameClients;
+CHLTVDirector g_TempDirector;
 GameDllInfo g_GameDll = {false, NULL, NULL};
 EngineInfo g_Engine = {NULL, NULL, NULL, NULL};
 SourceHook::CSourceHookImpl g_SourceHook;
@@ -52,38 +52,29 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 		// Currently, HL2 Engine has loaded Metamod:Source
 		// It is now asking it to get an interface.  We don't have one,
 		//  so we're gonna try to give it a fake one to get the information we need.
-		//  Then we'll swap the vtables with the real one from the real gamedll.
+		//  Then, the the interface will forward the calls to the original interface
 
 		if (strcmp(name, INTERFACEVERSION_SERVERGAMEDLL) == 0)
 		{
 			//We're in.  Give the server our fake class as bait.
 			if (ret)
 				*ret = IFACE_OK;
-
-			g_TempGameDLL = new CServerGameDLL;
-
-			return static_cast<void *>(g_TempGameDLL);
+			return static_cast<void *>(&g_TempGameDLL);
 		} else if (strcmp(name, INTERFACEVERSION_SERVERGAMEENTS) == 0) {
 			if (ret)
 				*ret = IFACE_OK;
 
-			g_TempGameEnts = new CServerGameEnts;
-
-			return static_cast<void *>(g_TempGameEnts);
+			return static_cast<void *>(&g_TempGameEnts);
 		} else if (strcmp(name, INTERFACEVERSION_SERVERGAMECLIENTS) == 0) {
 			if (ret)
 				*ret = IFACE_OK;
 
-			g_TempGameClients = new CServerGameClients;
-
-			return static_cast<void *>(g_TempGameClients);
+			return static_cast<void *>(&g_TempGameClients);
 		} else if (strcmp(name, INTERFACEVERSION_HLTVDIRECTOR) == 0) {
 			if (ret)
 				*ret = IFACE_OK;
 
-			g_TempDirector = new CHLTVDirector;
-
-			return static_cast<void *>(g_TempDirector);
+			return static_cast<void *>(&g_TempDirector);
 		} else {
 			if (ret)
 				*ret = IFACE_FAILED;
@@ -97,6 +88,9 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 
 bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals)
 {
+	if (m_pOrig)
+		return m_pOrig->DLLInit(engineFactory, physicsFactory, fileSystemFactory, pGlobals);
+
 	if (!g_GameDll.loaded)
 	{
 		//Initialize SourceHook
@@ -159,7 +153,7 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 				return false;
 			}
 
-			g_GameDll.serverGameDLL = serverDll;
+			g_GameDll.serverGameDLL_CC = SH_GET_CALLCLASS(IServerGameDLL, serverDll);
 
 			//Set this information early in case our wrappers are called somehow
 			g_Engine.engineFactory = engineFactory;
@@ -217,35 +211,12 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 				dlclose(g_GameDll.lib);
 				return false;
 			}
-
-			//The GameDLL has given the go - now we'll swap the vtables ( eww! )
-			//This ugly hack will patch the pointer we've given the engine
-			// so it will just be calling the real GameDLL instead.
-			// Unlike Metamod:HL1, this is the effect we want, rather than duplicating
-			//  the entire class (because SourceHook doesn't do that).
-			void *vtableDst = ((void *)(g_TempGameDLL));
-			void *vtableSrc = ((void *)(serverDll));
-
-			SourceHook::SetMemAccess(vtableDst, sizeof(IServerGameDLL), SH_MEM_READ|SH_MEM_WRITE);
-			memcpy(vtableDst, vtableSrc, sizeof(IServerGameDLL));
-
-			//Now patch IServerGameEnts
-			vtableDst = ((void *)(g_TempGameEnts));
-			vtableSrc = ((void *)(serverEnts));
-			SourceHook::SetMemAccess(vtableDst, sizeof(IServerGameEnts), SH_MEM_READ|SH_MEM_WRITE);
-			memcpy(vtableDst, vtableSrc, sizeof(IServerGameEnts));
-
-			//Now patch IServerGameClients
-			vtableDst = ((void *)(g_TempGameClients));
-			vtableSrc = ((void *)(serverClients));
-			SourceHook::SetMemAccess(vtableDst, sizeof(IServerGameClients), SH_MEM_READ|SH_MEM_WRITE);
-			memcpy(vtableDst, vtableSrc, sizeof(IServerGameClients));
-
-			//Now patch IHLTVDirector
-			vtableDst = ((void *)(g_TempDirector));
-			vtableSrc = ((void *)(serverHLTV));
-			SourceHook::SetMemAccess(vtableDst, sizeof(IHLTVDirector), SH_MEM_READ|SH_MEM_WRITE);
-			memcpy(vtableDst, vtableSrc, sizeof(IHLTVDirector));
+			
+			// Now tell the global temp classes that they can call the original functions
+			g_TempDirector.SetOrig(serverHLTV);
+			g_TempGameClients.SetOrig(serverClients);
+			g_TempGameEnts.SetOrig(serverEnts);
+			g_TempGameDLL.SetOrig(serverDll);
 
 			//Everything's done.
 			g_GameDll.loaded = true;
@@ -269,8 +240,7 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 		}
 	}
 
-	//Somehow, the function got here.  This should be impossible, as not only is it 
-	// only called once, but the vtables should be overridden.
+	//Somehow, the function got here.  This should be impossible.
 	Error("Metamod:Source fatal error - IServerGameDLL::DLLInit() called inappropriately");
 
 	return false;
@@ -282,18 +252,14 @@ void DLLShutdown_handler(void)
 	g_PluginMngr.UnloadAll();
 
 	//Call the DLL...
-	g_GameDll.serverGameDLL->DLLShutdown();
+	g_GameDll.serverGameDLL_CC->DLLShutdown();
+
+	// Shutdown sourcehook now
+	g_SourceHook.CompleteShutdown();
 
 	//Unload the DLL forcefully
 	dlclose(g_GameDll.lib);
 	memset(&g_GameDll, 0, sizeof(GameDllInfo));
-
-	//For now, I'm not gonna bother freeing the memory allocated above.
-	//Why?
-	// 1.  We're exiting the application (I should hope!)
-	// 2.  If we're not exiting, we just deallocated the gamedll, so we're about to crash out ANYWAY
-	// 3.  We never saved the original vtable pointers, and we'd have to copy them back to get our destructors.
-	//Soooo... we'll just accept our fate here.
 
 	//DON'T CALL THE GAMEDLL! IT'S GONE!  pinin' for the fjords
 	RETURN_META(MRES_SUPERCEDE);
