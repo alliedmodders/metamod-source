@@ -261,6 +261,9 @@ bool CPluginManager::_Pause(CPluginManager::CPlugin *pl, char *error, size_t max
 		if (pl->m_API->Pause(error, maxlen))
 		{
 			g_SourceHook.PausePlugin(pl->m_Id);
+			pl->m_Status = Pl_Paused;
+
+			return true;
 		}
 	}
 
@@ -280,6 +283,9 @@ bool CPluginManager::_Unpause(CPluginManager::CPlugin *pl, char *error, size_t m
 		if (pl->m_API->Unpause(error, maxlen))
 		{
 			g_SourceHook.UnpausePlugin(pl->m_Id);
+			pl->m_Status = Pl_Running;
+
+			return true;
 		}
 	}
 

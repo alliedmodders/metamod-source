@@ -55,6 +55,7 @@ struct GameDllInfo
 	bool loaded;
 	HINSTANCE lib;
 	CreateInterfaceFn factory;
+	IServerGameDLL *serverGameDLL;
 };
 
 /** @brief Stores information about the HL2 Engine pointers */
@@ -82,5 +83,11 @@ extern std::string g_ModPath;
 
 /** @brief Path to server binary */
 extern std::string g_BinPath;
+
+/** @brief Global variable for SourceHook macros */
+extern SourceHook::ISourceHook *g_SHPtr;
+
+/** @brief We have our own internal plugin id... */
+extern PluginId g_PLID;
 
 #endif //_INCLUDE_SOURCEMM_H

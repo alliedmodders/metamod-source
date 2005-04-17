@@ -31,12 +31,17 @@ CHLTVDirector *g_TempDirector = NULL;
 GameDllInfo g_GameDll = {false, NULL, NULL};
 EngineInfo g_Engine = {NULL, NULL, NULL, NULL};
 SourceHook::CSourceHookImpl g_SourceHook;
+SourceHook::ISourceHook *g_SHPtr;
 std::string g_ModPath;
 std::string g_BinPath;
+PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
 
 ///////////////////////////////////
 // Main code for HL2 Interaction //
 ///////////////////////////////////
+
+void DLLShutdown_handler(void);
+SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, 0);
 
 //This is where the magic happens
 SMM_API void *CreateInterface(const char *name, int *ret)
@@ -94,6 +99,9 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 {
 	if (!g_GameDll.loaded)
 	{
+		//Initialize SourceHook
+		g_SHPtr = static_cast<SourceHook::ISourceHook *>(&g_SourceHook);
+
 		//The gamedll isn't loaded yet.  We need to find out where it's hiding.
 		IVEngineServer *ive = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
 		if (!ive)
@@ -150,6 +158,8 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 				dlclose(g_GameDll.lib);
 				return false;
 			}
+
+			g_GameDll.serverGameDLL = serverDll;
 
 			//Set this information early in case our wrappers are called somehow
 			g_Engine.engineFactory = engineFactory;
@@ -240,6 +250,9 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 			//Everything's done.
 			g_GameDll.loaded = true;
 
+			//Initialize our shutdown hook
+			SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, serverDll, DLLShutdown_handler, false);
+
 			//Initialize our console hooks
 			ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
             
@@ -261,6 +274,29 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 	Error("Metamod:Source fatal error - IServerGameDLL::DLLInit() called inappropriately");
 
 	return false;
+}
+
+void DLLShutdown_handler(void)
+{
+	//It's time for us to shut down too!
+	g_PluginMngr.UnloadAll();
+
+	//Call the DLL...
+	g_GameDll.serverGameDLL->DLLShutdown();
+
+	//Unload the DLL forcefully
+	dlclose(g_GameDll.lib);
+	memset(&g_GameDll, 0, sizeof(GameDllInfo));
+
+	//For now, I'm not gonna bother freeing the memory allocated above.
+	//Why?
+	// 1.  We're exiting the application (I should hope!)
+	// 2.  If we're not exiting, we just deallocated the gamedll, so we're about to crash out ANYWAY
+	// 3.  We never saved the original vtable pointers, and we'd have to copy them back to get our destructors.
+	//Soooo... we'll just accept our fate here.
+
+	//DON'T CALL THE GAMEDLL! IT'S GONE!  pinin' for the fjords
+	RETURN_META(MRES_SUPERCEDE);
 }
 
 int LoadPluginsFromFile(const char *file)

@@ -44,14 +44,14 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			Msg("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
 			Msg("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 			Msg("For more information, see the official website\n");
-			Msg("http://www.sourcemm.net/\n");
+			Msg("http://www.sourcemm.net/\n\n");
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
 			Msg("Metamod:Source version %s\n", SOURCEMM_VERSION);
 			Msg("Compiled on: %s\n", SOURCEMM_DATE);
 			Msg("Plugin interface version: %d/%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
-			Msg("http://www.sourcemm.net/\n");
+			Msg("http://www.sourcemm.net/\n\n");
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
@@ -74,6 +74,9 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			SourceMM::CPluginManager::CPlugin *pl;
 			PluginIter i;
 			const char *status="";
+			const char *version=NULL;
+			const char *name=NULL;
+			const char *author=NULL;
 
 			Msg("-Id- %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
@@ -93,8 +96,30 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				} else if (pl->m_Status == Pl_NotFound) {
 					status = "NOFILE";
 				}
-				Msg("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, pl->m_API->GetName(), pl->m_API->GetVersion(), pl->m_API->GetAuthor(), status);
+
+				if (pl->m_API)
+				{
+					version = pl->m_API->GetVersion();
+					author = pl->m_API->GetAuthor();
+					name = pl->m_API->GetName();
+				} else {
+					version = "-";
+					author = "-";
+					name = "-";
+				}
+
+				if (!version)
+					version = "-";
+				if (!author)
+					author = "-";
+				if (!name)
+					name = pl->m_File.c_str();
+
+
+				Msg("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
+
+			Msg("\n");
 
 			return;
 		} else if (strcmp(command, "info") == 0) {
@@ -125,7 +150,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					Msg("URL: %s\n", pl->m_API->GetURL());
 					Msg("Details: API %03d, Date: %s\n", pl->m_API->GetApiVersion(), pl->m_API->GetDate());
 				}
-				Msg("File: %s\n", pl->m_File.c_str());
+				Msg("File: %s\n\n", pl->m_File.c_str());
 
 				return;
 			} else {
@@ -137,28 +162,16 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			if (args >= 3)
 			{
 				int id = atoi(e->Cmd_Argv(2));
-				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
-				if (!pl)
+
+				char error[255];
+
+				if (!g_PluginMngr.Pause(id, error, sizeof(error)-1))
 				{
-					Msg("Plugin %d not found.\n", id);
+					Msg("Pause failed: %s\n", error);
 					return;
 				}
 				
-				if (pl->m_Status != Pl_Running)
-				{
-					Msg("Plugin %d is not pausable.\n", pl->m_Id);
-					return;
-				}
-
-				char error[255]={0};
-				if (!pl->m_API->Pause(error, sizeof(error)-1))
-				{
-					Msg("Plugin %d refused pause: %s\n", pl->m_Id, error);
-					return;
-				}
-
-				g_SourceHook.PausePlugin(pl->m_Id);
-				Msg("\"%s\" has been paused.\n", pl->m_API->GetName());
+				Msg("Plugin %d has been paused.\n", id);
 
 				return;
 			} else {
@@ -170,28 +183,15 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			if (args >= 3)
 			{
 				int id = atoi(e->Cmd_Argv(2));
-				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
-				if (!pl)
+				char error[255];
+
+				if (!g_PluginMngr.Unpause(id, error, sizeof(error)-1))
 				{
-					Msg("Plugin %d not found.\n", id);
-					return;
-				}
-				
-				if (pl->m_Status != Pl_Paused)
-				{
-					Msg("Plugin %d is not unpausable.\n", pl->m_Id);
+					Msg("Unpause failed: %s\n", error);
 					return;
 				}
 
-				char error[255]={0};
-				if (!pl->m_API->Pause(error, sizeof(error)-1))
-				{
-					Msg("Plugin %d refused unpause: %s\n", pl->m_Id, error);
-					return;
-				}
-
-				g_SourceHook.UnpausePlugin(pl->m_Id);
-				Msg("\"%s\" has been unpaused.\n", pl->m_API->GetName());
+				Msg("Plugin %d has been unpaused.\n", id);
 
 				return;
 			} else {
@@ -211,10 +211,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				} else {
 					const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
-					ext ? "" : ".dll";
+					ext = ext ? "" : ".dll";
 					snprintf(full_path, sizeof(full_path)-1, "%s\\%s%s", g_ModPath.c_str(), file, ext);
 #else
-					ext ? "" : "_i486.so";
+					ext = ext ? "" : "_i486.so";
 					snprintf(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
 #endif
 				}
@@ -299,15 +299,17 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	Msg("Metamod:Source Menu\n");
 	Msg("usage: meta <command> [arguments]\n");
-	Msg("   clear     - Unload all plugins forcefully\n");
-	Msg("   credits   - About Metamod:Source\n");
-	Msg("   game      - Information about GameDLL\n");
-	Msg("   info      - Information about a plugin\n");
-	Msg("   list      - List plugins\n");
-	Msg("   load      - Load a plugin\n");
-	Msg("   pause     - Pause a running plugin\n");
-	Msg("   refresh   - Reparse plugins file\n");
-	Msg("   unload    - Unload a loaded plugin\n");
-	Msg("   unpause   - Unpause a paused plugin\n");
-	Msg("   version   - Version information\n");
+	Msg("  clear        - Unload all plugins forcefully\n");
+	Msg("  credits      - About Metamod:Source\n");
+	Msg("  force_unload - Forcefully unload a plugin\n");
+	Msg("  game         - Information about GameDLL\n");
+	Msg("  info         - Information about a plugin\n");
+	Msg("  list         - List plugins\n");
+	Msg("  load         - Load a plugin\n");
+	Msg("  pause        - Pause a running plugin\n");
+	Msg("  refresh      - Reparse plugins file\n");
+	Msg("  unload       - Unload a loaded plugin\n");
+	Msg("  unpause      - Unpause a paused plugin\n");
+	Msg("  version      - Version information\n");
+	Msg("\n");
 }
