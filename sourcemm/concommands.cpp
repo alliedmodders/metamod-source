@@ -20,6 +20,9 @@ SMConVarAccessor g_SMConVarAccessor;
 
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
+	// Add the FCVAR_GAMEDLL flag 
+	// => No crash on exit!
+	pCommand->AddFlags(FCVAR_GAMEDLL);
 	pCommand->SetNext( NULL );
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
