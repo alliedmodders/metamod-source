@@ -24,6 +24,7 @@ CPluginManager g_PluginMngr;
 CPluginManager::CPluginManager()
 {
 	m_LastId = Pl_MinId;
+	m_AllLoaded = false;
 }
 
 CPluginManager::~CPluginManager()
@@ -82,6 +83,24 @@ CPluginManager::CPlugin *CPluginManager::FindById(PluginId id)
 	}
 
 	return NULL;
+}
+
+void CPluginManager::SetAllLoaded()
+{
+	m_AllLoaded = true;
+	PluginIter i;
+
+	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
+	{
+		if ( (*i) && (*i)->m_Status == Pl_Running && (*i)->m_API )
+		{
+			//004 is when we added this callback
+			if ( (*i)->m_API->GetApiVersion() < 004 )
+			{
+				(*i)->m_API->AllPluginsLoaded();
+			}
+		}
+	}
 }
 
 bool CPluginManager::Pause(PluginId id, char *error, size_t maxlen)
@@ -179,6 +198,12 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), &(pl->fac_list), error, maxlen))
 						{
 							pl->m_Status = Pl_Running;
+							if (m_AllLoaded)
+							{
+								//API 004 is when we added this callback
+								if (pl->m_API->GetApiVersion() >= 4)
+									pl->m_API->AllPluginsLoaded();
+							}
 						} else {
 							pl->m_Status = Pl_Refused;
 						}

@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	003
+#define PLAPI_VERSION	004
 #define PLAPI_NAME		"ISmmPlugin"
 
 struct factories
@@ -83,6 +83,11 @@ public:
 	virtual const char *GetVersion() =0;
 	virtual const char *GetDate() =0;
 	virtual const char *GetLogTag() =0;
+public:
+	/**
+	 * @brief Called when all plugins have been loaded - API version 4
+	 */
+	virtual void AllPluginsLoaded() =0;
 };
 
 #define PL_EXPOSURE	CreateInterface

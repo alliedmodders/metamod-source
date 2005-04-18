@@ -47,6 +47,7 @@ namespace SourceMM
 	public:
 		CPluginManager();
 		~CPluginManager();
+		void SetAllLoaded();
 	public:
 		PluginId Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen);
 		bool Unload(PluginId id, bool force, char *error, size_t maxlen);
@@ -76,6 +77,7 @@ namespace SourceMM
 	private:
 		PluginId m_LastId;
 		std::list<CPlugin *> m_Plugins;
+		bool m_AllLoaded;
 	};
 };
 

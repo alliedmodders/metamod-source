@@ -229,6 +229,9 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 
 			LoadPluginsFromFile(full_path);
 
+			//All plugins are now loaded.
+			g_PluginMngr.SetAllLoaded();
+
 			return true;
 		}
 	}
@@ -251,7 +254,7 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 		if (fdwReason == DLL_PROCESS_DETACH)
 		{
 			if (g_GameDll.lib && g_GameDll.loaded)
-				//dlclose(g_GameDll.lib);
+				dlclose(g_GameDll.lib);
 			memset(&g_GameDll, 0, sizeof(GameDllInfo));
 		}
 		return TRUE;
