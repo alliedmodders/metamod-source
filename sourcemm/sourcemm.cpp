@@ -296,10 +296,16 @@ int LoadPluginsFromFile(const char *file)
 
 	char buffer[255], error[255], full_path[128];
 	const char *ptr, *ext;
+	size_t length;
 	while (!feof(fp))
 	{
 		buffer[0] = '\0';
 		fgets(buffer, sizeof(buffer)-1, fp);
+		length = strlen(buffer);
+		if (!length)
+			continue;
+		if (buffer[length-1] == '\n')
+			buffer[length-1] = '\0';
 		if (buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
 			continue;
 		//First find if it's an absolute path or not...
