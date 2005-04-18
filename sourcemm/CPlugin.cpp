@@ -95,7 +95,7 @@ void CPluginManager::SetAllLoaded()
 		if ( (*i) && (*i)->m_Status == Pl_Running && (*i)->m_API )
 		{
 			//004 is when we added this callback
-			if ( (*i)->m_API->GetApiVersion() < 004 )
+			if ( (*i)->m_API->GetApiVersion() >= 004 )
 			{
 				(*i)->m_API->AllPluginsLoaded();
 			}
