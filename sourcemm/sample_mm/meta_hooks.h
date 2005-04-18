@@ -1,3 +1,13 @@
+/* ======== sample_mm ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): David "BAILOPAN" Anderson
+* ============================
+*/
+
 #ifndef _INCLUDE_META_HOOKS_H
 #define _INCLUDE_META_HOOKS_H
 
