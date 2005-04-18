@@ -28,13 +28,12 @@ class CServerGameDLL : public IServerGameDLL
 public:
 	CServerGameDLL() : m_pOrig(0)
 	{
-		m_GameDescBuffer[0] = 0;
+		strcpy(m_GameDescBuffer, "Metamod:Source");
 	}
 	void SetOrig(IServerGameDLL *pOrig)
 	{
 		m_pOrig = pOrig;
-		strncpy(m_GameDescBuffer, pOrig->GetGameDescription(), 254);
-		m_GameDescBuffer[255] = 0;
+		snprintf(m_GameDescBuffer, 255, "%s", pOrig->GetGameDescription());
 	}
 
 	virtual bool DLLInit(	CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals);
