@@ -35,13 +35,11 @@ SourceHook::ISourceHook *g_SHPtr;
 std::string g_ModPath;
 std::string g_BinPath;
 PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
+bool bInShutdown = false;
 
 ///////////////////////////////////
 // Main code for HL2 Interaction //
 ///////////////////////////////////
-
-void DLLShutdown_handler(void);
-SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, 0);
 
 //This is where the magic happens
 SMM_API void *CreateInterface(const char *name, int *ret)
@@ -153,8 +151,6 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 				return false;
 			}
 
-			g_GameDll.serverGameDLL_CC = SH_GET_CALLCLASS(IServerGameDLL, serverDll);
-
 			//Set this information early in case our wrappers are called somehow
 			g_Engine.engineFactory = engineFactory;
 			g_Engine.icvar = (ICvar *)(g_Engine.engineFactory)(VENGINE_CVAR_INTERFACE_VERSION, NULL);
@@ -221,8 +217,9 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 			//Everything's done.
 			g_GameDll.loaded = true;
 
-			//Initialize our shutdown hook
-			SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, serverDll, DLLShutdown_handler, false);
+			//Get call class, etc
+			g_GameDll.serverDll = serverDll;
+			g_GameDll.serverDll_CC = SH_GET_CALLCLASS(IServerGameDLL, serverDll);
 
 			//Initialize our console hooks
 			ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
@@ -246,23 +243,28 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 	return false;
 }
 
-void DLLShutdown_handler(void)
+void CServerGameDLL::DLLShutdown()
 {
-	//It's time for us to shut down too!
+	//cancel if we're shutting down already
+	if (bInShutdown)
+		return;
+
+	//we're not re-entrant
+	bInShutdown = true;
+
+    //Call the original function through its call class
+	g_GameDll.serverDll_CC->DLLShutdown();
+
+	//Unload plugins
 	g_PluginMngr.UnloadAll();
 
-	//Call the DLL...
-	g_GameDll.serverGameDLL_CC->DLLShutdown();
-
-	// Shutdown sourcehook now
+	//Shutdown sourcehook now
+	SH_RELEASE_CALLCLASS(g_GameDll.serverDll_CC);
 	g_SourceHook.CompleteShutdown();
 
 	//Unload the DLL forcefully
 	dlclose(g_GameDll.lib);
 	memset(&g_GameDll, 0, sizeof(GameDllInfo));
-
-	//DON'T CALL THE GAMEDLL! IT'S GONE!  pinin' for the fjords
-	RETURN_META(MRES_SUPERCEDE);
 }
 
 int LoadPluginsFromFile(const char *file)

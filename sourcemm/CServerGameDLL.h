@@ -52,8 +52,7 @@ public:
 	{ m_pOrig->LevelShutdown(); }
 	virtual void GameShutdown( void )
 	{ m_pOrig->GameShutdown(); }
-	virtual void DLLShutdown( void )
-	{ m_pOrig->DLLShutdown(); }
+	virtual void DLLShutdown( void );
 	virtual float GetTickInterval( void ) const
 	{ return m_pOrig->GetTickInterval(); }
 	virtual ServerClass *GetAllServerClasses( void )
