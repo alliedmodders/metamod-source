@@ -52,6 +52,53 @@ public:
 	{
 		return "SAMPLE";
 	}
+public:
+	//These functions are from IServerPluginCallbacks
+	//Note, the parameters might be a little different to match the actual calls!
+
+	//Called on LevelInit.  Server plugins only have pMapName
+	bool LevelInit(const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
+
+	//Called on ServerActivate.  Same definition as server plugins
+	void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
+
+	//Called on a game tick.  Same definition as server plugins
+	void GameFrame(bool simulating);
+
+	//Called on level shutdown.  Same definition as server plugins 
+	void LevelShutdown(void);
+
+	//Client is activate (whatever that means).  We get an extra parameter...
+	// "If bLoadGame is true, don't spawn the player because its state is already setup."
+	void ClientActive(edict_t *pEntity, bool bLoadGame);
+
+	//Client disconnects - same as server plugins
+	void ClientDisconnect(edict_t *pEntity);
+
+	//Client is put in server - same as server plugins
+	void ClientPutInServer(edict_t *pEntity, char const *playername);
+
+	//Sets the client index - same as server plugins
+	void SetCommandClient(int index);
+
+	//Called on client settings changed (duh) - same as server plugins
+	void ClientSettingsChanged(edict_t *pEdict);
+
+	//Called on client connect.  Unlike server plugins, we return whether the 
+	// connection is allowed rather than set it through a pointer in the first parameter.
+	// You can still supercede the GameDLL through RETURN_META_VALUE(MRES_SUPERCEDE, true/false)
+	bool ClientConnect(edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen);
+
+	//Called when a client uses a command.  Unlike server plugins, it's void.
+	// You can still supercede the gamedll through RETURN_META(MRES_SUPERCEDE).
+	void ClientCommand(edict_t *pEntity);
+
+private:
+	IVEngineServer *m_Engine;
+	IServerGameDLL *m_ServerDll;
+	IServerGameClients *m_ServerClients;
+	IServerGameDLL *m_ServerDll_CC;
+	IServerGameClients *m_ServerClients_CC;
 };
 
 extern SamplePlugin g_SamplePlugin;
