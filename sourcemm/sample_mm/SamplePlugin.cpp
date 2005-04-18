@@ -5,9 +5,9 @@ SamplePlugin g_SamplePlugin;
 
 PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
 
-//SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
+SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
 
-//bool LevelInit_handler( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background );
+bool LevelInit_handler( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background );
 
 bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen)
 {
@@ -21,7 +21,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 		return false;
 	}
 
-	//SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, isgd, LevelInit_handler, false);
+	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, isgd, LevelInit_handler, false);
 
 	return true;
 }
@@ -31,7 +31,12 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	return true;
 }
 
-/*bool LevelInit_handler( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
+void SamplePlugin::AllPluginsLoaded()
+{
+	//we don't really care
+}
+
+bool LevelInit_handler( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
 {
 	FILE *fp = fopen("c:\\dump.txt", "at");
 	if (!fp)
@@ -42,4 +47,4 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	fclose(fp);
 
 	RETURN_META_VALUE(MRES_IGNORED, false);
-}*/
+}
