@@ -217,10 +217,6 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 			//Everything's done.
 			g_GameDll.loaded = true;
 
-			//Get call class, etc
-			g_GameDll.serverDll = serverDll;
-			g_GameDll.serverDll_CC = SH_GET_CALLCLASS(IServerGameDLL, serverDll);
-
 			//Initialize our console hooks
 			ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
             
@@ -243,28 +239,42 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 	return false;
 }
 
+// The engine uses the DLL even after it has call DLLShutdown, so we unload it
+// when it unloads us
+#if defined _WIN32
+	BOOL WINAPI DllMain(
+						HINSTANCE hinstDLL,
+						DWORD fdwReason,
+						LPVOID lpvReserved
+						)
+	{
+		if (fdwReason == DLL_PROCESS_DETACH)
+		{
+			if (g_GameDll.lib && g_GameDll.loaded)
+				//dlclose(g_GameDll.lib);
+			memset(&g_GameDll, 0, sizeof(GameDllInfo));
+		}
+		return TRUE;
+	}
+#elif defined __linux__
+	void __attribute__ ((destructor)) app_fini(void)
+	{
+		if (g_GameDll.lib && g_GameDll.loaded)
+			dlclose(g_GameDll.lib);
+		memset(&g_GameDll, 0, sizeof(GameDllInfo));
+	}
+#endif
+
 void CServerGameDLL::DLLShutdown()
 {
-	//cancel if we're shutting down already
-	if (bInShutdown)
-		return;
-
-	//we're not re-entrant
-	bInShutdown = true;
-
-    //Call the original function through its call class
-	g_GameDll.serverDll_CC->DLLShutdown();
+    //Call the original function
+	m_pOrig->DLLShutdown();
 
 	//Unload plugins
 	g_PluginMngr.UnloadAll();
 
-	//Shutdown sourcehook now
-	SH_RELEASE_CALLCLASS(g_GameDll.serverDll_CC);
+	// Shutdown sourcehook now
 	g_SourceHook.CompleteShutdown();
-
-	//Unload the DLL forcefully
-	dlclose(g_GameDll.lib);
-	memset(&g_GameDll, 0, sizeof(GameDllInfo));
 }
 
 int LoadPluginsFromFile(const char *file)
