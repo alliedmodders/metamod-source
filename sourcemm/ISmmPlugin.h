@@ -51,7 +51,7 @@ public:
 	 */
 	virtual bool Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen) =0;
 
-	/* @brief Called on plugin unload.
+	/** @brief Called on plugin unload.
 	 *
 	 * @param error Error message buffer
 	 * @param maxlen Size of error message buffer
@@ -59,7 +59,7 @@ public:
 	 */
 	virtual bool Unload(char *error, size_t maxlen) =0;
 
-	/* @brief Called on plugin pause.
+	/** @brief Called on plugin pause.
 	 *
 	 * @param error Error message buffer
 	 * @param maxlen Size of error message buffer
@@ -67,7 +67,7 @@ public:
 	 */
 	virtual bool Pause(char *error, size_t maxlen) =0;
 
-	/* @brief Called on plugin unpause.
+	/** @brief Called on plugin unpause.
 	 *
 	 * @param error Error message buffer
 	 * @param maxlen Size of error message buffer
@@ -75,17 +75,34 @@ public:
 	 */
 	virtual bool Unpause(char *error, size_t maxlen) =0;
 public:
+	/** @brief Return author as string */
 	virtual const char *GetAuthor() =0;
+
+	/** @brief Return plugin name as string */
 	virtual const char *GetName() =0;
+
+	/** @brief Return a description as string */
 	virtual const char *GetDescription() =0;
+
+	/** @brief Return a URL as string */
 	virtual const char *GetURL() =0;
+
+	/** @brief Return quick license code as string */
 	virtual const char *GetLicense() =0;
+
+	/** @brief Return version as string */
 	virtual const char *GetVersion() =0;
+
+	/** @brief Return author as string */
 	virtual const char *GetDate() =0;
+
+	/** @brief Return author as string */
 	virtual const char *GetLogTag() =0;
 public:
 	/**
 	 * @brief Called when all plugins have been loaded - API version 4
+         *
+         * Ths is useful for knowing when it's safe to request things another plugin might have.
 	 */
 	virtual void AllPluginsLoaded() =0;
 };
