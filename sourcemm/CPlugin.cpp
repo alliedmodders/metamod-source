@@ -142,6 +142,49 @@ bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
 	return _Unload(pl, force, error, maxlen);
 }
 
+bool CPluginManager::Retry(PluginId id, char *error, size_t len)
+{
+	PluginIter i;
+	char buffer[64];
+	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
+	{
+		if ( (*i) && (*i)->m_Id == id )
+		{
+			if ( (*i)->m_Status >= Pl_Paused)
+			{
+				snprintf(error, len, "Plugin %d is already running.", id);
+				return false;
+			}
+			CPlugin *pl = _Load((*i)->m_File.c_str(), Pl_Console, error, len);
+			if (!pl)
+				return false;
+			if (pl->m_Status >= Pl_Paused)
+			{
+				//Now it gets crazy... unload the original copy.
+				_Unload( (*i), true, buffer, sizeof(buffer)-1 );
+				
+				//Set the new copy's id
+				pl->m_Id = id;
+
+				//We just wasted an id... reclaim it
+				m_LastId--;
+				
+				return true;
+			} else {
+				//don't really care about the buffer here
+				_Unload(pl, true, buffer, sizeof(buffer)-1);
+
+				//We just wasted an id... reclaim it
+				m_LastId--;
+				return false;
+			}
+		}
+	}
+
+	snprintf(error, len, "Plugin %d not found,", id);
+	return false;
+}
+
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
 	FILE *fp;

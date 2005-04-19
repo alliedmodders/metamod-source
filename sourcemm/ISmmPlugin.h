@@ -32,7 +32,7 @@ struct factories
 };
 
 class ISmmAPI;
-typedef unsigned int PluginId;
+typedef int PluginId;
 
 class ISmmPlugin
 {

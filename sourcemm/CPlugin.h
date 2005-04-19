@@ -65,6 +65,16 @@ namespace SourceMM
 		 */
 		CPlugin *FindById(PluginId id);
 
+		/**
+		 * @brief Attempts to reload a failed plugin
+		 *
+		 * @param id Id of plugin
+		 * @param error Error message buffer
+		 * @param len Maximum length of buffer
+		 * @return True on success, false otherwise
+		 */
+		bool Retry(PluginId id, char *error, size_t len);
+
 		//Internal iterators
 		std::list<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
 		std::list<SourceMM::CPluginManager::CPlugin *>::iterator _end();

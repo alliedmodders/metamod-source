@@ -36,12 +36,12 @@ enum Pl_Status
 enum
 {
 	Pl_BadLoad=0,
-	Pl_Console,
-	Pl_File,
-	Pl_MinId,
+	Pl_Console=-1,
+	Pl_File=-2,
+	Pl_MinId=1,
 };
 
-typedef unsigned int PluginId;
+typedef int PluginId;
 struct factories;
 
 class ISmmPluginManager
