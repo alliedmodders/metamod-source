@@ -56,7 +56,7 @@ void SamplePlugin::ClientDisconnect(edict_t *pEntity)
 
 void SamplePlugin::ClientPutInServer(edict_t *pEntity, char const *playername)
 {
-	META_LOG(g_PLAPI, "ClientActivate called: pEntity=%d, playername=%s", pEntity ? m_Engine->IndexOfEdict(pEntity) : 0, playername);
+	META_LOG(g_PLAPI, "ClientPutInServer called: pEntity=%d, playername=%s", pEntity ? m_Engine->IndexOfEdict(pEntity) : 0, playername);
 	RETURN_META(MRES_IGNORED);
 }
 
