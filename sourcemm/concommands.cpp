@@ -53,7 +53,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 		} else if (strcmp(command, "version") == 0) {
 			Msg("Metamod:Source version %s\n", SOURCEMM_VERSION);
 			Msg("Compiled on: %s\n", SOURCEMM_DATE);
-			Msg("Plugin interface version: %d/%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+			Msg("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 			Msg("http://www.sourcemm.net/\n\n");
 
 			return;
@@ -146,12 +146,12 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					} else if (pl->m_Status == Pl_Running) {
 						Msg("Plugin %d is running.\n", id);
 					}
-					Msg("Name: \"%s\" by %s\n", pl->m_API->GetName(), pl->m_API->GetAuthor());
-					Msg("Version: %s\n", pl->m_API->GetVersion());
-					Msg("Description: %s\n", pl->m_API->GetDescription());
-					Msg("License: %s\n", pl->m_API->GetLicense());
-					Msg("URL: %s\n", pl->m_API->GetURL());
-					Msg("Details: API %03d, Date: %s\n", pl->m_API->GetApiVersion(), pl->m_API->GetDate());
+					Msg("  Name: \"%s\" by %s\n", pl->m_API->GetName(), pl->m_API->GetAuthor());
+					Msg("  Version: %s\n", pl->m_API->GetVersion());
+					Msg("  Description: %s\n", pl->m_API->GetDescription());
+					Msg("  License: %s\n", pl->m_API->GetLicense());
+					Msg("  URL: %s\n", pl->m_API->GetURL());
+					Msg("  Details: API %03d, Date: %s\n", pl->m_API->GetApiVersion(), pl->m_API->GetDate());
 				}
 				Msg("File: %s\n\n", pl->m_File.c_str());
 
