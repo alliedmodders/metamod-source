@@ -332,7 +332,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				return;
 			} else {
-				Msg("Usage: meta force_unload <id>\n");
+				Msg("Usage: meta retry <id>\n");
 
 				return;
 			}
