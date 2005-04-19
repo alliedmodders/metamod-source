@@ -16,6 +16,8 @@
  * @file CSmmAPI.cpp
  */
 
+using namespace SourceMM;
+
 CSmmAPI g_SmmAPI;
 
 ISmmPluginManager *CSmmAPI::PluginManager()
