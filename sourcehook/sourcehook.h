@@ -389,7 +389,9 @@ namespace SourceHook
 	/* 2) Declare some vars and set it up */ \
 	std::list<HookManagerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
 	std::list<HookManagerInfo::Iface::Hook> &postlist = ci.hooks_post; \
-	rettype orig_ret, override_ret, plugin_ret; \
+	rettype orig_ret; \
+	rettype override_ret; \
+	rettype plugin_ret; \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
