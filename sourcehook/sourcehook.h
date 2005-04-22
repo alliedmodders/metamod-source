@@ -24,16 +24,16 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
-#define SH_ASSERT(x) if (!(x)) __asm { int 3 }
-
 // System
 #define SH_SYS_WIN32 1
 #define SH_SYS_LINUX 2
 
 #ifdef _WIN32
 # define SH_SYS SH_SYS_WIN32
+# define SH_ASSERT(x) if (!(x)) __asm { int 3 }
 #elif defined __linux__
 # define SH_SYS SH_SYS_LINUX
+# define SH_ASSERT(x) if (!(x)) asm("int $3");
 #else
 # error Unsupported system
 #endif

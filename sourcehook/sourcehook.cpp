@@ -20,7 +20,7 @@
 # include <windows.h>
 #elif SH_SYS == SH_SYS_LINUX
 # include <sys/mman.h>
-# include <sys/limits.h>
+# include <limits.h>
 # include <unistd.h>
 # ifndef PAGESIZE
 #  define PAGESIZE 4096
@@ -459,7 +459,7 @@ namespace SourceHook
 			void *callgate = NULL;
 #if SH_RUNTIME_CODEGEN == 1
 			unsigned char *cggen = new unsigned char[SH_CCC_CODESIZE];
-			SH_CCC_MakeGate(cc.iface, cc.ptr, cggen, orig_entry);
+			//SH_CCC_MakeGate(cc.iface, cc.ptr, cggen, orig_entry);
 			callgate = (void*)cggen;
 			SetMemAccess(callgate, SH_CCC_CODESIZE, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
 #else
