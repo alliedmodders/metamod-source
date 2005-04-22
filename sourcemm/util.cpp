@@ -37,3 +37,4 @@ const char *UTIL_GetExtension(const char *file)
 
 	return NULL;
 }
+

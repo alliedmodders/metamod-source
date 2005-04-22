@@ -25,9 +25,9 @@ const char *UTIL_GetExtension(const char *file);
 	g_SmmAPI.SetLastMetaReturn(MRES_IGNORED); \
 	for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++) \
 	{ \
-		if ( (*i) && (*i)->fac_list.##type ) \
+		if ( (*i) && (*i)->fac_list. type ) \
 		{ \
-			d = ((*i)->fac_list.##type)(name, ret); \
+			d = ((*i)->fac_list. type)(name, ret); \
 			mres = g_SmmAPI.GetLastMetaReturn(); \
 			if (mres > high) \
 				high = mres; \

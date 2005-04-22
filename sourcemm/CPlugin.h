@@ -17,6 +17,7 @@
  */
 
 #include <list>
+#include <string>
 #include "IPluginManager.h"
 #include "oslink.h"
 
