@@ -107,8 +107,6 @@ private:
 	IVEngineServer *m_Engine;
 	IServerGameDLL *m_ServerDll;
 	IServerGameClients *m_ServerClients;
-	IServerGameDLL *m_ServerDll_CC;
-	IServerGameClients *m_ServerClients_CC;
 };
 
 extern SamplePlugin g_SamplePlugin;

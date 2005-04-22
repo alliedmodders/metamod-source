@@ -139,12 +139,6 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 	//Hook ClientCommand to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
 
-	//Now, importantly, SourceHook has modified the layout of the above classes.
-	//If we want to call them in their original state (i.e., without invoking hooks)
-	// we must request a "Call Class" from SourceHook.
-	m_ServerClients_CC = SH_GET_CALLCLASS(IServerGameClients, m_ServerClients);
-	m_ServerDll = SH_GET_CALLCLASS(IServerGameDLL, m_ServerDll);
-
 	return true;
 }
 
@@ -164,10 +158,6 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, ClientSettingsChanged, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
-
-	//Lastly, release the call classes we requested
-	SH_RELEASE_CALLCLASS(m_ServerDll_CC);
-	SH_RELEASE_CALLCLASS(m_ServerClients_CC);
 
 	return true;
 }
