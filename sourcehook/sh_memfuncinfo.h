@@ -65,9 +65,9 @@ namespace SourceHook
 			};
 			int delta;
 		};
-		template<class MFP> static inline void GetFuncInfo(MFP *mfp, MemFuncInfo &out)
+		template<class MFP> static inline void GetFuncInfo(MFP mfp, MemFuncInfo &out)
 		{
-			GCC_MemFunPtr *mfp_detail = (GCC_MemFunPtr*)mfp;
+			GCC_MemFunPtr *mfp_detail = (GCC_MemFunPtr*)&mfp;
 			out.thisptroffs = mfp_detail->delta;
 			if (mfp_detail->vtable_index_plus1 & 1)
 			{
