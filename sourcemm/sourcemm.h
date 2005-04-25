@@ -89,4 +89,7 @@ extern SourceHook::ISourceHook *g_SHPtr;
 /** @brief We have our own internal plugin id... */
 extern PluginId g_PLID;
 
+/** @brief Hook for LevelShutdown */
+void LevelShutdown_handler(void);
+
 #endif //_INCLUDE_SOURCEMM_H

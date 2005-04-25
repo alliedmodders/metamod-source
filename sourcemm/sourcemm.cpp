@@ -24,6 +24,8 @@
  * @file sourcemm.cpp
  */
 
+SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
+
 CServerGameDLL g_TempGameDLL;
 CServerGameEnts g_TempGameEnts;
 CServerGameClients g_TempGameClients;
@@ -36,6 +38,7 @@ std::string g_ModPath;
 std::string g_BinPath;
 PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
 bool bInShutdown = false;
+bool bInFirstLevel = true;
 
 ///////////////////////////////////
 // Main code for HL2 Interaction //
@@ -222,15 +225,21 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
             
 			//Now it's safe to load plugins.
 #if defined WIN32 || defined _WIN32
-			snprintf(full_path, sizeof(full_path)-1, "%s\\%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
 #else
-			snprintf(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
 #endif
 
 			LoadPluginsFromFile(full_path);
 
 			//All plugins are now loaded.
 			g_PluginMngr.SetAllLoaded();
+
+			//Like metamod, reload plugins at the end of the map.
+			//This is so plugins can hook everything on load, BUT, new plugins will be reloaded
+			// if the server is shut down (silly, but rare case).
+			bInFirstLevel = true;
+			SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, serverDll, LevelShutdown_handler, false);
 
 			return true;
 		}
@@ -400,4 +409,22 @@ void LogMessage(const char *msg, ...)
 	va_end(ap);
 
 	g_Engine.engine->LogPrint(buffer);
+}
+
+void LevelShutdown_handler(void)
+{
+	if (!bInFirstLevel)
+	{
+		char full_path[255];
+#if defined WIN32 || defined _WIN32
+		snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
+#else
+		snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
+#endif
+		LoadPluginsFromFile(full_path);
+	} else {
+		bInFirstLevel = false;
+	}
+
+	RETURN_META(MRES_IGNORED);
 }
