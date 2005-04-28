@@ -1,14 +1,16 @@
 #(C)2004-2005 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-OPT_FLAGS = -O3 -fno-rtti -funroll-loops -s -pipe
-DEBUG_FLAGS = -g -ggdb3
 HL2SDK = ../../../hl2sdk
-CPP = g++
 SMM_ROOT = ../../
 SRCDS = ~/srcds
 
-### NOTHING TO EDIT BELOW ###
+### EDIT BELOW FOR OTHER PROJECTS ###
+
+OPT_FLAGS = -O3 -fno-rtti -funroll-loops -s -pipe
+DEBUG_FLAGS = -g -ggdb3
+CPP = g++
+BINARY = stub_mm_i486.so
 
 OBJECTS = stub_mm.cpp
 
@@ -18,8 +20,6 @@ HL2PUB = $(HL2SDK)/public
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)tier0 -I$(HL2PUB)/tier1 \
 	-I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook -I$(SMM_ROOT)/sourcemm
-
-BINARY = stub_mm_i486.so
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
