@@ -402,93 +402,93 @@ bool Test_F16_int_post_handler(int x)
 	RETURN_META_VALUE(MRES_OVERRIDE, !META_RESULT_ORIG_RET(bool));
 }
 
-// I haven't checked the second F16 function yet
-
 int main(int argc, char *argv[])
 {
 	// Get an instance and call the functions using the pointer
 	// (otherwise the compiler optimizes away the vtable lookup)
 	Test zLOL;
+	Test zLOL2;
 	Test *zLOL_Ptr = &zLOL;
+	Test *zLOL2_Ptr = &zLOL2;
 	g_SHPtr = &g_SHImpl;
 
 	//////////////////////////////////////////////////////////////////////////
-	Test *cc = SH_GET_CALLCLASS(Test, zLOL_Ptr);
+	SourceHook::CallClass<Test> *cc = SH_GET_CALLCLASS(zLOL_Ptr);
 
 	printf("TEST1.1: Calling F299\n");
 	zLOL_Ptr->F299();
 	printf("TEST1.2: Calling F299 through cc\n");
-	cc->F299();
+	SH_CALL(cc, &Test::F299)();
 	printf("TEST1.3: Hooking it\n");
 	SH_ADD_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_pre_handler, false);
+	zLOL2_Ptr->F299();
 	printf("TEST1.4: Calling F299\n");
 	zLOL_Ptr->F299();
 	printf("TEST1.5: Calling F299 through cc\n");
-	cc->F299();
+	SH_CALL(cc, &Test::F299)();
 	printf("TEST1.6: Adding one more pre and one post hook\n");
 	SH_ADD_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_pre_handler2, false);
 	SH_ADD_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_post_handler, true);
 	printf("TEST1.7: Calling F299\n");
 	zLOL_Ptr->F299();
 	printf("TEST1.8: Calling F299 through cc\n");
-	cc->F299();
+	SH_CALL(cc, &Test::F299)();
 	printf("TEST1.9: Removing pre hooks\n");
 	SH_REMOVE_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_pre_handler, false);
 	SH_REMOVE_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_pre_handler2, false);
 	printf("TEST1.10: Calling F299\n");
 	zLOL_Ptr->F299();
 	printf("TEST1.11: Calling F299 through cc\n");
-	cc->F299();
+	SH_CALL(cc, &Test::F299)();
 	printf("TEST1.12: Removing post hook\n");
 	SH_REMOVE_HOOK_STATICFUNC(Test, F299, zLOL_Ptr, Test_F299_post_handler, true);
 	printf("TEST1.13: Calling F299\n");
 	zLOL_Ptr->F299();
 	printf("TEST1.14: Calling F299 through cc\n");
-	cc->F299();
+	SH_CALL(cc, &Test::F299)();
 
 	//////////////////////////////////////////////////////////////////////////
 	printf("\n\n*************************************************\n\n");
 	printf("TEST2.1: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.2: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.3: Hooking it\n");
 	SH_ADD_HOOK_STATICFUNC(Test, F16, zLOL_Ptr, Test_F16_int_pre_handler, false);
 	printf("TEST2.4: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.5: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.6: Adding post hook\n");
 	SH_ADD_HOOK_STATICFUNC(Test, F16, zLOL_Ptr, Test_F16_int_post_handler, true);
 	printf("TEST2.7: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.8: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
-	printf("TEST2.9: Removing pre hook\n");
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.XX.1: Pausing the plugin\n");
 	g_SHImpl.PausePlugin(g_PLID);
 	printf("TEST2.XX.2: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.XX.3: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.XX.4: Unpausing the plugin\n");
 	g_SHImpl.UnpausePlugin(g_PLID);
 	printf("TEST2.XX.5: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.XX.6: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.9: Removing pre hook\n");
 	SH_REMOVE_HOOK_STATICFUNC(Test, F16, zLOL_Ptr, Test_F16_int_pre_handler, false);
 	printf("TEST2.10: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.11: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 	printf("TEST2.12: Removing post hook\n");
 	SH_REMOVE_HOOK_STATICFUNC(Test, F16, zLOL_Ptr, Test_F16_int_post_handler, true);
 	printf("TEST2.10: Calling F16(155)\n");
 	printf("Returned: %d\n", zLOL_Ptr->F16(155) ? 1 : 0);
 	printf("TEST2.11: Calling F16(155) through CC\n");
-	printf("Returned: %d\n", cc->F16(155) ? 1 : 0);
+	printf("Returned: %d\n", SH_CALL(cc, static_cast<bool(Test::*)(int)>(&Test::F16))(155) ? 1 : 0);
 
 	SH_RELEASE_CALLCLASS(cc);
 

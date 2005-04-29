@@ -20,7 +20,7 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
-#define SH_ASSERT(x) if (!(x)) __asm { int 3 }
+#define SH_ASSERT(x, info) if (!(x)) __asm { int 3 }
 
 // System
 #define SH_SYS_WIN32 1
@@ -54,6 +54,8 @@
 #include "sh_memfuncinfo.h"
 #include "sh_memory.h"
 #include <list>
+#include <vector>
+#include <map>
 #include <algorithm>
 
 // Good old metamod!
@@ -72,6 +74,13 @@ enum META_RES
 namespace SourceHook
 {
 	const int STRBUF_LEN=8192;		// In bytes, for "vafmt" functions
+
+	/**
+	*	@brief An empty class. No inheritance used. Used for original-function-call hacks
+	*/
+	class EmptyClass
+	{
+	};
 
 	/**
 	*	@brief A plugin typedef
@@ -136,65 +145,60 @@ namespace SourceHook
 	*/
 	struct HookManagerInfo
 	{
-		struct Iface
+		struct VfnPtr
 		{
-			struct Hook
+			struct Iface
 			{
-				ISHDelegate *handler;			//!< Pointer to the handler
-				bool paused;					//!< If true, the hook should not be executed
-				Plugin plug;					//!< The owner plugin
+				struct Hook
+				{
+					ISHDelegate *handler;			//!< Pointer to the handler
+					bool paused;					//!< If true, the hook should not be executed
+					Plugin plug;					//!< The owner plugin
+				};
+				void *ptr;							//!< Pointer to the interface instance
+				std::list<Hook> hooks_pre;			//!< A list of pre-hooks
+				std::list<Hook> hooks_post;			//!< A list of post-hooks
+				bool operator ==(void *other) const
+				{
+					return ptr == other;
+				}
 			};
-			void *callclass;					//!< Stores a call class for this interface
-			void *ptr;							//!< Pointer to the interface instance
+
+			void *vfnptr;							//!< Pointer to the function
 			void *orig_entry;					//!< The original vtable entry
-			std::list<Hook> hooks_pre;			//!< A list of pre-hooks
-			std::list<Hook> hooks_post;			//!< A list of post-hooks
-			bool operator ==(void *other) const
+
+			typedef std::list<Iface> IfaceList;
+			typedef IfaceList::iterator IfaceListIter;
+			IfaceList ifaces;
+
+			bool operator ==(void *other)
 			{
-				return ptr == other;
+				return vfnptr == other;
 			}
 		};
 		Plugin plug;							//!< The owner plugin
 		const char *proto;						//!< The prototype of the function the hook manager is responsible for
 		int vtbl_idx;							//!< The vtable index
 		int vtbl_offs;							//!< The vtable offset
-		int thisptr_offs;						//!< The this-pointer-adjuster
 		HookManagerPubFunc func;				//!< The interface to the hook manager
 
-		int hookfunc_vtbl_idx;					//!< the vtable index of the hookfunc
-		int hookfunc_vtbl_offs;					//!< the vtable offset of the hookfunc
-		void *hookfunc_inst;					//!< Instance of the class the hookfunc is in
+		void *hookfunc_vfnptr;					//!< Pointer to the hookfunc impl
 		
-		std::list<Iface> ifaces;				//!< List of hooked interfaces
+		typedef std::list<VfnPtr> VfnPtrList;
+		typedef VfnPtrList::iterator VfnPtrListIter;
+		VfnPtrList vfnptrs;				//!< List of hooked interfaces
 	};
 
-	/**
-	*	@brief Structure describing a callclass
-	*/
-	struct CallClass
+	typedef std::vector<void*> OrigFuncs;
+	typedef std::map<int, OrigFuncs> OrigVTables;
+
+	template<class B> struct CallClass
 	{
-		struct VTable
-		{
-			void *ptr;
-			int actsize;
-			std::list<int> patches;	//!< Already patched entries
-			bool operator ==(void *other) const
-			{
-				return ptr == other;
-			}
-		};
-		void *iface;				//!< The iface pointer this callclass belongs to
-		size_t size;				//!< The size of the callclass
-		void *ptr;					//!< The actual "object"
-		typedef std::list<VTable> VTableList;
-		VTableList vtables;			//!< Already known vtables
-		int refcounter;				//!< How many times it was requested
-
-		bool operator ==(void *other) const
-		{
-			return ptr == other;
-		}
+		B *ptr;
+		OrigVTables vt;
 	};
+
+	typedef CallClass<void> GenericCallClass;
 
 	/**
 	*	@brief The main SourceHook interface
@@ -214,7 +218,7 @@ namespace SourceHook
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool AddHook(Plugin plug, void *iface, int ifacesize, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
+		virtual bool AddHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
 
 		/**
 		*	@brief Removes a hook.
@@ -227,7 +231,7 @@ namespace SourceHook
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool RemoveHook(Plugin plug, void *iface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
+		virtual bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
 
 		/**
 		*	@brief Checks whether a plugin has (a) hook manager(s) that is/are currently used by other plugins
@@ -242,14 +246,14 @@ namespace SourceHook
 		*	@param iface The interface pointer
 		*	@param size Size of the class
 		*/
-		virtual void *GetCallClass(void *iface, size_t size) = 0;
+		virtual GenericCallClass *GetCallClass(void *iface) = 0;
 
 		/**
 		*	@brief Release a callclass
 		*
 		*	@param ptr Pointer to the callclass
 		*/
-		virtual void ReleaseCallClass(void *ptr) = 0;
+		virtual void ReleaseCallClass(GenericCallClass *ptr) = 0;
 
 		virtual void SetRes(META_RES res) = 0;				//!< Sets the meta result
 		virtual META_RES GetPrevRes() = 0;					//!< Gets the meta result of the previously called handler
@@ -284,11 +288,16 @@ namespace SourceHook
 /**
 *	@brief Get/generate callclass for an interface pointer
 *
-*	@param ifacetype The type of the interface
 *	@param ifaceptr The interface pointer
 */
-#define SH_GET_CALLCLASS(ifacetype, ifaceptr) reinterpret_cast<ifacetype*>(SH_GLOB_SHPTR->GetCallClass(ifaceptr, sizeof(ifacetype)))
-#define SH_RELEASE_CALLCLASS(ptr) SH_GLOB_SHPTR->ReleaseCallClass(reinterpret_cast<void*>(ptr))
+template<class ifacetype>
+inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS(ifacetype *ptr)
+{
+	return reinterpret_cast<SourceHook::CallClass<ifacetype>*>(
+		SH_GLOB_SHPTR->GetCallClass(reinterpret_cast<void*>(ptr)));
+}
+
+#define SH_RELEASE_CALLCLASS(ptr) SH_GLOB_SHPTR->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr))
 
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	SourceHook::SH_FHAdd##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
@@ -307,6 +316,18 @@ namespace SourceHook
 #define SH_NOATTRIB
 
 
+
+#if SH_COMP == SH_COMP_MSVC
+# define SH_SETUP_MFP(mfp) \
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr.orig_entry;
+#elif SH_COMP == SH_COMP_GCC
+# define SH_SETUP_MFP(mfp) \
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr.orig_entry; \
+	reinterpret_cast<void**>(&mfp)[1] = 0;
+#else
+# error Not supported yet.
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 #define SH_FHCls(ift, iff, ov) FHCls_##ift##iff##ov
 
@@ -320,13 +341,10 @@ namespace SourceHook
 			GetFuncInfo(funcptr, mfi); \
 			param->vtbl_idx = mfi.vtblindex; \
 			param->vtbl_offs = mfi.vtbloffs; \
-			param->thisptr_offs = mfi.thisptroffs; \
-			if (param->thisptr_offs < 0) \
-				return 2; /*No virtual inheritance supported*/ \
+			\
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
-			param->hookfunc_vtbl_idx = mfi.vtblindex; \
-			param->hookfunc_vtbl_offs = mfi.vtbloffs; \
-			param->hookfunc_inst = (void*)&ms_Inst; \
+			param->hookfunc_vfnptr = \
+			reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]; \
 			return 0; \
 		} \
 		else if (action == HA_Register) \
@@ -353,7 +371,7 @@ namespace SourceHook
 			static const char *ms_Proto; \
 			SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
 
-#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto) \
+#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto, funcptr) \
 		}; \
 		const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 		SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
@@ -361,42 +379,67 @@ namespace SourceHook
 		bool SH_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 		{ \
-			return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, sizeof(ifacetype), \
+			MemFuncInfo mfi; \
+			GetFuncInfo(funcptr, mfi); \
+			if (mfi.thisptroffs < 0) \
+				return false; /* No virtual inheritance supported */ \
+			\
+			return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
 				SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
 				new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
 		} \
 		bool SH_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 		{ \
+			MemFuncInfo mfi; \
+			GetFuncInfo(funcptr, mfi); \
+			if (mfi.thisptroffs < 0) \
+				return false; /* No virtual inheritance supported */ \
+			\
 			CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD> tmp(handler); \
-			return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, \
+			return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
 				SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, &tmp, post); \
 		} \
 	}
 
-#define SH_SETUPCALLS(rettype) \
-	/* 1) Find the iface ptr */ \
-	/* 1.1) Adjust to original this pointer */ \
-	void *origthis = this - ms_HI->thisptr_offs; \
-	std::list<HookManagerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
-		ms_HI->ifaces.end(), origthis); \
-	SH_ASSERT(ifaceiter != ms_HI->ifaces.end()); \
-	HookManagerInfo::Iface &ci = *ifaceiter; \
+#define SH_SETUPCALLS(rettype, paramtypes, params) \
+	/* 1) Find the vfnptr */ \
+	void *ourvfnptr = reinterpret_cast<void*>( \
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
+	\
+	HookManagerInfo::VfnPtrListIter vfptriter = std::find(ms_HI->vfnptrs.begin(), \
+		ms_HI->vfnptrs.end(), ourvfnptr); \
+	if (vfptriter == ms_HI->vfnptrs.end()) \
+	{ \
+		/* Bleh? Should be impossible! */ \
+		SH_ASSERT(0, "Called with vfnptr 0x%p which couldn't be found in the list"); \
+	} \
+	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
+	/* 2) Find the iface */ \
+	HookManagerInfo::VfnPtr::IfaceListIter ifiter = std::find(vfnptr.ifaces.begin(), vfnptr.ifaces.end(), this); \
+	if (ifiter == vfnptr.ifaces.end()) \
+	{ \
+		/* The iface info was not found. Redirect the call to the original function. */ \
+		rettype (EmptyClass::*mfp)paramtypes; \
+		SH_SETUP_MFP(mfp); \
+		return (reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
+	} \
+	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	std::list<HookManagerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
-	std::list<HookManagerInfo::Iface::Hook> &postlist = ci.hooks_post; \
+	std::list<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
+	std::list<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
 	rettype orig_ret, override_ret, plugin_ret; \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetIfacePtr(ci.ptr); \
+	SH_GLOB_SHPTR->SetIfacePtr(this); \
 	SH_GLOB_SHPTR->SetOrigRet(reinterpret_cast<void*>(&orig_ret)); \
 	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
@@ -411,44 +454,64 @@ namespace SourceHook
 		} \
 	}
 
-#define SH_CALL_ORIG(ifacetype, ifacefunc, params) \
+#define SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
-		orig_ret = reinterpret_cast<ifacetype*>(ci.callclass)->ifacefunc params; \
+	{ \
+		rettype (EmptyClass::*mfp)paramtypes; \
+		SH_SETUP_MFP(mfp); \
+		orig_ret = (reinterpret_cast<EmptyClass*>(ci.ptr)->*mfp)params; \
+	} \
 	else \
 		orig_ret = override_ret;
 
 #define SH_RETURN() \
 	return status >= MRES_OVERRIDE ? override_ret : orig_ret;
 
-#define SH_HANDLEFUNC(ifacetype, ifacefunc, params, rettype) \
-	SH_SETUPCALLS(rettype) \
+#define SH_HANDLEFUNC(ifacetype, ifacefunc, paramtypes, params, rettype) \
+	SH_SETUPCALLS(rettype, paramtypes, params) \
 	SH_CALL_HOOKS(pre, params) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, params) \
+	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
 	SH_CALL_HOOKS(post, params) \
 	SH_RETURN()
 
 //////////////////////////////////////////////////////////////////////////
-#define SH_SETUPCALLS_void() \
-	/* 1) Find the iface ptr */ \
-	/* 1.1) Adjust to original this pointer */ \
-	void *origthis = this - ms_HI->thisptr_offs; \
-	std::list<HookManagerInfo::Iface>::iterator ifaceiter = std::find(ms_HI->ifaces.begin(), \
-		ms_HI->ifaces.end(), origthis); \
-	SH_ASSERT(ifaceiter != ms_HI->ifaces.end()); \
-	HookManagerInfo::Iface &ci = *ifaceiter; \
+#define SH_SETUPCALLS_void(paramtypes, params) \
+	/* 1) Find the vfnptr */ \
+	void *ourvfnptr = reinterpret_cast<void*>( \
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
+	\
+	HookManagerInfo::VfnPtrListIter vfptriter = std::find(ms_HI->vfnptrs.begin(), \
+		ms_HI->vfnptrs.end(), ourvfnptr); \
+	if (vfptriter == ms_HI->vfnptrs.end()) \
+	{ \
+		/* Bleh? Should be impossible! */ \
+		SH_ASSERT(0, "Called with vfnptr 0x%p which couldn't be found in the list"); \
+	} \
+	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
+	/* 2) Find the iface */ \
+	HookManagerInfo::VfnPtr::IfaceListIter ifiter = std::find(vfnptr.ifaces.begin(), vfnptr.ifaces.end(), this); \
+	if (ifiter == vfnptr.ifaces.end()) \
+	{ \
+		/* The iface info was not found. Redirect the call to the original function. */ \
+		void (EmptyClass::*mfp)paramtypes; \
+		SH_SETUP_MFP(mfp); \
+		(reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
+		return; \
+	} \
+	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	std::list<HookManagerInfo::Iface::Hook> &prelist = ci.hooks_pre; \
-	std::list<HookManagerInfo::Iface::Hook> &postlist = ci.hooks_post; \
+	std::list<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
+	std::list<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetIfacePtr(ci.ptr); \
+	SH_GLOB_SHPTR->SetIfacePtr(this); \
 	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (std::list<HookManagerInfo::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
@@ -458,54 +521,60 @@ namespace SourceHook
 			status = cur_res; \
 	}
 
-#define SH_CALL_ORIG_void(ifacetype, ifacefunc, params) \
+#define SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
-		reinterpret_cast<ifacetype*>(ci.callclass)->ifacefunc params;
+	{ \
+		void (EmptyClass::*mfp)paramtypes; \
+		SH_SETUP_MFP(mfp); \
+		(reinterpret_cast<EmptyClass*>(ci.ptr)->*mfp)params; \
+	}
 
 #define SH_RETURN_void()
 
-#define SH_HANDLEFUNC_void(ifacetype, ifacefunc, params) \
-	SH_SETUPCALLS_void() \
+#define SH_HANDLEFUNC_void(ifacetype, ifacefunc, paramtypes, params) \
+	SH_SETUPCALLS_void(paramtypes, params) \
 	SH_CALL_HOOKS_void(pre, params) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, params) \
+	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
 	SH_CALL_HOOKS_void(post, params) \
 	SH_RETURN_void()
 
 
 // Special vafmt handlers
-#define SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, params_orig, params_plug, rettype) \
-	SH_SETUPCALLS(rettype) \
+#define SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug, rettype) \
+	SH_SETUPCALLS(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(pre, params_plug) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, params_orig) \
+	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(post, params_plug) \
 	SH_RETURN()
 
-#define SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, params_orig, params_plug) \
-	SH_SETUPCALLS_void() \
+#define SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug) \
+	SH_SETUPCALLS_void(paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(pre, params_plug) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, params_orig) \
+	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(post, params_plug) \
 	SH_RETURN_void()
 
 //////////////////////////////////////////////////////////////////////////
 
 @VARARGS@
-// *********
+// ********* Support for @$@ arguments *********
 #define SH_DECL_HOOK@$@(ifacetype, ifacefunc, attr, overload, rettype@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(@param%%|, @)> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate@$@<@param%%|, @@, @rettype> FD; \
 		virtual rettype Func(@param%% p%%|, @) attr \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (@p%%|, @), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @)
+		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (@param%%|, @), (@p%%|, @), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @, \
+	(static_cast<rettype (ifacetype::*)(@param%%|, @)>(&ifacetype::ifacefunc)))
 
 #define SH_DECL_HOOK@$@_void(ifacetype, ifacefunc, attr, overload@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(@param%%|, @)> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate@$@<@param%%|, @> FD; \
 		virtual void Func(@param%% p%%|, @) attr \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (@p%%|, @)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @)
+		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (@param%%|, @), (@p%%|, @)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @, \
+	(static_cast<void (ifacetype::*)(@param%%|, @)>(&ifacetype::ifacefunc)))
 
 #define SH_DECL_HOOK@$@_vafmt(ifacetype, ifacefunc, attr, overload, rettype@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(@param%%|, @@, @const char *, ...)> \
@@ -518,9 +587,10 @@ namespace SourceHook
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf), rettype); \
+			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @ "|const char*|...")
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @ "|const char*|...", \
+	(static_cast<rettype (ifacetype::*)(@param%%|, @@, @const char *, ...)>(&ifacetype::ifacefunc)))
 
 #define SH_DECL_HOOK@$@_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(@param%%|, @@, @const char *, ...)> \
@@ -533,22 +603,70 @@ namespace SourceHook
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf)); \
+			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @ "|const char*|...")
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @ "|const char*|...", \
+	(static_cast<void (ifacetype::*)(@param%%|, @@, @const char *, ...)>(&ifacetype::ifacefunc)))
 
 @ENDARGS@
 
-/*
-#define SH_DECL_HOOK1(ifacetype, ifacefunc, attr, overload, rettype, param1) \
-	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload) \
-		typedef fastdelegate::FastDelegate1<param1, rettype> FD; \
-		virtual rettype Func(param1 p1) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (p1), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1)
-		
 
-*/
+//////////////////////////////////////////////////////////////////////////
+// SH_CALL
+
+
+#define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
+{ \
+	MemFuncInfo mfi; \
+	MFI_Impl<sizeof(m_MFP)>::GetFuncInfo(m_MFP, mfi); \
+	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.vtbloffs); \
+	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->second.size() || iter->second[mfi.vtblindex] == NULL) \
+		return (m_CC->ptr->*m_MFP)call; \
+	\
+	/* It's hooked. Call the original function. */ \
+	union \
+	{ \
+		RetType(EmptyClass::*mfpnew)prms; \
+		void *addr; \
+	} u; \
+	u.addr = iter->second[mfi.vtblindex]; \
+	\
+	return (reinterpret_cast<EmptyClass*>(m_CC->ptr)->*u.mfpnew)call; \
+}
+
+
+namespace SourceHook
+{
+	template<class CCType, class RetType, class MFPType> class ExecutableClass
+	{
+		CCType *m_CC;
+		MFPType m_MFP;
+	public:
+		ExecutableClass(CCType *cc, MFPType mfp) : m_CC(cc), m_MFP(mfp)
+		{
+		}
+
+@VARARGS@
+		// Support for @$@ arguments
+		template<@class Param%%|, @> RetType operator()(@Param%% p%%|, @) const 
+			SH_MAKE_EXECUTABLECLASS_OB((@p%%@), (@Param%%@))
+
+@ENDARGS@
+	};
+}
+
+@VARARGS@
+// Support for @$@ arguments
+template <class X, class Y, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @)>(ptr, mfp);
+}
+
+@ENDARGS@
+
+#undef SH_MAKE_EXECUTABLECLASS_BODY
 
 #endif
 	// The pope is dead. -> :(

@@ -28,14 +28,15 @@ namespace SourceHook
 		*/
 		struct RemoveHookInfo
 		{
-			RemoveHookInfo(Plugin p, void *i, HookManagerPubFunc h, ISHDelegate *hd, bool ps)
-				: plug(p), iface(i), hpf(h), handler(hd), post(ps)
+			RemoveHookInfo(Plugin pplug, void *piface, HookManagerPubFunc phookman,
+				ISHDelegate *phandler, bool ppost)
+				: plug(pplug), iface(piface), hookman(phookman), handler(phandler), post(ppost)
 			{
 			}
 
 			Plugin plug;
 			void *iface;
-			HookManagerPubFunc hpf;
+			HookManagerPubFunc hookman;
 			ISHDelegate *handler;
 			bool post;
 		};
@@ -45,27 +46,30 @@ namespace SourceHook
 		*/
 		typedef std::list<HookManagerInfo> HookManInfoList;
 
-
+		struct CallClassInfo
+		{
+			GenericCallClass cc;
+			int refcounter;
+			bool operator==(void *other)
+			{
+				return cc.ptr == other;
+			}
+		};
 		/**
-		*	@brief A list of Impl_CallClass structures
+		*	@brief A list of CallClass structures
 		*/
-		typedef std::list<CallClass> Impl_CallClassList;
+		typedef std::list<CallClassInfo> Impl_CallClassList;
 
 		Impl_CallClassList m_CallClasses;			//!< A list of already generated callclasses
 		HookManInfoList m_HookMans;					//!< A list of hook managers
-
-		int m_PageSize;								//!< Stores the system's page size
 
 		/**
 		*	@brief Finds a hook manager for a function based on a text-prototype, a vtable offset and a vtable index
 		*/
 		HookManInfoList::iterator FindHookMan(HookManInfoList::iterator begin, HookManInfoList::iterator end, 
-			const char *proto, int vtblofs, int vtblidx, int thisptrofs);
+			const char *proto, int vtblofs, int vtblidx);
 
-		void FreeCallClass(CallClass &cc);
-		bool ApplyCallClassPatch(CallClass &cc, int vtbl_offs, int vtbl_idx, void *orig_entry);
-
-		static const int MAX_VTABLE_LEN = 4096;		//!< Maximal vtable length in bytes
+		void ApplyCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx, void *orig_entry);
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
 		const void *m_OrigRet;
@@ -97,7 +101,7 @@ namespace SourceHook
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		bool AddHook(Plugin plug, void *iface, int ifacesize, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post);
+		bool AddHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post);
 
 		/**
 		*	@brief Removes a hook.
@@ -106,11 +110,34 @@ namespace SourceHook
 		*
 		*	@param plug The unique identifier of the plugin that calls this function
 		*	@param iface The interface pointer
+		*	@param thisptr_offs This pointer adjuster
+		*	@param myHookMan A hook manager function that should be capable of handling the function
+		*	@param handler A pointer to a FastDelegate containing the hook handler
+		*	@param post Set to true if you want a post handler
+		*/
+		bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post);
+
+		/**
+		*	@brief Removes a hook.
+		*
+		*	@return True if the function succeeded, false otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param iface Already adjusted interface pointer
 		*	@param myHookMan A hook manager function that should be capable of handling the function
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
 		bool RemoveHook(Plugin plug, void *iface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post);
+
+		/**
+		*	@brief Removes a hook.
+		*
+		*	@ return True if the function succeeded, false otherwise
+		*
+		*	@param info A RemoveHookInfo structure, describing the hook
+		*/
+		bool RemoveHook(RemoveHookInfo info);
 
 		/**
 		*	@brief Checks whether a plugin has (a) hook manager(s) that is/are currently used by other plugins
@@ -138,14 +165,14 @@ namespace SourceHook
 		*
 		*	@param iface The interface pointer
 		*/
-		void *GetCallClass(void *iface, size_t size);
+		GenericCallClass *GetCallClass(void *iface);
 
 		/**
 		*	@brief Release a callclass
 		*
 		*	@param ptr Pointer to the callclass
 		*/
-		virtual void ReleaseCallClass(void *ptr);
+		virtual void ReleaseCallClass(GenericCallClass *ptr);
 
 		virtual void SetRes(META_RES res);				//!< Sets the meta result
 		virtual META_RES GetPrevRes();					//!< Gets the meta result of the previously called handler
