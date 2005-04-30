@@ -981,6 +981,11 @@ FastDelegate@NUM<@SELARGS, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*fun
 	return FastDelegate@NUM<@SELARGS, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <@CLASSARGS, class RetType>
+FastDelegate@NUM<@SELARGS, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(@FUNCARGS)) { 
+	return FastDelegate@NUM<@SELARGS, FASTDLGT_RETTYPE>(func);
+}
+
 @ENDVAR
 
  // clean up after ourselves...

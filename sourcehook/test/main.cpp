@@ -45,10 +45,9 @@ public:
 				++passed;
 			else
 				++failed;
-
-			cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
-			cout << "Total: " << passed + failed << endl;
 		}
+		cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
+		cout << "Total: " << passed + failed << endl;
 	}
 };
 
@@ -59,6 +58,7 @@ std::list<Test *> Test::ms_Tests;
 	Test g_Test##x(Test##x, #x);
 
 DO_TEST(Basic);
+DO_TEST(VafmtAndOverload);
 
 int main(int argc, char *argv[])
 {

@@ -2627,6 +2627,11 @@ FastDelegate0<FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)() const) {
 	return FastDelegate0<FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class RetType>
+FastDelegate0<FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)()) { 
+	return FastDelegate0<FASTDLGT_RETTYPE>(func);
+}
+
 //N=1
 template <class X, class Y, class Param1, class RetType>
 FastDelegate1<Param1, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1)) { 
@@ -2636,6 +2641,11 @@ FastDelegate1<Param1, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Pa
 template <class X, class Y, class Param1, class RetType>
 FastDelegate1<Param1, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1) const) { 
 	return FastDelegate1<Param1, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class RetType>
+FastDelegate1<Param1, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1)) { 
+	return FastDelegate1<Param1, FASTDLGT_RETTYPE>(func);
 }
 
 //N=2
@@ -2649,6 +2659,11 @@ FastDelegate2<Param1, Param2, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*
 	return FastDelegate2<Param1, Param2, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class RetType>
+FastDelegate2<Param1, Param2, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2)) { 
+	return FastDelegate2<Param1, Param2, FASTDLGT_RETTYPE>(func);
+}
+
 //N=3
 template <class X, class Y, class Param1, class Param2, class Param3, class RetType>
 FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3)) { 
@@ -2658,6 +2673,11 @@ FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetTy
 template <class X, class Y, class Param1, class Param2, class Param3, class RetType>
 FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3) const) { 
 	return FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class RetType>
+FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3)) { 
+	return FastDelegate3<Param1, Param2, Param3, FASTDLGT_RETTYPE>(func);
 }
 
 //N=4
@@ -2671,6 +2691,11 @@ FastDelegate4<Param1, Param2, Param3, Param4, FASTDLGT_RETTYPE> MakeDelegate(Y* 
 	return FastDelegate4<Param1, Param2, Param3, Param4, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class RetType>
+FastDelegate4<Param1, Param2, Param3, Param4, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4)) { 
+	return FastDelegate4<Param1, Param2, Param3, Param4, FASTDLGT_RETTYPE>(func);
+}
+
 //N=5
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class RetType>
 FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5)) { 
@@ -2680,6 +2705,11 @@ FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE> MakeDele
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class RetType>
 FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const) { 
 	return FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class RetType>
+FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5)) { 
+	return FastDelegate5<Param1, Param2, Param3, Param4, Param5, FASTDLGT_RETTYPE>(func);
 }
 
 //N=6
@@ -2693,6 +2723,11 @@ FastDelegate6<Param1, Param2, Param3, Param4, Param5, Param6, FASTDLGT_RETTYPE> 
 	return FastDelegate6<Param1, Param2, Param3, Param4, Param5, Param6, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class RetType>
+FastDelegate6<Param1, Param2, Param3, Param4, Param5, Param6, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6)) { 
+	return FastDelegate6<Param1, Param2, Param3, Param4, Param5, Param6, FASTDLGT_RETTYPE>(func);
+}
+
 //N=7
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class RetType>
 FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7)) { 
@@ -2702,6 +2737,11 @@ FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_R
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class RetType>
 FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const) { 
 	return FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class RetType>
+FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7)) { 
+	return FastDelegate7<Param1, Param2, Param3, Param4, Param5, Param6, Param7, FASTDLGT_RETTYPE>(func);
 }
 
 //N=8
@@ -2715,6 +2755,11 @@ FastDelegate8<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, FA
 	return FastDelegate8<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class RetType>
+FastDelegate8<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8)) { 
+	return FastDelegate8<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, FASTDLGT_RETTYPE>(func);
+}
+
 //N=9
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class RetType>
 FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9)) { 
@@ -2724,6 +2769,11 @@ FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Pa
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class RetType>
 FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const) { 
 	return FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class RetType>
+FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9)) { 
+	return FastDelegate9<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, FASTDLGT_RETTYPE>(func);
 }
 
 //N=10
@@ -2737,6 +2787,11 @@ FastDelegate10<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 	return FastDelegate10<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class RetType>
+FastDelegate10<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10)) { 
+	return FastDelegate10<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, FASTDLGT_RETTYPE>(func);
+}
+
 //N=11
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class RetType>
 FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11)) { 
@@ -2746,6 +2801,11 @@ FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class RetType>
 FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const) { 
 	return FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class RetType>
+FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11)) { 
+	return FastDelegate11<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, FASTDLGT_RETTYPE>(func);
 }
 
 //N=12
@@ -2759,6 +2819,11 @@ FastDelegate12<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 	return FastDelegate12<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class RetType>
+FastDelegate12<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12)) { 
+	return FastDelegate12<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, FASTDLGT_RETTYPE>(func);
+}
+
 //N=13
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class RetType>
 FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13)) { 
@@ -2768,6 +2833,11 @@ FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class RetType>
 FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const) { 
 	return FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class RetType>
+FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13)) { 
+	return FastDelegate13<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, FASTDLGT_RETTYPE>(func);
 }
 
 //N=14
@@ -2781,6 +2851,11 @@ FastDelegate14<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 	return FastDelegate14<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class RetType>
+FastDelegate14<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14)) { 
+	return FastDelegate14<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, FASTDLGT_RETTYPE>(func);
+}
+
 //N=15
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class RetType>
 FastDelegate15<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15)) { 
@@ -2792,6 +2867,11 @@ FastDelegate15<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 	return FastDelegate15<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, FASTDLGT_RETTYPE>(x, func);
 }
 
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class RetType>
+FastDelegate15<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15)) { 
+	return FastDelegate15<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, FASTDLGT_RETTYPE>(func);
+}
+
 //N=16
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class RetType>
 FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16)) { 
@@ -2801,6 +2881,11 @@ FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class RetType>
 FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const) { 
 	return FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class RetType>
+FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16)) { 
+	return FastDelegate16<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, FASTDLGT_RETTYPE>(func);
 }
 
 
