@@ -108,6 +108,8 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 		return false;
 	}
 
+	META_LOG(g_PLAPI, "Starting plugin.\n");
+
 	//We're hooking the following things as POST, in order to seem like Server Plugins.
 	//However, I don't actually know if Valve has done server plugins as POST or not.
 	//Change the last parameter to 'false' in order to change this to PRE.
@@ -139,6 +141,12 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 	//Hook ClientCommand to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
 
+	//Get the call class for IVServerEngine so we can safely call functions without
+	// invoking their hooks (when needed).
+	m_Engine_CC = SH_GET_CALLCLASS(m_Engine);
+
+	SH_CALL(m_Engine_CC, &IVEngineServer::LogPrint)("All hooks started!\n");
+
 	return true;
 }
 
@@ -158,6 +166,8 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, ClientSettingsChanged, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
+
+	SH_RELEASE_CALLCLASS(m_Engine_CC);
 
 	return true;
 }

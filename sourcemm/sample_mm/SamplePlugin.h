@@ -12,6 +12,7 @@
 #define _INCLUDE_SAMPLEPLUGIN_H
 
 #include <ISmmPlugin.h>
+#include <sourcehook/sourcehook.h>
 
 class SamplePlugin : public ISmmPlugin
 {
@@ -107,6 +108,7 @@ private:
 	IVEngineServer *m_Engine;
 	IServerGameDLL *m_ServerDll;
 	IServerGameClients *m_ServerClients;
+	SourceHook::CallClass<IVEngineServer> *m_Engine_CC;
 };
 
 extern SamplePlugin g_SamplePlugin;
