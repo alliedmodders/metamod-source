@@ -70,6 +70,7 @@ namespace SourceHook
 			const char *proto, int vtblofs, int vtblidx);
 
 		void ApplyCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx, void *orig_entry);
+		void RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx);
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
 		const void *m_OrigRet;

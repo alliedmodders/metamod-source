@@ -212,12 +212,17 @@ namespace SourceHook
 			hookman->vfnptrs.push_back(vfp);
 
 			// Alter vtable entry
-			SetMemAccess(cur_vtptr, sizeof(void*) * tmp.vtbl_idx, SH_MEM_READ | SH_MEM_WRITE);
+			SetMemAccess(cur_vtptr, sizeof(void*) * (tmp.vtbl_idx + 1), SH_MEM_READ | SH_MEM_WRITE);
 			*reinterpret_cast<void**>(cur_vfnptr) = *reinterpret_cast<void**>(hookman->hookfunc_vfnptr);
 
 			// Make vfnptr_iter point to the new element
 			vfnptr_iter = hookman->vfnptrs.end();
 			--vfnptr_iter;
+
+			// Now that it is done, check whether we have to update any callclasses
+			for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
+				if (cciter->cc.ptr == iface)
+					ApplyCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx, vfnptr_iter->orig_entry);
 		}
 
 		HookManagerInfo::VfnPtr::IfaceListIter iface_iter = std::find(
@@ -244,18 +249,6 @@ namespace SourceHook
 		else
 			iface_iter->hooks_pre.push_back(hookinfo);
 
-
-		// Now that it is done, check whether we have to update any callclasses
-		for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
-		{
-			if (cciter->cc.ptr == iface)
-			{
-				ApplyCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx, vfnptr_iter->orig_entry);
-
-				// We can assume that there is no more callclass for the same iface
-				break;
-			}
-		}
 
 		return true;
 	}
@@ -316,11 +309,17 @@ namespace SourceHook
 							
 							hookman->vfnptrs.erase(vfnptr_iter);
 
+							// Remove callclass patch
+							for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
+								if (cciter->cc.ptr == adjustediface)
+									RemoveCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx);
+
 							if (hookman->vfnptrs.empty())
 							{
 								// Unregister the hook manager
 								hookman->func(HA_Unregister, NULL);
 							}
+
 						}
 					}
 				}
@@ -374,6 +373,28 @@ namespace SourceHook
 		if (tmpvec.size() <= (size_t)vtbl_idx)
 			tmpvec.resize(vtbl_idx+1);
 		tmpvec[vtbl_idx] = orig_entry;
+	}
+
+	void CSourceHookImpl::RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx)
+	{
+		OrigVTables::iterator iter = cc.cc.vt.find(vtbl_offs);
+		if (iter != cc.cc.vt.end())
+		{
+			if (iter->second.size() > (size_t)vtbl_idx)
+			{
+				iter->second[vtbl_idx] = 0;
+				// Free some memory if possible
+				OrigFuncs::reverse_iterator riter;
+				for (riter = iter->second.rbegin(); riter != iter->second.rend(); ++riter)
+				{
+					if (*riter != 0)
+						break;
+				}
+				iter->second.resize(iter->second.size() - (riter - iter->second.rbegin()));
+				if (!iter->second.size())
+					cc.cc.vt.erase(iter);
+			}
+		}
 	}
 
 	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
