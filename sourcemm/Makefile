@@ -10,7 +10,7 @@ SRCDS = ~/srcds
 OPT_FLAGS = -O3 -fno-rtti -funroll-loops -s -pipe
 DEBUG_FLAGS = -g -ggdb3
 CPP = g++
-BINARY = sourcemm_i486.so
+BINARY = server_i486.so
 
 OBJECTS = oslink.cpp sourcehook.cpp util.cpp convar.cpp concommands.cpp \
 	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp

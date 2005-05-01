@@ -116,30 +116,30 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 	//SH_ADD_HOOK_MEMFUNC means "SourceHook, Add Hook, Member Function".
 
 	//Hook LevelInit to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, m_ServerDll, &g_SamplePlugin, LevelInit, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, m_ServerDll, &g_SamplePlugin, &SamplePlugin::LevelInit, true);
 	//Hook ServerActivate to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_SamplePlugin, ServerActivate, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_SamplePlugin, &SamplePlugin::ServerActivate, true);
 	//Hook GameFrame to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, m_ServerDll, &g_SamplePlugin, GameFrame, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, m_ServerDll, &g_SamplePlugin, &SamplePlugin::GameFrame, true);
 	//Hook LevelShutdown to our function -- this makes more sense as pre I guess
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, m_ServerDll, &g_SamplePlugin, LevelShutdown, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, m_ServerDll, &g_SamplePlugin, &SamplePlugin::LevelShutdown, false);
 	//Hook ClientActivate to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, m_ServerClients, &g_SamplePlugin, ClientActive, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientActive, true);
 	//Hook ClientDisconnect to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, m_ServerClients, &g_SamplePlugin, ClientDisconnect, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientDisconnect, true);
 	//Hook ClientPutInServer to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, m_ServerClients, &g_SamplePlugin, ClientPutInServer, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientPutInServer, true);
 	//Hook SetCommandClient to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, m_ServerClients, &g_SamplePlugin, SetCommandClient, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, m_ServerClients, &g_SamplePlugin, &SamplePlugin::SetCommandClient, true);
 	//Hook ClientSettingsChanged to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, ClientSettingsChanged, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientSettingsChanged, true);
 
 	//The following functions are pre handled, because that's how they are in IServerPluginCallbacks
 
 	//Hook ClientConnect to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, ClientConnect, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientConnect, false);
 	//Hook ClientCommand to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientCommand, false);
 
 	//Get the call class for IVServerEngine so we can safely call functions without
 	// invoking their hooks (when needed).
@@ -155,17 +155,17 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	//Make sure we remove any hooks we did... this may not be necessary since
 	// SourceHook is capable of unloading plugins' hooks itself, but just to be safe.
 
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, m_ServerDll, &g_SamplePlugin, LevelInit, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_SamplePlugin, ServerActivate, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, m_ServerDll, &g_SamplePlugin, GameFrame, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, m_ServerDll, &g_SamplePlugin, LevelShutdown, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, m_ServerClients, &g_SamplePlugin, ClientActive, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, m_ServerClients, &g_SamplePlugin, ClientDisconnect, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, m_ServerClients, &g_SamplePlugin, ClientPutInServer, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, m_ServerClients, &g_SamplePlugin, SetCommandClient, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, ClientSettingsChanged, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, ClientConnect, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, ClientCommand, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, m_ServerDll, &g_SamplePlugin, &SamplePlugin::LevelInit, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_SamplePlugin, &SamplePlugin::ServerActivate, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, m_ServerDll, &g_SamplePlugin, &SamplePlugin::GameFrame, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, m_ServerDll, &g_SamplePlugin, &SamplePlugin::LevelShutdown, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientActive, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientDisconnect, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientPutInServer, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, m_ServerClients, &g_SamplePlugin, &SamplePlugin::SetCommandClient, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientSettingsChanged, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientConnect, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientCommand, false);
 
 	SH_RELEASE_CALLCLASS(m_Engine_CC);
 
