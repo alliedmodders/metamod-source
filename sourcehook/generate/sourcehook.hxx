@@ -699,6 +699,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @)const)
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @@, @...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @@, @...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...) const>(ptr, mfp);
+}
+
 @ENDARGS@
 
 #undef SH_MAKE_EXECUTABLECLASS_BODY

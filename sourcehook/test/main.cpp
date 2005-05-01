@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool g_Verbose;
+
 class Test
 {
 	typedef bool (*TestProto)(std::string&);
@@ -64,6 +66,8 @@ int main(int argc, char *argv[])
 {
 	std::string error;
 	int passed=0, failed=0;
+
+	g_Verbose = false;
 
 	Test::DoTests();
 

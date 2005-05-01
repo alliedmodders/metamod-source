@@ -1,5 +1,5 @@
 CC=gcc
-CCFLAGS=-c -I.. -DSH_DEBUG
+CCFLAGS=-c -g -I.. -DSH_DEBUG
 
 test.bin: bin bin/main.o bin/test1.o bin/test2.o bin/sourcehook.o
 	$(CC) bin/main.o bin/test1.o bin/test2.o bin/sourcehook.o -lstdc++ -o test.bin

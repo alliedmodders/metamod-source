@@ -35,7 +35,7 @@
 // We need to align addr down to pagesize on linux
 // We assume PAGESIZE is a power of two
 #		define SH_LALIGN(x) (void*)((int)(x) & ~(PAGESIZE-1))
-
+#		define SH_LALDIF(x) ((int)(x) & (PAGESIZE-1))
 # else
 #		error Unsupported OS/Compiler
 # endif
@@ -46,7 +46,7 @@ namespace SourceHook
 	inline bool SetMemAccess(void *addr, size_t len, int access)
 	{
 # ifdef __linux__
-		return mprotect(SH_LALIGN(addr), len, access)==0 ? true : false;
+		return mprotect(SH_LALIGN(addr), len + SH_LALDIF(addr), access)==0 ? true : false;
 # else
 		DWORD tmp;
 		DWORD prot;

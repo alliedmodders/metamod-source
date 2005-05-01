@@ -209,12 +209,15 @@ namespace SourceHook
 			HookManagerInfo::VfnPtr vfp;
 			vfp.vfnptr = cur_vfnptr;
 			vfp.orig_entry = *reinterpret_cast<void**>(cur_vfnptr);
-			hookman->vfnptrs.push_back(vfp);
 
 			// Alter vtable entry
-			SetMemAccess(cur_vtptr, sizeof(void*) * (tmp.vtbl_idx + 1), SH_MEM_READ | SH_MEM_WRITE);
+			if (!SetMemAccess(cur_vtptr, sizeof(void*) * (tmp.vtbl_idx + 1), SH_MEM_READ | SH_MEM_WRITE))
+				return false;
+			
 			*reinterpret_cast<void**>(cur_vfnptr) = *reinterpret_cast<void**>(hookman->hookfunc_vfnptr);
 
+			hookman->vfnptrs.push_back(vfp);
+			
 			// Make vfnptr_iter point to the new element
 			vfnptr_iter = hookman->vfnptrs.end();
 			--vfnptr_iter;

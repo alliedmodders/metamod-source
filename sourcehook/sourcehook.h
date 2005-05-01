@@ -1574,6 +1574,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)()const)
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)() const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(...) const>(ptr, mfp);
+}
+
 // Support for 1 arguments
 template <class X, class Y, class RetType, class Param1>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1)>
@@ -1587,6 +1601,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, ...) const>(ptr, mfp);
 }
 
 // Support for 2 arguments
@@ -1604,6 +1632,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2)const)
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, ...) const>(ptr, mfp);
+}
+
 // Support for 3 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3)>
@@ -1617,6 +1659,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, ...) const>(ptr, mfp);
 }
 
 // Support for 4 arguments
@@ -1634,6 +1690,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, ...) const>(ptr, mfp);
+}
+
 // Support for 5 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5)>
@@ -1647,6 +1717,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, ...) const>(ptr, mfp);
 }
 
 // Support for 6 arguments
@@ -1664,6 +1748,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, ...) const>(ptr, mfp);
+}
+
 // Support for 7 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7)>
@@ -1677,6 +1775,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...) const>(ptr, mfp);
 }
 
 // Support for 8 arguments
@@ -1694,6 +1806,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...) const>(ptr, mfp);
+}
+
 // Support for 9 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9)>
@@ -1707,6 +1833,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...) const>(ptr, mfp);
 }
 
 // Support for 10 arguments
@@ -1724,6 +1864,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...) const>(ptr, mfp);
+}
+
 // Support for 11 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11)>
@@ -1737,6 +1891,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...) const>(ptr, mfp);
 }
 
 // Support for 12 arguments
@@ -1754,6 +1922,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...) const>(ptr, mfp);
+}
+
 // Support for 13 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13)>
@@ -1767,6 +1949,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...) const>(ptr, mfp);
 }
 
 // Support for 14 arguments
@@ -1784,6 +1980,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...) const>(ptr, mfp);
+}
+
 // Support for 15 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15)>
@@ -1799,6 +2009,20 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15) const>(ptr, mfp);
 }
 
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...) const>(ptr, mfp);
+}
+
 // Support for 16 arguments
 template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16)>
@@ -1812,6 +2036,20 @@ SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Pa
 SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16)const)
 {
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16) const>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...)>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...)>(ptr, mfp);
+}
+
+template <class X, class Y, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...) const>
+SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...) const>(ptr, mfp);
 }
 
 
