@@ -280,53 +280,54 @@ namespace SourceHook
 			reinterpret_cast<char*>(adjustediface) + tmp.vtbl_offs);
 		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.vtbl_idx);
 
-		for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->vfnptrs.begin();
-			vfnptr_iter != hookman->vfnptrs.end(); ++vfnptr_iter)
+		HookManagerInfo::VfnPtrListIter vfnptr_iter = std::find(hookman->vfnptrs.begin(), hookman->vfnptrs.end(), cur_vfnptr);
+		if (vfnptr_iter == hookman->vfnptrs.end())
+			return false;
+
+		for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
+			iface_iter != vfnptr_iter->ifaces.end();)
 		{
-			if (vfnptr_iter->vfnptr == cur_vfnptr)
+			std::list<HookManagerInfo::VfnPtr::Iface::Hook> &hooks =
+				post ? iface_iter->hooks_post : iface_iter->hooks_pre;
+
+			bool erase;
+			for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = hooks.begin();
+				hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
 			{
-				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
-					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
-				{
-					std::list<HookManagerInfo::VfnPtr::Iface::Hook> &hooks =
-						post ? iface_iter->hooks_post : iface_iter->hooks_pre;
-
-					bool erase;
-					for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = hooks.begin();
-						hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
-					{
-						erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler);
-						if (erase)
-							hookiter->handler->DeleteThis();			// Make the _plugin_ delete the handler object
-					}
-					if (iface_iter->hooks_post.empty() && iface_iter->hooks_pre.empty())
-					{
-						vfnptr_iter->ifaces.erase(iface_iter);
-						if (vfnptr_iter->ifaces.empty())
-						{
-							// Deactivate the hook
-							*reinterpret_cast<void**>(vfnptr_iter->vfnptr) = vfnptr_iter->orig_entry;
-							
-							hookman->vfnptrs.erase(vfnptr_iter);
-
-							// Remove callclass patch
-							for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
-								if (cciter->cc.ptr == adjustediface)
-									RemoveCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx);
-
-							if (hookman->vfnptrs.empty())
-							{
-								// Unregister the hook manager
-								hookman->func(HA_Unregister, NULL);
-							}
-
-						}
-					}
-				}
-				return true;
+				erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler);
+				if (erase)
+					hookiter->handler->DeleteThis();			// Make the _plugin_ delete the handler object
 			}
+			if (iface_iter->hooks_post.empty() && iface_iter->hooks_pre.empty())
+			{
+				iface_iter = vfnptr_iter->ifaces.erase(iface_iter);
+				if (vfnptr_iter->ifaces.empty())
+				{
+					// Deactivate the hook
+					*reinterpret_cast<void**>(vfnptr_iter->vfnptr) = vfnptr_iter->orig_entry;
+					
+					hookman->vfnptrs.erase(vfnptr_iter);
+
+					// Remove callclass patch
+					for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
+						if (cciter->cc.ptr == adjustediface)
+							RemoveCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx);
+
+					if (hookman->vfnptrs.empty())
+					{
+						// Unregister the hook manager
+						hookman->func(HA_Unregister, NULL);
+					}
+
+					// Don't try to continue looping through ifaces
+					// - the list is already invalid
+					return true;
+				}
+			}
+			else
+				++iface_iter;
 		}
-		return false;
+		return true;
 	}
 
 	GenericCallClass *CSourceHookImpl::GetCallClass(void *iface)

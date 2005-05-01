@@ -19,13 +19,15 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="."
+				FavorSizeOrSpeed="0"
+				AdditionalIncludeDirectories=".."
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -67,14 +69,16 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="TRUE"
+				AdditionalIncludeDirectories=".."
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
 				BrowseInformation="0"
 				WarningLevel="3"
-				SuppressStartupBanner="FALSE"
+				SuppressStartupBanner="TRUE"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
 			<Tool
@@ -114,22 +118,72 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				GlobalOptimizations="TRUE"
+				Optimization="3"
+				GlobalOptimizations="FALSE"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="FALSE"
 				FavorSizeOrSpeed="2"
-				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				OmitFramePointers="TRUE"
+				OptimizeForWindowsApplication="FALSE"
+				AdditionalIncludeDirectories=".."
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="TRUE"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="5"
+				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/test.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/test.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug_NoDebugRuntimeLib|Win32"
+			OutputDirectory="Debug_NoDebugRuntimeLib"
+			IntermediateDirectory="Debug_NoDebugRuntimeLib"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				FavorSizeOrSpeed="0"
+				AdditionalIncludeDirectories=".."
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="TRUE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="4"
+				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -164,7 +218,13 @@
 				RelativePath="main.cpp">
 			</File>
 			<File
-				RelativePath="sourcehook.cpp">
+				RelativePath="..\sourcehook.cpp">
+			</File>
+			<File
+				RelativePath="test1.cpp">
+			</File>
+			<File
+				RelativePath="test2.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -176,6 +236,30 @@
 			<File
 				RelativePath="sourcehook_impl.h">
 			</File>
+			<File
+				RelativePath="testevents.h">
+			</File>
+			<Filter
+				Name="generate"
+				Filter="">
+				<File
+					RelativePath="..\generate\FastDelegate.hxx">
+				</File>
+				<File
+					RelativePath="..\generate\sourcehook.hxx">
+					<FileConfiguration
+						Name="Debug_NoDebugRuntimeLib|Win32">
+						<Tool
+							Name="VCCustomBuildTool"
+							CommandLine="echo on
+pushd ..\generate
+shworker.exe iter 16 sourcehook.hxx sourcehook.h
+copy sourcehook.h ..\sourcehook.h
+popd"
+							Outputs="../sourcehook.h"/>
+					</FileConfiguration>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

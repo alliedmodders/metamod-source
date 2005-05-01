@@ -124,6 +124,10 @@ namespace SourceHook
 		{
 		}
 
+		CSHDelegate(const CSHDelegate &other) : m_Deleg(other.m_Deleg)
+		{
+		}
+
 		void DeleteThis()
 		{
 			delete this;
@@ -165,17 +169,18 @@ namespace SourceHook
 			};
 
 			void *vfnptr;							//!< Pointer to the function
-			void *orig_entry;					//!< The original vtable entry
+			void *orig_entry;						//!< The original vtable entry
 
 			typedef std::list<Iface> IfaceList;
 			typedef IfaceList::iterator IfaceListIter;
-			IfaceList ifaces;
+			IfaceList ifaces;						//!< List of interface pointers
 
 			bool operator ==(void *other)
 			{
 				return vfnptr == other;
 			}
 		};
+
 		Plugin plug;							//!< The owner plugin
 		const char *proto;						//!< The prototype of the function the hook manager is responsible for
 		int vtbl_idx;							//!< The vtable index
@@ -272,16 +277,17 @@ namespace SourceHook
 	};
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Macro interface
-#define SET_META_RESULT(result)		SH_GLOB_SHPTR->SetRes(result)
-#define RETURN_META(result)			do { SH_GLOB_SHPTR->SetRes(result); return; } while(0)
-#define RETURN_META_VALUE(result, value)	do { SH_GLOB_SHPTR->SetRes(result); return (value); } while(0)
+/************************************************************************/
+/* High level interface                                                 */
+/************************************************************************/
+#define SET_META_RESULT(result)				SH_GLOB_SHPTR->SetRes(result)
+#define RETURN_META(result)					do { SET_META_RESULT(result); return; } while(0)
+#define RETURN_META_VALUE(result, value)	do { SET_META_RESULT(result); return (value); } while(0)
 
 #define META_RESULT_STATUS					SH_GLOB_SHPTR->GetStatus()
 #define META_RESULT_PREVIOUS				SH_GLOB_SHPTR->GetPrevRes()
-#define META_RESULT_ORIG_RET(type)			*(const type *)SH_GLOB_SHPTR->GetOrigRet()
-#define META_RESULT_OVERRIDE_RET(type)		*(const type *)SH_GLOB_SHPTR->GetOverrideRet()
+#define META_RESULT_ORIG_RET(type)			*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOrigRet())
+#define META_RESULT_OVERRIDE_RET(type)		*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOverrideRet())
 #define META_IFACEPTR						SH_GLOB_SHPTR->GetIfacePtr()
 
 
@@ -291,13 +297,20 @@ namespace SourceHook
 *	@param ifaceptr The interface pointer
 */
 template<class ifacetype>
-inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS(ifacetype *ptr)
+inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS_R(SourceHook::ISourceHook *shptr, ifacetype *ptr)
 {
 	return reinterpret_cast<SourceHook::CallClass<ifacetype>*>(
-		SH_GLOB_SHPTR->GetCallClass(reinterpret_cast<void*>(ptr)));
+		shptr->GetCallClass(reinterpret_cast<void*>(ptr)));
 }
 
-#define SH_RELEASE_CALLCLASS(ptr) SH_GLOB_SHPTR->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr))
+template<class ifacetype>
+inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::CallClass<ifacetype> *ptr)
+{
+	shptr->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr));
+}
+
+#define SH_GET_CALLCLASS(ptr) SH_GET_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
+#define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	__SourceHook_FHAdd##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
@@ -314,6 +327,7 @@ inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS(ifacetype *ptr)
 	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
 #define SH_NOATTRIB
+
 
 
 
