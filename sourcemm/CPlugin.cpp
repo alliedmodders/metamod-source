@@ -94,11 +94,10 @@ void CPluginManager::SetAllLoaded()
 	{
 		if ( (*i) && (*i)->m_Status == Pl_Running && (*i)->m_API )
 		{
-			//004 is when we added this callback
-			if ( (*i)->m_API->GetApiVersion() >= 004 )
-			{
-				(*i)->m_API->AllPluginsLoaded();
-			}
+			//API 4 is when we added this callback
+			//Min version is now 5, so we ignore this check
+			//if ( (*i)->m_API->GetApiVersion() >= 004 )
+			(*i)->m_API->AllPluginsLoaded();
 		}
 	}
 }
@@ -243,9 +242,10 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 							pl->m_Status = Pl_Running;
 							if (m_AllLoaded)
 							{
-								//API 004 is when we added this callback
-								if (pl->m_API->GetApiVersion() >= 4)
-									pl->m_API->AllPluginsLoaded();
+								//API 4 is when we added this callback
+								//Removing this code as the min version is now 5
+								//if (pl->m_API->GetApiVersion() >= 4)
+								pl->m_API->AllPluginsLoaded();
 							}
 						} else {
 							pl->m_Status = Pl_Refused;

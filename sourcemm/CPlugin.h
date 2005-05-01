@@ -21,6 +21,17 @@
 #include "IPluginManager.h"
 #include "oslink.h"
 
+/**
+ * History of plugin versions: (M=min, C=current)
+ *    1: Initial interface
+ *    2: Added GetLogTag()
+ *    3: Moved GetApiVersion() to top  (2005-04-16)
+ *    4: Added AllPluginsLoaded() callback (2005-04-18)
+ * MC 5: Bumped version for SourceHook V4 (2005-05-01)
+ */
+
+#define PLAPI_MIN_VERSION	5
+
 namespace SourceMM
 {
 	/**

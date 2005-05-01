@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	004
+#define PLAPI_VERSION	5
 #define PLAPI_NAME		"ISmmPlugin"
 
 struct factories
@@ -109,7 +109,6 @@ public:
 
 #define PL_EXPOSURE	CreateInterface
 #define PL_EXPOSURE_C	"CreateInterface"
-#define PLAPI_MIN_VERSION	002
 
 #define PLUGIN_EXPOSE(name, var) \
 	ISmmAPI *g_SMAPI = NULL; \
