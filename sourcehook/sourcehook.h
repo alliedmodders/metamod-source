@@ -608,7 +608,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate1<const char *, rettype> FD; \
 		virtual rettype Func(const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -618,13 +618,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype  "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK0_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype) \
+#define SH_DECL_HOOK0_void_vafmt(ifacetype, ifacefunc, attr, overload) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate1<const char *> FD; \
-		virtual void Func(const char *, ...) \
+		virtual void Func(const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -659,7 +659,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate2<param1, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -669,13 +669,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK1_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1) \
+#define SH_DECL_HOOK1_void_vafmt(ifacetype, ifacefunc, attr, overload, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate2<param1, const char *> FD; \
-		virtual void Func(param1 p1, const char *, ...) \
+		virtual void Func(param1 p1, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -710,7 +710,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate3<param1, param2, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -720,13 +720,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK2_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
+#define SH_DECL_HOOK2_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate3<param1, param2, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -761,7 +761,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate4<param1, param2, param3, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -771,13 +771,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK3_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
+#define SH_DECL_HOOK3_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate4<param1, param2, param3, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -812,7 +812,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -822,13 +822,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK4_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
+#define SH_DECL_HOOK4_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -863,7 +863,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -873,13 +873,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK5_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
+#define SH_DECL_HOOK5_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -914,7 +914,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -924,13 +924,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK6_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
+#define SH_DECL_HOOK6_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -965,7 +965,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -975,13 +975,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK7_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
+#define SH_DECL_HOOK7_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1016,7 +1016,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1026,13 +1026,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK8_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
+#define SH_DECL_HOOK8_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1067,7 +1067,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1077,13 +1077,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK9_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
+#define SH_DECL_HOOK9_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1118,7 +1118,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1128,13 +1128,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK10_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
+#define SH_DECL_HOOK10_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1169,7 +1169,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1179,13 +1179,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK11_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
+#define SH_DECL_HOOK11_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1220,7 +1220,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1230,13 +1230,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK12_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
+#define SH_DECL_HOOK12_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1271,7 +1271,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1281,13 +1281,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK13_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
+#define SH_DECL_HOOK13_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1322,7 +1322,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1332,13 +1332,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK14_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
+#define SH_DECL_HOOK14_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1373,7 +1373,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1383,13 +1383,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK15_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
+#define SH_DECL_HOOK15_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1424,7 +1424,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
@@ -1434,13 +1434,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|const char*|...", \
 	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
-#define SH_DECL_HOOK16_void_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
+#define SH_DECL_HOOK16_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *> FD; \
-		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, const char *, ...) \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, const char *fmt, ...) \
 		{ \
-			char buf[STRBUF_LEN]; \
+			char buf[::SourceHook::STRBUF_LEN]; \
 			va_list ap; \
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \

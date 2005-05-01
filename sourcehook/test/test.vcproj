@@ -226,15 +226,18 @@
 			<File
 				RelativePath="test2.cpp">
 			</File>
+			<File
+				RelativePath="test3.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
-				RelativePath="sourcehook.h">
+				RelativePath="..\sourcehook.h">
 			</File>
 			<File
-				RelativePath="sourcehook_impl.h">
+				RelativePath="..\sourcehook_impl.h">
 			</File>
 			<File
 				RelativePath="testevents.h">
@@ -255,7 +258,8 @@
 pushd ..\generate
 shworker.exe iter 16 sourcehook.hxx sourcehook.h
 copy sourcehook.h ..\sourcehook.h
-popd"
+popd
+"
 							Outputs="../sourcehook.h"/>
 					</FileConfiguration>
 				</File>

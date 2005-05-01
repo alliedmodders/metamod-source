@@ -72,5 +72,28 @@ namespace
 
 #define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; }
 
+#define MAKE_STATE(name) struct name : State {};
+#define MAKE_STATE_1(name, p1_type) struct name : State { \
+		p1_type m_Param1; \
+		name(p1_type param1) : m_Param1(param1) {} \
+		virtual bool IsEqual(State *other) { \
+			name *other2 = dynamic_cast<name*>(other); \
+			if (!other2) \
+				return false; \
+			return other2->m_Param1 == m_Param1;\
+		} \
+	}
+
+#define MAKE_STATE_2(name, p1_type, p2_type) struct name : State { \
+		p1_type m_Param1; \
+		p2_type m_Param2; \
+		name(p1_type param1, p2_type param2) : m_Param1(param1), m_Param2(param2) {} \
+		virtual bool IsEqual(State *other) { \
+			name *other2 = dynamic_cast<name*>(other); \
+			if (!other2) \
+				return false; \
+			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2;\
+		} \
+	}
 #endif
 

@@ -100,8 +100,35 @@ namespace SourceHook
 			// 004125A2 FF 60 04         jmp         dword ptr [eax+4]
 			//		==OR==
 			// 00411B80 8B 01            mov         eax,dword ptr [ecx] 
-			// 00411B82 FF A0 18 03 00 00 jmp         dword ptr [eax+318h] 
-			if (*addr++ == 0x8B && *addr++ == 0x01 && *addr++ == 0xFF)
+			// 00411B82 FF A0 18 03 00 00 jmp         dword ptr [eax+318h]
+
+			// However, for vararg functions, they look like this:
+			// 0048F0B0 8B 44 24 04      mov         eax,dword ptr [esp+4]
+			// 0048F0B4 8B 00            mov         eax,dword ptr [eax]
+			// 0048F0B6 FF 60 08         jmp         dword ptr [eax+8]
+			//		==OR==
+			// 0048F0B0 8B 44 24 04      mov         eax,dword ptr [esp+4]
+			// 0048F0B4 8B 00            mov         eax,dword ptr [eax]
+			// 00411B82 FF A0 18 03 00 00 jmp         dword ptr [eax+318h]
+			
+			// With varargs, the this pointer is passed as if it was the first argument
+
+			bool ok = false;
+			if (addr[0] == 0x8B && addr[1] == 0x44 && addr[2] == 0x24 && addr[3] == 0x04 &&
+				addr[4] == 0x8B && addr[5] == 0x00)
+			{
+				addr += 6;
+				ok = true;
+			}
+			else if (addr[0] == 0x8B && addr[1] == 0x01)
+			{
+				addr += 2;
+				ok = true;
+			}
+			if (!ok)
+				return -1;
+
+			if (*addr++ == 0xFF)
 			{
 				if (*addr == 0x60)
 				{

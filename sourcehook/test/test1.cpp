@@ -12,90 +12,17 @@ namespace
 	// Basic tests
 	// Hooking and callclass
 
-	struct State_F1_Called : State
-	{
-	};
-
-	struct State_F1_PreHandler_Called : State
-	{
-	};
-
-	struct State_F1_PostHandler_Called : State
-	{
-	};
-
-	struct State_F1_HookAdded : State
-	{
-		bool m_Successfully;
-		State_F1_HookAdded(bool successfully) : m_Successfully(successfully)
-		{
-		}
-
-		bool IsEqual(State *other)
-		{
-			State_F1_HookAdded *other2 = dynamic_cast<State_F1_HookAdded*>(other);
-			if (!other2)
-				return false;
-			return other2->m_Successfully == m_Successfully;
-		}
-	};
-
-	struct State_F1_HookRemoved : State
-	{
-	};
-
-	struct State_F1_CallClassGenerated : State
-	{
-	};
-
-	struct State_F1_CallClassReleased : State
-	{
-	};
-
-	struct State_F299_Called : State
-	{
-		std::string param;
-		State_F299_Called(const char *p) : param(p)
-		{
-		}
-		bool IsEqual(State *other)
-		{
-			State_F299_Called *other2 = dynamic_cast<State_F299_Called*>(other);
-			if (!other2)
-				return false;
-			return other2->param == param;
-		}
-	};
-
-	struct State_F299_PreHandlerCalled : State_F299_Called
-	{
-		State_F299_PreHandlerCalled(const char *p) : State_F299_Called(p)
-		{
-		}
-	};
-
-	struct State_F299_PostHandlerCalled : State_F299_Called
-	{
-		State_F299_PostHandlerCalled(const char *p) : State_F299_Called(p)
-		{
-		}
-	};
-
-	struct State_F299Ret : State
-	{
-		bool m_Ret;
-		State_F299Ret(bool ret) : m_Ret(ret)
-		{
-		}
-
-		bool IsEqual(State *other)
-		{
-			State_F299Ret *other2 = dynamic_cast<State_F299Ret*>(other);
-			if (!other2)
-				return false;
-			return other2->m_Ret == m_Ret;
-		}
-	};
+	MAKE_STATE(State_F1_Called);
+	MAKE_STATE(State_F1_PreHandler_Called);
+	MAKE_STATE(State_F1_PostHandler_Called);
+	MAKE_STATE_1(State_F1_HookAdded, bool);
+	MAKE_STATE(State_F1_HookRemoved);
+	MAKE_STATE(State_F1_CallClassGenerated);
+	MAKE_STATE(State_F1_CallClassReleased);
+	MAKE_STATE_1(State_F299_Called, std::string);
+	MAKE_STATE_1(State_F299_PreHandlerCalled, std::string);
+	MAKE_STATE_1(State_F299_PostHandlerCalled, std::string);
+	MAKE_STATE_1(State_F299Ret, bool);
 
 	class Test
 	{
