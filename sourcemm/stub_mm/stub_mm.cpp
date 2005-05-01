@@ -18,7 +18,7 @@ PLUGIN_EXPOSE(SamplePlugin, g_StubPlugin);
 //This has all of the necessary hook declarations.  Read it!
 #include "meta_hooks.h"
 
-void StubPlugin::ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
+void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 {
 	META_LOG(g_PLAPI, "ServerActivate() called: edictCount=%d, clientMax=%d", edictCount, clientMax);
 	RETURN_META(MRES_IGNORED);
@@ -36,18 +36,14 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, 
 		return false;
 	}
 
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_StubPlugin, ServerActivate, true);
-
-	m_ServerDll_CC = SH_GET_CALLCLASS(IServerGameDLL, m_ServerDll);
+	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 
 	return true;
 }
 
 bool StubPlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_StubPlugin, ServerActivate, true);
-
-	SH_RELEASE_CALLCLASS(m_ServerDll_CC);
+	SH_REMOVE_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 
 	return true;
 }

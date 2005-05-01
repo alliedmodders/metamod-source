@@ -30,9 +30,6 @@ public:
 	const char *GetVersion();
 	const char *GetDate();
 	const char *GetLogTag();
-public:
-	//Called on ServerActivate.  Same definition as server plugins
-	void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
 private:
 	IServerGameDLL *m_ServerDll;
 	IServerGameDLL *m_ServerDll_CC;
@@ -41,5 +38,8 @@ private:
 extern StubPlugin g_StubPlugin;
 
 PLUGIN_GLOBALVARS();
+
+//Called on ServerActivate.  Same definition as server plugins
+void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax);
 
 #endif //_INCLUDE_SAMPLEPLUGIN_H
