@@ -10,11 +10,13 @@
 * ============================
 */
 
-#include "sourcemm.h"
+#include <interface.h>
+#include <eiface.h>
 #include "CServerGameDLL.h"
 #include "CServerGameEnts.h"
 #include "CServerGameClients.h"
 #include "CHLTVDirector.h"
+#include "sourcemm.h"
 #include "concommands.h"
 #include "CSmmAPI.h"
 #include "util.h"

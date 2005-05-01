@@ -16,6 +16,8 @@
  * @file concommands.h
  */
 
+#include <interface.h>
+#include <eiface.h>
 #include "sourcemm.h"
 #include <convar.h>
 
