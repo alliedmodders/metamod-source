@@ -20,7 +20,13 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
-#define SH_ASSERT(x, info) if (!(x)) __asm { int 3 }
+#ifdef SH_DEBUG
+# define SH_ASSERT__(x, info, file, line, func) \
+	((printf("SOURCEHOOK DEBUG ASSERTION FAILED:\n  %s:%u(%s): %s\n", file, line, func, info), true) ? (abort(), 0) : 0)
+# define SH_ASSERT(x, info) if (!(x)) SH_ASSERT__(x, info, __FILE__, __LINE__, __FUNCTION__)
+#else
+# define SH_ASSERT(x, info)
+#endif
 
 // System
 #define SH_SYS_WIN32 1
@@ -67,7 +73,7 @@ enum META_RES
 	MRES_IGNORED=0,		// plugin didn't take any action
 	MRES_HANDLED,		// plugin did something, but real function should still be called
 	MRES_OVERRIDE,		// call real function, but use my return value
-	MRES_SUPERCEDE,		// skip real function; use my return value
+	MRES_SUPERCEDE		// skip real function; use my return value
 };
 
 
@@ -671,7 +677,7 @@ namespace SourceHook
 @VARARGS@
 		// Support for @$@ arguments
 		@template<@@class Param%%|, @@> @RetType operator()(@Param%% p%%|, @) const 
-			SH_MAKE_EXECUTABLECLASS_OB((@p%%@), (@Param%%@))
+			SH_MAKE_EXECUTABLECLASS_OB((@p%%|, @), (@Param%%|, @))
 
 @ENDARGS@
 	};

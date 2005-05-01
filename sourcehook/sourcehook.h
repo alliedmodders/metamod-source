@@ -20,7 +20,13 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
-#define SH_ASSERT(x, info) if (!(x)) __asm { int 3 }
+#ifdef SH_DEBUG
+# define SH_ASSERT__(x, info, file, line, func) \
+	((printf("SOURCEHOOK DEBUG ASSERTION FAILED:\n  %s:%u(%s): %s\n", file, line, func, info), true) ? (abort(), 0) : 0)
+# define SH_ASSERT(x, info) if (!(x)) SH_ASSERT__(x, info, __FILE__, __LINE__, __FUNCTION__)
+#else
+# define SH_ASSERT(x, info)
+#endif
 
 // System
 #define SH_SYS_WIN32 1
@@ -67,7 +73,7 @@ enum META_RES
 	MRES_IGNORED=0,		// plugin didn't take any action
 	MRES_HANDLED,		// plugin did something, but real function should still be called
 	MRES_OVERRIDE,		// call real function, but use my return value
-	MRES_SUPERCEDE,		// skip real function; use my return value
+	MRES_SUPERCEDE		// skip real function; use my return value
 };
 
 
@@ -1492,63 +1498,63 @@ namespace SourceHook
 
 		// Support for 2 arguments
 		template<class Param1, class Param2> RetType operator()(Param1 p1, Param2 p2) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2), (Param1Param2))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2), (Param1, Param2))
 
 		// Support for 3 arguments
 		template<class Param1, class Param2, class Param3> RetType operator()(Param1 p1, Param2 p2, Param3 p3) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3), (Param1Param2Param3))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3), (Param1, Param2, Param3))
 
 		// Support for 4 arguments
 		template<class Param1, class Param2, class Param3, class Param4> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4), (Param1Param2Param3Param4))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4), (Param1, Param2, Param3, Param4))
 
 		// Support for 5 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5), (Param1Param2Param3Param4Param5))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5), (Param1, Param2, Param3, Param4, Param5))
 
 		// Support for 6 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6), (Param1Param2Param3Param4Param5Param6))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6), (Param1, Param2, Param3, Param4, Param5, Param6))
 
 		// Support for 7 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7), (Param1Param2Param3Param4Param5Param6Param7))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7), (Param1, Param2, Param3, Param4, Param5, Param6, Param7))
 
 		// Support for 8 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8), (Param1Param2Param3Param4Param5Param6Param7Param8))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
 
 		// Support for 9 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9), (Param1Param2Param3Param4Param5Param6Param7Param8Param9))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
 
 		// Support for 10 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
 
 		// Support for 11 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
 
 		// Support for 12 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11p12), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11Param12))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
 
 		// Support for 13 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11p12p13), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11Param12Param13))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
 
 		// Support for 14 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11p12p13p14), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11Param12Param13Param14))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
 
 		// Support for 15 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11p12p13p14p15), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11Param12Param13Param14Param15))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
 
 		// Support for 16 arguments
 		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const 
-			SH_MAKE_EXECUTABLECLASS_OB((p1p2p3p4p5p6p7p8p9p10p11p12p13p14p15p16), (Param1Param2Param3Param4Param5Param6Param7Param8Param9Param10Param11Param12Param13Param14Param15Param16))
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
 
 	};
 }
@@ -1813,3 +1819,4 @@ SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(Param1, Param2, Param3, 
 
 #endif
 	// The pope is dead. -> :(
+

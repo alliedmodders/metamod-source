@@ -1,6 +1,9 @@
 #ifndef __TESTEVENTS_H__
 #define __TESTEVENTS_H__
 
+#include <typeinfo>
+#include <stdarg.h>
+
 namespace
 {
 
@@ -70,3 +73,4 @@ namespace
 #define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; }
 
 #endif
+

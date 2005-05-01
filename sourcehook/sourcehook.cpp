@@ -401,7 +401,8 @@ namespace SourceHook
 	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
 		HookManInfoList::iterator end, const char *proto, int vtblofs, int vtblidx)
 	{
-		for (HookManInfoList::iterator hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
+		HookManInfoList::iterator hookmaniter; 
+		for (hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
 		{
 			if (strcmp(hookmaniter->proto, proto) == 0 && hookmaniter->vtbl_offs == vtblofs &&
 				hookmaniter->vtbl_idx == vtblidx)

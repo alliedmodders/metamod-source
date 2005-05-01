@@ -734,3 +734,4 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK_MEMFUNC(Test, F10, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	return true;
 }
+

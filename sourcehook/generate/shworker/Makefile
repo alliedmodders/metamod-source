@@ -3,13 +3,13 @@ default: shworker
 bin: 
 	mkdir bin
 
-fd_hopter.o: fd_hopter.cpp
+fd_hopter.o: fd_hopter.cpp bin
 	gcc -fPIC -o bin/$@ -c $<
 
-main.o: main.cpp
+main.o: main.cpp bin
 	gcc -fPIC -o bin/$@ -c $<
 
-shworker: fd_hopter.o main.o
-	gcc -ldl -lstdc++ bin/fd_hopter.o bin/main.o -o bin/shworker
+shworker: fd_hopter.o main.o bin
+	gcc -ldl -lstdc++ bin/fd_hopter.o bin/main.o -o bin/shworker.bin
 
 

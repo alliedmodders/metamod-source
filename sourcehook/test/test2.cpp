@@ -107,3 +107,4 @@ bool TestVafmtAndOverload(std::string &error)
 
 	return true;
 }
+
