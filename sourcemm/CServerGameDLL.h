@@ -17,6 +17,7 @@
  */
 
 #include <eiface.h>
+#include "oslink.h"
 
 /**
  * @brief Empty class.  We only care about DLLInit.
