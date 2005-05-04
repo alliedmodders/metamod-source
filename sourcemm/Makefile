@@ -43,6 +43,7 @@ all:
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
 	$(MAKE) sourcemm
+	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 sourcemm: $(OBJ_LINUX)
