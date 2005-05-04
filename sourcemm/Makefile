@@ -12,8 +12,8 @@ DEBUG_FLAGS = -g -ggdb3
 CPP = g++
 BINARY = server_i486.so
 
-OBJECTS = oslink.cpp sourcehook.cpp util.cpp convar.cpp concommands.cpp \
-	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp
+OBJECTS = oslink.cpp util.cpp convar.cpp concommands.cpp \
+	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp sourcehook.cpp
 
 LINK = vstdlib_i486.so tier0_i486.so
 
@@ -41,7 +41,9 @@ all:
 	mkdir -p $(BIN_DIR)
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
+	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
 	$(MAKE) sourcemm
+	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 sourcemm: $(OBJ_LINUX)
 	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
