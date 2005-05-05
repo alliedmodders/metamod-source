@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <stdarg.h>
 #include <iostream>
+#include <string>
 
 extern bool g_Verbose;
 
@@ -31,12 +32,20 @@ namespace
 		{
 			return (typeid(other) == typeid(this)) ? true : false;
 		}
+
+		virtual void Dump() = 0;
 	};
 
 	typedef std::list<State*> StateList;
 
 	#define ADD_STATE(name) g_States.push_back(new name)
 
+
+	void DumpStates(StateList *sl)
+	{
+		for (StateList::iterator iter = sl->begin(); iter != sl->end(); ++iter)
+			(*iter)->Dump();
+	}
 
 	bool StatesOk(StateList *sl, ...)
 	{
@@ -54,6 +63,14 @@ namespace
 
 		if (requiredstates.size() != sl->size())
 		{
+			if (g_Verbose)
+			{
+				std::cout << std::endl << "FAIL: Should be:" << std::endl;
+				DumpStates(&requiredstates);
+				std::cout << std::endl << "FAIL: Is:" << std::endl;
+				DumpStates(sl);
+			}
+
 			for (StateList::iterator iter = requiredstates.begin(); iter != requiredstates.end(); ++iter)
 				delete *iter;
 			for (StateList::iterator iter = sl->begin(); iter != sl->end(); ++iter)
@@ -86,7 +103,11 @@ namespace
 //#define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; } else if (g_Verbose) { std::cout << "No error: " << myerr << std::endl; }
 #define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; }
 
-#define MAKE_STATE(name) struct name : State {};
+#define MAKE_STATE(name) struct name : State { \
+		virtual void Dump() { \
+			std::cout << "  " << #name << std::endl; } \
+	};
+
 #define MAKE_STATE_1(name, p1_type) struct name : State { \
 		p1_type m_Param1; \
 		name(p1_type param1) : m_Param1(param1) {} \
@@ -96,6 +117,8 @@ namespace
 				return false; \
 			return other2->m_Param1 == m_Param1;\
 		} \
+		virtual void Dump() { \
+			std::cout << "  " << #name << "; Param1=" << m_Param1 << std::endl; } \
 	}
 
 #define MAKE_STATE_2(name, p1_type, p2_type) struct name : State { \
@@ -108,6 +131,8 @@ namespace
 				return false; \
 			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2;\
 		} \
+		virtual void Dump() { \
+			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << std::endl; } \
 	}
 #endif
 

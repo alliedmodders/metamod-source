@@ -62,13 +62,14 @@ std::list<Test *> Test::ms_Tests;
 DO_TEST(Basic);
 DO_TEST(VafmtAndOverload);
 DO_TEST(ThisPtrOffs);
+DO_TEST(PlugSys);
 
 int main(int argc, char *argv[])
 {
 	std::string error;
 	int passed=0, failed=0;
 
-	g_Verbose = false;
+	g_Verbose = argc > 1 && strcmp(argv[1], "-v") == 0;
 
 	Test::DoTests();
 
