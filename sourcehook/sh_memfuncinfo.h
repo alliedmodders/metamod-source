@@ -528,8 +528,8 @@ namespace SourceHook
 	}
 
 
-	// GCC needs this, MSVC doesn't like them
-#if SH_COMP != SH_COMP_MSVC
+	// GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
+#if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
 
 	template<class X, class Y, class RetType>
 	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(...), MemFuncInfo &out)

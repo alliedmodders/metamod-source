@@ -229,6 +229,9 @@
 			<File
 				RelativePath="test3.cpp">
 			</File>
+			<File
+				RelativePath="test4.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

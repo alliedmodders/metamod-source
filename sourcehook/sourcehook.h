@@ -1887,9 +1887,8 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param
 }
 
 
-#if SH_COMP != SH_COMP_MSVC
-
-// **** MSVC doesn't like these, GCC needs them ****
+#if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
+// GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
 
 // Support for 0 arguments
 template <class X, class Y, class MFP, class RetType>
