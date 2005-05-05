@@ -305,6 +305,29 @@ namespace SourceHook
 	}
 
 @ENDARGS@
+
+	// GCC needs this, MSVC doesn't like them
+#if SH_COMP != SH_COMP_MSVC
+
+@VARARGS@
+	template<class X, class Y, class RetType@, @@class Param%%|, @>
+	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @@, @...), MemFuncInfo &out)
+	{
+		RetType(Y::*mfp2)(@Param%%|, @@, @...) = mfp;
+		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
+	}
+
+	template<class X, class Y, class RetType@, @@class Param%%|, @>
+		inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @@, @...) const, MemFuncInfo &out)
+	{
+		RetType(Y::*mfp2)(@Param%%|, @@, @...) const = mfp;
+		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
+	}
+
+@ENDARGS@
+
+#endif
+
 }
 
 #endif

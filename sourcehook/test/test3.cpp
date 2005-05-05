@@ -237,3 +237,4 @@ bool TestThisPtrOffs(std::string &error)
 
 	return true;
 }
+
