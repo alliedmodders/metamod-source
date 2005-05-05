@@ -54,16 +54,16 @@ namespace SourceHook
 
 # if SH_COMP == SH_COMP_GCC
 
-	template<> struct MFI_Impl<8>   // All of these have size==8
+	template<> struct MFI_Impl<2*SH_PTRSIZE>   // All of these have size==8/16
 	{
 		struct GCC_MemFunPtr
 		{
 			union
 			{
 				void *funcadr;				// always even
-				int vtable_index_plus1;		//  = vindex+1, always odd
+				intptr_t vtable_index_plus1;		//  = vindex+1, always odd
 			};
-			int delta;
+			intptr_t delta;
 		};
 		template<class MFP> static inline void GetFuncInfo(MFP mfp, MemFuncInfo &out)
 		{
@@ -71,7 +71,7 @@ namespace SourceHook
 			out.thisptroffs = mfp_detail->delta;
 			if (mfp_detail->vtable_index_plus1 & 1)
 			{
-				out.vtblindex = (mfp_detail->vtable_index_plus1 - 1) / 4;
+				out.vtblindex = (mfp_detail->vtable_index_plus1 - 1) / SH_PTRSIZE;
 				out.vtbloffs = 0;
 				out.isVirtual = true;
 			}
@@ -147,7 +147,7 @@ namespace SourceHook
 		}
 	}
 
-	template<> struct MFI_Impl<4>   // simple ones
+	template<> struct MFI_Impl<1*SH_PTRSIZE>   // simple ones
 	{
 		template<class MFP> static inline void GetFuncInfo(MFP mfp, MemFuncInfo &out)
 		{
@@ -158,7 +158,7 @@ namespace SourceHook
 		}
 	};
 
-	template<> struct MFI_Impl<8>   // more complicated ones!
+	template<> struct MFI_Impl<2*SH_PTRSIZE>   // more complicated ones!
 	{
 		struct MSVC_MemFunPtr2
 		{
@@ -175,7 +175,7 @@ namespace SourceHook
 	};
 
 	// By Don Clugston, adapted
-	template<> struct MFI_Impl<12>   // WOW IT"S GETTING BIGGER OMGOMOGMG
+	template<> struct MFI_Impl<3*SH_PTRSIZE>   // WOW IT"S GETTING BIGGER OMGOMOGMG
 	{
 		class __single_inheritance GenericClass;
 		class GenericClass {};
@@ -228,7 +228,7 @@ namespace SourceHook
 	// unknown_inheritance classes go here 
 	// This is probably the ugliest bit of code I've ever written. Look at the casts!
 	// There is a compiler bug in MSVC6 which prevents it from using this code.
-	template<> struct MFI_Impl<16>   // THE BIGGEST ONE!!!1GABEN
+	template<> struct MFI_Impl<4*SH_PTRSIZE>   // THE BIGGEST ONE!!!1GABEN
 	{
 		template<class MFP> static inline void GetFuncInfo(MFP mfp, MemFuncInfo &out)
 		{

@@ -63,6 +63,8 @@
 # define vsnprintf _vsnprintf
 #endif
 
+#define SH_PTRSIZE sizeof(void*)
+										
 #include "FastDelegate.h"
 #include "sh_memfuncinfo.h"
 #include "sh_memory.h"
@@ -86,8 +88,8 @@ enum META_RES
 
 namespace SourceHook
 {
-	const int STRBUF_LEN=8192;		// In bytes, for "vafmt" functions
-
+	const int STRBUF_LEN=4096;		// In bytes, for "vafmt" functions
+	
 	/**
 	*	@brief An empty class. No inheritance used. Used for original-function-call hacks
 	*/
@@ -677,8 +679,9 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 //////////////////////////////////////////////////////////////////////////
 // SH_CALL
 
+#if SH_COMP == SH_COMP_MSVC
 
-#define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
+# define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
@@ -699,6 +702,34 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
 }
 
+#elif SH_COMP == SH_COMP_GCC
+
+# define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
+{ \
+	using namespace ::SourceHook; \
+	MemFuncInfo mfi; \
+	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
+	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
+	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->second.size() || iter->second[mfi.vtblindex] == NULL) \
+		return (m_CC->ptr->*m_MFP)call; \
+	\
+	/* It's hooked. Call the original function. */ \
+	union \
+	{ \
+		RetType(EmptyClass::*mfpnew)prms; \
+		struct \
+		{ \
+			void *addr; \
+			intptr_t adjustor; \
+		} s; \
+	} u; \
+	u.s.addr = iter->second[mfi.vtblindex]; \
+	u.s.adjustor = mfi.thisptroffs; \
+	\
+	return (reinterpret_cast<EmptyClass*>(m_CC->ptr)->*u.mfpnew)call; \
+}
+
+#endif
 
 namespace SourceHook
 {

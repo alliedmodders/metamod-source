@@ -34,8 +34,8 @@
 
 // We need to align addr down to pagesize on linux
 // We assume PAGESIZE is a power of two
-#		define SH_LALIGN(x) (void*)((int)(x) & ~(PAGESIZE-1))
-#		define SH_LALDIF(x) ((int)(x) & (PAGESIZE-1))
+#		define SH_LALIGN(x) (void*)((intptr_t)(x) & ~(PAGESIZE-1))
+#		define SH_LALDIF(x) ((intptr_t)(x) & (PAGESIZE-1))
 # else
 #		error Unsupported OS/Compiler
 # endif

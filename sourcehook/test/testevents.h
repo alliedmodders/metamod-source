@@ -100,8 +100,7 @@ namespace
 	}
 }
 
-//#define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; } else if (g_Verbose) { std::cout << "No error: " << myerr << std::endl; }
-#define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; }
+#define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; } else if (g_Verbose) { std::cout << "No error: " << myerr << std::endl; }
 
 #define MAKE_STATE(name) struct name : State { \
 		virtual void Dump() { \
