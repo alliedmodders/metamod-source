@@ -249,6 +249,9 @@
 					RelativePath="..\generate\FastDelegate.hxx">
 				</File>
 				<File
+					RelativePath="..\generate\sh_memfuncinfo.hxx">
+				</File>
+				<File
 					RelativePath="..\generate\sourcehook.hxx">
 					<FileConfiguration
 						Name="Debug_NoDebugRuntimeLib|Win32">

@@ -28,14 +28,16 @@ namespace SourceHook
 		*/
 		struct RemoveHookInfo
 		{
-			RemoveHookInfo(Plugin pplug, void *piface, HookManagerPubFunc phookman,
+			RemoveHookInfo(Plugin pplug, void *piface, int tpo, HookManagerPubFunc phookman,
 				ISHDelegate *phandler, bool ppost)
-				: plug(pplug), iface(piface), hookman(phookman), handler(phandler), post(ppost)
+				: plug(pplug), iface(piface), thisptr_offs(tpo),
+				hookman(phookman), handler(phandler), post(ppost)
 			{
 			}
 
 			Plugin plug;
 			void *iface;
+			int thisptr_offs;
 			HookManagerPubFunc hookman;
 			ISHDelegate *handler;
 			bool post;
@@ -70,7 +72,10 @@ namespace SourceHook
 			const char *proto, int vtblofs, int vtblidx);
 
 		void ApplyCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx, void *orig_entry);
+		void ApplyCallClassPatches(CallClassInfo &cc);
+		void ApplyCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx, void *orig_entry);
 		void RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx);
+		void RemoveCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx);
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
 		const void *m_OrigRet;
@@ -79,6 +84,16 @@ namespace SourceHook
 	public:
 		CSourceHookImpl();
 		~CSourceHookImpl();
+
+		/**
+		*	@brief Returns the interface version
+		*/
+		int GetIfaceVersion();
+
+		/**
+		*	@brief Returns the implemnetation version
+		*/
+		int GetImplVersion();
 
 		/**
 		*	@brief Make sure that a plugin is not used by any other plugins anymore, and unregister all its hook managers
@@ -121,19 +136,6 @@ namespace SourceHook
 		/**
 		*	@brief Removes a hook.
 		*
-		*	@return True if the function succeeded, false otherwise
-		*
-		*	@param plug The unique identifier of the plugin that calls this function
-		*	@param iface Already adjusted interface pointer
-		*	@param myHookMan A hook manager function that should be capable of handling the function
-		*	@param handler A pointer to a FastDelegate containing the hook handler
-		*	@param post Set to true if you want a post handler
-		*/
-		bool RemoveHook(Plugin plug, void *iface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post);
-
-		/**
-		*	@brief Removes a hook.
-		*
 		*	@ return True if the function succeeded, false otherwise
 		*
 		*	@param info A RemoveHookInfo structure, describing the hook
@@ -165,8 +167,9 @@ namespace SourceHook
 		*	@brief Return a pointer to a callclass. Generate a new one if required.
 		*
 		*	@param iface The interface pointer
+		*	@param size Size of the class instance
 		*/
-		GenericCallClass *GetCallClass(void *iface);
+		GenericCallClass *GetCallClass(void *iface, size_t size);
 
 		/**
 		*	@brief Release a callclass
@@ -184,12 +187,12 @@ namespace SourceHook
 
 		//////////////////////////////////////////////////////////////////////////
 		// For hook managers
-		virtual META_RES &GetCurResRef();				//!< Gets the pointer to the current meta result
-		virtual META_RES &GetPrevResRef();				//!< Gets the pointer to the previous meta result
-		virtual META_RES &GetStatusRef();				//!< Gets the pointer to the status variable
+		virtual META_RES &GetCurResRef();				//!< Gets the reference to the current meta result
+		virtual META_RES &GetPrevResRef();				//!< Gets the reference to the previous meta result
+		virtual META_RES &GetStatusRef();				//!< Gets the reference to the status variable
+		virtual void* &GetIfacePtrRef();				//!< Gets the reference to the iface ptr
 		virtual void SetOrigRet(const void *ptr);		//!< Sets the original return pointer
 		virtual void SetOverrideRet(const void *ptr);	//!< Sets the override result pointer
-		virtual void SetIfacePtr(void *ptr);			//!< Sets the interface this pointer
 	};
 }
 

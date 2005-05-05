@@ -13,8 +13,8 @@ namespace
 	// Hooking and callclass
 
 	MAKE_STATE(State_F1_Called);
-	MAKE_STATE(State_F1_PreHandler_Called);
-	MAKE_STATE(State_F1_PostHandler_Called);
+	MAKE_STATE_1(State_F1_PreHandler_Called, void*);
+	MAKE_STATE_1(State_F1_PostHandler_Called, void*);
 	MAKE_STATE_1(State_F1_HookAdded, bool);
 	MAKE_STATE(State_F1_HookRemoved);
 	MAKE_STATE(State_F1_CallClassGenerated);
@@ -354,13 +354,13 @@ namespace
 	{
 		void Pre()
 		{
-			ADD_STATE(State_F1_PreHandler_Called);
+			ADD_STATE(State_F1_PreHandler_Called(reinterpret_cast<void*>(this)));
 			RETURN_META(g_F1Pre_WhatToDo);
 		}
 
 		void Post()
 		{
-			ADD_STATE(State_F1_PostHandler_Called);
+			ADD_STATE(State_F1_PostHandler_Called(reinterpret_cast<void*>(this)));
 			RETURN_META(g_F1Post_WhatToDo);
 		}
 	};
@@ -440,7 +440,7 @@ bool TestBasic(std::string &error)
 	CHECK_STATES((&g_States, 
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
-		new State_F1_PreHandler_Called,
+		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 3");
 
 	// 4) Rerequest the callclass
@@ -456,7 +456,7 @@ bool TestBasic(std::string &error)
 		new State_F1_CallClassReleased,
 		new State_F1_CallClassGenerated,
 		new State_F1_Called,
-		new State_F1_PreHandler_Called, 
+		new State_F1_PreHandler_Called(&f1_handlers), 
 		NULL), "Part 4");
 
 	// 5) Check ignore / supercede
@@ -470,9 +470,9 @@ bool TestBasic(std::string &error)
 
 	CHECK_STATES((&g_States,
 		new State_F1_Called,
-		new State_F1_PreHandler_Called,
+		new State_F1_PreHandler_Called(&f1_handlers),
 		new State_F1_Called,
-		new State_F1_PreHandler_Called,
+		new State_F1_PreHandler_Called(&f1_handlers),
 		new State_F1_Called,
 		NULL), "Part 5");
 
@@ -500,7 +500,7 @@ bool TestBasic(std::string &error)
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
 		new State_F1_Called,
-		new State_F1_PostHandler_Called,
+		new State_F1_PostHandler_Called(&f1_handlers),
 		NULL), "Part 7");
 
 	// 8) And a pre hook again
@@ -517,12 +517,12 @@ bool TestBasic(std::string &error)
 	CHECK_STATES((&g_States, 
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
-		new State_F1_PreHandler_Called,
+		new State_F1_PreHandler_Called(&f1_handlers),
 		new State_F1_Called,
-		new State_F1_PostHandler_Called,
+		new State_F1_PostHandler_Called(&f1_handlers),
 		new State_F1_Called,
-		new State_F1_PreHandler_Called,
-		new State_F1_PostHandler_Called,
+		new State_F1_PreHandler_Called(&f1_handlers),
+		new State_F1_PostHandler_Called(&f1_handlers),
 		NULL), "Part 8");
 
 	// 9) Remove all hooks

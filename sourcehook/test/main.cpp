@@ -61,6 +61,7 @@ std::list<Test *> Test::ms_Tests;
 
 DO_TEST(Basic);
 DO_TEST(VafmtAndOverload);
+DO_TEST(ThisPtrOffs);
 
 int main(int argc, char *argv[])
 {

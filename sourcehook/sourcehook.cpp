@@ -26,6 +26,16 @@ namespace SourceHook
 	{
 	}
 
+	int CSourceHookImpl::GetIfaceVersion()
+	{
+		return SH_IFACE_VERSION;
+	}
+
+	int CSourceHookImpl::GetImplVersion()
+	{
+		return SH_IMPL_VERSION;
+	}
+
 	bool CSourceHookImpl::IsPluginInUse(Plugin plug)
 	{
 		// Iterate through all hook managers which are in this plugin
@@ -65,7 +75,7 @@ namespace SourceHook
 	for (hook_iter = iface_iter->name.begin(); hook_iter != iface_iter->name.end(); ++hook_iter) \
 		if (hook_iter->plug == plug) \
 			hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->ptr, \
-			hmil_iter->func, hook_iter->handler, ispost))
+			hook_iter->thisptr_offs, hmil_iter->func, hook_iter->handler, ispost))
 		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
 		{
 			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->vfnptrs.begin();
@@ -141,7 +151,7 @@ namespace SourceHook
 #define TMP_CHECK_LIST(name, ispost) \
 	for (hook_iter = iface_iter->name.begin(); hook_iter != iface_iter->name.end(); ++hook_iter) \
 		hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->ptr, \
-		hmil_iter->func, hook_iter->handler, ispost))
+		hook_iter->thisptr_offs, hmil_iter->func, hook_iter->handler, ispost))
 		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
 		{
 			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->vfnptrs.begin();
@@ -223,9 +233,7 @@ namespace SourceHook
 			--vfnptr_iter;
 
 			// Now that it is done, check whether we have to update any callclasses
-			for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
-				if (cciter->cc.ptr == iface)
-					ApplyCallClassPatch(*cciter, tmp.vtbl_offs, tmp.vtbl_idx, vfnptr_iter->orig_entry);
+			ApplyCallClassPatches(adjustediface, tmp.vtbl_offs, tmp.vtbl_idx, vfp.orig_entry);
 		}
 
 		HookManagerInfo::VfnPtr::IfaceListIter iface_iter = std::find(
@@ -247,6 +255,7 @@ namespace SourceHook
 		hookinfo.handler = handler;
 		hookinfo.plug = plug;
 		hookinfo.paused = false;
+		hookinfo.thisptr_offs = thisptr_offs;
 		if (post)
    			iface_iter->hooks_post.push_back(hookinfo);
 		else
@@ -258,17 +267,12 @@ namespace SourceHook
 
 	bool CSourceHookImpl::RemoveHook(RemoveHookInfo info)
 	{
-		return RemoveHook(info.plug, info.iface, info.hookman, info.handler, info.post);
+		return RemoveHook(info.plug, info.iface, info.thisptr_offs, info.hookman, info.handler, info.post);
 	}
 
 	bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post)
 	{
-		return RemoveHook(plug, reinterpret_cast<void*>(reinterpret_cast<char*>(iface)+thisptr_offs),
-			myHookMan, handler, post);
-	}
-
-	bool CSourceHookImpl::RemoveHook(Plugin plug, void *adjustediface, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post)
-	{
+		void *adjustediface = reinterpret_cast<void*>(reinterpret_cast<char*>(iface)+thisptr_offs);
 		HookManagerInfo tmp;
 		if (myHookMan(HA_GetInfo, &tmp) != 0)
 			return false;
@@ -297,7 +301,8 @@ namespace SourceHook
 			for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = hooks.begin();
 				hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
 			{
-				erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler);
+				erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler) &&
+					hookiter->thisptr_offs == thisptr_offs;
 				if (erase)
 					hookiter->handler->DeleteThis();			// Make the _plugin_ delete the handler object
 			}
@@ -333,11 +338,11 @@ namespace SourceHook
 		return true;
 	}
 
-	GenericCallClass *CSourceHookImpl::GetCallClass(void *iface)
+	GenericCallClass *CSourceHookImpl::GetCallClass(void *iface, size_t size)
 	{
 		for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
 		{
-			if (cciter->cc.ptr == iface)
+			if (cciter->cc.ptr == iface && cciter->cc.objsize == size)
 			{
 				++cciter->refcounter;
 				return &cciter->cc;
@@ -347,15 +352,9 @@ namespace SourceHook
 		CallClassInfo tmp;
 		tmp.refcounter = 1;
 		tmp.cc.ptr = iface;
+		tmp.cc.objsize = size;
 
-		for (HookManInfoList::iterator hookman = m_HookMans.begin(); hookman != m_HookMans.end(); ++hookman)
-			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->vfnptrs.begin();
-				vfnptr_iter != hookman->vfnptrs.end(); ++vfnptr_iter)
-				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
-					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
-					if (iface_iter->ptr == iface)
-						ApplyCallClassPatch(tmp, hookman->vtbl_offs, hookman->vtbl_idx,
-						vfnptr_iter->orig_entry);
+		ApplyCallClassPatches(tmp);
 
 		m_CallClasses.push_back(tmp);
 		return &m_CallClasses.back().cc;
@@ -377,6 +376,55 @@ namespace SourceHook
 		if (tmpvec.size() <= (size_t)vtbl_idx)
 			tmpvec.resize(vtbl_idx+1);
 		tmpvec[vtbl_idx] = orig_entry;
+	}
+
+	void CSourceHookImpl::ApplyCallClassPatches(CallClassInfo &cc)
+	{
+		for (HookManInfoList::iterator hookman = m_HookMans.begin(); hookman != m_HookMans.end(); ++hookman)
+		{
+			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->vfnptrs.begin();
+				vfnptr_iter != hookman->vfnptrs.end(); ++vfnptr_iter)
+			{
+				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
+					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
+				{
+					if (iface_iter->ptr >= cc.cc.ptr &&
+						iface_iter->ptr < (reinterpret_cast<char*>(cc.cc.ptr) + cc.cc.objsize))
+					{
+						ApplyCallClassPatch(cc, static_cast<int>(reinterpret_cast<char*>(iface_iter->ptr) - 
+							reinterpret_cast<char*>(cc.cc.ptr)) + hookman->vtbl_offs,
+							hookman->vtbl_idx, vfnptr_iter->orig_entry);
+					}
+				}
+			}
+		}
+	}
+
+	void CSourceHookImpl::ApplyCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx, void *orig_entry)
+	{
+		for (Impl_CallClassList::iterator cc_iter = m_CallClasses.begin(); cc_iter != m_CallClasses.end();
+			++cc_iter)
+		{
+			if (ifaceptr >= cc_iter->cc.ptr &&
+				ifaceptr < (reinterpret_cast<char*>(cc_iter->cc.ptr) + cc_iter->cc.objsize))
+			{
+				ApplyCallClassPatch(*cc_iter, static_cast<int>(reinterpret_cast<char*>(ifaceptr) - 
+					reinterpret_cast<char*>(cc_iter->cc.ptr)) + vtbl_offs, vtbl_idx, orig_entry);
+			}
+		}
+	}
+
+	void CSourceHookImpl::RemoveCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx)
+	{
+		for (Impl_CallClassList::iterator cc_iter = m_CallClasses.begin(); cc_iter != m_CallClasses.end();
+			++cc_iter)
+		{
+			if (ifaceptr >= cc_iter->cc.ptr &&
+				ifaceptr < (reinterpret_cast<char*>(cc_iter->cc.ptr) + cc_iter->cc.objsize))
+			{
+				RemoveCallClassPatch(*cc_iter, vtbl_offs, vtbl_idx);
+			}
+		}
 	}
 
 	void CSourceHookImpl::RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx)
@@ -496,6 +544,11 @@ namespace SourceHook
 		return m_Status;
 	}
 
+	void * &CSourceHookImpl::GetIfacePtrRef()
+	{
+		return m_IfacePtr;
+	}
+
 	void CSourceHookImpl::SetOrigRet(const void *ptr)
 	{
 		m_OrigRet = ptr;
@@ -506,10 +559,6 @@ namespace SourceHook
 		m_OverrideRet = ptr;
 	}
 
-	void CSourceHookImpl::SetIfacePtr(void *ptr)
-	{
-		m_IfacePtr = ptr;
-	}
 	void *CSourceHookImpl::GetIfacePtr()
 	{
 		return m_IfacePtr;

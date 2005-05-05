@@ -1,3 +1,13 @@
+/* ======== SourceHook ========
+* Copyright (C) 2004-2005 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): Pavol "PM OnoTo" Marko
+* ============================
+*/
+
 #ifndef __TESTEVENTS_H__
 #define __TESTEVENTS_H__
 

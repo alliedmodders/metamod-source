@@ -1,6 +1,10 @@
 /* ======== SourceHook ========
-* By PM
+* Copyright (C) 2004-2005 Metamod:Source Development Team
 * No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): Pavol "PM OnoTo" Marko
 * ============================
 */
 
@@ -11,6 +15,9 @@
 
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
+
+#define SH_IFACE_VERSION 1
+#define SH_IMPL_VERSION 1
 
 #ifndef SH_GLOB_SHPTR
 #define SH_GLOB_SHPTR g_SHPtr
@@ -89,6 +96,15 @@ namespace SourceHook
 	};
 
 	/**
+	*	@brief Implicit cast.
+	*/
+	template <class In, class Out>
+		inline Out implicit_cast(In input)
+		{
+			return input;
+		}
+
+	/**
 	*	@brief A plugin typedef
 	*
 	*	SourceHook doesn't really care what this is. As long as the ==, != and = operators work on it
@@ -164,6 +180,7 @@ namespace SourceHook
 					ISHDelegate *handler;			//!< Pointer to the handler
 					bool paused;					//!< If true, the hook should not be executed
 					Plugin plug;					//!< The owner plugin
+					int thisptr_offs;				//!< This pointer offset
 				};
 				void *ptr;							//!< Pointer to the interface instance
 				std::list<Hook> hooks_pre;			//!< A list of pre-hooks
@@ -205,8 +222,9 @@ namespace SourceHook
 
 	template<class B> struct CallClass
 	{
-		B *ptr;
-		OrigVTables vt;
+		B *ptr;					//!< Pointer to the actual object
+		size_t objsize;			//!< Size of the instance
+		OrigVTables vt;			//!< Info about vtables & functions
 	};
 
 	typedef CallClass<void> GenericCallClass;
@@ -217,6 +235,16 @@ namespace SourceHook
 	class ISourceHook
 	{
 	public:
+		/**
+		*	@brief Return interface version
+		*/
+		virtual int GetIfaceVersion() = 0;
+
+		/**
+		*	@brief Return implementation version
+		*/
+		virtual int GetImplVersion() = 0;
+
 		/**
 		*	@brief Add a hook.
 		*
@@ -255,9 +283,9 @@ namespace SourceHook
 		*	@brief Return a pointer to a callclass. Generate a new one if required.
 		*
 		*	@param iface The interface pointer
-		*	@param size Size of the class
+		*	@param size Size of the class instance
 		*/
-		virtual GenericCallClass *GetCallClass(void *iface) = 0;
+		virtual GenericCallClass *GetCallClass(void *iface, size_t size) = 0;
 
 		/**
 		*	@brief Release a callclass
@@ -274,12 +302,12 @@ namespace SourceHook
 		virtual void *GetIfacePtr() = 0;					//!< Gets the interface pointer
 		//////////////////////////////////////////////////////////////////////////
 		// For hook managers
-		virtual META_RES &GetCurResRef() = 0;				//!< Gets the pointer to the current meta result
-		virtual META_RES &GetPrevResRef() = 0;				//!< Gets the pointer to the previous meta result
-		virtual META_RES &GetStatusRef() = 0;				//!< Gets the pointer to the status variable
+		virtual META_RES &GetCurResRef() = 0;				//!< Gets the reference to the current meta result
+		virtual META_RES &GetPrevResRef() = 0;				//!< Gets the reference to the previous meta result
+		virtual META_RES &GetStatusRef() = 0;				//!< Gets the reference to the status variable
+		virtual void* &GetIfacePtrRef() = 0;				//!< Gets the reference to the interface this pointer
 		virtual void SetOrigRet(const void *ptr) = 0;		//!< Sets the original return pointer
 		virtual void SetOverrideRet(const void *ptr) = 0;	//!< Sets the override result pointer
-		virtual void SetIfacePtr(void *ptr) = 0;			//!< Sets the interface this pointer
 	};
 }
 
@@ -306,7 +334,7 @@ template<class ifacetype>
 inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS_R(SourceHook::ISourceHook *shptr, ifacetype *ptr)
 {
 	return reinterpret_cast<SourceHook::CallClass<ifacetype>*>(
-		shptr->GetCallClass(reinterpret_cast<void*>(ptr)));
+		shptr->GetCallClass(reinterpret_cast<void*>(ptr), sizeof(ifacetype)));
 }
 
 template<class ifacetype>
@@ -319,14 +347,16 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
-	__SourceHook_FHAdd##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
+	__SourceHook_FHAdd##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
+	post, handler)
 #define SH_ADD_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler), post)
 #define SH_ADD_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
 	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
 #define SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
-	__SourceHook_FHRemove##ifacetype##ifacefunc((void*)ifaceptr, post, handler)
+	__SourceHook_FHRemove##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
+	post, handler)
 #define SH_REMOVE_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler), post)
 #define SH_REMOVE_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
@@ -355,6 +385,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	static int HookManPubFunc(::SourceHook::HookManagerAction action, ::SourceHook::HookManagerInfo *param) \
 	{ \
 		using namespace ::SourceHook; \
+		/* Verify interface version */ \
+		if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
+			return 1; \
+		\
 		if (action == ::SourceHook::HA_GetInfo) \
 		{ \
 			param->proto = ms_Proto; \
@@ -458,8 +492,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
+	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
 	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetIfacePtr(this); \
 	SH_GLOB_SHPTR->SetOrigRet(reinterpret_cast<void*>(&orig_ret)); \
 	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
@@ -469,6 +503,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
+		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - hiter->thisptr_offs); \
 		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
 		prev_res = cur_res; \
 		if (cur_res > status) \
@@ -532,8 +567,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
+	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
 	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetIfacePtr(this); \
 	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
@@ -542,6 +577,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
+		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - hiter->thisptr_offs); \
 		reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
 		prev_res = cur_res; \
 		if (cur_res > status) \
@@ -646,8 +682,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 { \
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
-	MFI_Impl<sizeof(m_MFP)>::GetFuncInfo(m_MFP, mfi); \
-	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.vtbloffs); \
+	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
+	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
 	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->second.size() || iter->second[mfi.vtblindex] == NULL) \
 		return (m_CC->ptr->*m_MFP)call; \
 	\
@@ -659,7 +695,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	} u; \
 	u.addr = iter->second[mfi.vtblindex]; \
 	\
-	return (reinterpret_cast<EmptyClass*>(m_CC->ptr)->*u.mfpnew)call; \
+	void *adjustedthisptr = reinterpret_cast<void*>(reinterpret_cast<char*>(m_CC->ptr) + mfi.thisptroffs); \
+	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
 }
 
 
@@ -683,37 +720,53 @@ namespace SourceHook
 	};
 }
 
+// SH_CALL needs to deduce the return type -> it uses templates and function overloading
+// That's why SH_CALL takes two parameters: "mfp2" of type RetType(X::*mfp)(params), and "mfp" of type MFP
+// The only purpose of the mfp2 parameter is to extract the return type
+
 @VARARGS@
 // Support for @$@ arguments
-template <class X, class Y, class RetType@, @@class Param%%|, @>
-SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @)>
-SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @))
+template <class X, class Y, class MFP, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @))
 {
-	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @)>(ptr, mfp);
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
 }
 
-template <class X, class Y, class RetType@, @@class Param%%|, @>
-SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @) const>
-SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @)const)
+template <class X, class Y, class MFP, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @)const)
 {
-	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @) const>(ptr, mfp);
-}
-
-template <class X, class Y, class RetType@, @@class Param%%|, @>
-SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...)>
-SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @@, @...))
-{
-	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...)>(ptr, mfp);
-}
-
-template <class X, class Y, class RetType@, @@class Param%%|, @>
-SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...) const>
-SH_CALL(SourceHook::CallClass<Y> *ptr, RetType(X::*mfp)(@Param%%|, @@, @...)const)
-{
-	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, RetType (X::*)(@Param%%|, @@, @...) const>(ptr, mfp);
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
 }
 
 @ENDARGS@
+
+#if SH_COMP != SH_COMP_MSVC
+
+// **** MSVC doesn't like these, GCC needs them ****
+
+@VARARGS@
+// Support for @$@ arguments
+template <class X, class Y, class MFP, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @@, @...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType@, @@class Param%%|, @>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @@, @...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+@ENDARGS@
+
+#endif
+
+#define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
 
 #undef SH_MAKE_EXECUTABLECLASS_BODY
 
