@@ -289,6 +289,9 @@ void CServerGameDLL::DLLShutdown()
 
 	// Shutdown sourcehook now
 	g_SourceHook.CompleteShutdown();
+
+	// Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly
+	g_SMConVarAccessor.MarkCommandsAsGameDLL();
 }
 
 int LoadPluginsFromFile(const char *file)

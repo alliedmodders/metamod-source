@@ -22,11 +22,25 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
 	// Add the FCVAR_GAMEDLL flag 
 	// => No crash on exit!
-	pCommand->AddFlags(FCVAR_GAMEDLL);
+	// UPDATE: Do _not_ add the FCVAR_GAMEDLL flag here, as it
+	// causes the command to be unusable on listenservers until you load a map
+	// We will set the FCVAR_GAMEDLL flag on all commands we have registered once we are being unloaded
+	//pCommand->AddFlags(FCVAR_GAMEDLL);
+	m_RegisteredCommands.push_back(pCommand);
+
 	pCommand->SetNext( NULL );
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
 	return true;
+}
+
+void SMConVarAccessor::MarkCommandsAsGameDLL()
+{
+	for (std::list<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
+		iter != m_RegisteredCommands.end(); ++iter)
+	{
+		(*iter)->AddFlags(FCVAR_GAMEDLL);
+	}
 }
 
 ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY, "Metamod:Source Version");
@@ -54,6 +68,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			Msg("Metamod:Source version %s\n", SOURCEMM_VERSION);
 			Msg("Compiled on: %s\n", SOURCEMM_DATE);
 			Msg("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+			Msg("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
 			Msg("http://www.sourcemm.net/\n\n");
 
 			return;

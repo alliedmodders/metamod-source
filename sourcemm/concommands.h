@@ -20,11 +20,14 @@
 #include <eiface.h>
 #include "sourcemm.h"
 #include <convar.h>
+#include <list>
 
 class SMConVarAccessor : public IConCommandBaseAccessor
 {
+	std::list<ConCommandBase*> m_RegisteredCommands;
 public:
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
+	void MarkCommandsAsGameDLL();
 };
 
 extern SMConVarAccessor g_SMConVarAccessor;
