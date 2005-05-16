@@ -10,6 +10,7 @@
 
 #include "CSmmAPI.h"
 #include "sourcemm.h"
+#include "concommands.h"
 
 /**
  * @brief Implementation of main API interface
@@ -86,3 +87,14 @@ META_RES CSmmAPI::GetLastMetaReturn()
 {
 	return m_Res;
 }
+
+IConCommandBaseAccessor *CSmmAPI::GetCvarBaseAccessor()
+{
+	return static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor);
+}
+
+void CSmmAPI::UnregisterCvar(ConCommandBase *pCvar)
+{
+	g_SMConVarAccessor.Unregister(pCvar);
+}
+

@@ -18,6 +18,7 @@
 
 #include <interface.h>
 #include <eiface.h>
+#include <convar.h>
 #include <sourcehook/sourcehook.h>
 #include "IPluginManager.h"
 
@@ -38,6 +39,10 @@ public:
 	virtual CGlobalVars *pGlobals() =0;
 	virtual void SetLastMetaReturn(META_RES res) =0;
 	virtual META_RES GetLastMetaReturn() =0;
+public:
+	//Added in 1.00-RC2 to solve concommand problems
+	virtual IConCommandBaseAccessor *GetCvarBaseAccessor() =0;
+	virtual void UnregisterCvar(ConCommandBase *pCvar) =0;
 };
 
 #endif //_INCLUDE_ISMM_API_H

@@ -34,6 +34,8 @@ namespace SourceMM
 		CGlobalVars *pGlobals();
 		void SetLastMetaReturn(META_RES res);
 		META_RES GetLastMetaReturn();
+		IConCommandBaseAccessor *GetCvarBaseAccessor();
+		void UnregisterCvar(ConCommandBase *pCvar);
 	private:
 		META_RES m_Res;
 	};

@@ -43,6 +43,34 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 	}
 }
 
+void SMConVarAccessor::Unregister(ConCommandBase *pCvar)
+{
+	ICvar *cv = g_Engine.icvar;
+
+	ConCommandBase *ptr = cv->GetCommands();
+
+	if (ptr == pCvar && ptr->GetNext())
+	{
+		//we're at the beginning of the list
+		*ptr = *(ptr->GetNext());
+		return;
+	}
+
+	while (ptr)
+	{
+		ConCommandBase *pNext = const_cast<ConCommandBase *>(ptr->GetNext());
+		if (pNext == pCvar)
+			break;
+		ptr = pNext;
+	}
+
+	if (ptr)
+	{
+		ptr->SetNext(const_cast<ConCommandBase *>(pCvar->GetNext()));
+		pCvar->SetNext(NULL);
+	}
+}
+
 ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY, "Metamod:Source Version");
 
 CON_COMMAND(meta, "Metamod:Source Menu")

@@ -28,6 +28,7 @@ class SMConVarAccessor : public IConCommandBaseAccessor
 public:
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
 	void MarkCommandsAsGameDLL();
+	void Unregister(ConCommandBase *pCvar);
 };
 
 extern SMConVarAccessor g_SMConVarAccessor;
