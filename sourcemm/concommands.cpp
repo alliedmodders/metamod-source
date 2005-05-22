@@ -69,6 +69,8 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCvar)
 		ptr->SetNext(const_cast<ConCommandBase *>(pCvar->GetNext()));
 		pCvar->SetNext(NULL);
 	}
+
+	m_RegisteredCommands.remove(pCvar);
 }
 
 ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY, "Metamod:Source Version");

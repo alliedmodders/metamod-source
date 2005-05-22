@@ -93,8 +93,13 @@ IConCommandBaseAccessor *CSmmAPI::GetCvarBaseAccessor()
 	return static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor);
 }
 
-void CSmmAPI::UnregisterCvar(ConCommandBase *pCvar)
+bool CSmmAPI::RegisterConCmdBase(ConCommandBase *pCommand)
 {
-	g_SMConVarAccessor.Unregister(pCvar);
+	return g_SMConVarAccessor.RegisterConCommandBase(pCommand);
+}
+
+void CSmmAPI::UnregisterConCmdBase(ConCommandBase *pCommand)
+{
+	g_SMConVarAccessor.Unregister(pCommand);
 }
 
