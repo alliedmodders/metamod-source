@@ -140,6 +140,8 @@ public:
 
 #define META_LOG	g_SMAPI->LogMsg
 
+#define CONCMD_VARNAME(name) name##_command
+
 #if !defined SMM_API
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define SMM_API extern "C" __declspec(dllexport)
