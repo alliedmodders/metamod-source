@@ -100,7 +100,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			Msg("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
 			Msg("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 			Msg("For more information, see the official website\n");
-			Msg("http://www.sourcemm.net/\n\n");
+			Msg("http://www.sourcemm.net/\n");
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
@@ -108,7 +108,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			Msg("Compiled on: %s\n", SOURCEMM_DATE);
 			Msg("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 			Msg("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-			Msg("http://www.sourcemm.net/\n\n");
+			Msg("http://www.sourcemm.net/\n");
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
@@ -176,7 +176,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				Msg("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
 
-			Msg("\n");
+			//Msg("\n");
 
 			return;
 		} else if (strcmp(command, "cmds") == 0) {
@@ -453,7 +453,6 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	Msg("  unload       - Unload a loaded plugin\n");
 	Msg("  unpause      - Unpause a paused plugin\n");
 	Msg("  version      - Version information\n");
-	Msg("\n");
 }
 
 int UTIL_CmpNocase(const std::string &s1, const std::string &s2)
