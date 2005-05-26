@@ -13,6 +13,9 @@
 
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
+#include <igameevents.h>
+
+#define SAMPLE_VERSION	"1.10"
 
 class SamplePlugin : public ISmmPlugin
 {
@@ -53,7 +56,7 @@ public:
 	}
 	const char *GetVersion()
 	{
-		return "1.00";
+		return SAMPLE_VERSION;
 	}
 	const char *GetDate()
 	{
@@ -105,6 +108,7 @@ public:
 	void ClientCommand(edict_t *pEntity);
 
 private:
+	IGameEventManager2 *m_GameEventManager;	
 	IVEngineServer *m_Engine;
 	IServerGameDLL *m_ServerDll;
 	IServerGameClients *m_ServerClients;
@@ -113,5 +117,7 @@ private:
 
 extern SamplePlugin g_SamplePlugin;
 PLUGIN_GLOBALVARS();
+
+bool FireEvent_Handler(IGameEvent *event, bool bDontBroadcast);
 
 #endif //_INCLUDE_SAMPLEPLUGIN_H

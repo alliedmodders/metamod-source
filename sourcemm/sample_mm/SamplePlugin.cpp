@@ -10,6 +10,7 @@
 
 #include <oslink.h>
 #include "SamplePlugin.h"
+#include "cvars.h"
 
 SamplePlugin g_SamplePlugin;
 
@@ -32,7 +33,8 @@ void SamplePlugin::ServerActivate(edict_t *pEdictList, int edictCount, int clien
 
 void SamplePlugin::GameFrame(bool simulating)
 {
-	META_LOG(g_PLAPI, "GameFrame() called: simulating=%d", simulating);
+	//don't log this, it just pumps stuff to the screen ;]
+	//META_LOG(g_PLAPI, "GameFrame() called: simulating=%d", simulating);
 	RETURN_META(MRES_IGNORED);
 }
 
@@ -84,6 +86,18 @@ void SamplePlugin::ClientCommand(edict_t *pEntity)
 	RETURN_META(MRES_IGNORED);
 }
 
+bool FireEvent_Handler(IGameEvent *event, bool bDontBroadcast)
+{
+	if (!event || !event->GetName())
+		RETURN_META_VALUE(MRES_IGNORED, false);
+
+	const char *name = event->GetName();
+
+	META_LOG(g_PLAPI, "FireGameEvent called: name=%s", name); 
+
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
 bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen)
 {
 	PLUGIN_SAVEVARS();
@@ -91,6 +105,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 	m_ServerDll = (IServerGameDLL *)((ismm->serverFactory())(INTERFACEVERSION_SERVERGAMEDLL, NULL));
 	m_Engine = (IVEngineServer *)((ismm->engineFactory())(INTERFACEVERSION_VENGINESERVER, NULL));
 	m_ServerClients = (IServerGameClients *)((ismm->serverFactory())(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
+	m_GameEventManager = (IGameEventManager2 *)((ismm->engineFactory())(INTERFACEVERSION_GAMEEVENTSMANAGER2, NULL));
 
 	if (!m_ServerDll)
 	{
@@ -107,8 +122,16 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_SERVERGAMECLIENTS);
 		return false;
 	}
+	if (!m_GameEventManager)
+	{
+		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_GAMEEVENTSMANAGER2);
+		return false;
+	}
 
 	META_LOG(g_PLAPI, "Starting plugin.\n");
+
+	//Init our cvars/concmds
+	ConCommandBaseMgr::OneTimeInit(&g_Accessor);
 
 	//We're hooking the following things as POST, in order to seem like Server Plugins.
 	//However, I don't actually know if Valve has done server plugins as POST or not.
@@ -141,6 +164,9 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 	//Hook ClientCommand to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientCommand, false);
 
+	//This hook is a static hook, no member function
+	SH_ADD_HOOK_STATICFUNC(IGameEventManager2, FireEvent, m_GameEventManager, FireEvent_Handler, false); 
+
 	//Get the call class for IVServerEngine so we can safely call functions without
 	// invoking their hooks (when needed).
 	m_Engine_CC = SH_GET_CALLCLASS(m_Engine);
@@ -152,9 +178,14 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error
 
 bool SamplePlugin::Unload(char *error, size_t maxlen)
 {
+	//IT IS CRUCIAL THAT YOU REMOVE CVARS.
+	//As of Metamod:Source 1.00-RC2, it will automatically remove them for you.
+	//But this is only if you've registered them correctly!
+    
 	//Make sure we remove any hooks we did... this may not be necessary since
-	// SourceHook is capable of unloading plugins' hooks itself, but just to be safe.
+	//SourceHook is capable of unloading plugins' hooks itself, but just to be safe.
 
+	SH_REMOVE_HOOK_STATICFUNC(IGameEventManager2, FireEvent, m_GameEventManager, FireEvent_Handler, false); 
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, m_ServerDll, &g_SamplePlugin, &SamplePlugin::LevelInit, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, m_ServerDll, &g_SamplePlugin, &SamplePlugin::ServerActivate, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, m_ServerDll, &g_SamplePlugin, &SamplePlugin::GameFrame, true);
@@ -167,6 +198,7 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, m_ServerClients, &g_SamplePlugin, &SamplePlugin::ClientCommand, false);
 
+	//this, sourcehook does not keep track of.  we must do this.
 	SH_RELEASE_CALLCLASS(m_Engine_CC);
 
 	return true;
