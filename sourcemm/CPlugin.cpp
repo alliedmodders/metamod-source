@@ -391,7 +391,7 @@ bool CPluginManager::UnloadAll()
 		{
 			if ( (*i)->m_API )
 			{
-				if ( (*i)->m_API->Unload(NULL, 0) )
+				if ( !(*i)->m_API->Unload(NULL, 0) )
 					status = false;
 
 				UnregAllConCmds( (*i) );
