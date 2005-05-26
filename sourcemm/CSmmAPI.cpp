@@ -93,13 +93,27 @@ IConCommandBaseAccessor *CSmmAPI::GetCvarBaseAccessor()
 	return static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor);
 }
 
-bool CSmmAPI::RegisterConCmdBase(ConCommandBase *pCommand)
+bool CSmmAPI::RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
-	return g_SMConVarAccessor.RegisterConCommandBase(pCommand);
+	if (pCommand->IsCommand())
+	{
+		g_PluginMngr.AddPluginCmd(plugin, pCommand);
+	} else {
+		g_PluginMngr.AddPluginCvar(plugin, pCommand);
+	}
+
+	return g_SMConVarAccessor.Register(pCommand);
 }
 
-void CSmmAPI::UnregisterConCmdBase(ConCommandBase *pCommand)
+void CSmmAPI::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
+	if (pCommand->IsCommand())
+	{
+		g_PluginMngr.RemovePluginCmd(plugin, pCommand);
+	} else {
+		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
+	}
+
 	g_SMConVarAccessor.Unregister(pCommand);
 }
 

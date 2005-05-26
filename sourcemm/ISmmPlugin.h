@@ -138,8 +138,13 @@ public:
 	g_SMAPI->SetLastMetaReturn(mres); \
 	return value;
 
-#define META_LOG	g_SMAPI->LogMsg
+#define META_LOG		g_SMAPI->LogMsg
+#define META_REGCMD(name)		g_SMAPI->RegisterConCmdBase(g_PLAPI, name##_command)
+#define META_REGCVAR(var)		g_SMAPI->RegisterConCmdBase(g_PLAPI, var)
+#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, name##_command)
+#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, var)
 
+//probably should use this up above someday
 #define CONCMD_VARNAME(name) name##_command
 
 #if !defined SMM_API

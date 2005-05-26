@@ -18,6 +18,9 @@
 
 #include <list>
 #include <string>
+#include <interface.h>
+#include <eiface.h>
+#include <convar.h>
 #include "IPluginManager.h"
 #include "oslink.h"
 
@@ -55,6 +58,8 @@ namespace SourceMM
 			ISmmPlugin *m_API;
 			HINSTANCE m_Lib;
 			factories fac_list;
+			std::list<ConCommandBase *> m_Cvars;
+			std::list<ConCommandBase *> m_Cmds;
 		};
 	public:
 		CPluginManager();
@@ -69,6 +74,11 @@ namespace SourceMM
 	public:
 		bool Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source);
 
+		void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
+		void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
+		void RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
+		void RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
+
 		/**
 		 * @brief Finds a plugin by Id
 		 *
@@ -76,6 +86,8 @@ namespace SourceMM
 		 * @return CPlugin on success, NULL otherwise
 		 */
 		CPlugin *FindById(PluginId id);
+
+		CPlugin *FindByAPI(ISmmPlugin *api);
 
 		/**
 		 * @brief Attempts to reload a failed plugin
@@ -96,6 +108,7 @@ namespace SourceMM
 		bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen);
 		bool _Pause(CPlugin *pl, char *error, size_t maxlen);
 		bool _Unpause(CPlugin *pl, char *error, size_t maxlen);
+		void UnregAllConCmds(CPlugin *pl);
 	private:
 		PluginId m_LastId;
 		std::list<CPlugin *> m_Plugins;

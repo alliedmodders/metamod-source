@@ -11,6 +11,7 @@
 #include "CPlugin.h"
 #include "CSmmAPI.h"
 #include "sourcemm.h"
+#include "concommands.h"
 
 /** 
  * @brief Implements functions from CPlugin.h
@@ -184,6 +185,23 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 	return false;
 }
 
+CPluginManager::CPlugin *CPluginManager::FindByAPI(ISmmPlugin *api)
+{
+	PluginIter i;
+
+	//don't find bad plugins!
+	if (!api)
+		return NULL;
+
+	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
+	{
+		if ( (*i)->m_API == api )
+			return (*i);
+	}
+
+	return NULL;
+}
+
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
 	FILE *fp;
@@ -277,6 +295,8 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 		{
 			//Make sure to detach it from sourcehook!
 			g_SourceHook.UnloadPlugin(pl->m_Id);
+
+			UnregAllConCmds(pl);
 
 			//Clean up the DLL
 			dlclose(pl->m_Lib);
@@ -374,6 +394,8 @@ bool CPluginManager::UnloadAll()
 				if ( (*i)->m_API->Unload(NULL, 0) )
 					status = false;
 
+				UnregAllConCmds( (*i) );
+
 				//Unlink from SourceHook
 				g_SourceHook.UnloadPlugin( (*i)->m_Id );
 
@@ -382,9 +404,9 @@ bool CPluginManager::UnloadAll()
 			}
 			delete (*i);
 		}
-
-		i = m_Plugins.erase(i);
 	}
+
+	m_Plugins.clear();
 
 	return status;
 }
@@ -412,4 +434,59 @@ PluginIter CPluginManager::_begin()
 PluginIter CPluginManager::_end()
 {
 	return m_Plugins.end();
+}
+
+void CPluginManager::AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
+{
+	CPlugin *pl = FindByAPI(api);
+
+	if (!pl)
+		return;
+
+	pl->m_Cvars.push_back(pCvar);
+}
+
+void CPluginManager::AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
+{
+	CPlugin *pl = FindByAPI(api);
+
+	if (!pl)
+		return;
+
+	pl->m_Cmds.push_back(pCmd);
+}
+
+void CPluginManager::RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
+{
+	CPlugin *pl = FindByAPI(api);
+
+	if (!pl)
+		return;
+
+	pl->m_Cvars.remove(pCvar);
+}
+
+void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
+{
+	CPlugin *pl = FindByAPI(api);
+
+	if (!pl)
+		return;
+
+	pl->m_Cmds.remove(pCmd);
+}
+
+void CPluginManager::UnregAllConCmds(CPlugin *pl)
+{
+	std::list<ConCommandBase *>::iterator i;
+
+	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
+		g_SMConVarAccessor.Unregister( (*i) );
+
+	pl->m_Cvars.clear();
+
+	for (i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
+		g_SMConVarAccessor.Unregister( (*i) );
+
+	pl->m_Cmds.clear();
 }

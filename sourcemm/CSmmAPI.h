@@ -35,8 +35,8 @@ namespace SourceMM
 		void SetLastMetaReturn(META_RES res);
 		META_RES GetLastMetaReturn();
 		IConCommandBaseAccessor *GetCvarBaseAccessor();
-		bool RegisterConCmdBase(ConCommandBase *pCommand);
-		void UnregisterConCmdBase(ConCommandBase *pCommand);
+		bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
+		void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 	private:
 		META_RES m_Res;
 	};

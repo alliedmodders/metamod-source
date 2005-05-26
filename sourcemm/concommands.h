@@ -27,8 +27,20 @@ class SMConVarAccessor : public IConCommandBaseAccessor
 	std::list<ConCommandBase*> m_RegisteredCommands;
 public:
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
+	bool Register(ConCommandBase *pCommand);
 	void MarkCommandsAsGameDLL();
-	void Unregister(ConCommandBase *pCvar);
+	void Unregister(ConCommandBase *pCommand);
+};
+
+class CAlwaysRegisterableCommand : public ConCommandBase
+{
+	ICvar *m_pICvar;
+public:
+	CAlwaysRegisterableCommand();
+	bool IsRegistered( void ) const;
+	// If already registered, removes us
+	// Then it registers us again
+	void BringToFront();
 };
 
 extern SMConVarAccessor g_SMConVarAccessor;

@@ -87,6 +87,7 @@
 				AdditionalDependencies="tier0.lib vstdlib.lib"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="1"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -174,6 +175,9 @@
 			</File>
 			<File
 				RelativePath=".\oslink.h">
+			</File>
+			<File
+				RelativePath=".\resource.h">
 			</File>
 			<File
 				RelativePath=".\sourcemm.h">

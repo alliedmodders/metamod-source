@@ -8,6 +8,8 @@
 * ============================
 */
 
+#include <string>
+#include <ctype.h>
 #include "concommands.h"
 #include "CPlugin.h"
 
@@ -16,6 +18,7 @@
  * @file concommands.cpp
  */
 
+CAlwaysRegisterableCommand g_EternalCommand;
 SMConVarAccessor g_SMConVarAccessor;
 
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
@@ -34,6 +37,15 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 	return true;
 }
 
+bool SMConVarAccessor::Register(ConCommandBase *pCommand)
+{
+	//simple, don't mark as part of sourcemm!
+	pCommand->SetNext( NULL );
+	g_Engine.icvar->RegisterConCommandBase(pCommand);
+
+	return true;
+}
+
 void SMConVarAccessor::MarkCommandsAsGameDLL()
 {
 	for (std::list<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
@@ -43,37 +55,34 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 	}
 }
 
-void SMConVarAccessor::Unregister(ConCommandBase *pCvar)
+void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 {
 	ICvar *cv = g_Engine.icvar;
-
 	ConCommandBase *ptr = cv->GetCommands();
 
-	if (ptr == pCvar && ptr->GetNext())
+	if (ptr == pCommand)
 	{
-		//we're at the beginning of the list
-		*ptr = *(ptr->GetNext());
-		return;
+		//first in list
+		g_EternalCommand.BringToFront();
+		g_EternalCommand.SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
+	} else {
+		//find us and unregister us
+		ConCommandBase *pPrev = NULL;
+		while (ptr)
+		{
+			if (ptr == pCommand)
+				break;
+			pPrev = ptr;
+			ptr = const_cast<ConCommandBase *>(ptr->GetNext());
+		}
+		if (pPrev && ptr == pCommand)
+		{
+			pPrev->SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
+		}
 	}
-
-	while (ptr)
-	{
-		ConCommandBase *pNext = const_cast<ConCommandBase *>(ptr->GetNext());
-		if (pNext == pCvar)
-			break;
-		ptr = pNext;
-	}
-
-	if (ptr)
-	{
-		ptr->SetNext(const_cast<ConCommandBase *>(pCvar->GetNext()));
-		pCvar->SetNext(NULL);
-	}
-
-	m_RegisteredCommands.remove(pCvar);
 }
 
-ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY, "Metamod:Source Version");
+ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
 
 CON_COMMAND(meta, "Metamod:Source Menu")
 {
@@ -111,9 +120,9 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 		} else if (strcmp(command, "refresh") == 0) {
 			char full_path[255];
 #if defined WIN32 || defined _WIN32
-			snprintf(full_path, sizeof(full_path)-1, "%s\\%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
 #else
-			snprintf(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
 #endif
 			LoadPluginsFromFile(full_path);
 
@@ -168,6 +177,68 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			}
 
 			Msg("\n");
+
+			return;
+		} else if (strcmp(command, "cmds") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+
+				if (!pl)
+				{
+					Msg("Plugin %d not found.\n", id);
+					return;
+				}
+
+				if (!pl->m_API)
+				{
+					Msg("Plugin %d is not loaded.\n", id);
+				} else {
+					Msg("Console commands for %s:\n", pl->m_API->GetName());
+					std::list<ConCommandBase *>::iterator ci;
+					size_t count = 0;
+
+					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
+					{
+						count++;
+						Msg(" [%5d] %-s\n", count, (*ci)->GetName());
+					}
+				}
+			} else {
+				Msg("Usage: meta cmds <id>\n");
+			}
+
+			return;
+		} else if (strcmp(command, "cvars") == 0) {
+			if (args >= 3)
+			{
+				int id = atoi(e->Cmd_Argv(2));
+				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+
+				if (!pl)
+				{
+					Msg("Plugin %d not found.\n", id);
+					return;
+				}
+
+				if (!pl->m_API)
+				{
+					Msg("Plugin %d is not loaded.\n", id);
+				} else {
+					Msg("Registered cvars for %s:\n", pl->m_API->GetName());
+					std::list<ConCommandBase *>::iterator ci;
+					size_t count = 0;
+
+					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)
+					{
+						count++;
+						Msg(" [%5d] %-s\n", count, (*ci)->GetName());
+					}
+				}
+			} else {
+				Msg("Usage: meta cvars <id>\n");
+			}
 
 			return;
 		} else if (strcmp(command, "info") == 0) {
@@ -368,6 +439,8 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	Msg("Metamod:Source Menu\n");
 	Msg("usage: meta <command> [arguments]\n");
 	Msg("  clear        - Unload all plugins forcefully\n");
+	Msg("  cmds         - Show plugin commands\n");
+	Msg("  cvars        - Show plugin cvars\n");
 	Msg("  credits      - About Metamod:Source\n");
 	Msg("  force_unload - Forcefully unload a plugin\n");
 	Msg("  game         - Information about GameDLL\n");
@@ -381,4 +454,66 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	Msg("  unpause      - Unpause a paused plugin\n");
 	Msg("  version      - Version information\n");
 	Msg("\n");
+}
+
+int UTIL_CmpNocase(const std::string &s1, const std::string &s2)
+{
+	std::string::const_iterator p1 = s1.begin();
+	std::string::const_iterator p2 = s2.begin();
+
+	while (p1 != s1.end() && p2 != s2.end())
+	{
+		if(toupper(*p1) != toupper(*p2))
+			return (toupper(*p1)<toupper(*p2)) ? -1 : 1;
+		++p1;
+		++p2;
+	}
+
+	return (s2.size() == s1.size()) ? 0 : (s1.size() < s2.size()) ? -1 : 1;	// size is unsigned
+}
+
+CAlwaysRegisterableCommand::CAlwaysRegisterableCommand()
+{
+	Create("", NULL, FCVAR_UNREGISTERED|FCVAR_GAMEDLL);
+	m_pICvar = NULL;
+}
+
+bool CAlwaysRegisterableCommand::IsRegistered( void ) const
+{
+	return false;
+}
+
+void CAlwaysRegisterableCommand::BringToFront()
+{
+	if (!m_pICvar)
+		m_pICvar = g_Engine.icvar;
+
+	// First, let's try to find us!
+	ConCommandBase *pPtr = m_pICvar->GetCommands();
+
+	if (pPtr == this)
+	{
+		// We are already at the beginning; Nothing to do
+		return;
+	}
+
+	while (pPtr)
+	{
+		if (pPtr == this && pPtr->IsCommand() && UTIL_CmpNocase(GetName(), pPtr->GetName()) == 0)
+			break;
+		ConCommandBase *pPrev = NULL;
+		while (pPtr)
+		{
+			if (pPtr == this)
+				break;
+			pPrev = pPtr;
+			pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
+		}
+		if (pPrev && pPtr == this)
+		{
+			pPrev->SetNext(m_pNext);		// Remove us from the list
+		}
+		// Now, register us
+		m_pICvar->RegisterConCommandBase(this);
+	}
 }

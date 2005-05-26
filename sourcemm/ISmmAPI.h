@@ -42,8 +42,8 @@ public:
 public:
 	//Added in 1.00-RC2 to solve concommand problems
 	virtual IConCommandBaseAccessor *GetCvarBaseAccessor() =0;
-	virtual bool RegisterConCmdBase(ConCommandBase *pCommand) =0;
-	virtual void UnregisterConCmdBase(ConCommandBase *pCommand) =0;
+	virtual bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
+	virtual void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
 };
 
 #endif //_INCLUDE_ISMM_API_H
