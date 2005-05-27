@@ -15,12 +15,12 @@ BINARY = server_i486.so
 OBJECTS = oslink.cpp util.cpp convar.cpp concommands.cpp \
 	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp sourcehook.cpp
 
-LINK = vstdlib_i486.so tier0_i486.so
+LINK = vstdlib_i486.so tier0_i486.so /lib/lstdc++.a
 
 HL2PUB = $(HL2SDK)/public
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)tier0 -I$(HL2PUB)/tier1 \
-	-I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook
+	-I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook -L$(SMM_ROOT)/sourcemm
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
@@ -42,12 +42,13 @@ all:
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
+	ln -sf `g++ -print-file-name=libstdc++.a` $(SMM_ROOT)/sourcemm/libstdc++.a 
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 sourcemm: $(OBJ_LINUX)
-	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
+	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -static-libgcc -o$(BIN_DIR)/$(BINARY)
 
 debug:	
 	$(MAKE) all DEBUG=true
