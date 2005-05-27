@@ -63,6 +63,7 @@ DO_TEST(Basic);
 DO_TEST(VafmtAndOverload);
 DO_TEST(ThisPtrOffs);
 DO_TEST(PlugSys);
+DO_TEST(Bail);
 
 int main(int argc, char *argv[])
 {
