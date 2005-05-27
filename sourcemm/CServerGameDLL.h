@@ -48,8 +48,7 @@ public:
 	{ m_pOrig->GameFrame(simulating); }
 	virtual void PreClientUpdate( bool simulating )
 	{ m_pOrig->PreClientUpdate(simulating); }
-	virtual void LevelShutdown( void )
-	{ m_pOrig->LevelShutdown(); }
+	virtual void LevelShutdown( void );
 	virtual void GameShutdown( void )
 	{ m_pOrig->GameShutdown(); }
 	virtual void DLLShutdown( void );

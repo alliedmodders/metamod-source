@@ -26,8 +26,6 @@
  * @file sourcemm.cpp
  */
 
-SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
-
 CServerGameDLL g_TempGameDLL;
 CServerGameEnts g_TempGameEnts;
 CServerGameClients g_TempGameClients;
@@ -241,7 +239,6 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 			//This is so plugins can hook everything on load, BUT, new plugins will be reloaded
 			// if the server is shut down (silly, but rare case).
 			bInFirstLevel = true;
-			SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, serverDll, LevelShutdown_handler, false);
 
 			return true;
 		}
@@ -416,6 +413,12 @@ void LogMessage(const char *msg, ...)
 	g_Engine.engine->LogPrint(buffer);
 }
 
+void CServerGameDLL::LevelShutdown(void)
+{
+	LevelShutdown_handler();
+	m_pOrig->LevelShutdown();
+}
+
 void LevelShutdown_handler(void)
 {
 	if (!bInFirstLevel)
@@ -430,6 +433,4 @@ void LevelShutdown_handler(void)
 	} else {
 		bInFirstLevel = false;
 	}
-
-	RETURN_META(MRES_IGNORED);
 }
