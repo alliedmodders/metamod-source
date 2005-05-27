@@ -12,7 +12,7 @@ DEBUG_FLAGS = -g -ggdb3
 CPP = g++
 BINARY = sample_mm_i486.so
 
-OBJECTS = SamplePlugin.cpp
+OBJECTS = SamplePlugin.cpp cvars.cpp convar.cpp
 
 LINK = vstdlib_i486.so tier0_i486.so
 
