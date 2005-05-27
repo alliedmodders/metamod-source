@@ -8,10 +8,10 @@
 * ============================
 */
 
-#include <string>
 #include <ctype.h>
 #include "concommands.h"
 #include "CPlugin.h"
+#include <string>
 
 /**
  * @brief Console Command Implementations

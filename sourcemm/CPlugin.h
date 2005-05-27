@@ -16,13 +16,13 @@
  * @file CPlugin.cpp
  */
 
-#include <list>
-#include <string>
 #include <interface.h>
 #include <eiface.h>
 #include <convar.h>
 #include "IPluginManager.h"
 #include "oslink.h"
+#include <list>
+#include <string>
 
 /**
  * History of plugin versions: (M=min, C=current)
