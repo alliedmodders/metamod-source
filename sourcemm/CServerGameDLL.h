@@ -40,8 +40,7 @@ public:
 	virtual bool DLLInit(	CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn fileSystemFactory, CGlobalVars *pGlobals);
 	virtual bool GameInit( void )
 	{ return m_pOrig->GameInit(); }
-	virtual bool LevelInit( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
-	{ return m_pOrig->LevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background); }
+	virtual bool LevelInit( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background );
 	virtual void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 	{ m_pOrig->ServerActivate(pEdictList, edictCount, clientMax); }
 	virtual void GameFrame( bool simulating )

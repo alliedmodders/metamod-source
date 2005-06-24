@@ -249,10 +249,15 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 						snprintf(error, maxlen, "Failed to get API");
 					pl->m_Status = Pl_Error;
 				} else {
-					if (pl->m_API->GetApiVersion() < PLAPI_MIN_VERSION)
+					int api = pl->m_API->GetApiVersion();
+					if (api < PLAPI_MIN_VERSION)
 					{
 						if (error)
-							snprintf(error, maxlen, "Plugin API %d is out of date with required minimum (%d)", pl->m_API->GetApiVersion(), PLAPI_MIN_VERSION);
+							snprintf(error, maxlen, "Plugin API %d is out of date with required minimum (%d)", api, PLAPI_MIN_VERSION);
+						pl->m_Status = Pl_Error;
+					} else if (api > PLAPI_VERSION) {
+						if (error)
+							snprintf(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
 						pl->m_Status = Pl_Error;
 					} else {
 						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), &(pl->fac_list), error, maxlen))

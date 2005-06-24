@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	5
+#define PLAPI_VERSION	6
 #define PLAPI_NAME		"ISmmPlugin"
 
 struct factories
@@ -143,6 +143,8 @@ public:
 #define META_REGCVAR(var)		g_SMAPI->RegisterConCmdBase(g_PLAPI, var)
 #define META_UNREGCMD(name)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, name##_command)
 #define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, var)
+#define	META_CONPRINT	g_SMAPI->ConPrint
+#define META_CONPRINTF	g_SMAPI->ConPrintf
 
 //probably should use this up above someday
 #define CONCMD_VARNAME(name) name##_command

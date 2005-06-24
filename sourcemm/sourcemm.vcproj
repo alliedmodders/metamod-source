@@ -239,6 +239,9 @@
 			<File
 				RelativePath=".\convar.cpp">
 			</File>
+			<File
+				RelativePath=".\convar.h">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -18,10 +18,14 @@
 
 #include "ISmmAPI.h"
 
+typedef void (*CONPRINTF_FUNC)(const char *, ...);
+
 namespace SourceMM
 {
 	class CSmmAPI : public ISmmAPI
 	{
+	public:
+		CSmmAPI::CSmmAPI();
 	public:
 		ISmmPluginManager *PluginManager();
 		SourceHook::ISourceHook *SourceHook();
@@ -37,11 +41,20 @@ namespace SourceMM
 		IConCommandBaseAccessor *GetCvarBaseAccessor();
 		bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 		void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
+		void ConPrint(const char *fmt);
+		void ConPrintf(const char *fmt, ...);
+		bool CacheSuccessful();
+	public:
+		bool CacheCmds();
 	private:
 		META_RES m_Res;
+		CONPRINTF_FUNC m_ConPrintf;
+		bool m_Cache;
 	};
 };
 
 extern SourceMM::CSmmAPI g_SmmAPI;
+
+#define	CONMSG	g_SmmAPI.ConPrintf
 
 #endif //_INCLUDE_CSMM_API_H

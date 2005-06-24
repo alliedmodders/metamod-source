@@ -222,6 +222,12 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 
 			//Initialize our console hooks
 			ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
+
+			if (!g_SmmAPI.CacheCmds())
+			{
+				LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
+				LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
+			}
             
 			//Now it's safe to load plugins.
 #if defined WIN32 || defined _WIN32
@@ -433,4 +439,15 @@ void LevelShutdown_handler(void)
 	} else {
 		bInFirstLevel = false;
 	}
+}
+
+bool CServerGameDLL::LevelInit( char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
+{ 
+	if (!g_SmmAPI.CacheSuccessful())
+	{
+		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
+		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
+	}
+
+	return m_pOrig->LevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
 }

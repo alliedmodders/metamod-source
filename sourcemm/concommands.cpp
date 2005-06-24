@@ -9,6 +9,7 @@
 */
 
 #include <ctype.h>
+#include "CSmmAPI.h"
 #include "concommands.h"
 #include "CPlugin.h"
 #include <string>
@@ -95,26 +96,26 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 		const char *command = e->Cmd_Argv(1);
 		if (strcmp(command, "credits") == 0)
 		{
-			Msg("Metamod:Source was developed by:\n");
-			Msg("  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-			Msg("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-			Msg("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
-			Msg("For more information, see the official website\n");
-			Msg("http://www.sourcemm.net/\n");
+			CONMSG("Metamod:Source was developed by:\n");
+			CONMSG("  SourceHook: Pavol \"PM OnoTo\" Marko\n");
+			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
+			CONMSG("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
+			CONMSG("For more information, see the official website\n");
+			CONMSG("http://www.sourcemm.net/\n");
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
-			Msg("Metamod:Source version %s\n", SOURCEMM_VERSION);
-			Msg("Compiled on: %s\n", SOURCEMM_DATE);
-			Msg("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
-			Msg("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-			Msg("http://www.sourcemm.net/\n");
+			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
+			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
+			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+			CONMSG("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
+			CONMSG("http://www.sourcemm.net/\n");
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
-			Msg("GameDLL Information\n");
-			Msg("  Mod path: %s\n", g_ModPath.c_str());
-			Msg("  Dll path: %s\n", g_BinPath.c_str());
+			CONMSG("GameDLL Information\n");
+			CONMSG("  Mod path: %s\n", g_ModPath.c_str());
+			CONMSG("  Dll path: %s\n", g_BinPath.c_str());
 
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
@@ -135,7 +136,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			const char *name=NULL;
 			const char *author=NULL;
 
-			Msg("-Id- %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
+			CONMSG("-Id- %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
@@ -173,10 +174,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					name = pl->m_File.c_str();
 
 
-				Msg("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
 
-			//Msg("\n");
+			//CONMSG("\n");
 
 			return;
 		} else if (strcmp(command, "cmds") == 0) {
@@ -187,26 +188,26 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!pl)
 				{
-					Msg("Plugin %d not found.\n", id);
+					CONMSG("Plugin %d not found.\n", id);
 					return;
 				}
 
 				if (!pl->m_API)
 				{
-					Msg("Plugin %d is not loaded.\n", id);
+					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
-					Msg("Console commands for %s:\n", pl->m_API->GetName());
+					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
 					std::list<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
 					{
 						count++;
-						Msg(" [%5d] %-s\n", count, (*ci)->GetName());
+						CONMSG(" [%5d] %-s\n", count, (*ci)->GetName());
 					}
 				}
 			} else {
-				Msg("Usage: meta cmds <id>\n");
+				CONMSG("Usage: meta cmds <id>\n");
 			}
 
 			return;
@@ -218,26 +219,26 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!pl)
 				{
-					Msg("Plugin %d not found.\n", id);
+					CONMSG("Plugin %d not found.\n", id);
 					return;
 				}
 
 				if (!pl->m_API)
 				{
-					Msg("Plugin %d is not loaded.\n", id);
+					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
-					Msg("Registered cvars for %s:\n", pl->m_API->GetName());
+					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
 					std::list<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)
 					{
 						count++;
-						Msg(" [%5d] %-s\n", count, (*ci)->GetName());
+						CONMSG(" [%5d] %-s\n", count, (*ci)->GetName());
 					}
 				}
 			} else {
-				Msg("Usage: meta cvars <id>\n");
+				CONMSG("Usage: meta cvars <id>\n");
 			}
 
 			return;
@@ -248,32 +249,32 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
 				if (!pl)
 				{
-					Msg("Plugin %d not found.\n", id);
+					CONMSG("Plugin %d not found.\n", id);
 					return;
 				}
 
 				if (!pl->m_API)
 				{
-					Msg("Plugin %d is not loaded.\n", id);
+					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					if (pl->m_Status == Pl_Paused)
 					{
-						Msg("Plugin %d is paused.\n", id);
+						CONMSG("Plugin %d is paused.\n", id);
 					} else if (pl->m_Status == Pl_Running) {
-						Msg("Plugin %d is running.\n", id);
+						CONMSG("Plugin %d is running.\n", id);
 					}
-					Msg("  Name: \"%s\" by %s\n", pl->m_API->GetName(), pl->m_API->GetAuthor());
-					Msg("  Version: %s\n", pl->m_API->GetVersion());
-					Msg("  Description: %s\n", pl->m_API->GetDescription());
-					Msg("  License: %s\n", pl->m_API->GetLicense());
-					Msg("  URL: %s\n", pl->m_API->GetURL());
-					Msg("  Details: API %03d, Date: %s\n", pl->m_API->GetApiVersion(), pl->m_API->GetDate());
+					CONMSG("  Name: \"%s\" by %s\n", pl->m_API->GetName(), pl->m_API->GetAuthor());
+					CONMSG("  Version: %s\n", pl->m_API->GetVersion());
+					CONMSG("  Description: %s\n", pl->m_API->GetDescription());
+					CONMSG("  License: %s\n", pl->m_API->GetLicense());
+					CONMSG("  URL: %s\n", pl->m_API->GetURL());
+					CONMSG("  Details: API %03d, Date: %s\n", pl->m_API->GetApiVersion(), pl->m_API->GetDate());
 				}
-				Msg("File: %s\n\n", pl->m_File.c_str());
+				CONMSG("File: %s\n\n", pl->m_File.c_str());
 
 				return;
 			} else {
-				Msg("Usage: meta info <id>\n");
+				CONMSG("Usage: meta info <id>\n");
 
 				return;
 			}
@@ -286,15 +287,15 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!g_PluginMngr.Pause(id, error, sizeof(error)-1))
 				{
-					Msg("Pause failed: %s\n", error);
+					CONMSG("Pause failed: %s\n", error);
 					return;
 				}
 				
-				Msg("Plugin %d has been paused.\n", id);
+				CONMSG("Plugin %d has been paused.\n", id);
 
 				return;
 			} else {
-				Msg("Usage: meta pause <id>\n");
+				CONMSG("Usage: meta pause <id>\n");
 
 				return;
 			}
@@ -306,15 +307,15 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!g_PluginMngr.Unpause(id, error, sizeof(error)-1))
 				{
-					Msg("Unpause failed: %s\n", error);
+					CONMSG("Unpause failed: %s\n", error);
 					return;
 				}
 
-				Msg("Plugin %d has been unpaused.\n", id);
+				CONMSG("Plugin %d has been unpaused.\n", id);
 
 				return;
 			} else {
-				Msg("Usage: meta unpause <id>\n");
+				CONMSG("Usage: meta unpause <id>\n");
 
 				return;
 			}
@@ -346,20 +347,20 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				pl = g_PluginMngr.FindById(id);
 				if (!pl || id < Pl_MinId || (pl->m_Status < Pl_Paused))
 				{
-					Msg("Failed to load plugin %s (%s).\n", file, error);
+					CONMSG("Failed to load plugin %s (%s).\n", file, error);
 					return;
 				}
 
 				if (!already)
 				{
-					Msg("Plugin \"%s\" loaded with id %d.\n", pl->m_API->GetName(), pl->m_Id);
+					CONMSG("Plugin \"%s\" loaded with id %d.\n", pl->m_API->GetName(), pl->m_Id);
 				} else {
-					Msg("Plugin \"%s\" is already loaded as %d.\n", pl->m_API->GetName(), pl->m_Id);
+					CONMSG("Plugin \"%s\" is already loaded as %d.\n", pl->m_API->GetName(), pl->m_Id);
 				}
 				
 				return;
 			} else {
-				Msg("Usage: meta load <path>\n");
+				CONMSG("Usage: meta load <path>\n");
 
 				return;
 			}
@@ -371,15 +372,15 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
 				{
-					Msg("Unload failed: %s\n", error);
+					CONMSG("Unload failed: %s\n", error);
 					return;
 				}
 
-				Msg("Plugin %d unloaded.\n", id);
+				CONMSG("Plugin %d unloaded.\n", id);
 
 				return;
 			} else {
-				Msg("Usage: meta unload <id>\n");
+				CONMSG("Usage: meta unload <id>\n");
 
 				return;
 			}
@@ -391,26 +392,26 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
 				{
-					Msg("Force unload failed: %s\n", error);
+					CONMSG("Force unload failed: %s\n", error);
 					return;
 				}
 
-				Msg("Plugin %d force unloaded.\n", id);
+				CONMSG("Plugin %d force unloaded.\n", id);
 
 				return;
 			} else {
-				Msg("Usage: meta force_unload <id>\n");
+				CONMSG("Usage: meta force_unload <id>\n");
 
 				return;
 			}
 		} else if (strcmp(command, "clear") == 0) {
 			if (!g_PluginMngr.UnloadAll())
 			{
-				Msg("One or more plugins resisted removal (cleaned anyway).\n");
+				CONMSG("One or more plugins resisted removal (cleaned anyway).\n");
 				return;
 			} 
 
-			Msg("All plugins unloaded.\n");
+			CONMSG("All plugins unloaded.\n");
 
 			return;
 		} else if (strcmp(command, "retry") == 0) {
@@ -421,38 +422,38 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (!g_PluginMngr.Retry(id, error, sizeof(error)-1))
 				{
-					Msg("Error reloading plugin: %s\n", error);
+					CONMSG("Error reloading plugin: %s\n", error);
 					return;
 				}
 
-				Msg("Plugin %d successfully reloaded.\n", id);
+				CONMSG("Plugin %d successfully reloaded.\n", id);
 
 				return;
 			} else {
-				Msg("Usage: meta retry <id>\n");
+				CONMSG("Usage: meta retry <id>\n");
 
 				return;
 			}
 		}
 	}
 
-	Msg("Metamod:Source Menu\n");
-	Msg("usage: meta <command> [arguments]\n");
-	Msg("  clear        - Unload all plugins forcefully\n");
-	Msg("  cmds         - Show plugin commands\n");
-	Msg("  cvars        - Show plugin cvars\n");
-	Msg("  credits      - About Metamod:Source\n");
-	Msg("  force_unload - Forcefully unload a plugin\n");
-	Msg("  game         - Information about GameDLL\n");
-	Msg("  info         - Information about a plugin\n");
-	Msg("  list         - List plugins\n");
-	Msg("  load         - Load a plugin\n");
-	Msg("  pause        - Pause a running plugin\n");
-	Msg("  refresh      - Reparse plugins file\n");
-	Msg("  retry        - Attempt to reload a plugin\n");
-	Msg("  unload       - Unload a loaded plugin\n");
-	Msg("  unpause      - Unpause a paused plugin\n");
-	Msg("  version      - Version information\n");
+	CONMSG("Metamod:Source Menu\n");
+	CONMSG("usage: meta <command> [arguments]\n");
+	CONMSG("  clear        - Unload all plugins forcefully\n");
+	CONMSG("  cmds         - Show plugin commands\n");
+	CONMSG("  cvars        - Show plugin cvars\n");
+	CONMSG("  credits      - About Metamod:Source\n");
+	CONMSG("  force_unload - Forcefully unload a plugin\n");
+	CONMSG("  game         - Information about GameDLL\n");
+	CONMSG("  info         - Information about a plugin\n");
+	CONMSG("  list         - List plugins\n");
+	CONMSG("  load         - Load a plugin\n");
+	CONMSG("  pause        - Pause a running plugin\n");
+	CONMSG("  refresh      - Reparse plugins file\n");
+	CONMSG("  retry        - Attempt to reload a plugin\n");
+	CONMSG("  unload       - Unload a loaded plugin\n");
+	CONMSG("  unpause      - Unpause a paused plugin\n");
+	CONMSG("  version      - Version information\n");
 }
 
 int UTIL_CmpNocase(const std::string &s1, const std::string &s2)
