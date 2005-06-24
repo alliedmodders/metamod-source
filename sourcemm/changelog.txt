@@ -1,0 +1,15 @@
+
+2005/06/xx 1.00-RC2:
+ - Added API for dealing with ConCommandBase registration (cvars/concmds).
+    This is to fix the fact that Valve API provides no way to unlist a cvar/cmd.
+ - Added two new commands - "meta cmds" and "meta cvars".
+ - Added API calls for correctly printing to the console such that rcon
+    will also receive messages that a plugin prints.
+    This problem was mentioned on hlcoders and Valve offered no reply.
+ - Added event hooking and cvar samples to sample_mm.
+ - Bumped API version to 6.
+ - Fixed "meta clear" not unloading all plugins.
+ - Fixed Metamod:Source loading plugins with a higher current API version.
+
+2005/05/06 1.00-RC1:
+ - Initial release.
