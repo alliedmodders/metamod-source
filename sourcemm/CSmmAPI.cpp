@@ -140,7 +140,7 @@ void CSmmAPI::ConPrintf(const char *fmt, ...)
 
 //////////////////////////////////////////////////////////////////////////
 //THERE BE HAX HERE!!!! DON'T TELL ALFRED, BUT GABE WANTED IT THAT WAY. //
-// (note: you can find the windows offset by looking for the text       //
+// (note: you can find the offset by looking for the text               //
 //   "Echo text to console", you'll find the callback cmd pushed on the //
 //   stack.)                                                            //
 //////////////////////////////////////////////////////////////////////////
@@ -180,7 +180,6 @@ bool CSmmAPI::CacheCmds()
 
 	ConCommandBase *pBase = pCvar->GetCommands();
 	unsigned char *ptr = NULL;
-	char *addr = NULL;
 	FnCommandCallback callback = NULL;
 	int offs = 0;
 
