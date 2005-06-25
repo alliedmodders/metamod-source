@@ -15,7 +15,7 @@ BINARY = server_i486.so
 OBJECTS = oslink.cpp util.cpp convar.cpp concommands.cpp \
 	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp sourcehook.cpp
 
-LINK = vstdlib_i486.so tier0_i486.so /lib/lstdc++.a
+LINK = vstdlib_i486.so tier0_i486.so
 
 HL2PUB = $(HL2SDK)/public
 
