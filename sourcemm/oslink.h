@@ -52,10 +52,11 @@
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
 #elif defined __GNUC__
-# if !__GLIBC_HAVE_LONG_LONG
+#include <stdint.h>
+#if !__GLIBC_HAVE_LONG_LONG
 	typedef long long			int64_t;
-# endif
 	typedef unsigned long long	uint64_t;
+#endif
 #endif
 
 #ifndef __linux__
