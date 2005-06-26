@@ -256,6 +256,18 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 	return false;
 }
 
+void Shutdown()
+{
+	//Unload plugins
+	g_PluginMngr.UnloadAll();
+
+	// Shutdown sourcehook now
+	g_SourceHook.CompleteShutdown();
+
+	// Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly
+	g_SMConVarAccessor.MarkCommandsAsGameDLL();
+}
+
 // The engine uses the DLL even after it has call DLLShutdown, so we unload it
 // when it unloads us
 #if defined _WIN32
@@ -267,6 +279,8 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 	{
 		if (fdwReason == DLL_PROCESS_DETACH)
 		{
+			if (!bInShutdown)
+				Shutdown();
 			if (g_GameDll.lib && g_GameDll.loaded)
 				dlclose(g_GameDll.lib);
 			memset(&g_GameDll, 0, sizeof(GameDllInfo));
@@ -276,6 +290,8 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 #elif defined __linux__
 	void __attribute__ ((destructor)) app_fini(void)
 	{
+		if (!bInShutdown())
+			Shutdown();
 		if (g_GameDll.lib && g_GameDll.loaded)
 			dlclose(g_GameDll.lib);
 		memset(&g_GameDll, 0, sizeof(GameDllInfo));
@@ -284,17 +300,12 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
 
 void CServerGameDLL::DLLShutdown()
 {
+	Shutdown();
+
     //Call the original function
 	m_pOrig->DLLShutdown();
 
-	//Unload plugins
-	g_PluginMngr.UnloadAll();
-
-	// Shutdown sourcehook now
-	g_SourceHook.CompleteShutdown();
-
-	// Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly
-	g_SMConVarAccessor.MarkCommandsAsGameDLL();
+	bInShutdown = true;
 }
 
 int LoadPluginsFromFile(const char *file)

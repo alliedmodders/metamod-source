@@ -30,11 +30,11 @@ CPluginManager::CPluginManager()
 
 CPluginManager::~CPluginManager()
 {
-	if (m_Plugins.size())
+	/*if (m_Plugins.size())
 	{
 		UnloadAll();
 		m_Plugins.clear();
-	}
+	}*/
 }
 
 CPluginManager::CPlugin::CPlugin() : m_Lib(NULL), m_API(NULL), m_Id(0), m_Source(0)
@@ -388,30 +388,23 @@ bool CPluginManager::_Unpause(CPluginManager::CPlugin *pl, char *error, size_t m
 bool CPluginManager::UnloadAll()
 {
 	PluginIter i;
-	bool status = true;
+
+	std::list<SourceMM::CPluginManager::CPlugin *> remqueue;
 
 	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
+		remqueue.push_back( (*i) );
+
+	char error[128];
+	bool status = true;
+
+	for (i=remqueue.begin(); i!=remqueue.end(); i++)
 	{
-		if ( (*i) )
-		{
-			if ( (*i)->m_API )
-			{
-				if ( !(*i)->m_API->Unload(NULL, 0) )
-					status = false;
-
-				UnregAllConCmds( (*i) );
-
-				//Unlink from SourceHook
-				g_SourceHook.UnloadPlugin( (*i)->m_Id );
-
-				//Free the DLL
-				dlclose( (*i)->m_Lib );
-			}
-			delete (*i);
-		}
+		if ( !_Unload( (*i), true, error, sizeof(error)-1) )
+			status = false;
 	}
 
 	m_Plugins.clear();
+	remqueue.clear();
 
 	return status;
 }

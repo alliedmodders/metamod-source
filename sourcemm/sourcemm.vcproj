@@ -31,12 +31,13 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib"
-				OutputFile="$(OutDir)/sourcemm.dll"
+				AdditionalDependencies="tier0.lib vstdlib.lib"
+				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/sourcemm.pdb"
 				SubSystem="2"
+				EnableCOMDATFolding="1"
 				ImportLibrary="$(OutDir)/sourcemm.lib"
 				TargetMachine="1"/>
 			<Tool
