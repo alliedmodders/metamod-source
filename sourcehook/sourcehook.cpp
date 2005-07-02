@@ -71,12 +71,14 @@ namespace SourceHook
 	{
 		// 1) Manually remove all hooks by this plugin
 		std::list<RemoveHookInfo> hookstoremove;
+		HookManInfoList::iterator hmil_iter;
+
 #define TMP_CHECK_LIST(name, ispost) \
 	for (hook_iter = iface_iter->name.begin(); hook_iter != iface_iter->name.end(); ++hook_iter) \
 		if (hook_iter->plug == plug) \
 			hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->ptr, \
 			hook_iter->thisptr_offs, hmil_iter->func, hook_iter->handler, ispost))
-		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
+		for (hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
 		{
 			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->vfnptrs.begin();
 				vfnptr_iter != hmil_iter->vfnptrs.end(); ++vfnptr_iter)
@@ -101,7 +103,7 @@ namespace SourceHook
 
 		HookManInfoList tmphookmans;
 		bool erase = false;
-		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end();
+		for (hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end();
 			erase ? hmil_iter=m_HookMans.erase(hmil_iter) : ++hmil_iter)
 		{
 			if (hmil_iter->plug == plug)
@@ -119,7 +121,7 @@ namespace SourceHook
 		}
 		
 		// For each hook manager:
-		for (HookManInfoList::iterator hmil_iter = tmphookmans.begin(); hmil_iter != tmphookmans.end(); ++hmil_iter)
+		for (hmil_iter = tmphookmans.begin(); hmil_iter != tmphookmans.end(); ++hmil_iter)
 		{
 			// Find a suitable hook manager in an other plugin
 			HookManInfoList::iterator newHookMan = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
@@ -142,6 +144,20 @@ namespace SourceHook
 			// Unregister the old one, register the new one
 			hmil_iter->func(HA_Unregister, NULL);
 			newHookMan->func(HA_Register, &(*newHookMan));
+
+			// zOMG BAIL, here is part of what you wanted:
+
+			// Go through all vfnptrs in this hookman and patch them to point to the new manager's handler!
+			// or whatever
+			for (HookManagerInfo::VfnPtrListIter vfnptr_iter = newHookMan->vfnptrs.begin();
+				vfnptr_iter != newHookMan->vfnptrs.end(); ++vfnptr_iter)
+			{
+				// And DEREFERENCE newHookMan->hookfunc_vfnptr!
+				// otherwise it will be executing the vtable... had to find out the hard way
+				*reinterpret_cast<void**>(vfnptr_iter->vfnptr) = *reinterpret_cast<void**>(newHookMan->hookfunc_vfnptr);
+			}
+
+			// That should fix it, bail!
 		}
 	}
 
