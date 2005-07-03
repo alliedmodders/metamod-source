@@ -17,6 +17,8 @@
  */
 
 const char *UTIL_GetExtension(const char *file);
+void UTIL_TrimLeft(char *buffer);
+void UTIL_TrimRight(char *buffer);
 
 #define META_INTERFACE_MACRO(type, final) \
 	PluginIter i; \

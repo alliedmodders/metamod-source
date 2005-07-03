@@ -334,7 +334,11 @@ int LoadPluginsFromFile(const char *file)
 			continue;
 		if (buffer[length-1] == '\n')
 			buffer[length-1] = '\0';
-		if (buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+
+		UTIL_TrimLeft(buffer);
+		UTIL_TrimRight(buffer);
+
+		if (buffer[0] == NULL || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
 			continue;
 		//First find if it's an absolute path or not...
 		if (buffer[0] == '/' || strncmp(&(buffer[1]), ":\\", 2) == 0)
