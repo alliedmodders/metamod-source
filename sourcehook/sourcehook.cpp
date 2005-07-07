@@ -478,9 +478,9 @@ namespace SourceHook
 	static bool CSourceHookImpl::IsBadReadPtr(const void *ptr, size_t len)
 	{
 		void(*prevHandler)(int sig);
-		g_BadReadCalled = true;
+		m_BadReadCalled = true;
 
-		if (setjmp(g_BadReadJmpBuffer))
+		if (setjmp(m_BadReadJmpBuf))
 			return true;
 
 		prevHandler = signal(SIGSEGV, BadReadHandler);
@@ -491,7 +491,7 @@ namespace SourceHook
 		for (size_t i = 0; i < len; i++)
 			dummy = p[i];
 
-		g_BadReadCalled = false;
+		m_BadReadCalled = false;
 
 		signal(SIGSEGV, prevHandler);
 
