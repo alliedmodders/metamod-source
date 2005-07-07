@@ -473,38 +473,6 @@ namespace SourceHook
 		}
 	}
 
-#ifdef __linux__
-	// Windows has an implentation for this already, but Linux does not :(
-	static bool CSourceHookImpl::IsBadReadPtr(const void *ptr, size_t len)
-	{
-		void(*prevHandler)(int sig);
-		m_BadReadCalled = true;
-
-		if (setjmp(m_BadReadJmpBuf))
-			return true;
-
-		prevHandler = signal(SIGSEGV, BadReadHandler);
-
-		volatile const char *p = reinterpret_cast<const char*>(ptr);
-		char dummy;
-
-		for (size_t i = 0; i < len; i++)
-			dummy = p[i];
-
-		m_BadReadCalled = false;
-
-		signal(SIGSEGV, prevHandler);
-
-		return false;
-	}
-
-	static void CSourceHookImpl::BadReadHandler(int sig)
-	{
-		if (m_BadReadCalled)
-			longjmp(m_BadReadJmpBuf, 1);
-	}
-#endif
-
 	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
 		HookManInfoList::iterator end, const char *proto, int vtblofs, int vtblidx)
 	{
@@ -619,4 +587,36 @@ namespace SourceHook
 	{
 		return m_IfacePtr;
 	}
+
+#ifdef __linux__
+	// Windows has an implementation for this already, but Linux does not :(
+	bool IsBadReadPtr(const void *ptr, size_t len)
+	{
+		void(*prevHandler)(int sig);
+		g_BadReadCalled = true;
+
+		if (setjmp(g_BadReadJmpBuf))
+			return true;
+
+		prevHandler = signal(SIGSEGV, BadReadHandler);
+
+		volatile const char *p = reinterpret_cast<const char*>(ptr);
+		char dummy;
+
+		for (size_t i = 0; i < len; i++)
+			dummy = p[i];
+
+		g_BadReadCalled = false;
+
+		signal(SIGSEGV, prevHandler);
+
+		return false;
+	}
+
+	void CSourceHookImpl::BadReadHandler(int sig)
+	{
+		if (g_BadReadCalled)
+			longjmp(g_BadReadJmpBuf, 1);
+	}
+#endif
 }
