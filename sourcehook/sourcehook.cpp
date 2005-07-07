@@ -473,7 +473,7 @@ namespace SourceHook
 		}
 	}
 
-#if __linux__
+#ifdef __linux__
 	// Windows has an implentation for this already, but Linux does not :(
 	static bool CSourceHookImpl::IsBadReadPtr(const void *ptr, size_t len)
 	{
