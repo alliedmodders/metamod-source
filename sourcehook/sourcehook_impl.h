@@ -13,6 +13,11 @@
 
 #include "sourcehook.h"
 
+#ifdef __linux__
+#include <signal.h>
+#include <setjmp.h>
+#endif
+
 // Set this to 1 to enable runtime code generation (faster)
 #define SH_RUNTIME_CODEGEN 1
 
@@ -76,6 +81,22 @@ namespace SourceHook
 		void ApplyCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx, void *orig_entry);
 		void RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx);
 		void RemoveCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx);
+
+#ifdef __linux__
+		/**
+		*	@brief Checks to see if a memory value can be read from a given pointer.
+		*
+		*	@return True if the value can be read and false if it cannot.
+		*
+		*	@param ptr The pointer to the memory value.
+		*	@param len The length of the memory value to be read from the pointer.
+		*/
+		static bool IsBadReadPtr(const void *ptr, size_t len);
+		static void BadReadHandler(int sig);
+
+		bool m_BadReadCalled;
+		jmp_buf m_BadReadJmpBuf;
+#endif
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
 		const void *m_OrigRet;

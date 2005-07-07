@@ -5,6 +5,7 @@
 * License: zlib/libpng
 *
 * Author(s): Pavol "PM OnoTo" Marko
+* Contributors: Scott "Damaged Soul" Ehlert
 * ============================
 */
 
@@ -299,6 +300,13 @@ namespace SourceHook
 		if (hookman == m_HookMans.end())
 			return false;
 
+		if (IsBadReadPtr(reinterpret_cast<char*>(adjustediface) + tmp.vtbl_offs, sizeof(char)))
+		{
+			hookman->vfnptrs.clear();
+			hookman->func(HA_Unregister, NULL);
+			return true;
+		}
+
 		void **cur_vtptr = *reinterpret_cast<void***>(
 			reinterpret_cast<char*>(adjustediface) + tmp.vtbl_offs);
 		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.vtbl_idx);
@@ -464,6 +472,38 @@ namespace SourceHook
 			}
 		}
 	}
+
+#if __linux__
+	// Windows has an implentation for this already, but Linux does not :(
+	static bool CSourceHookImpl::IsBadReadPtr(const void *ptr, size_t len)
+	{
+		void(*prevHandler)(int sig);
+		g_BadReadCalled = true;
+
+		if (setjmp(g_BadReadJmpBuffer))
+			return true;
+
+		prevHandler = signal(SIGSEGV, BadReadHandler);
+
+		volatile const char *p = reinterpret_cast<const char*>(ptr);
+		char dummy;
+
+		for (size_t i = 0; i < len; i++)
+			dummy = p[i];
+
+		g_BadReadCalled = false;
+
+		signal(SIGSEGV, prevHandler);
+
+		return false;
+	}
+
+	static void CSourceHookImpl::BadReadHandler(int sig)
+	{
+		if (m_BadReadCalled)
+			longjmp(m_BadReadJmpBuf, 1);
+	}
+#endif
 
 	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
 		HookManInfoList::iterator end, const char *proto, int vtblofs, int vtblidx)

@@ -13,6 +13,7 @@
  - Fixed "meta clear" not unloading all plugins.
  - Fixed Metamod:Source loading plugins with a higher current API version.
  - Fixed whitespace being parsed in metaplugins.ini.
+ - Fixed bug where SourceHook tried to patch already destroyed/unavailable memory.
  - Bumped Plugin API version to 6.
 
 2005/05/06 1.00-RC1:
