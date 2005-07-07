@@ -613,7 +613,7 @@ namespace SourceHook
 		return false;
 	}
 
-	void CSourceHookImpl::BadReadHandler(int sig)
+	void BadReadHandler(int sig)
 	{
 		if (g_BadReadCalled)
 			longjmp(g_BadReadJmpBuf, 1);
