@@ -43,6 +43,8 @@ public:
 	void BringToFront();
 };
 
+const char *GetPluginsFile();
+
 extern SMConVarAccessor g_SMConVarAccessor;
 
 #endif //_INCLUDE_CONCOMMANDS_H

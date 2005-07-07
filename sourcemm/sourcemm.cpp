@@ -231,9 +231,9 @@ bool CServerGameDLL::DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn 
             
 			//Now it's safe to load plugins.
 #if defined WIN32 || defined _WIN32
-			snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s\\%s", g_ModPath.c_str(), GetPluginsFile());
 #else
-			snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
+			snprintf(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 #endif
 
 			LoadPluginsFromFile(full_path);
@@ -290,7 +290,7 @@ void Shutdown()
 #elif defined __linux__
 	void __attribute__ ((destructor)) app_fini(void)
 	{
-		if (!bInShutdown())
+		if (!bInShutdown)
 			Shutdown();
 		if (g_GameDll.lib && g_GameDll.loaded)
 			dlclose(g_GameDll.lib);
@@ -338,7 +338,7 @@ int LoadPluginsFromFile(const char *file)
 		UTIL_TrimLeft(buffer);
 		UTIL_TrimRight(buffer);
 
-		if (buffer[0] == NULL || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
 			continue;
 		//First find if it's an absolute path or not...
 		if (buffer[0] == '/' || strncmp(&(buffer[1]), ":\\", 2) == 0)
