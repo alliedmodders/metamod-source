@@ -1,5 +1,5 @@
 
-2005/07/xx 1.00-RC2:
+2005/07/07 1.00-RC2:
  - Added API for dealing with ConCommandBase registration (cvars/concmds).
     This is to fix the fact that Valve API provides no way to unlist a cvar/cmd.
  - Added two new commands - "meta cmds" and "meta cvars".
@@ -7,6 +7,7 @@
     will also receive messages that a plugin prints.
     This problem was mentioned on hlcoders and Valve offered no reply.
  - Added event hooking and cvar samples to sample_mm.
+ - Added new cvar, mm_pluginsfile, which defaults to "addons/metamod/metaplugins.ini".  
  - Fixed a bug where multiple vtable patches on the same hook were not re-patched when removed.
     This caused a crash when two hooks were declared on one function, the first was removed, and
     the original function was then called.
