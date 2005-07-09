@@ -211,9 +211,6 @@ namespace SourceHook
 	*/
 	bool IsBadReadPtr(const void *ptr, size_t len);
 	void BadReadHandler(int sig);
-
-	bool g_BadReadCalled;
-	jmp_buf g_BadReadJmpBuf;
 #endif
 }
 

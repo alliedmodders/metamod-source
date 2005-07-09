@@ -589,6 +589,9 @@ namespace SourceHook
 	}
 
 #ifdef __linux__
+	bool g_BadReadCalled;
+	jmp_buf g_BadReadJmpBuf;
+
 	// Windows has an implementation for this already, but Linux does not :(
 	bool IsBadReadPtr(const void *ptr, size_t len)
 	{
