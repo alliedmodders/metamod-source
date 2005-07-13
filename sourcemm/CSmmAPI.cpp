@@ -150,7 +150,7 @@ void CSmmAPI::ConPrintf(const char *fmt, ...)
 #define ENGINE486_OFFS	40
 #define ENGINE686_SIG	"\x53\x83\xEC\x08\xBB\x01\x00\x00"
 #define ENGINE686_OFFS	50
-#define	ENGINEAMD_SIG	"\x53\x31\xBB\x01\x00\x00\x00\x51"
+#define	ENGINEAMD_SIG	"\x53\x51\xBB\x01\x00\x00\x00\x51"
 #define	ENGINEAMD_OFFS	47
 #define ENGINEW32_SIG	"\xA1\x2A\x2A\x2A\x2A\x56\xBE\x01"
 #define ENGINEW32_OFFS	38

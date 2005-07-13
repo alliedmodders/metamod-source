@@ -3,7 +3,7 @@
 
 HL2SDK = ../../../hl2sdk
 SMM_ROOT = ../../
-SRCDS = ~/srcds
+SRCDS = ~/srcds_l
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
