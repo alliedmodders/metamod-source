@@ -26,7 +26,7 @@
 #include "oslink.h"
 #include "util.h"
 
-#define		SOURCEMM_VERSION	"1.00-RC2"
+#define		SOURCEMM_VERSION	"1.00"
 #define		SOURCEMM_DATE		__DATE__
 
 /**
