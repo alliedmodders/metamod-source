@@ -51,7 +51,7 @@ namespace SourceHook
 		/**
 		*	@brief A list of HookManagerInfo structures
 		*/
-		typedef std::list<HookManagerInfo> HookManInfoList;
+		typedef List<HookManagerInfo> HookManInfoList;
 
 		struct CallClassInfo
 		{
@@ -65,7 +65,7 @@ namespace SourceHook
 		/**
 		*	@brief A list of CallClass structures
 		*/
-		typedef std::list<CallClassInfo> Impl_CallClassList;
+		typedef List<CallClassInfo> Impl_CallClassList;
 
 		Impl_CallClassList m_CallClasses;			//!< A list of already generated callclasses
 		HookManInfoList m_HookMans;					//!< A list of hook managers

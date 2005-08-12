@@ -14,7 +14,6 @@
  * @brief Contains the implementation of the SourceHook API
 */
 
-#include <algorithm>
 #include "sourcehook_impl.h"
 
 namespace SourceHook
@@ -58,7 +57,7 @@ namespace SourceHook
 				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
 					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
 				{
-					std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
+					List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
 					TMP_CHECK_LIST(hooks_pre);
 					TMP_CHECK_LIST(hooks_post);
 				}
@@ -71,7 +70,7 @@ namespace SourceHook
 	void CSourceHookImpl::UnloadPlugin(Plugin plug)
 	{
 		// 1) Manually remove all hooks by this plugin
-		std::list<RemoveHookInfo> hookstoremove;
+		List<RemoveHookInfo> hookstoremove;
 		HookManInfoList::iterator hmil_iter;
 
 #define TMP_CHECK_LIST(name, ispost) \
@@ -87,7 +86,7 @@ namespace SourceHook
 				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
 					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
 				{
-					std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
+					List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
 					TMP_CHECK_LIST(hooks_pre, false);
 					TMP_CHECK_LIST(hooks_post, true);
 				}
@@ -95,7 +94,7 @@ namespace SourceHook
 		}
 #undef TMP_CHECK_LIST
 
-		for (std::list<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
+		for (List<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
 			RemoveHook(*rmiter);
 
 		// 2) Other plugins may use hook managers in this plugin.
@@ -164,7 +163,7 @@ namespace SourceHook
 
 	void CSourceHookImpl::CompleteShutdown()
 	{
-		std::list<RemoveHookInfo> hookstoremove;
+		List<RemoveHookInfo> hookstoremove;
 #define TMP_CHECK_LIST(name, ispost) \
 	for (hook_iter = iface_iter->name.begin(); hook_iter != iface_iter->name.end(); ++hook_iter) \
 		hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->ptr, \
@@ -177,7 +176,7 @@ namespace SourceHook
 				for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
 					iface_iter != vfnptr_iter->ifaces.end(); ++iface_iter)
 				{
-					std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
+					List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hook_iter;
 					TMP_CHECK_LIST(hooks_pre, false);
 					TMP_CHECK_LIST(hooks_post, true);
 				}
@@ -185,7 +184,7 @@ namespace SourceHook
 		}
 #undef TMP_CHECK_LIST
 
-		for (std::list<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
+		for (List<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
 			RemoveHook(*rmiter);
 
 		m_HookMans.clear();
@@ -227,8 +226,7 @@ namespace SourceHook
 			reinterpret_cast<char*>(adjustediface) + tmp.vtbl_offs);
 		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.vtbl_idx);
 
-		HookManagerInfo::VfnPtrListIter vfnptr_iter = std::find(
-			hookman->vfnptrs.begin(), hookman->vfnptrs.end(), cur_vfnptr);
+		HookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->vfnptrs.find(cur_vfnptr);
 
 		if (vfnptr_iter == hookman->vfnptrs.end())
 		{
@@ -253,8 +251,7 @@ namespace SourceHook
 			ApplyCallClassPatches(adjustediface, tmp.vtbl_offs, tmp.vtbl_idx, vfp.orig_entry);
 		}
 
-		HookManagerInfo::VfnPtr::IfaceListIter iface_iter = std::find(
-			vfnptr_iter->ifaces.begin(), vfnptr_iter->ifaces.end(), adjustediface);
+		HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.find(adjustediface);
 		if (iface_iter == vfnptr_iter->ifaces.end())
 		{
 			// Add a new one
@@ -311,18 +308,19 @@ namespace SourceHook
 			reinterpret_cast<char*>(adjustediface) + tmp.vtbl_offs);
 		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.vtbl_idx);
 
-		HookManagerInfo::VfnPtrListIter vfnptr_iter = std::find(hookman->vfnptrs.begin(), hookman->vfnptrs.end(), cur_vfnptr);
+		HookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->vfnptrs.find(cur_vfnptr);
+
 		if (vfnptr_iter == hookman->vfnptrs.end())
 			return false;
 
 		for (HookManagerInfo::VfnPtr::IfaceListIter iface_iter = vfnptr_iter->ifaces.begin();
 			iface_iter != vfnptr_iter->ifaces.end();)
 		{
-			std::list<HookManagerInfo::VfnPtr::Iface::Hook> &hooks =
+			List<HookManagerInfo::VfnPtr::Iface::Hook> &hooks =
 				post ? iface_iter->hooks_post : iface_iter->hooks_pre;
 
 			bool erase;
-			for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = hooks.begin();
+			for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = hooks.begin();
 				hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
 			{
 				erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler) &&
@@ -386,7 +384,7 @@ namespace SourceHook
 
 	void CSourceHookImpl::ReleaseCallClass(GenericCallClass *ptr)
 	{
-		Impl_CallClassList::iterator iter = std::find(m_CallClasses.begin(), m_CallClasses.end(), ptr);
+		Impl_CallClassList::iterator iter = m_CallClasses.find(ptr);
 		if (iter == m_CallClasses.end())
 			return;
 		--iter->refcounter;
@@ -495,12 +493,12 @@ namespace SourceHook
 				for (HookManagerInfo::VfnPtr::IfaceListIter ifaceiter = vfnptr_iter->ifaces.begin();
 					ifaceiter != vfnptr_iter->ifaces.end(); ++ifaceiter)
 				{
-					for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
+					for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
 						hookiter != ifaceiter->hooks_pre.end(); ++hookiter)
 						if (plug == hookiter->plug)
 							hookiter->paused = true;
 
-					for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
+					for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
 						hookiter != ifaceiter->hooks_post.end(); ++hookiter)
 						if (plug == hookiter->plug)
 							hookiter->paused = true;
@@ -516,12 +514,12 @@ namespace SourceHook
 				for (HookManagerInfo::VfnPtr::IfaceListIter ifaceiter = vfnptr_iter->ifaces.begin();
 					ifaceiter != vfnptr_iter->ifaces.end(); ++ifaceiter)
 				{
-					for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
+					for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_pre.begin();
 						hookiter != ifaceiter->hooks_pre.end(); ++hookiter)
 						if (plug == hookiter->plug)
 							hookiter->paused = false;
 
-					for (std::list<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
+					for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hookiter = ifaceiter->hooks_post.begin();
 						hookiter != ifaceiter->hooks_post.end(); ++hookiter)
 						if (plug == hookiter->plug)
 							hookiter->paused = false;

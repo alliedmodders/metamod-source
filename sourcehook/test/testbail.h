@@ -5,6 +5,8 @@
 #include "sourcehook_impl.h"
 #include "testevents.h"
 #include <stdarg.h>
+#include <list>
+#include <algorithm>
 
 void ___TestBail2();
 

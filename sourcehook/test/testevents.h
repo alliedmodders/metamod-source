@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <stdarg.h>
 #include <iostream>
+#include <list>
 #include <string>
 
 extern bool g_Verbose;

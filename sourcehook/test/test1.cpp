@@ -395,6 +395,7 @@ bool TestBasic(std::string &error)
 
 	// 1) Get a call class and call the member through it and normally
 	SourceHook::CallClass<Test> *cc = SH_GET_CALLCLASS(pTest);
+
 	ADD_STATE(State_F1_CallClassGenerated);
 
 	SH_CALL(cc, &Test::F1)();
@@ -445,6 +446,7 @@ bool TestBasic(std::string &error)
 
 	// 4) Rerequest the callclass
 	SH_RELEASE_CALLCLASS(cc);
+	
 	ADD_STATE(State_F1_CallClassReleased);
 	cc2 = SH_GET_CALLCLASS(pTest);
 	ADD_STATE(State_F1_CallClassGenerated);
