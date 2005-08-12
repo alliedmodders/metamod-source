@@ -78,10 +78,10 @@ extern EngineInfo g_Engine;
 extern SourceHook::CSourceHookImpl g_SourceHook;
 
 /** @brief Mod path (important!)*/
-extern std::string g_ModPath;
+extern String g_ModPath;
 
 /** @brief Path to server binary */
-extern std::string g_BinPath;
+extern String g_BinPath;
 
 /** @brief Global variable for SourceHook macros */
 extern SourceHook::ISourceHook *g_SHPtr;

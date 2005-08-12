@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	6
+#define PLAPI_VERSION	7
 #define PLAPI_NAME		"ISmmPlugin"
 
 struct factories

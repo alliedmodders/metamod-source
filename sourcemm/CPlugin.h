@@ -21,8 +21,8 @@
 #include <convar.h>
 #include "IPluginManager.h"
 #include "oslink.h"
-#include <list>
-#include <string>
+#include "smm_list.h"
+#include "smm_string.h"
 
 /**
  * History of plugin versions: (M=min, C=current)
@@ -30,10 +30,12 @@
  *    2: Added GetLogTag()
  *    3: Moved GetApiVersion() to top  (2005-04-16)
  *    4: Added AllPluginsLoaded() callback (2005-04-18)
- * MC 5: Bumped version for SourceHook V4 (2005-05-01)
+ *    5: Bumped version for SourceHook V4 (2005-05-01)
+ *    6: Added functions for console printing (2005-05-26)
+ * MC 7: Changed template libraries (2005-08-11)
  */
 
-#define PLAPI_MIN_VERSION	5
+#define PLAPI_MIN_VERSION	6
 
 namespace SourceMM
 {
@@ -52,14 +54,14 @@ namespace SourceMM
 			CPlugin();
 		public:
 			PluginId m_Id;
-			std::string m_File;
+			String m_File;
 			Pl_Status m_Status;
 			PluginId m_Source;
 			ISmmPlugin *m_API;
 			HINSTANCE m_Lib;
 			factories fac_list;
-			std::list<ConCommandBase *> m_Cvars;
-			std::list<ConCommandBase *> m_Cmds;
+			List<ConCommandBase *> m_Cvars;
+			List<ConCommandBase *> m_Cmds;
 		};
 	public:
 		CPluginManager();
@@ -100,8 +102,8 @@ namespace SourceMM
 		bool Retry(PluginId id, char *error, size_t len);
 
 		//Internal iterators
-		std::list<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
-		std::list<SourceMM::CPluginManager::CPlugin *>::iterator _end();
+		List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
+		List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
@@ -111,12 +113,12 @@ namespace SourceMM
 		void UnregAllConCmds(CPlugin *pl);
 	private:
 		PluginId m_LastId;
-		std::list<CPlugin *> m_Plugins;
+		List<CPlugin *> m_Plugins;
 		bool m_AllLoaded;
 	};
 };
 
-typedef std::list<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
+typedef List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
 
 /** @brief Singleton for plugin manager */
 extern SourceMM::CPluginManager g_PluginMngr;

@@ -389,7 +389,7 @@ bool CPluginManager::UnloadAll()
 {
 	PluginIter i;
 
-	std::list<SourceMM::CPluginManager::CPlugin *> remqueue;
+	List<SourceMM::CPluginManager::CPlugin *> remqueue;
 
 	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
 		remqueue.push_back( (*i) );
@@ -476,7 +476,7 @@ void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
 
 void CPluginManager::UnregAllConCmds(CPlugin *pl)
 {
-	std::list<ConCommandBase *>::iterator i;
+	List<ConCommandBase *>::iterator i;
 
 	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
 		g_SMConVarAccessor.Unregister( (*i) );

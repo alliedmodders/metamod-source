@@ -12,7 +12,8 @@
 #include "CSmmAPI.h"
 #include "concommands.h"
 #include "CPlugin.h"
-#include <string>
+#include "smm_string.h"
+#include "smm_list.h"
 
 /**
  * @brief Console Command Implementations
@@ -49,7 +50,7 @@ bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 
 void SMConVarAccessor::MarkCommandsAsGameDLL()
 {
-	for (std::list<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
+	for (List<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
 		iter != m_RegisteredCommands.end(); ++iter)
 	{
 		(*iter)->AddFlags(FCVAR_GAMEDLL);
@@ -202,7 +203,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
-					std::list<ConCommandBase *>::iterator ci;
+					List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
@@ -233,7 +234,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
-					std::list<ConCommandBase *>::iterator ci;
+					List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)
@@ -461,22 +462,6 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	CONMSG("  version      - Version information\n");
 }
 
-int UTIL_CmpNocase(const std::string &s1, const std::string &s2)
-{
-	std::string::const_iterator p1 = s1.begin();
-	std::string::const_iterator p2 = s2.begin();
-
-	while (p1 != s1.end() && p2 != s2.end())
-	{
-		if(toupper(*p1) != toupper(*p2))
-			return (toupper(*p1)<toupper(*p2)) ? -1 : 1;
-		++p1;
-		++p2;
-	}
-
-	return (s2.size() == s1.size()) ? 0 : (s1.size() < s2.size()) ? -1 : 1;	// size is unsigned
-}
-
 CAlwaysRegisterableCommand::CAlwaysRegisterableCommand()
 {
 	Create("", NULL, FCVAR_UNREGISTERED|FCVAR_GAMEDLL);
@@ -504,7 +489,7 @@ void CAlwaysRegisterableCommand::BringToFront()
 
 	while (pPtr)
 	{
-		if (pPtr == this && pPtr->IsCommand() && UTIL_CmpNocase(GetName(), pPtr->GetName()) == 0)
+		if (pPtr == this && pPtr->IsCommand() && stricmp(GetName(), pPtr->GetName()) == 0)
 			break;
 		ConCommandBase *pPrev = NULL;
 		while (pPtr)
