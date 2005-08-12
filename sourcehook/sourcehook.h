@@ -68,7 +68,7 @@
 #include "FastDelegate.h"
 #include "sh_memfuncinfo.h"
 #include "sh_memory.h"
-#include "smm_list.h"
+#include "sh_list.h"
 #include <vector>
 #include <map>
 

@@ -181,15 +181,6 @@
 				RelativePath=".\resource.h">
 			</File>
 			<File
-				RelativePath=".\smm_list.h">
-			</File>
-			<File
-				RelativePath=".\smm_string.h">
-			</File>
-			<File
-				RelativePath=".\smm_vector.h">
-			</File>
-			<File
 				RelativePath=".\sourcemm.h">
 			</File>
 			<File
@@ -220,6 +211,9 @@
 		<Filter
 			Name="SourceHook"
 			Filter="">
+			<File
+				RelativePath="..\sourcehook\sh_string.h">
+			</File>
 			<File
 				RelativePath="..\sourcehook\sourcehook.cpp">
 			</File>

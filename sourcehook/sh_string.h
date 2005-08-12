@@ -20,6 +20,9 @@
 #include <string.h>
 #include <stdio.h>
 
+namespace SourceHook
+{
+
 class String
 {
 public:
@@ -360,5 +363,7 @@ private:
 public:
 	static const int npos = -1;
 };
+
+};	//NAMESPACE
 
 #endif //_INCLUDE_CSTRING_H

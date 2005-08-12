@@ -11,6 +11,8 @@
 #ifndef _INCLUDE_SMM_LIST_H
 #define _INCLUDE_SMM_LIST_H
 
+namespace SourceHook
+{
 //This class is from CSDM_amxx by BAILOPAN
 //
 template <class T>
@@ -240,5 +242,6 @@ public:
 		return *this;
 	}
 };
+};	//NAMESPACE
 
 #endif //_INCLUDE_CSDM_LIST_H

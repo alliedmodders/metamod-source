@@ -21,8 +21,8 @@
 #include <convar.h>
 #include "IPluginManager.h"
 #include "oslink.h"
-#include "smm_list.h"
-#include "smm_string.h"
+#include "sh_list.h"
+#include "sh_string.h"
 
 /**
  * History of plugin versions: (M=min, C=current)
@@ -54,14 +54,14 @@ namespace SourceMM
 			CPlugin();
 		public:
 			PluginId m_Id;
-			String m_File;
+			SourceHook::String m_File;
 			Pl_Status m_Status;
 			PluginId m_Source;
 			ISmmPlugin *m_API;
 			HINSTANCE m_Lib;
 			factories fac_list;
-			List<ConCommandBase *> m_Cvars;
-			List<ConCommandBase *> m_Cmds;
+			SourceHook::List<ConCommandBase *> m_Cvars;
+			SourceHook::List<ConCommandBase *> m_Cmds;
 		};
 	public:
 		CPluginManager();
@@ -102,8 +102,8 @@ namespace SourceMM
 		bool Retry(PluginId id, char *error, size_t len);
 
 		//Internal iterators
-		List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
-		List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
+		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
+		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
@@ -113,12 +113,12 @@ namespace SourceMM
 		void UnregAllConCmds(CPlugin *pl);
 	private:
 		PluginId m_LastId;
-		List<CPlugin *> m_Plugins;
+		SourceHook::List<CPlugin *> m_Plugins;
 		bool m_AllLoaded;
 	};
 };
 
-typedef List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
+typedef SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
 
 /** @brief Singleton for plugin manager */
 extern SourceMM::CPluginManager g_PluginMngr;

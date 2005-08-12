@@ -34,8 +34,8 @@ GameDllInfo g_GameDll = {false, NULL, NULL};
 EngineInfo g_Engine = {NULL, NULL, NULL, NULL};
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr;
-String g_ModPath;
-String g_BinPath;
+SourceHook::String g_ModPath;
+SourceHook::String g_BinPath;
 PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
 bool bInShutdown = false;
 bool bInFirstLevel = true;

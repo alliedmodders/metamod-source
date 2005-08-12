@@ -12,8 +12,8 @@
 #include "CSmmAPI.h"
 #include "concommands.h"
 #include "CPlugin.h"
-#include "smm_string.h"
-#include "smm_list.h"
+#include "sh_string.h"
+#include "sh_list.h"
 
 /**
  * @brief Console Command Implementations
@@ -50,7 +50,7 @@ bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 
 void SMConVarAccessor::MarkCommandsAsGameDLL()
 {
-	for (List<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
+	for (SourceHook::List<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
 		iter != m_RegisteredCommands.end(); ++iter)
 	{
 		(*iter)->AddFlags(FCVAR_GAMEDLL);
@@ -203,7 +203,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
-					List<ConCommandBase *>::iterator ci;
+					SourceHook::List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
@@ -234,7 +234,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
-					List<ConCommandBase *>::iterator ci;
+					SourceHook::List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)

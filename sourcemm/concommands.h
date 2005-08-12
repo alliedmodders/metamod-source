@@ -20,11 +20,11 @@
 #include <eiface.h>
 #include "sourcemm.h"
 #include <convar.h>
-#include "smm_list.h"
+#include "sh_list.h"
 
 class SMConVarAccessor : public IConCommandBaseAccessor
 {
-	List<ConCommandBase*> m_RegisteredCommands;
+	SourceHook::List<ConCommandBase*> m_RegisteredCommands;
 public:
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
 	bool Register(ConCommandBase *pCommand);

@@ -6,7 +6,6 @@
 #include <string>
 #include <list>
 #include "sourcehook_impl.h"
-#include "smm_list.h"
 
 using namespace std;
 
