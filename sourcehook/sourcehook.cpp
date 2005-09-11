@@ -458,6 +458,8 @@ namespace SourceHook
 			{
 				iter->second[vtbl_idx] = 0;
 				// Free some memory if possible
+				// :TODO: add this back in!
+				/*
 				OrigFuncs::reverse_iterator riter;
 				for (riter = iter->second.rbegin(); riter != iter->second.rend(); ++riter)
 				{
@@ -466,7 +468,7 @@ namespace SourceHook
 				}
 				iter->second.resize(iter->second.size() - (riter - iter->second.rbegin()));
 				if (!iter->second.size())
-					cc.cc.vt.erase(iter);
+					cc.cc.vt.erase(iter);*/
 			}
 		}
 	}

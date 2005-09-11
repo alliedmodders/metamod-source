@@ -69,7 +69,7 @@
 #include "sh_memfuncinfo.h"
 #include "sh_memory.h"
 #include "sh_list.h"
-#include <vector>
+#include "sh_vector.h"
 #include <map>
 
 // Good old metamod!
@@ -218,7 +218,7 @@ namespace SourceHook
 		VfnPtrList vfnptrs;				//!< List of hooked interfaces
 	};
 
-	typedef std::vector<void*> OrigFuncs;
+	typedef SourceHook::CVector<void*> OrigFuncs;
 	typedef std::map<int, OrigFuncs> OrigVTables;
 
 	template<class B> struct CallClass

@@ -269,7 +269,13 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
-				RelativePath="..\..\sourcemm\smm_list.h">
+				RelativePath="..\sh_list.h">
+			</File>
+			<File
+				RelativePath="..\sh_string.h">
+			</File>
+			<File
+				RelativePath="..\sh_vector.h">
 			</File>
 			<File
 				RelativePath="..\sourcehook.h">

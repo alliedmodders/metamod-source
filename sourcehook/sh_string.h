@@ -11,7 +11,6 @@
 /* AMX Mod X
  *
  * by the AMX Mod X Development Team
- *  originally developed by OLO
  */
 
 #ifndef _INCLUDE_CSTRING_H

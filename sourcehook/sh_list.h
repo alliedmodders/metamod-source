@@ -13,8 +13,7 @@
 
 namespace SourceHook
 {
-//This class is from CSDM_amxx by BAILOPAN
-//
+//This class is from CSDM for AMX Mod X
 template <class T>
 class List
 {
