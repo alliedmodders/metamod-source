@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="sourcemm"
 	ProjectGUID="{F7D47743-73B3-49B5-9D76-2333C5DFD565}"
+	RootNamespace="sourcemm"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -212,7 +213,16 @@
 			Name="SourceHook"
 			Filter="">
 			<File
+				RelativePath="..\sourcehook\sh_list.h">
+			</File>
+			<File
 				RelativePath="..\sourcehook\sh_string.h">
+			</File>
+			<File
+				RelativePath="..\sourcehook\sh_tinyhash.h">
+			</File>
+			<File
+				RelativePath="..\sourcehook\sh_vector.h">
 			</File>
 			<File
 				RelativePath="..\sourcehook\sourcehook.cpp">

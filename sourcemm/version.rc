@@ -27,8 +27,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,4
- PRODUCTVERSION 1,0,0,4
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -45,12 +45,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Metamod: Source"
             VALUE "FileDescription", "Metamod: Source"
-            VALUE "FileVersion", "1.00"
+            VALUE "FileVersion", "1.10"
             VALUE "InternalName", "sourcemm"
             VALUE "LegalCopyright", "Copyright (c) 2004-2005, Metamod: Source Development Team"
             VALUE "OriginalFilename", "server.dll"
             VALUE "ProductName", "Metamod: Source"
-            VALUE "ProductVersion", "1.00"
+            VALUE "ProductVersion", "1.10"
         END
     END
     BLOCK "VarFileInfo"

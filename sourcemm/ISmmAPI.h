@@ -22,6 +22,12 @@
 #include <sourcehook/sourcehook.h>
 #include "IPluginManager.h"
 
+#if defined __GNUC__
+#if ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)) || (__GNUC__ < 3)
+#error "You must compile with at least GCC 3.4! If you know what you are doing, you can remove this message."
+#endif //version check
+#endif //__GNUC__
+
 class ISmmPluginManager;
 class ISmmPlugin;
 

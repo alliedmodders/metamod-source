@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="sample_mm"
 	ProjectGUID="{FAFF34FB-FE14-47B5-81BD-70D237392FB2}"
+	RootNamespace="sample_mm"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -31,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib"
+				AdditionalDependencies="tier0.lib vstdlib.lib"
 				OutputFile="$(OutDir)/sample_mm.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
