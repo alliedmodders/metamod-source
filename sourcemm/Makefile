@@ -9,13 +9,13 @@ SRCDS = ~/srcds_l
 
 OPT_FLAGS = -O3 -fno-rtti -funroll-loops -s -pipe
 DEBUG_FLAGS = -g -ggdb3
-CPP = g++
+CPP = gcc
 BINARY = server_i486.so
 
 OBJECTS = oslink.cpp util.cpp convar.cpp concommands.cpp \
 	CSmmAPI.cpp sourcemm.cpp CPlugin.cpp sourcehook.cpp
 
-LINK = vstdlib_i486.so tier0_i486.so
+LINK = vstdlib_i486.so tier0_i486.so -static-libgcc
 
 HL2PUB = $(HL2SDK)/public
 
@@ -30,7 +30,7 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-CFLAGS += -fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -fPIC -Wno-deprecated
+CFLAGS += -fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -fPIC -Wno-deprecated -fno-exceptions -fno-rtti
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 

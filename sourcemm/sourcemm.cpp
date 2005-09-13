@@ -466,3 +466,23 @@ bool CServerGameDLL::LevelInit( char const *pMapName, char const *pMapEntities, 
 
 	return m_pOrig->LevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
 }
+
+#if defined __GNUC__ && (__GNUC__ == 3)
+void * ::operator new(size_t size) {
+	return(calloc(1, size)); 
+}
+
+void * ::operator new[](size_t size) {
+	return(calloc(1, size)); 
+}
+
+void ::operator delete(void * ptr) {
+	if(ptr)
+		free(ptr);
+}
+
+void ::operator delete[](void * ptr) {
+	if(ptr)
+		free(ptr);
+}
+#endif
