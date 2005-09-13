@@ -35,7 +35,7 @@
  * MC 7: Changed template libraries (2005-08-11)
  */
 
-#define PLAPI_MIN_VERSION	6
+#define PLAPI_MIN_VERSION	7
 
 namespace SourceMM
 {
