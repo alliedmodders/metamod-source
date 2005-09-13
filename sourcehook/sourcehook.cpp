@@ -454,9 +454,9 @@ namespace SourceHook
 		OrigVTables::iterator iter = cc.cc.vt.find(vtbl_offs);
 		if (iter != cc.cc.vt.end())
 		{
-			if (iter->second.size() > (size_t)vtbl_idx)
+			if (iter->val.size() > (size_t)vtbl_idx)
 			{
-				iter->second[vtbl_idx] = 0;
+				iter->val[vtbl_idx] = 0;
 				// Free some memory if possible
 				// :TODO: add this back in!
 				/*

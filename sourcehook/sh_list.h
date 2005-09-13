@@ -137,6 +137,7 @@ public:
 				m_This = m_This->next;
 			return *this;
 		}
+		//post increment
 		iterator operator++(int)
 		{
 			iterator old(*this);
@@ -161,6 +162,10 @@ public:
 			return (m_This != where.m_This);
 		}
 		bool operator ==(iterator &where)
+		{
+			return (m_This == where.m_This);
+		}
+		bool operator ==(const iterator &where) const
 		{
 			return (m_This == where.m_This);
 		}

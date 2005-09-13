@@ -70,7 +70,7 @@
 #include "sh_memory.h"
 #include "sh_list.h"
 #include "sh_vector.h"
-#include <map>
+#include "sh_tinyhash.h"
 
 // Good old metamod!
 
@@ -219,7 +219,7 @@ namespace SourceHook
 	};
 
 	typedef SourceHook::CVector<void*> OrigFuncs;
-	typedef std::map<int, OrigFuncs> OrigVTables;
+	typedef SourceHook::THash<int, OrigFuncs> OrigVTables;
 
 	template<class B> struct CallClass
 	{
@@ -1497,8 +1497,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
 	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
-	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
-	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->second.size() || iter->second[mfi.vtblindex] == NULL) \
+	OrigVTables::iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
+	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->val.size() || iter->val[mfi.vtblindex] == NULL) \
 		return (m_CC->ptr->*m_MFP)call; \
 	\
 	/* It's hooked. Call the original function. */ \
@@ -1507,7 +1507,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		RetType(EmptyClass::*mfpnew)prms; \
 		void *addr; \
 	} u; \
-	u.addr = iter->second[mfi.vtblindex]; \
+	u.addr = iter->val[mfi.vtblindex]; \
 	\
 	void *adjustedthisptr = reinterpret_cast<void*>(reinterpret_cast<char*>(m_CC->ptr) + mfi.thisptroffs); \
 	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
@@ -1520,8 +1520,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
 	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
-	OrigVTables::const_iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
-	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->second.size() || iter->second[mfi.vtblindex] == NULL) \
+	OrigVTables::iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
+	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->val.size() || iter->val[mfi.vtblindex] == NULL) \
 		return (m_CC->ptr->*m_MFP)call; \
 	\
 	/* It's hooked. Call the original function. */ \
@@ -1534,7 +1534,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			intptr_t adjustor; \
 		} s; \
 	} u; \
-	u.s.addr = iter->second[mfi.vtblindex]; \
+	u.s.addr = iter->val[mfi.vtblindex]; \
 	u.s.adjustor = mfi.thisptroffs; \
 	\
 	return (reinterpret_cast<EmptyClass*>(m_CC->ptr)->*u.mfpnew)call; \
