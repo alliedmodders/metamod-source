@@ -11,6 +11,8 @@
 #ifndef _INCLUDE_SMM_LIST_H
 #define _INCLUDE_SMM_LIST_H
 
+#include <malloc.h>
+
 namespace SourceHook
 {
 //This class is from CSDM for AMX Mod X
@@ -157,13 +159,9 @@ public:
 		{
 			return &(m_This->obj);
 		}
-		bool operator != (iterator &where)
+		bool operator != (const iterator &where) const
 		{
 			return (m_This != where.m_This);
-		}
-		bool operator ==(iterator &where)
-		{
-			return (m_This == where.m_This);
 		}
 		bool operator ==(const iterator &where) const
 		{

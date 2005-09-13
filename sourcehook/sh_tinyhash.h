@@ -71,7 +71,7 @@ namespace SourceHook
 				m_Buckets[place]->push_back(pNode);
 				m_percentUsed += (1.0f / (float)m_numBuckets);
 			} else {
-				List<THashNode *>::iterator iter;
+				typename List<THashNode *>::iterator iter;
 				for (iter=m_Buckets[place]->begin(); iter!=m_Buckets[place]->end(); iter++)
 				{
 					if (Compare((*iter)->key, key) == 0)
@@ -97,7 +97,7 @@ namespace SourceHook
 			} else {
 				size_t oldSize = m_numBuckets;
 				m_numBuckets *= 2;
-				List<THashNode *>::iterator iter;
+				typename List<THashNode *>::iterator iter;
 				size_t place;
 				THashNode *pHashNode;
                 NodePtr *temp = new NodePtr[m_numBuckets];
