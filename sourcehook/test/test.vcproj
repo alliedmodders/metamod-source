@@ -275,6 +275,9 @@
 				RelativePath="..\sh_string.h">
 			</File>
 			<File
+				RelativePath="..\sh_tinyhash.h">
+			</File>
+			<File
 				RelativePath="..\sh_vector.h">
 			</File>
 			<File

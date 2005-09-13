@@ -6,6 +6,9 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <stdlib.h>
+#include <time.h>
+#include "sh_tinyhash.h"
 #include "sourcehook_impl.h"
 
 using namespace std;
@@ -66,6 +69,24 @@ DO_TEST(VafmtAndOverload);
 DO_TEST(ThisPtrOffs);
 DO_TEST(PlugSys);
 DO_TEST(Bail);
+
+template <>
+int SourceHook::HashFunction<int>(const int & k)
+{
+	return k;
+}
+
+template <>
+int SourceHook::Compare<int>(const int & v1, const int & v2)
+{
+	if (v1 == v2)
+		return 0;
+	if (v1 < v2)
+		return -1;
+	if (v1 > v2)
+		return 1;
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
