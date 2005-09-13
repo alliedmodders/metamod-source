@@ -197,7 +197,7 @@ namespace SourceHook
 		private:
 			void _Inc()
 			{
-				if (end || !hash)
+				if (end || !hash || curbucket >= hash->m_numBuckets)
 					return;
 				if (curbucket < 0)
 				{
