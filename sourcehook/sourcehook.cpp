@@ -14,7 +14,9 @@
  * @brief Contains the implementation of the SourceHook API
 */
 
+#if defined __GNUC__
 #include <stdint.h>
+#endif
 #include "sourcehook_impl.h"
 #include "sh_tinyhash.h"
 
