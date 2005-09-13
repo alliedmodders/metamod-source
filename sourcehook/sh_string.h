@@ -21,7 +21,6 @@
 
 namespace SourceHook
 {
-
 class String
 {
 public:

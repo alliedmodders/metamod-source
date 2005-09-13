@@ -15,9 +15,26 @@
 */
 
 #include "sourcehook_impl.h"
+#include "sh_tinyhash.h"
 
 namespace SourceHook
 {
+	template<>
+	SourceHook::HashFunction<int>(const int & k)
+	{
+		return k;
+	}
+	template<>
+	SourceHook::Compare<int>(const int & k1, const int & k2)
+	{
+		if (k1 == k2)
+			return 0;
+		if (k1 > k2)
+			return 1;
+		if (k1 < k2)
+			return -1;
+		return 0;
+	}
 	CSourceHookImpl::CSourceHookImpl()
 	{
 	}
