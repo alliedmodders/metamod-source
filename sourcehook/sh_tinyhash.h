@@ -42,8 +42,38 @@ namespace SourceHook
 		};
 		typedef List<THashNode *> *	NodePtr;
 	public:
-		THash() : m_numBuckets(0), m_Buckets(NULL)
+		THash() : m_Buckets(NULL), m_numBuckets(0), m_percentUsed(0.0f)
 		{
+			_Refactor();
+		}
+		THash(const THash &other) : m_Buckets(new NodePtr[other.m_numBuckets]),
+			m_numBuckets(other.m_numBuckets), m_percentUsed(other.m_percentUsed)
+		{
+			for (size_t i=0; i<m_numBuckets; i++)
+					m_Buckets[i] = NULL;
+			for (const_iterator iter = other.begin(); iter != other.end(); ++iter)
+				_FindOrInsert(iter->key)->val = iter->val;
+		}
+		void operator=(const THash &other)
+		{
+			clear();
+			for (const_iterator iter = other.begin(); iter != other.end(); ++iter)
+				_FindOrInsert(iter->key)->val = iter->val;
+		}
+
+		~THash()
+		{
+			if (m_Buckets)
+				delete [] m_Buckets;
+		}
+		void clear()
+		{
+			if (m_Buckets)
+				delete [] m_Buckets;
+			m_Buckets = NULL;
+			m_numBuckets = 0;
+			m_percentUsed = 0.0f;
+			
 			_Refactor();
 		}
 		size_t GetBuckets()
@@ -135,14 +165,15 @@ namespace SourceHook
 		}
 	public:
 		friend class iterator;
+		friend class const_iterator;
 		class iterator
 		{
 			friend class THash;
 		public:
-			iterator() : hash(NULL), end(true)
+			iterator() : curbucket(-1), hash(NULL), end(true)
 			{
 			};
-			iterator(THash *h) : hash(h), end(false)
+			iterator(THash *h) : curbucket(-1), hash(h), end(false)
 			{
 				if (!h->m_Buckets)
 					end = true;
@@ -162,7 +193,7 @@ namespace SourceHook
 				_Inc();
 				return old;
 			}
-			THashNode & operator * () const
+			const THashNode & operator * () const
 			{
 				return *(*iter);
 			}
@@ -170,7 +201,7 @@ namespace SourceHook
 			{
 				return *(*iter);
 			}
-			THashNode * operator ->() const
+			const THashNode * operator ->() const
 			{
 				return (*iter);
 			}
@@ -197,7 +228,7 @@ namespace SourceHook
 		private:
 			void _Inc()
 			{
-				if (end || !hash || curbucket >= hash->m_numBuckets)
+				if (end || !hash || curbucket >= static_cast<int>(hash->m_numBuckets))
 					return;
 				if (curbucket < 0)
 				{
@@ -242,6 +273,105 @@ namespace SourceHook
 			THash *hash;
 			bool end;
 		};
+		class const_iterator
+		{
+			friend class THash;
+		public:
+			const_iterator() : curbucket(-1), hash(NULL), end(true)
+			{
+			};
+			const_iterator(const THash *h) : curbucket(-1), hash(h), end(false)
+			{
+				if (!h->m_Buckets)
+					end = true;
+				else
+					_Inc();
+			};
+			//pre increment
+			const_iterator & operator++()
+			{
+				_Inc();
+				return *this;
+			}
+			//post increment
+			const_iterator operator++(int)
+			{
+				iterator old(*this);
+				_Inc();
+				return old;
+			}
+			const THashNode & operator * () const
+			{
+				return *(*iter);
+			}
+			const THashNode * operator ->() const
+			{
+				return (*iter);
+			}
+			bool operator ==(const const_iterator &where) const
+			{
+				if (where.hash == this->hash
+					&& where.end == this->end
+					&& 
+					 (this->end || 
+					   ((where.curbucket == this->curbucket) 
+					     && (where.iter == iter))
+						 ))
+					return true;
+				return false;
+			}
+			bool operator !=(const const_iterator &where) const
+			{
+				return !( (*this) == where );
+			}
+		private:
+			void _Inc()
+			{
+				if (end || !hash || curbucket >= static_cast<int>(hash->m_numBuckets))
+					return;
+				if (curbucket < 0)
+				{
+					for (int i=0; i<(int)hash->m_numBuckets; i++)
+					{
+						if (hash->m_Buckets[i])
+						{
+							iter = hash->m_Buckets[i]->begin();
+							if (iter == hash->m_Buckets[i]->end())
+								continue;
+							curbucket = i;
+							break;
+						}
+					}
+					if (curbucket < 0)
+						end = true;
+				} else {
+					if (iter != hash->m_Buckets[curbucket]->end())
+						iter++;
+					if (iter == hash->m_Buckets[curbucket]->end())
+					{
+						int oldbucket = curbucket;
+						for (int i=curbucket+1; i<(int)hash->m_numBuckets; i++)
+						{
+							if (hash->m_Buckets[i])
+							{
+								iter = hash->m_Buckets[i]->begin();
+								if (iter == hash->m_Buckets[i]->end())
+									continue;
+								curbucket = i;
+								break;
+							}
+						}
+						if (curbucket == oldbucket)
+							end = true;
+					}
+				}
+			}
+		private:
+			int curbucket;
+			typename SourceHook::List<THashNode *>::iterator iter;
+			const THash *hash;
+			bool end;
+		};
 	public:
 		iterator begin()
 		{
@@ -253,6 +383,18 @@ namespace SourceHook
 			iter.hash = this;
 			return iter;
 		}
+		
+		const_iterator begin() const
+		{
+			return const_iterator(this);
+		}
+		const_iterator end() const
+		{
+			const_iterator iter;
+			iter.hash = this;
+			return iter;
+		}
+		
 		template <typename U>
 		iterator find(const U & u) const
 		{

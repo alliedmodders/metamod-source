@@ -126,12 +126,22 @@ public:
 		{
 			m_This = where.m_This;
 		}
+		//pre decrement
 		iterator & operator--()
 		{
 			if (m_This)
 				m_This = m_This->prev;
 			return *this;
 		}
+		//post decrement
+		iterator operator--(int)
+		{
+			iterator old(*this);
+			if (m_This)
+				m_This = m_This->prev;
+			return old;
+		}	
+		
 		//pre increment
 		iterator & operator++()
 		{
@@ -147,7 +157,8 @@ public:
 				m_This = m_This->next;
 			return old;
 		}
-		T & operator * () const
+		
+		const T & operator * () const
 		{
 			return m_This->obj;
 		}
@@ -155,10 +166,16 @@ public:
 		{
 			return m_This->obj;
 		}
-		T * operator -> () const
+		
+		T * operator -> ()
 		{
 			return &(m_This->obj);
 		}
+		const T * operator -> () const
+		{
+			return &(m_This->obj);
+		}
+		
 		bool operator != (const iterator &where) const
 		{
 			return (m_This != where.m_This);
@@ -238,6 +255,7 @@ public:
 	}
 	List & operator =(List &src)
 	{
+		clear();
 		iterator iter;
 		for (iter=src.begin(); iter!=src.end(); iter++)
 			push_back( (*iter) );

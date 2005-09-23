@@ -27,7 +27,10 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
+
 #ifdef SH_DEBUG
+# include <stdio.h>
+# include <stdlib.h>
 # define SH_ASSERT__(x, info, file, line, func) \
 	((printf("SOURCEHOOK DEBUG ASSERTION FAILED:\n  %s:%u(%s): %s\n", file, line, func, info), true) ? (abort(), 0) : 0)
 # define SH_ASSERT(x, info) if (!(x)) SH_ASSERT__(x, info, __FILE__, __LINE__, __FUNCTION__)
@@ -68,10 +71,9 @@
 #include "FastDelegate.h"
 #include "sh_memfuncinfo.h"
 #include "sh_memory.h"
-#include <list>
-#include <vector>
-#include <map>
-#include <algorithm>
+#include "sh_list.h"
+#include "sh_vector.h"
+#include "sh_tinyhash.h"
 
 // Good old metamod!
 
@@ -185,8 +187,8 @@ namespace SourceHook
 					int thisptr_offs;				//!< This pointer offset
 				};
 				void *ptr;							//!< Pointer to the interface instance
-				SourceHook::List<Hook> hooks_pre;			//!< A list of pre-hooks
-				SourceHook::List<Hook> hooks_post;			//!< A list of post-hooks
+				List<Hook> hooks_pre;				//!< A list of pre-hooks
+				List<Hook> hooks_post;				//!< A list of post-hooks
 				bool operator ==(void *other) const
 				{
 					return ptr == other;
@@ -196,7 +198,7 @@ namespace SourceHook
 			void *vfnptr;							//!< Pointer to the function
 			void *orig_entry;						//!< The original vtable entry
 
-			typedef SourceHook::List<Iface> IfaceList;
+			typedef List<Iface> IfaceList;
 			typedef IfaceList::iterator IfaceListIter;
 			IfaceList ifaces;						//!< List of interface pointers
 
@@ -214,7 +216,7 @@ namespace SourceHook
 
 		void *hookfunc_vfnptr;					//!< Pointer to the hookfunc impl
 		
-		typedef SourceHook::List<VfnPtr> VfnPtrList;
+		typedef List<VfnPtr> VfnPtrList;
 		typedef VfnPtrList::iterator VfnPtrListIter;
 		VfnPtrList vfnptrs;				//!< List of hooked interfaces
 	};
@@ -237,6 +239,8 @@ namespace SourceHook
 	class ISourceHook
 	{
 	public:
+		virtual ~ISourceHook()
+		{ }
 		/**
 		*	@brief Return interface version
 		*/
@@ -467,8 +471,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	void *ourvfnptr = reinterpret_cast<void*>( \
 		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
 	\
-	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->find(ms_HI->vfnptrs.begin(), \
-		ms_HI->vfnptrs.end(), ourvfnptr); \
+	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->vfnptrs.find(ourvfnptr); \
 	if (vfptriter == ms_HI->vfnptrs.end()) \
 	{ \
 		/* Bleh? Should be impossible! */ \
@@ -476,7 +479,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	} \
 	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
 	/* 2) Find the iface */ \
-	HookManagerInfo::VfnPtr::IfaceListIter ifiter = ms_HI->find(vfnptr.ifaces.begin(), vfnptr.ifaces.end(), this); \
+	HookManagerInfo::VfnPtr::IfaceListIter ifiter = vfnptr.ifaces.find(this); \
 	if (ifiter == vfnptr.ifaces.end()) \
 	{ \
 		/* The iface info was not found. Redirect the call to the original function. */ \
@@ -486,8 +489,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	} \
 	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
-	SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
+	List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
+	List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
 	rettype orig_ret; \
 	rettype override_ret; \
 	rettype plugin_ret; \
@@ -501,7 +504,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #define SH_CALL_HOOKS(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
@@ -544,8 +547,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	void *ourvfnptr = reinterpret_cast<void*>( \
 		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
 	\
-	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->find(ms_HI->vfnptrs.begin(), \
-		ms_HI->vfnptrs.end(), ourvfnptr); \
+	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->vfnptrs.find(ourvfnptr); \
 	if (vfptriter == ms_HI->vfnptrs.end()) \
 	{ \
 		/* Bleh? Should be impossible! */ \
@@ -553,7 +555,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	} \
 	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
 	/* 2) Find the iface */ \
-	HookManagerInfo::VfnPtr::IfaceListIter ifiter = ms_HI->find(vfnptr.ifaces.begin(), vfnptr.ifaces.end(), this); \
+	HookManagerInfo::VfnPtr::IfaceListIter ifiter = vfnptr.ifaces.find(this); \
 	if (ifiter == vfnptr.ifaces.end()) \
 	{ \
 		/* The iface info was not found. Redirect the call to the original function. */ \
@@ -564,8 +566,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	} \
 	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
-	SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
+	List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
+	List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
@@ -575,7 +577,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #define SH_CALL_HOOKS_void(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (SourceHook::List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
 	{ \
 		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
