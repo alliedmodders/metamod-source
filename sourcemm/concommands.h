@@ -30,6 +30,7 @@ public:
 	bool Register(ConCommandBase *pCommand);
 	void MarkCommandsAsGameDLL();
 	void Unregister(ConCommandBase *pCommand);
+	void UnregisterGameDLLCommands();
 };
 
 class CAlwaysRegisterableCommand : public ConCommandBase

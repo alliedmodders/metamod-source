@@ -37,7 +37,6 @@ SourceHook::ISourceHook *g_SHPtr;
 SourceHook::String g_ModPath;
 SourceHook::String g_BinPath;
 PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
-bool bInShutdown = false;
 bool bInFirstLevel = true;
 
 ///////////////////////////////////
@@ -268,44 +267,21 @@ void Shutdown()
 	g_SMConVarAccessor.MarkCommandsAsGameDLL();
 }
 
-// The engine uses the DLL even after it has call DLLShutdown, so we unload it
-// when it unloads us
-#if defined _WIN32
-	BOOL WINAPI DllMain(
-						HINSTANCE hinstDLL,
-						DWORD fdwReason,
-						LPVOID lpvReserved
-						)
-	{
-		if (fdwReason == DLL_PROCESS_DETACH)
-		{
-			if (!bInShutdown)
-				Shutdown();
-			if (g_GameDll.lib && g_GameDll.loaded)
-				dlclose(g_GameDll.lib);
-			memset(&g_GameDll, 0, sizeof(GameDllInfo));
-		}
-		return TRUE;
-	}
-#elif defined __linux__
-	void __attribute__ ((destructor)) app_fini(void)
-	{
-		if (!bInShutdown)
-			Shutdown();
-		if (g_GameDll.lib && g_GameDll.loaded)
-			dlclose(g_GameDll.lib);
-		memset(&g_GameDll, 0, sizeof(GameDllInfo));
-	}
-#endif
-
 void CServerGameDLL::DLLShutdown()
 {
 	Shutdown();
 
-    //Call the original function
+	//Call the original function
 	m_pOrig->DLLShutdown();
 
-	bInShutdown = true;
+	//Unregister all commands marked as GameDLL now
+	//This prevents crashes when the engine tries to unregister them once we have already unloaded the gamedll
+	//(we used to unload the gamedll in a __attribute__((destructor)) function but I've had problems with that (crashes in dlclose)
+	g_SMConVarAccessor.UnregisterGameDLLCommands();
+
+	if (g_GameDll.lib && g_GameDll.loaded)
+		dlclose(g_GameDll.lib);
+	memset(&g_GameDll, 0, sizeof(GameDllInfo));
 }
 
 int LoadPluginsFromFile(const char *file)

@@ -84,6 +84,37 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	}
 }
 
+void SMConVarAccessor::UnregisterGameDLLCommands()
+{
+	ConCommandBase *begin = g_Engine.icvar->GetCommands();
+	ConCommandBase *iter = begin;
+	ConCommandBase *prev = NULL;
+	while (iter)
+	{
+		// watch out for the ETERNAL COMMAND!
+		if (iter != &g_EternalCommand && iter->IsBitSet(FCVAR_GAMEDLL))
+		{
+			// Remove it!
+			if (iter == begin)
+			{
+				g_EternalCommand.BringToFront();
+				iter = const_cast<ConCommandBase*>(iter->GetNext());
+				g_EternalCommand.SetNext(iter);
+				prev = &g_EternalCommand;
+				continue;
+			}
+			else
+			{
+				iter = const_cast<ConCommandBase*>(iter->GetNext());
+				prev->SetNext(iter);
+				continue;
+			}
+		}
+		prev = iter;
+		iter = const_cast<ConCommandBase*>(iter->GetNext());
+	}
+}
+
 ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
 #if defined WIN32 || defined _WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
