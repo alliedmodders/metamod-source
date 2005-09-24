@@ -126,13 +126,13 @@ public:
 
 	int find(const char c, int index = 0)
 	{
-		size_t len = size();
+		int len = static_cast<int>(size());
 		if (len < 1)
 			return npos;
-		if (index >= (int)len || index < 0)
+		if (index >= len || index < 0)
 			return npos;
-		unsigned int i = 0;
-		for (i=index; i<(int)len; i++)
+		int i = 0;
+		for (i=index; i<len; i++)
 		{
 			if (v[i] == c)
 			{
@@ -275,7 +275,7 @@ public:
 			num = len - index;
 		}
 
-		unsigned int i = 0, j=0;
+		unsigned int i = 0;
 		unsigned int nslen = num + 2;
 
 		ns.Grow(nslen);
