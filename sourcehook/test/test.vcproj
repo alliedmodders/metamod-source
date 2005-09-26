@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="test"
 	ProjectGUID="{456BBA64-FF14-4292-8443-3BA79E4D84CC}"
+	RootNamespace="test"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -263,6 +264,9 @@
 			</File>
 			<File
 				RelativePath=".\testbail2.cpp">
+			</File>
+			<File
+				RelativePath=".\testlist.cpp">
 			</File>
 		</Filter>
 		<Filter

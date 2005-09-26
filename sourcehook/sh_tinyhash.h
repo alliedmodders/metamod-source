@@ -63,17 +63,11 @@ namespace SourceHook
 
 		~THash()
 		{
-			if (m_Buckets)
-				delete [] m_Buckets;
+			_Clear();
 		}
 		void clear()
 		{
-			if (m_Buckets)
-				delete [] m_Buckets;
-			m_Buckets = NULL;
-			m_numBuckets = 0;
-			m_percentUsed = 0.0f;
-			
+			_Clear();
 			_Refactor();
 		}
 		size_t GetBuckets()
@@ -90,6 +84,21 @@ namespace SourceHook
 			return pNode->val;
 		}
 	private:
+		void _Clear()
+		{
+			for (size_t i=0; i<m_numBuckets; i++)
+			{
+				if (m_Buckets[i])
+				{
+					delete m_Buckets[i];
+					m_Buckets[i] = NULL;
+				}
+			}
+			if (m_Buckets)
+				delete [] m_Buckets;
+			m_Buckets = NULL;
+			m_numBuckets = 0;
+		}
 		THashNode *_FindOrInsert(const K & key)
 		{
 			size_t place = HashFunction(key) % m_numBuckets;
