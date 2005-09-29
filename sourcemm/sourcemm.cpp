@@ -443,6 +443,18 @@ bool CServerGameDLL::LevelInit( char const *pMapName, char const *pMapEntities, 
 	return m_pOrig->LevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
 }
 
+const char *CServerGameDLL::GetGameDescription()
+{
+	if (m_pOrig)
+	{
+		const char *game = m_pOrig->GetGameDescription();
+		if (game)
+			strcpy(m_GameDescBuffer, game);
+	}
+
+	return m_GameDescBuffer;
+}
+
 #if defined __GNUC__ && (__GNUC__ == 3)
 void * ::operator new(size_t size) {
 	return(calloc(1, size)); 

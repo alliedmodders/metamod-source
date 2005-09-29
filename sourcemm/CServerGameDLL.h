@@ -55,8 +55,7 @@ public:
 	{ return m_pOrig->GetTickInterval(); }
 	virtual ServerClass *GetAllServerClasses( void )
 	{ return m_pOrig->GetAllServerClasses(); }
-	virtual const char *GetGameDescription( void )
-	{ return m_GameDescBuffer; }
+	virtual const char *GetGameDescription( void );
 	virtual void CreateNetworkStringTables( void )
 	{ m_pOrig->CreateNetworkStringTables(); }
 	virtual CSaveRestoreData  *SaveInit( int size )
