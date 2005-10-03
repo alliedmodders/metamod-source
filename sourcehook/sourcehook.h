@@ -134,7 +134,7 @@ namespace SourceHook
 		HA_Unregister			//!< Clear the saved pointer
 	};
 
-	class IHookManagerInfo;
+	struct IHookManagerInfo;
 
 	/**
 	*	@brief Pointer to hook manager interface function

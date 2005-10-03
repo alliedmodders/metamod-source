@@ -15,14 +15,17 @@ namespace
 	{
 		Hmm *m_This;
 		int m_Int;
-		Hmm(const Hmm &other) : m_This(this), m_Int(other.m_Int)
+		Hmm(const Hmm &other) : m_Int(other.m_Int)
 		{
+			m_This = this;
 		}
-		Hmm(int i) : m_This(this), m_Int(i)
+		Hmm(int i) : m_Int(i)
 		{
+			m_This = this;
 		}
-		Hmm() : m_This(this), m_Int(0)
+		Hmm() : m_Int(0)
 		{
+			m_This = this;
 		}
 		void operator = (const Hmm &other)
 		{
@@ -134,12 +137,13 @@ namespace
 
 		// Find
 		int ver = 1;
-		for (HashType::iterator iter = hash.begin(); iter != hash.end(); ++iter)
+		HashType::iterator iter;
+		for (iter = hash.begin(); iter != hash.end(); ++iter)
 			CHECK_COND(iter->key == ver && iter->val == (ver++) + 5000, "Part2");
 
 		CHECK_COND(ver == mymax+1, "Part2.1");
 
-		HashType::iterator iter = hash.find(300);
+		iter = hash.find(300);
 		CHECK_COND(iter != hash.end() && iter->val == 300+5000, "Part3.1");
 		iter = hash.find(mymax+200);
 		CHECK_COND(iter == hash.end(), "Part3.2");

@@ -11,7 +11,7 @@
 #ifndef _INCLUDE_SMM_LIST_H
 #define _INCLUDE_SMM_LIST_H
 
-#include <malloc.h>
+#include <new>
 
 namespace SourceHook
 {
