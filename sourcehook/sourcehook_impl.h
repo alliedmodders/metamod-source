@@ -12,13 +12,12 @@
 #define __SOURCEHOOK_IMPL_H__
 
 #include "sourcehook.h"
-
-#ifdef __linux__
-#include <signal.h>
-#include <setjmp.h>
-#endif
+#include "sh_list.h"
+#include "sh_vector.h"
+#include "sh_tinyhash.h"
 
 // Set this to 1 to enable runtime code generation (faster)
+//  (unused at the moment, but may come back, so I'm leaving it in here!)
 #define SH_RUNTIME_CODEGEN 1
 
 namespace SourceHook
@@ -28,6 +27,7 @@ namespace SourceHook
 	*/
 	class CSourceHookImpl : public ISourceHook
 	{
+	private:
 		/**
 		*	@brief A hook can be removed if you have this information
 		*/
@@ -48,24 +48,165 @@ namespace SourceHook
 			bool post;
 		};
 
-		/**
-		*	@brief A list of HookManagerInfo structures
-		*/
-		typedef List<HookManagerInfo> HookManInfoList;
-
-		struct CallClassInfo
+		struct HookInfo
 		{
-			GenericCallClass cc;
-			int refcounter;
-			bool operator==(void *other)
+			ISHDelegate *handler;			//!< Pointer to the handler
+			bool paused;					//!< If true, the hook should not be executed
+			Plugin plug;					//!< The owner plugin
+			int thisptr_offs;				//!< This pointer offset
+		};
+
+		class CHookList : public IHookList
+		{
+		public:
+			List<HookInfo> m_List;
+
+			friend class CIter;
+
+			class CIter : public IHookList::IIter
 			{
-				return cc.ptr == other;
+				friend class CHookList;
+
+				CHookList *m_pList;
+				List<HookInfo>::iterator m_Iter;
+
+				void SkipPaused();
+			public:
+				CIter(CHookList *pList);
+
+				virtual ~CIter();
+
+				void GoToBegin();
+
+				bool End();
+				void Next();
+				ISHDelegate *Handler();
+				int ThisPtrOffs();
+
+				CIter *m_pNext;		// When stored in m_FreeIters
+			};
+
+			CIter *m_FreeIters;
+
+			CHookList();
+			CHookList(const CHookList &other);
+			virtual ~CHookList();
+
+			void operator=(const CHookList &other);
+
+			IIter *GetIter();
+			void ReleaseIter(IIter *pIter);
+		};
+
+		// I know, data hiding... But I'm a lazy bastard!
+
+		class CIface : public IIface
+		{
+		public:
+			void *m_Ptr;
+			CHookList m_PreHooks;
+			CHookList m_PostHooks;
+		public:
+			CIface(void *ptr);
+			virtual ~CIface();
+
+			void *GetPtr();
+			IHookList *GetPreHooks();
+			IHookList *GetPostHooks();
+
+			bool operator==(void *ptr)
+			{
+				return m_Ptr == ptr;
 			}
 		};
+
+		class CVfnPtr : public IVfnPtr
+		{
+		public:
+			typedef List<CIface> IfaceList;
+			typedef IfaceList::iterator IfaceListIter;
+
+			void *m_Ptr;
+			void *m_OrigEntry;
+
+			IfaceList m_Ifaces;
+
+		public:
+			CVfnPtr(void *ptr);
+			virtual ~CVfnPtr();
+
+			void *GetVfnPtr();
+			void *GetOrigEntry();
+
+			virtual IIface *FindIface(void *ptr);
+
+			bool operator==(void *ptr)
+			{
+				return m_Ptr == ptr;
+			}
+		};
+
+		class CHookManagerInfo : public IHookManagerInfo
+		{
+		public:
+			typedef List<CVfnPtr> VfnPtrList;
+			typedef VfnPtrList::iterator VfnPtrListIter;
+
+			Plugin m_Plug;
+			HookManagerPubFunc m_Func;
+
+			int m_VtblOffs;
+			int m_VtblIdx;
+			const char *m_Proto;
+			void *m_HookfuncVfnptr;
+
+			VfnPtrList m_VfnPtrs;
+
+		public:
+			virtual ~CHookManagerInfo();
+
+			IVfnPtr *FindVfnPtr(void *vfnptr);
+
+			void SetInfo(int vtbl_offs, int vtbl_idx, const char *proto);
+			void SetHookfuncVfnptr(void *hookfunc_vfnptr);
+		};
+		/**
+		*	@brief A list of CHookManagerInfo classes
+		*/
+		typedef List<CHookManagerInfo> HookManInfoList;
+
+		class CCallClassImpl : public GenericCallClass
+		{
+		public:
+
+			typedef SourceHook::CVector<void*> OrigFuncs;
+			typedef SourceHook::THash<int, OrigFuncs> OrigVTables;
+
+			void *m_Ptr;			//!< Pointer to the actual object
+			size_t m_ObjSize;		//!< Size of the instance
+			OrigVTables m_VT;		//!< Info about vtables & functions
+
+			int m_RefCounter;
+
+			CCallClassImpl(void *ptr, size_t size);
+			virtual ~CCallClassImpl();
+
+			bool operator==(void *other)
+			{
+				return m_Ptr == other;
+			}
+
+			void *GetThisPtr();
+			void *GetOrigFunc(int vtbloffs, int vtblidx);
+
+			void ApplyCallClassPatch(int vtbl_offs, int vtbl_idx, void *orig_entry);
+			void RemoveCallClassPatch(int vtbl_offs, int vtbl_idx);
+		};
+
 		/**
 		*	@brief A list of CallClass structures
 		*/
-		typedef List<CallClassInfo> Impl_CallClassList;
+		typedef List<CCallClassImpl> Impl_CallClassList;
 
 		Impl_CallClassList m_CallClasses;			//!< A list of already generated callclasses
 		HookManInfoList m_HookMans;					//!< A list of hook managers
@@ -73,14 +214,14 @@ namespace SourceHook
 		/**
 		*	@brief Finds a hook manager for a function based on a text-prototype, a vtable offset and a vtable index
 		*/
-		HookManInfoList::iterator FindHookMan(HookManInfoList::iterator begin, HookManInfoList::iterator end, 
+		HookManInfoList::iterator FindHookMan(HookManInfoList::iterator begin, HookManInfoList::iterator end,
 			const char *proto, int vtblofs, int vtblidx);
 
-		void ApplyCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx, void *orig_entry);
-		void ApplyCallClassPatches(CallClassInfo &cc);
+		void ApplyCallClassPatches(CCallClassImpl &cc);
 		void ApplyCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx, void *orig_entry);
-		void RemoveCallClassPatch(CallClassInfo &cc, int vtbl_offs, int vtbl_idx);
 		void RemoveCallClassPatches(void *ifaceptr, int vtbl_offs, int vtbl_idx);
+
+		void SetPluginPaused(Plugin plug, bool paused);
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
 		const void *m_OrigRet;
@@ -88,7 +229,7 @@ namespace SourceHook
 		void *m_IfacePtr;
 	public:
 		CSourceHookImpl();
-		~CSourceHookImpl();
+		virtual ~CSourceHookImpl();
 
 		/**
 		*	@brief Returns the interface version
@@ -199,19 +340,6 @@ namespace SourceHook
 		virtual void SetOrigRet(const void *ptr);		//!< Sets the original return pointer
 		virtual void SetOverrideRet(const void *ptr);	//!< Sets the override result pointer
 	};
-
-#ifdef __linux__
-	/**
-	*	@brief Checks to see if a memory value can be read from a given pointer.
-	*
-	*	@return True if the value can be read and false if it cannot.
-	*
-	*	@param ptr The pointer to the memory value.
-	*	@param len The length of the memory value to be read from the pointer.
-	*/
-	bool IsBadReadPtr(const void *ptr, size_t len);
-	void BadReadHandler(int sig);
-#endif
 }
 
 #endif

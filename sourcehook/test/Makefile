@@ -1,16 +1,16 @@
 #(C)2004-2005 SourceMM Development Team
-# Makefile written by David "BAILOPAN" Anderson
+# Makefile written by David "BAILOPAN" Anderson and Pavol Marko
 
 OPT_FLAGS = -O3 -funroll-loops -s -pipe
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc
-BINARY = sourcehook_test
-
-OBJECTS = test1.cpp test2.cpp test3.cpp test4.cpp testbail.cpp testbail2.cpp testlist.cpp main.cpp sourcehook.cpp
-
 LINK = -lstdc++
-
 INCLUDE = -I. -I..
+MAX_PARAMS=20
+
+BINARY = sourcehook_test
+OBJECTS = main.cpp sourcehook.cpp $(shell ls -t test*.cpp)
+HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
@@ -20,27 +20,41 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-# CFLAGS += 
+CFLAGS += -Wall
+# Also, enable SH_ASSERT
+CFLAGS += -DSH_DEBUG
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
+	
 
-$(BIN_DIR)/%.o: %.cpp
+default: all
+
+$(BIN_DIR)/%.o: %.cpp $(HEADERS)
 	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
 
+../sourcehook.h: ../generate/sourcehook.hxx
+	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) sourcehook.hxx sourcehook.h; cp sourcehook.h ..)
+
+../sourcehook.hxx: ../generate/sh_memfuncinfo.hxx
+	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) sh_memfuncinfo.hxx sh_memfuncinfo.h; cp sh_memfuncino.h ..)
+
+../FastDelegate.hxx: ../generate/FastDelegate.hxx
+	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) FastDelegate.hxx FastDelegate.h; cp FastDelegate.h ..)
+	
+debug:
+	$(MAKE) all DEBUG=true
+	
 all:
 	mkdir -p $(BIN_DIR)
 	ln -sf ../sourcehook.cpp sourcehook.cpp
-	$(MAKE) sourcehook_test
+	$(MAKE) $(BINARY)
 	rm -f $(BINARY)
+	rm -f sourcehook.cpp
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
-sourcehook_test: $(OBJ_LINUX)
+
+$(BINARY): $(OBJ_LINUX)
 	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -o$(BIN_DIR)/$(BINARY)
-
-debug:	
-	$(MAKE) all DEBUG=true
-
-default: all
 
 clean:
 	rm -rf Release/*.o

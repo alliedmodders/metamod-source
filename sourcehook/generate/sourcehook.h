@@ -16,8 +16,8 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
-#define SH_IFACE_VERSION 1
-#define SH_IMPL_VERSION 1
+#define SH_IFACE_VERSION 2
+#define SH_IMPL_VERSION 2
 
 #ifndef SH_GLOB_SHPTR
 #define SH_GLOB_SHPTR g_SHPtr
@@ -27,13 +27,21 @@
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
 
-
 #ifdef SH_DEBUG
 # include <stdio.h>
 # include <stdlib.h>
-# define SH_ASSERT__(x, info, file, line, func) \
-	((printf("SOURCEHOOK DEBUG ASSERTION FAILED:\n  %s:%u(%s): %s\n", file, line, func, info), true) ? (abort(), 0) : 0)
-# define SH_ASSERT(x, info) if (!(x)) SH_ASSERT__(x, info, __FILE__, __LINE__, __FUNCTION__)
+
+# define SH_ASSERT(x, info) \
+	do { \
+		if (!(x)) \
+		{ \
+			printf("SOURCEHOOK DEBUG ASSERTION FAILED: %s:%u(%s): %s: ", __FILE__, __LINE__, __FUNCTION__, #x); \
+			printf info; \
+			putchar('\n'); \
+			abort(); \
+		} \
+	} while(0)
+
 #else
 # define SH_ASSERT(x, info)
 #endif
@@ -67,13 +75,9 @@
 #endif
 
 #define SH_PTRSIZE sizeof(void*)
-										
+
 #include "FastDelegate.h"
 #include "sh_memfuncinfo.h"
-#include "sh_memory.h"
-#include "sh_list.h"
-#include "sh_vector.h"
-#include "sh_tinyhash.h"
 
 // Good old metamod!
 
@@ -90,10 +94,13 @@ enum META_RES
 
 namespace SourceHook
 {
-	const int STRBUF_LEN=4096;		// In bytes, for "vafmt" functions
-	
 	/**
-	*	@brief An empty class. No inheritance used. Used for original-function-call hacks
+	*	@brief	Specifies the size (in bytes) for the internal buffer of vafmt(printf-like) function handlers
+	*/
+	const int STRBUF_LEN=4096;
+
+	/**
+	*	@brief	An empty class. No inheritance used. Used for original-function-call hacks
 	*/
 	class EmptyClass
 	{
@@ -111,29 +118,33 @@ namespace SourceHook
 	/**
 	*	@brief A plugin typedef
 	*
-	*	SourceHook doesn't really care what this is. As long as the ==, != and = operators work on it
-	*	and every plugin has a unique identifier, everything is ok.
+	*	SourceHook doesn't really care what this is. As long as the ==, != and = operators work on it and every
+	*	plugin has a unique identifier, everything is ok.
+	*	It should also be possible to set it to 0.
 	*/
 	typedef int Plugin;
 
+	/**
+	*	@brief Specifies the actions for hook managers
+	*/
 	enum HookManagerAction
 	{
-		HA_GetInfo = 0,			// -> Only store info
-		HA_Register,			// -> Save the pointer for future reference
-		HA_Unregister			// -> Clear the saved pointer
+		HA_GetInfo = 0,			//!< Store info about the hook manager
+		HA_Register,			//!< Save the IHookManagerInfo pointer for future reference
+		HA_Unregister			//!< Clear the saved pointer
 	};
 
-	struct HookManagerInfo;
+	class IHookManagerInfo;
 
 	/**
-	*	@brief Pointer to hook manager type
+	*	@brief Pointer to hook manager interface function
 	*
 	*	A "hook manager" is a the only thing that knows the actual protoype of the function at compile time.
-	*	
-	*	@param hi A pointer to a HookManagerInfo structure. The hook manager should fill it and store it for
-	*				future reference (mainly if something should get hooked to its hookfunc)
+	*
+	*   @param ha What the hook manager should do
+	*	@param hi A pointer to IHookManagerInfo
 	*/
-	typedef int (*HookManagerPubFunc)(HookManagerAction ha, HookManagerInfo *hi);
+	typedef int (*HookManagerPubFunc)(HookManagerAction ha, IHookManagerInfo *hi);
 
 	class ISHDelegate
 	{
@@ -161,7 +172,7 @@ namespace SourceHook
 
 		bool IsEqual(ISHDelegate *other)
 		{
-			return static_cast<CSHDelegate<T>* >(other)->GetDeleg() == GetDeleg();				
+			return static_cast<CSHDelegate<T>* >(other)->GetDeleg() == GetDeleg();
 		}
 
 		T &GetDeleg()
@@ -170,65 +181,83 @@ namespace SourceHook
 		}
 	};
 
-	/**
-	*	@brief This structure contains information about a hook manager (hook manager)
-	*/
-	struct HookManagerInfo
+	struct IHookList
 	{
-		struct VfnPtr
+		struct IIter
 		{
-			struct Iface
-			{
-				struct Hook
-				{
-					ISHDelegate *handler;			//!< Pointer to the handler
-					bool paused;					//!< If true, the hook should not be executed
-					Plugin plug;					//!< The owner plugin
-					int thisptr_offs;				//!< This pointer offset
-				};
-				void *ptr;							//!< Pointer to the interface instance
-				List<Hook> hooks_pre;				//!< A list of pre-hooks
-				List<Hook> hooks_post;				//!< A list of post-hooks
-				bool operator ==(void *other) const
-				{
-					return ptr == other;
-				}
-			};
-
-			void *vfnptr;							//!< Pointer to the function
-			void *orig_entry;						//!< The original vtable entry
-
-			typedef List<Iface> IfaceList;
-			typedef IfaceList::iterator IfaceListIter;
-			IfaceList ifaces;						//!< List of interface pointers
-
-			bool operator ==(void *other)
-			{
-				return vfnptr == other;
-			}
+			virtual bool End() = 0;
+			virtual void Next() = 0;
+			virtual ISHDelegate *Handler() = 0;
+			virtual int ThisPtrOffs() = 0;
 		};
-
-		Plugin plug;							//!< The owner plugin
-		const char *proto;						//!< The prototype of the function the hook manager is responsible for
-		int vtbl_idx;							//!< The vtable index
-		int vtbl_offs;							//!< The vtable offset
-		HookManagerPubFunc func;				//!< The interface to the hook manager
-
-		void *hookfunc_vfnptr;					//!< Pointer to the hookfunc impl
-		
-		typedef List<VfnPtr> VfnPtrList;
-		typedef VfnPtrList::iterator VfnPtrListIter;
-		VfnPtrList vfnptrs;				//!< List of hooked interfaces
+		virtual IIter *GetIter() = 0;
+		virtual void ReleaseIter(IIter *pIter) = 0;
 	};
 
-	typedef SourceHook::CVector<void*> OrigFuncs;
-	typedef SourceHook::THash<int, OrigFuncs> OrigVTables;
+	struct IIface
+	{
+		virtual void *GetPtr() = 0;
+		virtual IHookList *GetPreHooks() = 0;
+		virtual IHookList *GetPostHooks() = 0;
+	};
+
+	struct IVfnPtr
+	{
+		virtual void *GetVfnPtr() = 0;
+		virtual void *GetOrigEntry() = 0;
+
+		virtual IIface *FindIface(void *ptr) = 0;
+	};
+
+	struct IHookManagerInfo
+	{
+		virtual IVfnPtr *FindVfnPtr(void *vfnptr) = 0;
+
+		virtual void SetInfo(int vtbloffs, int vtblidx, const char *proto) = 0;
+		virtual void SetHookfuncVfnptr(void *hookfunc_vfnptr) = 0;
+	};
+
+	class AutoHookIter
+	{
+		IHookList *m_pList;
+		IHookList::IIter *m_pIter;
+	public:
+		AutoHookIter(IHookList *pList)
+			: m_pList(pList), m_pIter(pList->GetIter())
+		{
+		}
+
+		~AutoHookIter()
+		{
+			m_pList->ReleaseIter(m_pIter);
+		}
+
+		bool End()
+		{
+			return m_pIter->End();
+		}
+
+		void Next()
+		{
+			m_pIter->Next();
+		}
+
+		ISHDelegate *Handler()
+		{
+			return m_pIter->Handler();
+		}
+
+		int ThisPtrOffs()
+		{
+			return m_pIter->ThisPtrOffs();
+		}
+
+	};
 
 	template<class B> struct CallClass
 	{
-		B *ptr;					//!< Pointer to the actual object
-		size_t objsize;			//!< Size of the instance
-		OrigVTables vt;			//!< Info about vtables & functions
+		virtual B *GetThisPtr() = 0;
+		virtual void *GetOrigFunc(int vtbloffs, int vtblidx) = 0;
 	};
 
 	typedef CallClass<void> GenericCallClass;
@@ -239,8 +268,6 @@ namespace SourceHook
 	class ISourceHook
 	{
 	public:
-		virtual ~ISourceHook()
-		{ }
 		/**
 		*	@brief Return interface version
 		*/
@@ -263,7 +290,8 @@ namespace SourceHook
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool AddHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
+		virtual bool AddHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
+			ISHDelegate *handler, bool post) = 0;
 
 		/**
 		*	@brief Removes a hook.
@@ -276,7 +304,8 @@ namespace SourceHook
 		*	@param handler A pointer to a FastDelegate containing the hook handler
 		*	@param post Set to true if you want a post handler
 		*/
-		virtual bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan, ISHDelegate *handler, bool post) = 0;
+		virtual bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
+			ISHDelegate *handler, bool post) = 0;
 
 		/**
 		*	@brief Checks whether a plugin has (a) hook manager(s) that is/are currently used by other plugins
@@ -301,10 +330,13 @@ namespace SourceHook
 		virtual void ReleaseCallClass(GenericCallClass *ptr) = 0;
 
 		virtual void SetRes(META_RES res) = 0;				//!< Sets the meta result
-		virtual META_RES GetPrevRes() = 0;					//!< Gets the meta result of the previously called handler
+		virtual META_RES GetPrevRes() = 0;					//!< Gets the meta result of the
+															//!<  previously calledhandler
 		virtual META_RES GetStatus() = 0;					//!< Gets the highest meta result
-		virtual const void *GetOrigRet() = 0;				//!< Gets the original result. If not in post function, undefined
-		virtual const void *GetOverrideRet() = 0;			//!< Gets the override result. If none is specified, NULL
+		virtual const void *GetOrigRet() = 0;				//!< Gets the original result.
+															//!<  If not in post function, undefined
+		virtual const void *GetOverrideRet() = 0;			//!< Gets the override result.
+															//!<  If none is specified, NULL
 		virtual void *GetIfacePtr() = 0;					//!< Gets the interface pointer
 		//////////////////////////////////////////////////////////////////////////
 		// For hook managers
@@ -375,10 +407,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #if SH_COMP == SH_COMP_MSVC
 # define SH_SETUP_MFP(mfp) \
-	reinterpret_cast<void**>(&mfp)[0] = vfnptr.orig_entry;
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr->GetOrigEntry();
 #elif SH_COMP == SH_COMP_GCC
 # define SH_SETUP_MFP(mfp) \
-	reinterpret_cast<void**>(&mfp)[0] = vfnptr.orig_entry; \
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr->GetOrigEntry(); \
 	reinterpret_cast<void**>(&mfp)[1] = 0;
 #else
 # error Not supported yet.
@@ -388,24 +420,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_FHCls(ift, iff, ov) __SourceHook_FHCls_##ift##iff##ov
 
 #define SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr) \
-	static int HookManPubFunc(::SourceHook::HookManagerAction action, ::SourceHook::HookManagerInfo *param) \
+	SH_FHCls(ifacetype,ifacefunc,overload)() \
+	{ \
+		GetFuncInfo(funcptr, ms_MFI); \
+	} \
+	\
+	static int HookManPubFunc(::SourceHook::HookManagerAction action, ::SourceHook::IHookManagerInfo *param) \
 	{ \
 		using namespace ::SourceHook; \
+		GetFuncInfo(funcptr, ms_MFI); \
 		/* Verify interface version */ \
 		if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
 			return 1; \
 		\
 		if (action == ::SourceHook::HA_GetInfo) \
 		{ \
-			param->proto = ms_Proto; \
-			MemFuncInfo mfi; \
-			GetFuncInfo(funcptr, mfi); \
-			param->vtbl_idx = mfi.vtblindex; \
-			param->vtbl_offs = mfi.vtbloffs; \
+			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, ms_Proto); \
 			\
+			MemFuncInfo mfi; \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
-			param->hookfunc_vfnptr = \
-			reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]; \
+			param->SetHookfuncVfnptr( \
+				reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
 			return 0; \
 		} \
 		else if (action == ::SourceHook::HA_Register) \
@@ -429,15 +464,17 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	struct SH_FHCls(ifacetype,ifacefunc,overload) \
 	{ \
 		static SH_FHCls(ifacetype,ifacefunc,overload) ms_Inst; \
-		static ::SourceHook::HookManagerInfo *ms_HI; \
+		static ::SourceHook::MemFuncInfo ms_MFI; \
+		static ::SourceHook::IHookManagerInfo *ms_HI; \
 		static const char *ms_Proto; \
 		SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
 
 #define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto, funcptr) \
 	}; \
-	const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 	SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
-	::SourceHook::HookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
+	::SourceHook::MemFuncInfo SH_FHCls(ifacetype,ifacefunc,overload)::ms_MFI; \
+	::SourceHook::IHookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
+	const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 	bool __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
@@ -469,28 +506,22 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	/* 1) Find the vfnptr */ \
 	using namespace ::SourceHook; \
 	void *ourvfnptr = reinterpret_cast<void*>( \
-		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_MFI.vtbloffs) + ms_MFI.vtblindex); \
+	IVfnPtr *vfnptr = ms_HI->FindVfnPtr(ourvfnptr); \
+	SH_ASSERT(vfnptr, ("Called with vfnptr 0x%p which couldn't be found in the list", ourvfnptr)); \
 	\
-	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->vfnptrs.find(ourvfnptr); \
-	if (vfptriter == ms_HI->vfnptrs.end()) \
-	{ \
-		/* Bleh? Should be impossible! */ \
-		SH_ASSERT(0, "Called with vfnptr 0x%p which couldn't be found in the list"); \
-	} \
-	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
-	/* 2) Find the iface */ \
-	HookManagerInfo::VfnPtr::IfaceListIter ifiter = vfnptr.ifaces.find(this); \
-	if (ifiter == vfnptr.ifaces.end()) \
+	/* ... and the iface */ \
+	IIface *ifinfo = vfnptr->FindIface(reinterpret_cast<void*>(this)); \
+	if (!ifinfo) \
 	{ \
 		/* The iface info was not found. Redirect the call to the original function. */ \
 		rettype (EmptyClass::*mfp)paramtypes; \
 		SH_SETUP_MFP(mfp); \
 		return (reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	} \
-	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
-	List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
+	IHookList *prelist = ifinfo->GetPreHooks(); \
+	IHookList *postlist = ifinfo->GetPostHooks(); \
 	rettype orig_ret; \
 	rettype override_ret; \
 	rettype plugin_ret; \
@@ -504,12 +535,11 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #define SH_CALL_HOOKS(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
 	{ \
-		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
-		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - hiter->thisptr_offs); \
-		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
+		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
+		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
 		prev_res = cur_res; \
 		if (cur_res > status) \
 			status = cur_res; \
@@ -525,7 +555,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		rettype (EmptyClass::*mfp)paramtypes; \
 		SH_SETUP_MFP(mfp); \
-		orig_ret = (reinterpret_cast<EmptyClass*>(ci.ptr)->*mfp)params; \
+		orig_ret = (reinterpret_cast<EmptyClass*>(ifinfo->GetPtr())->*mfp)params; \
 	} \
 	else \
 		orig_ret = override_ret;
@@ -542,21 +572,16 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 //////////////////////////////////////////////////////////////////////////
 #define SH_SETUPCALLS_void(paramtypes, params) \
-	using namespace ::SourceHook; \
 	/* 1) Find the vfnptr */ \
+	using namespace ::SourceHook; \
 	void *ourvfnptr = reinterpret_cast<void*>( \
-		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_HI->vtbl_offs) + ms_HI->vtbl_idx); \
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + ms_MFI.vtbloffs) + ms_MFI.vtblindex); \
+	IVfnPtr *vfnptr = ms_HI->FindVfnPtr(ourvfnptr); \
+	SH_ASSERT(vfnptr, ("Called with vfnptr 0x%p which couldn't be found in the list", ourvfnptr)); \
 	\
-	HookManagerInfo::VfnPtrListIter vfptriter = ms_HI->vfnptrs.find(ourvfnptr); \
-	if (vfptriter == ms_HI->vfnptrs.end()) \
-	{ \
-		/* Bleh? Should be impossible! */ \
-		SH_ASSERT(0, "Called with vfnptr 0x%p which couldn't be found in the list"); \
-	} \
-	HookManagerInfo::VfnPtr &vfnptr = *vfptriter; \
-	/* 2) Find the iface */ \
-	HookManagerInfo::VfnPtr::IfaceListIter ifiter = vfnptr.ifaces.find(this); \
-	if (ifiter == vfnptr.ifaces.end()) \
+	/* ... and the iface */ \
+	IIface *ifinfo = vfnptr->FindIface(reinterpret_cast<void*>(this)); \
+	if (!ifinfo) \
 	{ \
 		/* The iface info was not found. Redirect the call to the original function. */ \
 		void (EmptyClass::*mfp)paramtypes; \
@@ -564,25 +589,24 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 		return; \
 	} \
-	HookManagerInfo::VfnPtr::Iface &ci = *ifiter; \
 	/* 2) Declare some vars and set it up */ \
-	List<HookManagerInfo::VfnPtr::Iface::Hook> &prelist = ci.hooks_pre; \
-	List<HookManagerInfo::VfnPtr::Iface::Hook> &postlist = ci.hooks_post; \
+	IHookList *prelist = ifinfo->GetPreHooks(); \
+	IHookList *postlist = ifinfo->GetPostHooks(); \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
 	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetOverrideRet(NULL);
+	SH_GLOB_SHPTR->SetOverrideRet(NULL); \
+	SH_GLOB_SHPTR->SetOrigRet(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
 	prev_res = MRES_IGNORED; \
-	for (List<HookManagerInfo::VfnPtr::Iface::Hook>::iterator hiter = post##list.begin(); hiter != post##list.end(); ++hiter) \
+	for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
 	{ \
-		if (hiter->paused) continue; \
 		cur_res = MRES_IGNORED; \
-		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - hiter->thisptr_offs); \
-		reinterpret_cast<CSHDelegate<FD>*>(hiter->handler)->GetDeleg() params; \
+		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
+		reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
 		prev_res = cur_res; \
 		if (cur_res > status) \
 			status = cur_res; \
@@ -593,7 +617,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		void (EmptyClass::*mfp)paramtypes; \
 		SH_SETUP_MFP(mfp); \
-		(reinterpret_cast<EmptyClass*>(ci.ptr)->*mfp)params; \
+		(reinterpret_cast<EmptyClass*>(ifinfo->GetPtr())->*mfp)params; \
 	}
 
 #define SH_RETURN_void()
@@ -1490,6 +1514,210 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|const char*|...", \
 	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc)))
 
+// ********* Support for 17 arguments *********
+#define SH_DECL_HOOK17(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
+		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17, \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK17_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
+		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17, \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK17_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf), rettype); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|const char*|...", \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK17_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf)); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|const char*|...", \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+// ********* Support for 18 arguments *********
+#define SH_DECL_HOOK18(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
+		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18, \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK18_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
+		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18, \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK18_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf), rettype); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|const char*|...", \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK18_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf)); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|const char*|...", \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+// ********* Support for 19 arguments *********
+#define SH_DECL_HOOK19(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
+		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19, \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK19_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
+		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19, \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK19_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf), rettype); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|const char*|...", \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK19_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf)); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|const char*|...", \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+// ********* Support for 20 arguments *********
+#define SH_DECL_HOOK20(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
+		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20, \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK20_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
+		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20, \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK20_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate21<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf), rettype); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20 "|const char*|...", \
+	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
+#define SH_DECL_HOOK20_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr> \
+		(&ifacetype::ifacefunc))) \
+		typedef fastdelegate::FastDelegate21<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20, const char *fmt, ...) \
+		{ \
+			char buf[::SourceHook::STRBUF_LEN]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, sizeof(buf), fmt, ap); \
+			va_end(ap); \
+			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf)); \
+		} \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20 "|const char*|...", \
+	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc)))
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -1497,14 +1725,16 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #if SH_COMP == SH_COMP_MSVC
 
+// :TODO: TEST THIS ON MSVC
+
 # define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
-	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
-	OrigVTables::iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
-	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->val.size() || iter->val[mfi.vtblindex] == NULL) \
-		return (m_CC->ptr->*m_MFP)call; \
+	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
+	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
+	if (!origfunc) \
+		return (m_CC->GetThisPtr()->*m_MFP)call; \
 	\
 	/* It's hooked. Call the original function. */ \
 	union \
@@ -1512,9 +1742,9 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		RetType(EmptyClass::*mfpnew)prms; \
 		void *addr; \
 	} u; \
-	u.addr = iter->val[mfi.vtblindex]; \
+	u.addr = origfunc; \
 	\
-	void *adjustedthisptr = reinterpret_cast<void*>(reinterpret_cast<char*>(m_CC->ptr) + mfi.thisptroffs); \
+	void *adjustedthisptr = reinterpret_cast<void*>(reinterpret_cast<char*>(m_CC->GetThisPtr()) + mfi.thisptroffs); \
 	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
 }
 
@@ -1524,10 +1754,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 { \
 	using namespace ::SourceHook; \
 	MemFuncInfo mfi; \
-	GetFuncInfo(m_CC->ptr, m_MFP, mfi); \
-	OrigVTables::iterator iter = m_CC->vt.find(mfi.thisptroffs + mfi.vtbloffs); \
-	if (iter == m_CC->vt.end() || mfi.vtblindex >= (int)iter->val.size() || iter->val[mfi.vtblindex] == NULL) \
-		return (m_CC->ptr->*m_MFP)call; \
+	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
+	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
+	if (!origfunc) \
+		return (m_CC->GetThisPtr()->*m_MFP)call; \
 	\
 	/* It's hooked. Call the original function. */ \
 	union \
@@ -1539,10 +1769,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			intptr_t adjustor; \
 		} s; \
 	} u; \
-	u.s.addr = iter->val[mfi.vtblindex]; \
+	u.s.addr = origfunc; \
 	u.s.adjustor = mfi.thisptroffs; \
 	\
-	return (reinterpret_cast<EmptyClass*>(m_CC->ptr)->*u.mfpnew)call; \
+	return (reinterpret_cast<EmptyClass*>(m_CC->GetThisPtr())->*u.mfpnew)call; \
 }
 
 #endif
@@ -1559,72 +1789,88 @@ namespace SourceHook
 		}
 
 		// Support for 0 arguments
-		RetType operator()() const 
+		RetType operator()() const
 			SH_MAKE_EXECUTABLECLASS_OB((), ())
 
 		// Support for 1 arguments
-		template<class Param1> RetType operator()(Param1 p1) const 
+		template<class Param1> RetType operator()(Param1 p1) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1), (Param1))
 
 		// Support for 2 arguments
-		template<class Param1, class Param2> RetType operator()(Param1 p1, Param2 p2) const 
+		template<class Param1, class Param2> RetType operator()(Param1 p1, Param2 p2) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2), (Param1, Param2))
 
 		// Support for 3 arguments
-		template<class Param1, class Param2, class Param3> RetType operator()(Param1 p1, Param2 p2, Param3 p3) const 
+		template<class Param1, class Param2, class Param3> RetType operator()(Param1 p1, Param2 p2, Param3 p3) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3), (Param1, Param2, Param3))
 
 		// Support for 4 arguments
-		template<class Param1, class Param2, class Param3, class Param4> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const 
+		template<class Param1, class Param2, class Param3, class Param4> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4), (Param1, Param2, Param3, Param4))
 
 		// Support for 5 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5), (Param1, Param2, Param3, Param4, Param5))
 
 		// Support for 6 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6), (Param1, Param2, Param3, Param4, Param5, Param6))
 
 		// Support for 7 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7), (Param1, Param2, Param3, Param4, Param5, Param6, Param7))
 
 		// Support for 8 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
 
 		// Support for 9 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
 
 		// Support for 10 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
 
 		// Support for 11 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
 
 		// Support for 12 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
 
 		// Support for 13 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
 
 		// Support for 14 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
 
 		// Support for 15 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
 
 		// Support for 16 arguments
-		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const 
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
+
+		// Support for 17 arguments
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17) const
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
+
+		// Support for 18 arguments
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
+
+		// Support for 19 arguments
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
+
+		// Support for 20 arguments
+		template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20> RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const
+			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
 
 	};
 }
@@ -1888,6 +2134,66 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
 }
 
+// Support for 17 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 18 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 19 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 20 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
 
 #if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
 // GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
@@ -2147,12 +2453,72 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param
 	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
 }
 
+// Support for 17 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 18 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 19 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+// Support for 20 arguments
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...))
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
+template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>
+SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...)const)
+{
+	return SourceHook::ExecutableClass<SourceHook::CallClass<Y>, RetType, MFP>(ptr, mfp);
+}
+
 
 #endif
 
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
 
-#undef SH_MAKE_EXECUTABLECLASS_BODY
+#undef SH_MAKE_EXECUTABLECLASS_OB
 
 #endif
 	// The pope is dead. -> :(

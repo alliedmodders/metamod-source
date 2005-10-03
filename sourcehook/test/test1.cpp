@@ -2,6 +2,8 @@
 #include "sourcehook_impl.h"
 #include "testevents.h"
 
+#include "sh_memory.h"
+
 namespace
 {
 	StateList g_States;
@@ -12,6 +14,7 @@ namespace
 	// Basic tests
 	// Hooking and callclass
 
+	MAKE_STATE_1(State_ModuleInMemory, bool);
 	MAKE_STATE(State_F1_Called);
 	MAKE_STATE_1(State_F1_PreHandler_Called, void*);
 	MAKE_STATE_1(State_F1_PostHandler_Called, void*);
@@ -385,6 +388,22 @@ namespace
 
 bool TestBasic(std::string &error)
 {
+
+	// Simple test for ModuleInMemory:
+	//  1) &error should on the stack
+	//  2) 0 should not be mapped
+	//  3) &error to -1 should not be mapped
+	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(reinterpret_cast<char*>(&error), sizeof(error))));
+	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(0, 1)));
+	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(reinterpret_cast<char*>(&error),
+		(reinterpret_cast<std::string*>(-1) - &error) - 1)));
+
+	CHECK_STATES((&g_States,
+		new State_ModuleInMemory(true),
+		new State_ModuleInMemory(false),
+		new State_ModuleInMemory(false),
+		NULL), "ModuleInMemory");
+
 	SourceHook::CSourceHookImpl g_SHImpl;
 	g_SHPtr = &g_SHImpl;
 	g_PLID = 1337;
@@ -401,7 +420,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
@@ -421,7 +440,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
@@ -437,8 +456,8 @@ bool TestBasic(std::string &error)
 
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
-	
-	CHECK_STATES((&g_States, 
+
+	CHECK_STATES((&g_States,
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
 		new State_F1_PreHandler_Called(&f1_handlers),
@@ -446,7 +465,7 @@ bool TestBasic(std::string &error)
 
 	// 4) Rerequest the callclass
 	SH_RELEASE_CALLCLASS(cc);
-	
+
 	ADD_STATE(State_F1_CallClassReleased);
 	cc2 = SH_GET_CALLCLASS(pTest);
 	ADD_STATE(State_F1_CallClassGenerated);
@@ -454,11 +473,11 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_CallClassReleased,
 		new State_F1_CallClassGenerated,
 		new State_F1_Called,
-		new State_F1_PreHandler_Called(&f1_handlers), 
+		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 4");
 
 	// 5) Check ignore / supercede
@@ -485,7 +504,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_HookRemoved,
 		new State_F1_Called,
 		new State_F1_Called,
@@ -498,7 +517,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
 		new State_F1_Called,
@@ -516,7 +535,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_HookAdded(true),
 		new State_F1_Called,
 		new State_F1_PreHandler_Called(&f1_handlers),
@@ -536,7 +555,7 @@ bool TestBasic(std::string &error)
 	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_HookRemoved,
 		new State_F1_HookRemoved,
 		new State_F1_Called,
@@ -550,7 +569,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
 		new State_F299Ret(true),
 		new State_F299_Called("hi"),
@@ -561,7 +580,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
 		new State_F299_Called("hi"),
 		new State_F299Ret(true),
@@ -573,7 +592,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
 		new State_F299_Called("hi"),
 		new State_F299_PostHandlerCalled("hi"),
@@ -586,7 +605,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
 		new State_F299_Called("hi"),
 		new State_F299_PostHandlerCalled("hi"),
@@ -599,7 +618,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
 		new State_F299_PostHandlerCalled("hi"),
 		new State_F299Ret(true),
@@ -611,7 +630,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
 		new State_F299_PostHandlerCalled("hi"),
 		new State_F299Ret(false),
@@ -623,7 +642,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
 	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
 		new State_F299Ret(true),
 		new State_F299_Called("hi"),
@@ -635,7 +654,7 @@ bool TestBasic(std::string &error)
 	ADD_STATE(State_F1_CallClassReleased);
 
 
-	CHECK_STATES((&g_States, 
+	CHECK_STATES((&g_States,
 		new State_F1_CallClassReleased,
 		NULL), "Part 11");
 

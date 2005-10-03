@@ -27,13 +27,13 @@ namespace SourceHook
 	 * This is a tiny, growable hash class.
 	 * Meant for quick and dirty dictionaries only!
 	 */
-	template <class K, class V> 
+	template <class K, class V>
 	class THash
 	{
 	public:
 		struct THashNode
 		{
-			THashNode(const K & k, const V & v) : 
+			THashNode(const K & k, const V & v) :
 				key(k), val(v)
 				{
 				};
@@ -139,7 +139,7 @@ namespace SourceHook
 				typename List<THashNode *>::iterator iter;
 				size_t place;
 				THashNode *pHashNode;
-                NodePtr *temp = new NodePtr[m_numBuckets];
+				NodePtr *temp = new NodePtr[m_numBuckets];
 				for (size_t i=0; i<m_numBuckets; i++)
 					temp[i] = NULL;
 				//look in old hash table
@@ -222,10 +222,10 @@ namespace SourceHook
 			{
 				if (where.hash == this->hash
 					&& where.end == this->end
-					&& 
-					 (this->end || 
-					   ((where.curbucket == this->curbucket) 
-					     && (where.iter == iter))
+					&&
+					 (this->end ||
+					   ((where.curbucket == this->curbucket)
+						&& (where.iter == iter))
 						 ))
 					return true;
 				return false;
@@ -233,6 +233,20 @@ namespace SourceHook
 			bool operator !=(const iterator &where) const
 			{
 				return !( (*this) == where );
+			}
+
+			void erase()
+			{
+				if (end || !hash || curbucket < 0 || curbucket >= static_cast<int>(hash->m_numBuckets))
+					return;
+
+				// Remove this element and move to the next one
+				iterator tmp = *this;
+				++tmp;
+				hash->m_Buckets[curbucket]->erase(iter);
+				*this = tmp;
+
+				// :TODO: Maybe refactor to a lower size if required
 			}
 		private:
 			void _Inc()
@@ -321,10 +335,10 @@ namespace SourceHook
 			{
 				if (where.hash == this->hash
 					&& where.end == this->end
-					&& 
-					 (this->end || 
-					   ((where.curbucket == this->curbucket) 
-					     && (where.iter == iter))
+					&&
+					 (this->end ||
+					   ((where.curbucket == this->curbucket)
+						&& (where.iter == iter))
 						 ))
 					return true;
 				return false;
@@ -392,7 +406,7 @@ namespace SourceHook
 			iter.hash = this;
 			return iter;
 		}
-		
+
 		const_iterator begin() const
 		{
 			return const_iterator(this);
@@ -403,7 +417,7 @@ namespace SourceHook
 			iter.hash = this;
 			return iter;
 		}
-		
+
 		template <typename U>
 		iterator find(const U & u) const
 		{
@@ -427,6 +441,20 @@ namespace SourceHook
 					return iter;
 			}
 			return end();
+		}
+
+		iterator erase(iterator where)
+		{
+			where.erase();
+			return where;
+		}
+		template <typename U>
+		void erase(const U & u)
+		{
+			iterator iter = find(u);
+			if (iter == end())
+				return;
+			iter.erase();
 		}
 	private:
 		NodePtr	*m_Buckets;
