@@ -388,19 +388,14 @@ namespace
 
 bool TestBasic(std::string &error)
 {
-
-	// Simple test for ModuleInMemory:
+	// Simple test for ModuleInMemory
 	//  1) &error should on the stack
 	//  2) 0 should not be mapped
-	//  3) &error to -1 should not be mapped
 	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(reinterpret_cast<char*>(&error), sizeof(error))));
 	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(0, 1)));
-	ADD_STATE(State_ModuleInMemory(SourceHook::ModuleInMemory(reinterpret_cast<char*>(&error),
-		(reinterpret_cast<std::string*>(-1) - &error) - 1)));
 
 	CHECK_STATES((&g_States,
 		new State_ModuleInMemory(true),
-		new State_ModuleInMemory(false),
 		new State_ModuleInMemory(false),
 		NULL), "ModuleInMemory");
 
