@@ -341,12 +341,26 @@ namespace SourceHook
 
 			bool erase;
 			for (List<HookInfo>::iterator hookiter = hooks.begin();
-				hookiter != hooks.end(); erase ? hookiter = hooks.erase(hookiter) : ++hookiter)
+				hookiter != hooks.end(); )
 			{
 				erase = hookiter->plug == plug && hookiter->handler->IsEqual(handler) &&
 					hookiter->thisptr_offs == thisptr_offs;
 				if (erase)
+				{
 					hookiter->handler->DeleteThis();			// Make the _plugin_ delete the handler object
+
+					// Move all iterators pointing at this
+					List<HookInfo>::iterator oldhookiter = hookiter;
+					hookiter = hooks.erase(hookiter);
+					List<HookInfo>::iterator newhookiter = hookiter;
+					--newhookiter; // The hook loop will ++ it then
+					CHookList::CIter *pItIter;
+					for (pItIter = iface_iter->m_PreHooks.m_UsedIters; pItIter; pItIter = pItIter->m_pNext)
+						if (pItIter->m_Iter == oldhookiter)
+							pItIter->m_Iter = newhookiter;
+				}
+				else
+					++hookiter;
 			}
 			if (iface_iter->m_PostHooks.m_List.empty() && iface_iter->m_PreHooks.m_List.empty())
 			{
@@ -701,10 +715,10 @@ namespace SourceHook
 	// CHookList
 	////////////////////////////
 
-	CSourceHookImpl::CHookList::CHookList() : m_FreeIters(NULL)
+	CSourceHookImpl::CHookList::CHookList() : m_FreeIters(NULL), m_UsedIters(NULL)
 	{
 	}
-	CSourceHookImpl::CHookList::CHookList(const CHookList &other) : m_List(other.m_List), m_FreeIters(NULL)
+	CSourceHookImpl::CHookList::CHookList(const CHookList &other) : m_List(other.m_List), m_FreeIters(NULL), m_UsedIters(NULL)
 	{
 	}
 	CSourceHookImpl::CHookList::~CHookList()
@@ -718,19 +732,41 @@ namespace SourceHook
 	}
 	IHookList::IIter *CSourceHookImpl::CHookList::GetIter()
 	{
+		CIter *ret;
 		if (m_FreeIters)
 		{
-			CIter *ret = m_FreeIters;
+			ret = m_FreeIters;
 			m_FreeIters = ret->m_pNext;
 			ret->GoToBegin();
-			return ret;
 		}
-		return new CIter(this);
+		else
+		{
+			ret = new CIter(this);
+		}
+		
+		ret->m_pNext = m_UsedIters;
+		ret->m_pPrev = NULL;
+		if (m_UsedIters)
+			m_UsedIters->m_pPrev = ret;
+		m_UsedIters = ret;
+
+		return ret;
 	}
 	void CSourceHookImpl::CHookList::ReleaseIter(IIter *pIter)
 	{
 		CIter *pIter2 = static_cast<CIter*>(pIter);
+
+		// Unlink from m_UsedIters
+
+		if (pIter2->m_pNext)
+			pIter2->m_pNext->m_pPrev = pIter2->m_pPrev;
+		if (pIter2->m_pPrev)
+			pIter2->m_pPrev->m_pNext = pIter2->m_pNext;
+
+		// Link to m_FreeIters
+
 		pIter2->m_pNext = m_FreeIters;
+
 		m_FreeIters = pIter2;
 	}
 
@@ -750,12 +786,20 @@ namespace SourceHook
 
 	bool CSourceHookImpl::CHookList::CIter::End()
 	{
+		if (!m_pList)
+			return false;
 		return m_Iter == m_pList->m_List.end();
 	}
 	void CSourceHookImpl::CHookList::CIter::Next()
 	{
+		if (!m_pList)
+			return;
 		++m_Iter;
 		SkipPaused();
+	}
+	void CSourceHookImpl::CHookList::CIter::Clear()
+	{
+		m_pList = NULL;
 	}
 	void CSourceHookImpl::CHookList::CIter::SkipPaused()
 	{

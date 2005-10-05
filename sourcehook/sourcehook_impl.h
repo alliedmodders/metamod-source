@@ -68,10 +68,12 @@ namespace SourceHook
 				friend class CHookList;
 
 				CHookList *m_pList;
-				List<HookInfo>::iterator m_Iter;
 
 				void SkipPaused();
 			public:
+
+				List<HookInfo>::iterator m_Iter;
+
 				CIter(CHookList *pList);
 
 				virtual ~CIter();
@@ -83,10 +85,14 @@ namespace SourceHook
 				ISHDelegate *Handler();
 				int ThisPtrOffs();
 
-				CIter *m_pNext;		// When stored in m_FreeIters
+				void Clear();
+
+				CIter *m_pNext;		// When stored in m_FreeIters and m_UsedIters
+				CIter *m_pPrev;		// Only used when stored in m_UsedIters
 			};
 
 			CIter *m_FreeIters;
+			CIter *m_UsedIters;
 
 			CHookList();
 			CHookList(const CHookList &other);
