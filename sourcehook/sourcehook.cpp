@@ -365,6 +365,8 @@ namespace SourceHook
 			if (iface_iter->m_PostHooks.m_List.empty() && iface_iter->m_PreHooks.m_List.empty())
 			{
 				// There are no hooks on this iface anymore...
+				if (m_CurIface == static_cast<IIface*>(&(*iface_iter)))
+					m_HLS = HLS_Stop;
 
 				iface_iter = vfnptr_iter->m_Ifaces.erase(iface_iter);
 				if (vfnptr_iter->m_Ifaces.empty())
@@ -577,6 +579,16 @@ namespace SourceHook
 		return m_IfacePtr;
 	}
 
+	HookLoopStatus &CSourceHookImpl::GetStatusVarRef(IIface *pIface)
+	{
+		m_CurIface = pIface;
+		return m_HLS;
+	}
+	void CSourceHookImpl::HookLoopDone()
+	{
+		m_CurIface = NULL;
+	}
+
 	////////////////////////////
 	// CCallClassImpl
 	////////////////////////////
@@ -762,6 +774,8 @@ namespace SourceHook
 			pIter2->m_pNext->m_pPrev = pIter2->m_pPrev;
 		if (pIter2->m_pPrev)
 			pIter2->m_pPrev->m_pNext = pIter2->m_pNext;
+		if (pIter2 == m_UsedIters)
+			m_UsedIters = NULL;
 
 		// Link to m_FreeIters
 

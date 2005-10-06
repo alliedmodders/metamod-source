@@ -230,6 +230,8 @@ namespace SourceHook
 		void SetPluginPaused(Plugin plug, bool paused);
 
 		META_RES m_Status, m_PrevRes, m_CurRes;
+		HookLoopStatus m_HLS;
+		IIface *m_CurIface;
 		const void *m_OrigRet;
 		const void *m_OverrideRet;
 		void *m_IfacePtr;
@@ -345,6 +347,8 @@ namespace SourceHook
 		virtual void* &GetIfacePtrRef();				//!< Gets the reference to the iface ptr
 		virtual void SetOrigRet(const void *ptr);		//!< Sets the original return pointer
 		virtual void SetOverrideRet(const void *ptr);	//!< Sets the override result pointer
+		HookLoopStatus &GetStatusVarRef(IIface *pIface);
+		void HookLoopDone();
 	};
 }
 

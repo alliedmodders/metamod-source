@@ -16,7 +16,13 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
-#define SH_IFACE_VERSION 2
+// Interface revisions:
+//  1 - Initial revision
+//  2 - Changed to virtual functions for iterators and all queries
+//  3 - Added "hook loop status variable"
+//  Future: Thread safe interface?
+
+#define SH_IFACE_VERSION 3
 #define SH_IMPL_VERSION 2
 
 #ifndef SH_GLOB_SHPTR
@@ -134,7 +140,7 @@ namespace SourceHook
 		HA_Unregister			//!< Clear the saved pointer
 	};
 
-	class IHookManagerInfo;
+	struct IHookManagerInfo;
 
 	/**
 	*	@brief Pointer to hook manager interface function
@@ -229,7 +235,8 @@ namespace SourceHook
 
 		~AutoHookIter()
 		{
-			m_pList->ReleaseIter(m_pIter);
+			if (m_pList)
+				m_pList->ReleaseIter(m_pIter);
 		}
 
 		bool End()
@@ -252,6 +259,10 @@ namespace SourceHook
 			return m_pIter->ThisPtrOffs();
 		}
 
+		void SetToZero()
+		{
+			m_pList = 0;
+		}
 	};
 
 	template<class B> struct CallClass
@@ -261,6 +272,15 @@ namespace SourceHook
 	};
 
 	typedef CallClass<void> GenericCallClass;
+
+	/**
+	*	@brief SH informs the loop in the hook manager about its status through this
+	*/
+	enum HookLoopStatus
+	{
+		HLS_Continue=0,
+		HLS_Stop
+	};
 
 	/**
 	*	@brief The main SourceHook interface
@@ -346,6 +366,8 @@ namespace SourceHook
 		virtual void* &GetIfacePtrRef() = 0;				//!< Gets the reference to the interface this pointer
 		virtual void SetOrigRet(const void *ptr) = 0;		//!< Sets the original return pointer
 		virtual void SetOverrideRet(const void *ptr) = 0;	//!< Sets the override result pointer
+		virtual HookLoopStatus &GetStatusVarRef(IIface *pIface) = 0;			//!< gets the reference to the hook status loop variable
+		virtual void HookLoopDone() = 0;
 	};
 }
 
@@ -407,10 +429,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #if SH_COMP == SH_COMP_MSVC
 # define SH_SETUP_MFP(mfp) \
-	reinterpret_cast<void**>(&mfp)[0] = vfnptr->GetOrigEntry();
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr_origentry;
 #elif SH_COMP == SH_COMP_GCC
 # define SH_SETUP_MFP(mfp) \
-	reinterpret_cast<void**>(&mfp)[0] = vfnptr->GetOrigEntry(); \
+	reinterpret_cast<void**>(&mfp)[0] = vfnptr_origentry; \
 	reinterpret_cast<void**>(&mfp)[1] = 0;
 #else
 # error Not supported yet.
@@ -510,6 +532,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	IVfnPtr *vfnptr = ms_HI->FindVfnPtr(ourvfnptr); \
 	SH_ASSERT(vfnptr, ("Called with vfnptr 0x%p which couldn't be found in the list", ourvfnptr)); \
 	\
+	void *vfnptr_origentry = vfnptr->GetOrigEntry(); \
 	/* ... and the iface */ \
 	IIface *ifinfo = vfnptr->FindIface(reinterpret_cast<void*>(this)); \
 	if (!ifinfo) \
@@ -522,6 +545,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	/* 2) Declare some vars and set it up */ \
 	IHookList *prelist = ifinfo->GetPreHooks(); \
 	IHookList *postlist = ifinfo->GetPostHooks(); \
+	HookLoopStatus &hls = SH_GLOB_SHPTR->GetStatusVarRef(ifinfo); \
+	hls = HLS_Continue; \
 	rettype orig_ret; \
 	rettype override_ret; \
 	rettype plugin_ret; \
@@ -534,19 +559,28 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_GLOB_SHPTR->SetOverrideRet(NULL);
 
 #define SH_CALL_HOOKS(post, params) \
-	prev_res = MRES_IGNORED; \
-	for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
+	if (hls == HLS_Continue) \
 	{ \
-		cur_res = MRES_IGNORED; \
-		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
-		plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
-		prev_res = cur_res; \
-		if (cur_res > status) \
-			status = cur_res; \
-		if (cur_res >= MRES_OVERRIDE) \
+		prev_res = MRES_IGNORED; \
+		for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
 		{ \
-			override_ret = plugin_ret; \
-			SH_GLOB_SHPTR->SetOverrideRet(&override_ret); \
+			cur_res = MRES_IGNORED; \
+			ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
+			hls = HLS_Continue; \
+			plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
+			prev_res = cur_res; \
+			if (cur_res > status) \
+				status = cur_res; \
+			if (cur_res >= MRES_OVERRIDE) \
+			{ \
+				override_ret = plugin_ret; \
+				SH_GLOB_SHPTR->SetOverrideRet(&override_ret); \
+			} \
+			if (hls == HLS_Stop) \
+			{ \
+				iter.SetToZero(); \
+				break; \
+			} \
 		} \
 	}
 
@@ -555,7 +589,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		rettype (EmptyClass::*mfp)paramtypes; \
 		SH_SETUP_MFP(mfp); \
-		orig_ret = (reinterpret_cast<EmptyClass*>(ifinfo->GetPtr())->*mfp)params; \
+		orig_ret = (reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	} \
 	else \
 		orig_ret = override_ret;
@@ -579,6 +613,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	IVfnPtr *vfnptr = ms_HI->FindVfnPtr(ourvfnptr); \
 	SH_ASSERT(vfnptr, ("Called with vfnptr 0x%p which couldn't be found in the list", ourvfnptr)); \
 	\
+	void *vfnptr_origentry = vfnptr->GetOrigEntry(); \
 	/* ... and the iface */ \
 	IIface *ifinfo = vfnptr->FindIface(reinterpret_cast<void*>(this)); \
 	if (!ifinfo) \
@@ -593,6 +628,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	IHookList *prelist = ifinfo->GetPreHooks(); \
 	IHookList *postlist = ifinfo->GetPostHooks(); \
 	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
+	HookLoopStatus &hls = SH_GLOB_SHPTR->GetStatusVarRef(ifinfo); \
+	hls = HLS_Continue; \
 	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
 	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
 	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
@@ -601,15 +638,24 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_GLOB_SHPTR->SetOrigRet(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
-	prev_res = MRES_IGNORED; \
-	for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
+	if (hls == HLS_Continue) \
 	{ \
-		cur_res = MRES_IGNORED; \
-		ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
-		reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
-		prev_res = cur_res; \
-		if (cur_res > status) \
-			status = cur_res; \
+		prev_res = MRES_IGNORED; \
+		for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
+		{ \
+			cur_res = MRES_IGNORED; \
+			ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
+			hls = HLS_Continue; \
+			reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
+			prev_res = cur_res; \
+			if (cur_res > status) \
+				status = cur_res; \
+			if (hls == HLS_Stop) \
+			{ \
+				iter.SetToZero(); \
+				break; \
+			} \
+		} \
 	}
 
 #define SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
@@ -617,7 +663,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	{ \
 		void (EmptyClass::*mfp)paramtypes; \
 		SH_SETUP_MFP(mfp); \
-		(reinterpret_cast<EmptyClass*>(ifinfo->GetPtr())->*mfp)params; \
+		(reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	}
 
 #define SH_RETURN_void()
