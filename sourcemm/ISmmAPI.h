@@ -45,16 +45,29 @@ public:
 	virtual CGlobalVars *pGlobals() =0;
 	virtual void SetLastMetaReturn(META_RES res) =0;
 	virtual META_RES GetLastMetaReturn() =0;
-public:
-	//Added in 1.00-RC2 to solve concommand problems
+public:		//Added in 1.00-RC2 (0:0)
+	//solves concommand problems by keeping track for loading/unloading
 	virtual IConCommandBaseAccessor *GetCvarBaseAccessor() =0;
 	virtual bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
 	virtual void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
-public:
-	//Added in 1.00-RC2.  attempt fix at valve not exporting rcon printing
+	//attempt fix at valve not exporting rcon printing
 	//these do not add newlines
 	virtual void ConPrint(const char *fmt) =0;
 	virtual void ConPrintf(const char *fmt, ...) =0;
+public:		//Added in 1.10 (1:0)
+	//added by request.  Checks if ConPrint/ConPrintf will mirror to rcon.
+	virtual bool RemotePrintingAvailable() =0;
+	//Returns the Metamod Version numbers as major version and minor (API) version.
+	//changes to minor version are guaranteed to be backwards compatible.
+	//changes to major version are not.
+	//Also returns current plugin version and minimum plugin version
+	virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) =0;
+	//Returns sourcehook API version and implementation version
+	virtual void GetShVersions(int &shvers, int &shimpl) =0;
 };
+
+/** Version history
+ * 1.10 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
+ */
 
 #endif //_INCLUDE_ISMM_API_H

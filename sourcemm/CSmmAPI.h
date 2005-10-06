@@ -44,6 +44,12 @@ namespace SourceMM
 		void ConPrint(const char *fmt);
 		void ConPrintf(const char *fmt, ...);
 		bool CacheSuccessful();
+		bool RemotePrintingAvailable()
+		{
+			return CacheSuccessful();
+		}
+		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin);
+		virtual void GetShVersions(int &shvers, int &shimpl);
 	public:
 		bool CacheCmds();
 	private:

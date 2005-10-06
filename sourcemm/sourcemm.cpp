@@ -396,8 +396,6 @@ void DLLShutdown_handler()
 	SH_RELEASE_CALLCLASS(dllExec);
 	dllExec = NULL;
 
-	//right now this will crash when the function returns!
-	// :TODO: remove this warning once PM fixes it.
 	g_SourceHook.CompleteShutdown();
 
 	if (g_GameDll.lib && g_GameDll.loaded)
@@ -468,7 +466,7 @@ int LoadPluginsFromFile(const char *file)
 				ext = "";
 			}
 			//Format the new path
-			UTIL_PathFmt(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), buffer, ext);
+			UTIL_PathFmt(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), buffer, ext);
 			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error)-1);
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{

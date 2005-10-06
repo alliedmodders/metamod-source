@@ -209,9 +209,6 @@
 			<File
 				RelativePath="..\sourcehook\sh_vector.h">
 			</File>
-			<File
-				RelativePath="..\sourcehook\sourcehook.cpp">
-			</File>
 			<Filter
 				Name="Headers"
 				Filter="">
@@ -223,6 +220,9 @@
 				</File>
 				<File
 					RelativePath="..\sourcehook\sh_memory.h">
+				</File>
+				<File
+					RelativePath="..\sourcehook\sourcehook.cpp">
 				</File>
 				<File
 					RelativePath="..\sourcehook\sourcehook.h">

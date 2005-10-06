@@ -183,7 +183,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				{
 					status = "PAUSE";
 				} else if (pl->m_Status == Pl_Running) {
-					status = "RUN";
+					if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
+						status = "RUN";
+					else
+						status = "STOPPED";
 				} else if (pl->m_Status == Pl_Refused) {
 					status = "FAIL";
 				} else if (pl->m_Status == Pl_Error) {
@@ -298,7 +301,16 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					{
 						CONMSG("Plugin %d is paused.\n", id);
 					} else if (pl->m_Status == Pl_Running) {
-						CONMSG("Plugin %d is running.\n", id);
+						char run_msg[255];
+						bool run = false;
+						if (pl->m_API && pl->m_API->QueryRunning(run_msg, sizeof(run_msg)-1))
+							run = true;
+						if (run)
+						{
+							CONMSG("Plugin %d is running.\n", id);
+						} else {
+							CONMSG("Plugin %d is stopped: %s\n", id, run_msg);
+						}
 					}
 					CONMSG("  Name: \"%s\" by %s\n", pl->m_API->GetName(), pl->m_API->GetAuthor());
 					CONMSG("  Version: %s\n", pl->m_API->GetVersion());

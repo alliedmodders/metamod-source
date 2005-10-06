@@ -11,6 +11,7 @@
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"
+#include "CPlugin.h"
 
 /**
  * @brief Implementation of main API interface
@@ -225,4 +226,18 @@ bool CSmmAPI::CacheCmds()
 bool CSmmAPI::CacheSuccessful()
 {
 	return m_Cache;
+}
+
+void CSmmAPI::GetApiVersions(int &major, int &minor, int &plvers, int &plmin)
+{
+	major = SM_VERS_API_MAJOR;
+	minor = SM_VERS_API_MINOR;
+	plvers = PLAPI_VERSION;
+	plmin = PLAPI_MIN_VERSION;
+}
+
+void CSmmAPI::GetShVersions(int &shvers, int &shimpl)
+{
+	shvers = SH_IFACE_VERSION;
+	shimpl = SH_IMPL_VERSION;
 }
