@@ -360,8 +360,6 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 		}
 	}
 
-		SetUnhandledExceptionFilter(NULL);
-
 	//if we got here, there's definitely a gamedll.
 	//META_INTERFACE_MACRO(server, g_GameDll.factory);
 	return (g_GameDll.factory)(name, ret);
