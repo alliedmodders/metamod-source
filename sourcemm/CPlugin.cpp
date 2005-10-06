@@ -260,7 +260,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 							snprintf(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
 						pl->m_Status = Pl_Error;
 					} else {
-						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), &(pl->fac_list), error, maxlen))
+						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), &(pl->fac_list), error, maxlen, m_AllLoaded))
 						{
 							pl->m_Status = Pl_Running;
 							if (m_AllLoaded)
@@ -422,6 +422,20 @@ bool CPluginManager::Query(PluginId id, const char *&file, factories *&list, Pl_
 	source = pl->m_Source;
 
 	return true;
+}
+
+bool CPluginManager::QueryRunning(PluginId id, char *error, size_t maxlength)
+{
+	CPlugin *pl = FindById(id);
+
+	if (!pl || !pl->m_API)
+	{
+		if (error)
+			snprintf(error, maxlength, "Plugin not valid");
+		return false;
+	}
+
+	return pl->m_API->QueryRunning(error, maxlength);
 }
 
 PluginIter CPluginManager::_begin()

@@ -36,3 +36,25 @@ int GetLastError()
 	return errno;
 }
 #endif
+
+bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
+{
+#if defined WIN32 || defined _WIN32
+	MEMORY_BASIC_INFORMATION mem;
+	if (!VirtualQuery((void *)pAddr, &mem, sizeof(mem)))
+		return false;
+	if (mem.AllocationBase == NULL)
+		return false;
+	HMODULE dll = (HMODULE)mem.AllocationBase;
+	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
+#elif defined __linux__
+	Dl_info info;
+	if (!dladdr((void *)pAddr, &info))
+		return false;
+	if (!info.dli_fbase || !info.dli_fname)
+		return false;
+	const char *dllpath = info.dli_fname;
+	snprintf(buffer, maxlength, "%s", dllpath);
+#endif
+	return true;
+}

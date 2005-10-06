@@ -29,6 +29,9 @@
 #define		SOURCEMM_VERSION	"1.10"
 #define		SOURCEMM_DATE		__DATE__
 
+#define	MIN_GAMEDLL_VERSION	3
+#define	MAX_GAMEDLL_VERSION	4
+
 /**
  * @brief Entry point for HL2 Engine
  */
@@ -55,11 +58,17 @@ struct GameDllInfo
 	bool loaded;
 	HINSTANCE lib;
 	CreateInterfaceFn factory;
+	IServerGameDLL *pGameDLL;
 };
 
 /** @brief Stores information about the HL2 Engine pointers */
 struct EngineInfo
 {
+	EngineInfo() : loaded(false), 
+		engineFactory(NULL), physicsFactory(NULL), fileSystemFactory(NULL),
+		pGlobals(NULL), icvar(NULL), engine(NULL)
+	{ };
+	bool loaded;
 	CreateInterfaceFn engineFactory;
 	CreateInterfaceFn physicsFactory;
 	CreateInterfaceFn fileSystemFactory;
@@ -88,8 +97,5 @@ extern SourceHook::ISourceHook *g_SHPtr;
 
 /** @brief We have our own internal plugin id... */
 extern PluginId g_PLID;
-
-/** @brief Hook for LevelShutdown */
-void LevelShutdown_handler(void);
 
 #endif //_INCLUDE_SOURCEMM_H

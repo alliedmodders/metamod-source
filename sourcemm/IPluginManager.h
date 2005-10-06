@@ -19,6 +19,17 @@
 #include "ISmmPlugin.h"
 
 /**
+ * @brief Load sources
+ */
+enum
+{
+	Pl_BadLoad=0,
+	Pl_Console=-1,
+	Pl_File=-2,
+	Pl_MinId=1,
+};
+
+/**
  * @brief Status of a plugin at runtime
  */
 enum Pl_Status
@@ -30,17 +41,6 @@ enum Pl_Status
 	Pl_Running=0,
 };
 
-/**
- * @brief Load sources
- */
-enum
-{
-	Pl_BadLoad=0,
-	Pl_Console=-1,
-	Pl_File=-2,
-	Pl_MinId=1,
-};
-
 typedef int PluginId;
 struct factories;
 
@@ -48,7 +48,9 @@ class ISmmPluginManager
 {
 public:
 	/**
-	 * @brief Loads a plugin and returns its id
+	 * @brief Loads a plugin and returns its id.  If this is called before DLLInit(),
+	 *  then the plugin is considered to be "hot" - it might refuse its own load later!
+	 *  Also, a hot plugin might not have an error message.
 	 *
 	 * @param file String containing file name
 	 * @param source Specifies who loaded the plugin
@@ -109,6 +111,16 @@ public:
 	 * @return True on success, false if not found
 	 */
 	virtual bool Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source) =0;
+
+	/** 
+	 * @brief Checks another plugin's QueryRunning() status.
+	 *
+	 * @param id		Id of plugin
+	 * @param error		Message buffer
+	 * @param maxlen	Size of error buffer
+	 * @return			Status value
+	 */
+	virtual bool QueryRunning(PluginId id, char *error, size_t maxlength) =0;
 };
 
 #endif //_INCLUDE_PLUGINMANAGER_H

@@ -155,31 +155,16 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath=".\CHLTVDirector.h">
-			</File>
-			<File
 				RelativePath=".\concommands.h">
 			</File>
 			<File
 				RelativePath=".\CPlugin.h">
 			</File>
 			<File
-				RelativePath=".\CServerGameClients.h">
-			</File>
-			<File
-				RelativePath=".\CServerGameDLL.h">
-			</File>
-			<File
-				RelativePath=".\CServerGameEnts.h">
-			</File>
-			<File
 				RelativePath=".\CSmmAPI.h">
 			</File>
 			<File
 				RelativePath=".\oslink.h">
-			</File>
-			<File
-				RelativePath=".\resource.h">
 			</File>
 			<File
 				RelativePath=".\sourcemm.h">

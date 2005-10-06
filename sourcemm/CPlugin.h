@@ -33,6 +33,8 @@
  *    5: Bumped version for SourceHook V4 (2005-05-01)
  *    6: Added functions for console printing (2005-05-26)
  * MC 7: Changed template libraries (2005-08-11)
+ *		 New loading structure mechanism
+ *	     New SourceHook version
  */
 
 #define PLAPI_MIN_VERSION	7
@@ -75,6 +77,7 @@ namespace SourceMM
 		bool UnloadAll();
 	public:
 		bool Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source);
+		bool QueryRunning(PluginId id, char *error, size_t maxlength);
 
 		void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
 		void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);

@@ -17,8 +17,12 @@
  */
 
 const char *UTIL_GetExtension(const char *file);
+void UTIL_TrimComments(char *buffer);
 void UTIL_TrimLeft(char *buffer);
 void UTIL_TrimRight(char *buffer);
+void UTIL_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t len2);
+void UTIL_PathFmt(char *buffer, size_t len, const char *fmt, ...);
+bool UTIL_PathCmp(const char *path1, const char *path2);
 
 #define META_INTERFACE_MACRO(type, final) \
 	PluginIter i; \
@@ -39,12 +43,15 @@ void UTIL_TrimRight(char *buffer);
 	} \
 	if (high == MRES_OVERRIDE) \
 	{ \
-		(final)(name, ret); \
+		if (final) \
+			(final)(name, ret); \
 		return mret; \
 	} else if (high == MRES_SUPERCEDE) { \
 		return mret; \
 	} else { \
-		return (final)(name, ret); \
+		if (final) \
+			return (final)(name, ret); \
+		return NULL; \
 	} 
 
 #endif //_INCLUDE_UTIL_H
