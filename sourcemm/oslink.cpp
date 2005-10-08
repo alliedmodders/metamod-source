@@ -16,6 +16,7 @@
 #include "oslink.h"
 #ifdef __linux
 #include <errno.h>
+#include <stdio.h>
 #endif
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
