@@ -17,13 +17,11 @@ namespace
 	SH_DECL_HOOK0_void(zomg_lolz, zomg, SH_NOATTRIB, 0);
 	void Handler()
 	{
-		printf("H1\n");
 		SH_REMOVE_HOOK_STATICFUNC(zomg_lolz, zomg, reinterpret_cast<zomg_lolz*>(META_IFACEPTR),
 			Handler, false);
 	}
 	void Handler2()
 	{
-		printf("H2\n");
 	}
 }
 

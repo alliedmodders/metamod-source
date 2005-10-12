@@ -365,8 +365,12 @@ namespace SourceHook
 			if (iface_iter->m_PostHooks.m_List.empty() && iface_iter->m_PreHooks.m_List.empty())
 			{
 				// There are no hooks on this iface anymore...
-				if (m_CurIface == static_cast<IIface*>(&(*iface_iter)))
-					m_HLS = HLS_Stop;
+				for (HookLoopInfoStack::iterator hli_iter = m_HLIStack.begin();
+					hli_iter != m_HLIStack.end(); ++hli_iter)
+				{
+					if (hli_iter->pCurIface == static_cast<IIface*>(&(*iface_iter)))
+						hli_iter->shouldContinue = false;
+				}
 
 				iface_iter = vfnptr_iter->m_Ifaces.erase(iface_iter);
 				if (vfnptr_iter->m_Ifaces.empty())
@@ -519,74 +523,80 @@ namespace SourceHook
 		SetPluginPaused(plug, false);
 	}
 
+	void CSourceHookImpl::HookLoopBegin(IIface *pIface)
+	{
+		HookLoopInfo hli;
+		hli.pCurIface = pIface;
+		hli.shouldContinue = true;
+		m_HLIStack.push(hli);
+	}
+
+	void CSourceHookImpl::HookLoopEnd()
+	{
+		m_HLIStack.pop();
+	}
+
 	void CSourceHookImpl::SetRes(META_RES res)
 	{
-		m_CurRes = res;
+		*m_HLIStack.front().pCurRes = res;
 	}
 
 	META_RES CSourceHookImpl::GetPrevRes()
 	{
-		return m_PrevRes;
+		return *m_HLIStack.front().pPrevRes;
 	}
 
 	META_RES CSourceHookImpl::GetStatus()
 	{
-		return m_Status;
+		return *m_HLIStack.front().pStatus;
 	}
 
 	const void *CSourceHookImpl::GetOrigRet()
 	{
-		return m_OrigRet;
+		return m_HLIStack.front().pOrigRet;
 	}
 
 	const void *CSourceHookImpl::GetOverrideRet()
 	{
-		return m_OverrideRet;
-	}
-
-	META_RES &CSourceHookImpl::GetCurResRef()
-	{
-		return m_CurRes;
-	}
-
-	META_RES &CSourceHookImpl::GetPrevResRef()
-	{
-		return m_PrevRes;
-	}
-
-	META_RES &CSourceHookImpl::GetStatusRef()
-	{
-		return m_Status;
-	}
-
-	void * &CSourceHookImpl::GetIfacePtrRef()
-	{
-		return m_IfacePtr;
-	}
-
-	void CSourceHookImpl::SetOrigRet(const void *ptr)
-	{
-		m_OrigRet = ptr;
-	}
-
-	void CSourceHookImpl::SetOverrideRet(const void *ptr)
-	{
-		m_OverrideRet = ptr;
+		return m_HLIStack.front().pOverrideRet;
 	}
 
 	void *CSourceHookImpl::GetIfacePtr()
 	{
-		return m_IfacePtr;
+		return *m_HLIStack.front().pIfacePtrPtr;
 	}
 
-	HookLoopStatus &CSourceHookImpl::GetStatusVarRef(IIface *pIface)
+	void CSourceHookImpl::SetCurResPtr(META_RES *mres)
 	{
-		m_CurIface = pIface;
-		return m_HLS;
+		m_HLIStack.front().pCurRes = mres;
 	}
-	void CSourceHookImpl::HookLoopDone()
+
+	void CSourceHookImpl::SetPrevResPtr(META_RES *mres)
 	{
-		m_CurIface = NULL;
+		m_HLIStack.front().pPrevRes = mres;
+	}
+
+	void CSourceHookImpl::SetStatusPtr(META_RES *mres)
+	{
+		m_HLIStack.front().pStatus = mres;
+	}
+
+	void CSourceHookImpl::SetIfacePtrPtr(void **pp)
+	{
+		m_HLIStack.front().pIfacePtrPtr = pp;
+	}
+
+	void CSourceHookImpl::SetOrigRetPtr(const void *ptr)
+	{
+		m_HLIStack.front().pOrigRet = ptr;
+	}
+	void CSourceHookImpl::SetOverrideRetPtr(const void *ptr)
+	{
+		m_HLIStack.front().pOverrideRet = ptr;
+	}
+	bool CSourceHookImpl::ShouldContinue()
+	{
+		return m_HLIStack.front().shouldContinue;
 	}
 
 	////////////////////////////

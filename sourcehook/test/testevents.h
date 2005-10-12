@@ -134,5 +134,23 @@ namespace
 		virtual void Dump() { \
 			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << std::endl; } \
 	}
+
+#define MAKE_STATE_3(name, p1_type, p2_type, p3_type) struct name : State { \
+		p1_type m_Param1; \
+		p2_type m_Param2; \
+		p3_type m_Param3; \
+		name(p1_type param1, p2_type param2, p3_type param3) : m_Param1(param1), m_Param2(param2), m_Param3(param3) {} \
+		virtual bool IsEqual(State *other) { \
+			name *other2 = dynamic_cast<name*>(other); \
+			if (!other2) \
+				return false; \
+			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2 && other2->m_Param3 == m_Param3;\
+		} \
+		virtual void Dump() { \
+			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << "; Param3=" << m_Param3 << std::endl; } \
+	}
+
+#define CHECK_COND(c, err) if (!(c)) { error = err; return false; }
+
 #endif
 

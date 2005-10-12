@@ -1,13 +1,13 @@
 #include <string>
 #include "sh_list.h"
 #include "sh_tinyhash.h"
+#include "testevents.h"
 
 // TEST LIST
 // Tests sh_list, sh_tinyhash, sh_vector
 
 // :TODO: vector test
-
-#define CHECK_COND(c, err) if (!(c)) { error = err; return false; }
+// :TODO: stack test
 
 namespace
 {

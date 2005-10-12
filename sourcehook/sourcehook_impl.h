@@ -15,6 +15,7 @@
 #include "sh_list.h"
 #include "sh_vector.h"
 #include "sh_tinyhash.h"
+#include "sh_stack.h"
 
 // Set this to 1 to enable runtime code generation (faster)
 //  (unused at the moment, but may come back, so I'm leaving it in here!)
@@ -217,6 +218,21 @@ namespace SourceHook
 		Impl_CallClassList m_CallClasses;			//!< A list of already generated callclasses
 		HookManInfoList m_HookMans;					//!< A list of hook managers
 
+		struct HookLoopInfo
+		{
+			META_RES *pStatus;
+			META_RES *pPrevRes;
+			META_RES *pCurRes;
+
+			bool shouldContinue;
+
+			IIface *pCurIface;
+			const void *pOrigRet;
+			const void *pOverrideRet;
+			void **pIfacePtrPtr;
+		};
+		typedef CStack<HookLoopInfo> HookLoopInfoStack;
+
 		/**
 		*	@brief Finds a hook manager for a function based on a text-prototype, a vtable offset and a vtable index
 		*/
@@ -229,12 +245,7 @@ namespace SourceHook
 
 		void SetPluginPaused(Plugin plug, bool paused);
 
-		META_RES m_Status, m_PrevRes, m_CurRes;
-		HookLoopStatus m_HLS;
-		IIface *m_CurIface;
-		const void *m_OrigRet;
-		const void *m_OverrideRet;
-		void *m_IfacePtr;
+		HookLoopInfoStack m_HLIStack;
 	public:
 		CSourceHookImpl();
 		virtual ~CSourceHookImpl();
@@ -341,14 +352,15 @@ namespace SourceHook
 
 		//////////////////////////////////////////////////////////////////////////
 		// For hook managers
-		virtual META_RES &GetCurResRef();				//!< Gets the reference to the current meta result
-		virtual META_RES &GetPrevResRef();				//!< Gets the reference to the previous meta result
-		virtual META_RES &GetStatusRef();				//!< Gets the reference to the status variable
-		virtual void* &GetIfacePtrRef();				//!< Gets the reference to the iface ptr
-		virtual void SetOrigRet(const void *ptr);		//!< Sets the original return pointer
-		virtual void SetOverrideRet(const void *ptr);	//!< Sets the override result pointer
-		HookLoopStatus &GetStatusVarRef(IIface *pIface);
-		void HookLoopDone();
+		void HookLoopBegin(IIface *pIface);			//!< Should be called when a hook loop begins
+		void HookLoopEnd();							//!< Should be called when a hook loop exits
+		void SetCurResPtr(META_RES *mres);			//!< Sets pointer to the current meta result
+		void SetPrevResPtr(META_RES *mres);			//!< Sets pointer to previous meta result
+		void SetStatusPtr(META_RES *mres);			//!< Sets pointer to the status variable
+		void SetIfacePtrPtr(void **pp);				//!< Sets pointer to the interface this pointer
+		void SetOrigRetPtr(const void *ptr);		//!< Sets the original return pointer
+		void SetOverrideRetPtr(const void *ptr);	//!< Sets the override result pointer
+		bool ShouldContinue();						//!< Returns false if the hook loop should exit
 	};
 }
 

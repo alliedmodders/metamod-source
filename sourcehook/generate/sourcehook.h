@@ -20,10 +20,10 @@
 //  1 - Initial revision
 //  2 - Changed to virtual functions for iterators and all queries
 //  3 - Added "hook loop status variable"
-//  Future: Thread safe interface?
+//  4 - Reentrant
 
-#define SH_IFACE_VERSION 3
-#define SH_IMPL_VERSION 2
+#define SH_IFACE_VERSION 4
+#define SH_IMPL_VERSION 3
 
 #ifndef SH_GLOB_SHPTR
 #define SH_GLOB_SHPTR g_SHPtr
@@ -274,15 +274,6 @@ namespace SourceHook
 	typedef CallClass<void> GenericCallClass;
 
 	/**
-	*	@brief SH informs the loop in the hook manager about its status through this
-	*/
-	enum HookLoopStatus
-	{
-		HLS_Continue=0,
-		HLS_Stop
-	};
-
-	/**
 	*	@brief The main SourceHook interface
 	*/
 	class ISourceHook
@@ -360,14 +351,15 @@ namespace SourceHook
 		virtual void *GetIfacePtr() = 0;					//!< Gets the interface pointer
 		//////////////////////////////////////////////////////////////////////////
 		// For hook managers
-		virtual META_RES &GetCurResRef() = 0;				//!< Gets the reference to the current meta result
-		virtual META_RES &GetPrevResRef() = 0;				//!< Gets the reference to the previous meta result
-		virtual META_RES &GetStatusRef() = 0;				//!< Gets the reference to the status variable
-		virtual void* &GetIfacePtrRef() = 0;				//!< Gets the reference to the interface this pointer
-		virtual void SetOrigRet(const void *ptr) = 0;		//!< Sets the original return pointer
-		virtual void SetOverrideRet(const void *ptr) = 0;	//!< Sets the override result pointer
-		virtual HookLoopStatus &GetStatusVarRef(IIface *pIface) = 0;			//!< gets the reference to the hook status loop variable
-		virtual void HookLoopDone() = 0;
+		virtual void HookLoopBegin(IIface *pIface) = 0;			//!< Should be called when a hook loop begins
+		virtual void HookLoopEnd() = 0;							//!< Should be called when a hook loop exits
+		virtual void SetCurResPtr(META_RES *mres) = 0;			//!< Sets pointer to the current meta result
+		virtual void SetPrevResPtr(META_RES *mres) = 0;			//!< Sets pointer to previous meta result
+		virtual void SetStatusPtr(META_RES *mres) = 0;			//!< Sets pointer to the status variable
+		virtual void SetIfacePtrPtr(void **pp) = 0;				//!< Sets pointer to the interface this pointer
+		virtual void SetOrigRetPtr(const void *ptr) = 0;		//!< Sets the original return pointer
+		virtual void SetOverrideRetPtr(const void *ptr) = 0;	//!< Sets the override result pointer
+		virtual bool ShouldContinue() = 0;						//!< Returns false if the hook loop should exit
 	};
 }
 
@@ -543,30 +535,31 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		return (reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	} \
 	/* 2) Declare some vars and set it up */ \
+	SH_GLOB_SHPTR->HookLoopBegin(ifinfo); \
 	IHookList *prelist = ifinfo->GetPreHooks(); \
 	IHookList *postlist = ifinfo->GetPostHooks(); \
-	HookLoopStatus &hls = SH_GLOB_SHPTR->GetStatusVarRef(ifinfo); \
-	hls = HLS_Continue; \
+	META_RES status = MRES_IGNORED; \
+	META_RES prev_res; \
+	META_RES cur_res; \
+	SH_GLOB_SHPTR->SetStatusPtr(&status); \
+	SH_GLOB_SHPTR->SetPrevResPtr(&prev_res); \
+	SH_GLOB_SHPTR->SetCurResPtr(&cur_res); \
 	rettype orig_ret; \
 	rettype override_ret; \
 	rettype plugin_ret; \
-	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
-	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
-	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
-	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
-	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetOrigRet(reinterpret_cast<void*>(&orig_ret)); \
-	SH_GLOB_SHPTR->SetOverrideRet(NULL);
+	void* ifptr; \
+	SH_GLOB_SHPTR->SetIfacePtrPtr(&ifptr); \
+	SH_GLOB_SHPTR->SetOrigRetPtr(reinterpret_cast<void*>(&orig_ret)); \
+	SH_GLOB_SHPTR->SetOverrideRetPtr(NULL);
 
 #define SH_CALL_HOOKS(post, params) \
-	if (hls == HLS_Continue) \
+	if (SH_GLOB_SHPTR->ShouldContinue()) \
 	{ \
 		prev_res = MRES_IGNORED; \
 		for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
 		{ \
 			cur_res = MRES_IGNORED; \
 			ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
-			hls = HLS_Continue; \
 			plugin_ret = reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
 			prev_res = cur_res; \
 			if (cur_res > status) \
@@ -574,9 +567,9 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			if (cur_res >= MRES_OVERRIDE) \
 			{ \
 				override_ret = plugin_ret; \
-				SH_GLOB_SHPTR->SetOverrideRet(&override_ret); \
+				SH_GLOB_SHPTR->SetOverrideRetPtr(&override_ret); \
 			} \
-			if (hls == HLS_Stop) \
+			if (!SH_GLOB_SHPTR->ShouldContinue()) \
 			{ \
 				iter.SetToZero(); \
 				break; \
@@ -595,6 +588,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		orig_ret = override_ret;
 
 #define SH_RETURN() \
+	SH_GLOB_SHPTR->HookLoopEnd(); \
 	return status >= MRES_OVERRIDE ? override_ret : orig_ret;
 
 #define SH_HANDLEFUNC(ifacetype, ifacefunc, paramtypes, params, rettype) \
@@ -625,32 +619,33 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		return; \
 	} \
 	/* 2) Declare some vars and set it up */ \
+	SH_GLOB_SHPTR->HookLoopBegin(ifinfo); \
 	IHookList *prelist = ifinfo->GetPreHooks(); \
 	IHookList *postlist = ifinfo->GetPostHooks(); \
-	META_RES &cur_res = SH_GLOB_SHPTR->GetCurResRef(); \
-	HookLoopStatus &hls = SH_GLOB_SHPTR->GetStatusVarRef(ifinfo); \
-	hls = HLS_Continue; \
-	META_RES &prev_res = SH_GLOB_SHPTR->GetPrevResRef(); \
-	META_RES &status = SH_GLOB_SHPTR->GetStatusRef(); \
-	void* &ifptr = SH_GLOB_SHPTR->GetIfacePtrRef(); \
-	status = MRES_IGNORED; \
-	SH_GLOB_SHPTR->SetOverrideRet(NULL); \
-	SH_GLOB_SHPTR->SetOrigRet(NULL);
+	META_RES status = MRES_IGNORED; \
+	META_RES prev_res; \
+	META_RES cur_res; \
+	SH_GLOB_SHPTR->SetStatusPtr(&status); \
+	SH_GLOB_SHPTR->SetPrevResPtr(&prev_res); \
+	SH_GLOB_SHPTR->SetCurResPtr(&cur_res); \
+	void* ifptr; \
+	SH_GLOB_SHPTR->SetIfacePtrPtr(&ifptr); \
+	SH_GLOB_SHPTR->SetOverrideRetPtr(NULL); \
+	SH_GLOB_SHPTR->SetOrigRetPtr(NULL);
 
 #define SH_CALL_HOOKS_void(post, params) \
-	if (hls == HLS_Continue) \
+	if (SH_GLOB_SHPTR->ShouldContinue()) \
 	{ \
 		prev_res = MRES_IGNORED; \
 		for (AutoHookIter iter(post##list); !iter.End(); iter.Next()) \
 		{ \
 			cur_res = MRES_IGNORED; \
 			ifptr = reinterpret_cast<void*>(reinterpret_cast<char*>(this) - iter.ThisPtrOffs()); \
-			hls = HLS_Continue; \
 			reinterpret_cast<CSHDelegate<FD>*>(iter.Handler())->GetDeleg() params; \
 			prev_res = cur_res; \
 			if (cur_res > status) \
 				status = cur_res; \
-			if (hls == HLS_Stop) \
+			if (!SH_GLOB_SHPTR->ShouldContinue()) \
 			{ \
 				iter.SetToZero(); \
 				break; \
@@ -666,7 +661,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	}
 
-#define SH_RETURN_void()
+#define SH_RETURN_void() \
+	SH_GLOB_SHPTR->HookLoopEnd();
 
 #define SH_HANDLEFUNC_void(ifacetype, ifacefunc, paramtypes, params) \
 	SH_SETUPCALLS_void(paramtypes, params) \
