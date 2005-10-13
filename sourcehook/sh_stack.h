@@ -70,7 +70,7 @@ namespace SourceHook
 			iterator operator++(int)	// postincrement
 			{
 				iterator tmp = *this;
-				++m_Ptr;
+				++m_Index;
 				return tmp;
 			}
 
@@ -83,7 +83,7 @@ namespace SourceHook
 			iterator operator--(int)	// postdecrememnt
 			{
 				iterator tmp = *this;
-				--m_Ptr;
+				--m_Index;
 				return tmp;
 			}
 
@@ -110,12 +110,37 @@ namespace SourceHook
 			assert(m_Elements);
 		}
 
+		CStack(const CStack &other) : m_Elements(NULL),
+			m_AllocatedSize(0),
+			m_UsedSize(0)
+		{
+			assert(reserve(other.m_AllocatedSize) && m_Elements);
+			m_UsedSize = other.m_UsedSize;
+			for (size_t i = 0; i < m_UsedSize; ++i)
+				m_Elements[i] = other.m_Elements[i];
+		}
+
 		~CStack()
 		{
 			if (m_Elements)
 				delete [] m_Elements;
 		}
 		
+		void operator=(const CStack &other)
+		{
+			if (m_AllocatedSize < other.m_AllocatedSize)
+			{
+				if (m_Elements)
+					delete [] m_Elements;
+				m_Elements = new T[other.m_AllocatedSize];
+				assert(m_Elements);
+				m_AllocatedSize = other.m_AllocatedSize;
+			}
+			m_UsedSize = other.m_UsedSize;
+			for (size_t i = 0; i < m_UsedSize; ++i)
+				m_Elements[i] = other.m_Elements[i];
+		}
+
 		bool push(const T &val)
 		{
 			if (m_UsedSize + 1 == m_AllocatedSize)
@@ -128,9 +153,12 @@ namespace SourceHook
 					m_AllocatedSize /= 2;
 					return false;
 				}
-				for (size_t i = 0; i < m_UsedSize; ++i)
-					newElements[i] = m_Elements[i];
-				delete [] m_Elements;
+				if (m_Elements)
+				{
+					for (size_t i = 0; i < m_UsedSize; ++i)
+						newElements[i] = m_Elements[i];
+					delete [] m_Elements;
+				}
 				m_Elements = newElements;
 			}
 			m_Elements[m_UsedSize++] = val;
@@ -158,6 +186,37 @@ namespace SourceHook
 		iterator end()
 		{
 			return iterator(this, m_UsedSize);
+		}
+
+		size_t size()
+		{
+			return m_UsedSize;
+		}
+		size_t capacity()
+		{
+			return m_AllocatedSize;
+		}
+		bool empty()
+		{
+			return m_UsedSize == 0 ? true : false;
+		}
+		bool reserve(size_t size)
+		{
+			if (size > m_AllocatedSize)
+			{
+				T *newElements = new T[size];
+				if (!newElements)
+					return false;
+				if (m_Elements)
+				{
+					for (size_t i = 0; i < m_UsedSize; ++i)
+						newElements[i] = m_Elements[i];
+					delete [] m_Elements;
+				}
+				m_Elements = newElements;
+				m_AllocatedSize = size;
+			}
+			return true;
 		}
 	};
 };	//namespace SourceHook

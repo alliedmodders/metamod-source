@@ -1,5 +1,6 @@
 #include <string>
 #include "sh_list.h"
+#include "sh_stack.h"
 #include "sh_tinyhash.h"
 #include "testevents.h"
 
@@ -163,6 +164,53 @@ namespace
 
 		return true;
 	}
+
+	bool DoTestStack(std::string &error)
+	{
+		typedef SourceHook::CStack<int> IntStack;
+		IntStack stk;
+		int i;
+
+		CHECK_COND(stk.size() == 0 && stk.empty(), "A0");
+
+		for (i = 0; i < 5000; ++i)
+			stk.push(i);
+
+		CHECK_COND(stk.front() == 4999, "1");
+		CHECK_COND(stk.size() == 5000 && !stk.empty(), "A1");
+
+		IntStack::iterator iter;
+		i = 0;
+		for (iter = stk.begin(); iter != stk.end(); ++iter, ++i)
+			CHECK_COND(*iter == i, "2");
+
+		i = 0;
+		for (iter = stk.begin(); iter != stk.end(); iter++, ++i)
+			CHECK_COND(*iter == i, "3");
+
+		--iter;
+		iter--;
+		*iter = 'g'+'a'+'b'+'e'+'n';
+		stk.pop();
+
+		CHECK_COND(stk.size() == 4999 && !stk.empty(), "A2");
+		CHECK_COND(stk.front() == 'g'+'a'+'b'+'e'+'n', "4");
+		
+		IntStack stk2(stk);
+		CHECK_COND(stk2.size() == 4999 && !stk2.empty(), "A3");
+
+		IntStack::iterator iter2 = stk2.begin();
+		for (iter = stk.begin(); iter != stk.end(); ++iter, iter2++)
+			CHECK_COND(*iter == *iter2, "5");
+
+		while (!stk2.empty())
+			stk2.pop();
+		CHECK_COND(stk2.size() == 0 && stk2.empty(), "A4");
+		stk = stk2;
+		CHECK_COND(stk.size() == 0 && stk.empty(), "A5");
+
+		return true;
+	}
 }
 
 bool TestList(std::string &error)
@@ -173,6 +221,8 @@ bool TestList(std::string &error)
 	if (!DoTestTinyHash(error))
 		return false;
 
+	if (!DoTestStack(error))
+		return false;
 
 	return true;
 }
