@@ -6,7 +6,7 @@ bin:
 fd_hopter.o: fd_hopter.cpp bin
 	gcc -fPIC -o bin/$@ -c $<
 
-main.o: main.cpp bin
+main.o: shworker.cpp bin
 	gcc -fPIC -o bin/$@ -c $<
 
 shworker: fd_hopter.o main.o bin
