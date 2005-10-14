@@ -5,7 +5,7 @@
 //						- Don Clugston, Mar 2004.
 //		Major contributions were made by Jody Hagins.
 // History:
-// 24-Apr-04 1.0  Submitted to CodeProject.
+// 24-Apr-04 1.0  * Submitted to CodeProject.
 // 28-Apr-04 1.1  * Prevent most unsafe uses of evil static function hack.
 //				  * Improved syntax for horrible_cast (thanks Paul Bludov).
 //				  * Tested on Metrowerks MWCC and Intel ICL (IA32)
@@ -30,14 +30,20 @@
 //				  * Less use of macros. Error messages should be more comprehensible.
 //				  * Added include guards
 //				  * Added FastDelegate::empty() to test if invocation is safe (Thanks Neville Franks).
-//				  * Now tested on VS 2005 Beta, PGI C++
+//				  * Now tested on VS 2005 Express Beta, PGI C++
 // 24-Dec-04 1.4  * Added DelegateMemento, to allow collections of disparate delegates.
 //                * <,>,<=,>= comparison operators to allow storage in ordered containers.
 //				  * Substantial reduction of code size, especially the 'Closure' class.
 //				  * Standardised all the compiler-specific workarounds.
 //                * MFP conversion now works for CodePlay (but not yet supported in the full code).
-//                * Now compiles without warnings on _any_ compiler, including BCC 5.5.1
+//                * Now compiles without warnings on _any_ supported compiler, including BCC 5.5.1
 //				  * New syntax: FastDelegate< int (char *, double) >.
+// 14-Feb-05 1.4.1* Now treats =0 as equivalent to .clear(), ==0 as equivalent to .empty(). (Thanks elfric).
+//				  * Now tested on Intel ICL for AMD64, VS2005 Beta for AMD64 and Itanium.
+// 30-Mar-05 1.5  * Safebool idiom: "if (dg)" is now equivalent to "if (!dg.empty())"
+//				  * Fully supported by CodePlay VectorC
+//                * Bugfix for Metrowerks: empty() was buggy because a valid MFP can be 0 on MWCC!
+//                * More optimal assignment,== and != operators for static function pointers.
 
 #ifndef FASTDELEGATE_H
 #define FASTDELEGATE_H
@@ -531,8 +537,10 @@ struct SimplifyMemFunc<SINGLE_MEMFUNCPTR_SIZE + 3*sizeof(int) >
 // +-- Static pointer --+--pThis --+-- pMemFunc-+-- Meaning------+
 // |   0				|  0       |   0        | Empty          |
 // |   !=0              |(dontcare)|  Invoker   | Static function|
-// |   0                |  !=0     |  !=0       | Method call    |
+// |   0                |  !=0     |  !=0*      | Method call    |
 // +--------------------+----------+------------+----------------+
+//  * For Metrowerks, this can be 0. (first virtual function in a 
+//       single_inheritance class).
 // When stored stored inside a specific delegate, the 'dontcare' entries are replaced
 // with a reference to the delegate itself. This complicates the = and == operators
 // for the delegate class.
@@ -544,9 +552,11 @@ struct SimplifyMemFunc<SINGLE_MEMFUNCPTR_SIZE + 3*sizeof(int) >
 // horrible_cast. In this case the DelegateMemento implementation is simple:
 // +--pThis --+-- pMemFunc-+-- Meaning---------------------+
 // |    0     |  0         | Empty                         |
-// |  !=0     |  !=0       | Static function or method call|
+// |  !=0     |  !=0*      | Static function or method call|
 // +----------+------------+-------------------------------+
-// Note that the Sun C++ and MSVC documentation explicitly state that they
+//  * For Metrowerks, this can be 0. (first virtual function in a 
+//       single_inheritance class).
+// Note that the Sun C++ and MSVC documentation explicitly state that they 
 // support static_cast between void * and function pointers.
 
 class DelegateMemento {
@@ -570,9 +580,7 @@ public:
 	}
 #else
 	DelegateMemento() : m_pthis(0), m_pFunction(0) {};
-	void clear() {
-		m_pthis=0; m_pFunction=0;
-	}
+	void clear() {	m_pthis=0; m_pFunction=0;	}
 #endif
 public:
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
@@ -603,8 +611,13 @@ public:
 		return memcmp(&m_pFunction, &right.m_pFunction, sizeof(m_pFunction)) < 0;
 
 	}
+	// BUGFIX (Mar 2005):
+	// We can't just compare m_pFunction because on Metrowerks,
+	// m_pFunction can be zero even if the delegate is not empty!
 	inline bool operator ! () const		// Is it bound to anything?
-	{ return m_pFunction==0; }
+	{ return m_pthis==0 && m_pFunction==0; }
+	inline bool empty() const		// Is it bound to anything?
+	{ return m_pthis==0 && m_pFunction==0; }
 public:
 	DelegateMemento & operator = (const DelegateMemento &right)  {
 		SetMementoFrom(right);
@@ -723,7 +736,11 @@ public:
 	template < class DerivedClass, class ParentInvokerSig >
 	inline void bindstaticfunc(DerivedClass *pParent, ParentInvokerSig static_function_invoker,
 				StaticFuncPtr function_to_bind ) {
-		bindmemfunc(pParent, static_function_invoker);
+		if (function_to_bind==0) { // cope with assignment to 0
+			m_pFunction=0;
+		} else {
+			bindmemfunc(pParent, static_function_invoker);
+        }
 		m_pStaticFunction=reinterpret_cast<GenericFuncPtr>(function_to_bind);
 	}
 	inline UnvoidStaticFuncPtr GetStaticFunction() const {
@@ -752,9 +769,13 @@ public:
 	template < 	class DerivedClass, class ParentInvokerSig>
 	inline void bindstaticfunc(DerivedClass *pParent, ParentInvokerSig static_function_invoker,
 				StaticFuncPtr function_to_bind) {
-		// We'll be ignoring the 'this' pointer, but we need to make sure we pass
-		// a valid value to bindmemfunc().
-		bindmemfunc(pParent, static_function_invoker);
+		if (function_to_bind==0) { // cope with assignment to 0
+			m_pFunction=0;
+		} else { 
+		   // We'll be ignoring the 'this' pointer, but we need to make sure we pass
+		   // a valid value to bindmemfunc().
+			bindmemfunc(pParent, static_function_invoker);
+        }
 
 		// WARNING! Evil hack. We store the function in the 'this' pointer!
 		// Ensure that there's a compilation failure if function pointers
@@ -780,6 +801,13 @@ public:
 	}
 #endif // !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
 
+	// Does the closure contain this static function?
+	inline bool IsEqualToStaticFuncPtr(StaticFuncPtr funcptr){
+		if (funcptr==0) return empty();
+	// For the Evil method, if it doesn't actually contain a static function, this will return an arbitrary
+	// value that is not equal to any valid function pointer.
+		else return funcptr==reinterpret_cast<StaticFuncPtr>(GetStaticFunction());
+	}
 };
 
 
@@ -816,6 +844,14 @@ public:
 // it cannot be void. DesiredRetType is the real type which is returned from
 // all of the functions. It can be void.
 
+// Implicit conversion to "bool" is achieved using the safe_bool idiom,
+// using member data pointers (MDP). This allows "if (dg)..." syntax
+// Because some compilers (eg codeplay) don't have a unique value for a zero
+// MDP, an extra padding member is added to the SafeBool struct.
+// Some compilers (eg VC6) won't implicitly convert from 0 to an MDP, so
+// in that case the static function constructor is not made explicit; this
+// allows "if (dg==0) ..." to compile.
+
 @VARARGS
 template<@CLASSARGS, class RetType=detail::DefaultVoid>
 class FastDelegate@NUM {
@@ -824,7 +860,8 @@ private:
 	typedef DesiredRetType (*StaticFunctionPtr)(@FUNCARGS);
 	typedef RetType (*UnvoidStaticFunctionPtr)(@FUNCARGS);
 	typedef RetType (detail::GenericClass::*GenericMemFn)(@FUNCARGS);
-	detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> m_Closure;
+	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
 	typedef FastDelegate@NUM type;
@@ -858,15 +895,34 @@ public:
 	inline void bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(@FUNCARGS) const) {
 		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	}
 	// Static functions. We convert them into a member function call.
-	// Note that this also provides a conversion from static functions.
+	// This constructor also provides implicit conversion
 	FastDelegate@NUM(DesiredRetType (*function_to_bind)(@FUNCARGS) ) {
+		bind(function_to_bind);	}
+	// for efficiency, prevent creation of a temporary
+	void operator = (DesiredRetType (*function_to_bind)(@FUNCARGS) ) {
 		bind(function_to_bind);	}
 	inline void bind(DesiredRetType (*function_to_bind)(@FUNCARGS)) {
 		m_Closure.bindstaticfunc(this, &FastDelegate@NUM::InvokeStaticFunction,
 			function_to_bind); }
-	RetType operator() (@FUNCARGS) const { // Invoke the delegate
-		// this next line is the only one that violates the standard
+	// Invoke the delegate
+	RetType operator() (@FUNCARGS) const {
 	return (m_Closure.GetClosureThis()->*(m_Closure.GetClosureMemPtr()))(@INVOKEARGS); }
+	// Implicit conversion to "bool" using the safe_bool idiom
+private:
+	typedef struct SafeBoolStruct {
+		int a_data_pointer_to_this_is_0_on_buggy_compilers;
+		StaticFunctionPtr m_nonzero;
+	} UselessTypedef;
+    typedef StaticFunctionPtr SafeBoolStruct::*unspecified_bool_type;
+public:
+	operator unspecified_bool_type() const {
+        return empty()? 0: &SafeBoolStruct::m_nonzero;
+    }
+	// necessary to allow ==0 to work despite the safe_bool idiom
+	inline bool operator==(StaticFunctionPtr funcptr) {
+		return m_Closure.IsEqualToStaticFuncPtr(funcptr);	}
+	inline bool operator!=(StaticFunctionPtr funcptr) { 
+		return !m_Closure.IsEqualToStaticFuncPtr(funcptr);    }
 	inline bool operator ! () const	{	// Is it bound to anything?
 			return !m_Closure; }
 	inline bool empty() const	{
@@ -908,8 +964,7 @@ class FastDelegate;
 // FastDelegate@NUM < @SELARGS, R >
 template<typename R, @CLASSARGS>
 class FastDelegate< R ( @SELARGS ) >
-  // Inherit from FastDelegate@NUM so that it can be treated just
-  // like a FastDelegate@NUM
+  // Inherit from FastDelegate@NUM so that it can be treated just like a FastDelegate@NUM
   : public FastDelegate@NUM < @SELARGS, R >
 {
 public:

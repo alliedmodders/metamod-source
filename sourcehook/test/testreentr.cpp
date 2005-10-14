@@ -66,6 +66,10 @@ namespace
 	MAKE_STATE_1(State_H_C7_G, C7*);
 	MAKE_STATE_1(State_H_C8_G, C8*);
 
+	MAKE_STATE_1(State_H2_C4_G, C4*);
+
+	int g_TestID;
+
 	struct C1
 	{
 		virtual void F()
@@ -163,6 +167,23 @@ namespace
 		}
 	};
 
+	SH_DECL_HOOK0_void(C1, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C1, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C2, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C2, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C3, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C3, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C4, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C4, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C5, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C5, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C6, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C6, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C7, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C7, G, SH_NOATTRIB, 0, int);
+	SH_DECL_HOOK0_void(C8, F, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0(C8, G, SH_NOATTRIB, 0, int);
+
 	void Handler_C1_F()
 	{
 		ADD_STATE(State_H_C1_F(META_IFACEPTR(C1)));
@@ -207,6 +228,11 @@ namespace
 		g_pC5->F();
 		return 4;
 	}
+	int Handler2_C4_G()
+	{
+		ADD_STATE(State_H2_C4_G(META_IFACEPTR(C4)));
+		return 4;
+	}
 	void Handler_C5_F()
 	{
 		ADD_STATE(State_H_C5_F(META_IFACEPTR(C5)));
@@ -231,6 +257,11 @@ namespace
 	}
 	void Handler_C7_F()
 	{
+		if (g_TestID == 1 || g_TestID == 2)
+			SH_REMOVE_HOOK_STATICFUNC(C4, G, g_pC4, Handler2_C4_G, false);
+		if (g_TestID == 2)
+			SH_REMOVE_HOOK_STATICFUNC(C4, G, g_pC4, Handler_C4_G, false);
+
 		ADD_STATE(State_H_C7_F(META_IFACEPTR(C7)));
 		g_pC7->G();
 	}
@@ -259,23 +290,6 @@ namespace
 	C6 g_C6;
 	C7 g_C7;
 	C8 g_C8;
-
-	SH_DECL_HOOK0_void(C1, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C1, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C2, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C2, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C3, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C3, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C4, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C4, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C5, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C5, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C6, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C6, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C7, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C7, G, SH_NOATTRIB, 0, int);
-	SH_DECL_HOOK0_void(C8, F, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0(C8, G, SH_NOATTRIB, 0, int);
 }
 
 bool TestReentr(std::string &error)
@@ -346,6 +360,224 @@ bool TestReentr(std::string &error)
 		new State_C1_G(g_pC1),
 		new State_C1_F(g_pC1),
 		NULL), "1");
+
+
+	SH_ADD_HOOK_STATICFUNC(C4, G, g_pC4, Handler2_C4_G, false);
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_H_C4_G(g_pC4),
+		new State_H_C5_F(g_pC5),
+		new State_H_C5_G(g_pC5),
+		new State_H_C6_F(g_pC6),
+		new State_H_C6_G(g_pC6),
+		new State_H_C7_F(g_pC7),
+		new State_H_C7_G(g_pC7),
+		new State_H_C8_F(g_pC8),
+		new State_H_C8_G(g_pC8),
+		new State_C8_G(g_pC8),
+		new State_C8_F(g_pC8),
+		new State_C7_G(g_pC7),
+		new State_C7_F(g_pC7),
+		new State_C6_G(g_pC6),
+		new State_C6_F(g_pC6),
+		new State_C5_G(g_pC5),
+		new State_C5_F(g_pC5),
+		new State_H2_C4_G(g_pC4),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "2");
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_H_C4_G(g_pC4),
+		new State_H_C5_F(g_pC5),
+		new State_H_C5_G(g_pC5),
+		new State_H_C6_F(g_pC6),
+		new State_H_C6_G(g_pC6),
+		new State_H_C7_F(g_pC7),
+		new State_H_C7_G(g_pC7),
+		new State_H_C8_F(g_pC8),
+		new State_H_C8_G(g_pC8),
+		new State_C8_G(g_pC8),
+		new State_C8_F(g_pC8),
+		new State_C7_G(g_pC7),
+		new State_C7_F(g_pC7),
+		new State_C6_G(g_pC6),
+		new State_C6_F(g_pC6),
+		new State_C5_G(g_pC5),
+		new State_C5_F(g_pC5),
+		new State_H2_C4_G(g_pC4),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "3");
+
+	g_TestID = 1;
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_H_C4_G(g_pC4),
+		new State_H_C5_F(g_pC5),
+		new State_H_C5_G(g_pC5),
+		new State_H_C6_F(g_pC6),
+		new State_H_C6_G(g_pC6),
+		new State_H_C7_F(g_pC7),
+		new State_H_C7_G(g_pC7),
+		new State_H_C8_F(g_pC8),
+		new State_H_C8_G(g_pC8),
+		new State_C8_G(g_pC8),
+		new State_C8_F(g_pC8),
+		new State_C7_G(g_pC7),
+		new State_C7_F(g_pC7),
+		new State_C6_G(g_pC6),
+		new State_C6_F(g_pC6),
+		new State_C5_G(g_pC5),
+		new State_C5_F(g_pC5),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "4");
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_H_C4_G(g_pC4),
+		new State_H_C5_F(g_pC5),
+		new State_H_C5_G(g_pC5),
+		new State_H_C6_F(g_pC6),
+		new State_H_C6_G(g_pC6),
+		new State_H_C7_F(g_pC7),
+		new State_H_C7_G(g_pC7),
+		new State_H_C8_F(g_pC8),
+		new State_H_C8_G(g_pC8),
+		new State_C8_G(g_pC8),
+		new State_C8_F(g_pC8),
+		new State_C7_G(g_pC7),
+		new State_C7_F(g_pC7),
+		new State_C6_G(g_pC6),
+		new State_C6_F(g_pC6),
+		new State_C5_G(g_pC5),
+		new State_C5_F(g_pC5),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "5");
+
+
+
+	SH_ADD_HOOK_STATICFUNC(C4, G, g_pC4, Handler2_C4_G, false);
+
+	g_TestID = 2;
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_H_C4_G(g_pC4),
+		new State_H_C5_F(g_pC5),
+		new State_H_C5_G(g_pC5),
+		new State_H_C6_F(g_pC6),
+		new State_H_C6_G(g_pC6),
+		new State_H_C7_F(g_pC7),
+		new State_H_C7_G(g_pC7),
+		new State_H_C8_F(g_pC8),
+		new State_H_C8_G(g_pC8),
+		new State_C8_G(g_pC8),
+		new State_C8_F(g_pC8),
+		new State_C7_G(g_pC7),
+		new State_C7_F(g_pC7),
+		new State_C6_G(g_pC6),
+		new State_C6_F(g_pC6),
+		new State_C5_G(g_pC5),
+		new State_C5_F(g_pC5),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "6");
+
+	g_pC1->F();
+
+	CHECK_STATES((&g_States,
+		new State_H_C1_F(g_pC1),
+		new State_H_C1_G(g_pC1),
+		new State_H_C2_F(g_pC2),
+		new State_H_C2_G(g_pC2),
+		new State_H_C3_F(g_pC3),
+		new State_H_C3_G(g_pC3),
+		new State_H_C4_F(g_pC4),
+		new State_C4_G(g_pC4),
+		new State_C4_F(g_pC4),
+		new State_C3_G(g_pC3),
+		new State_C3_F(g_pC3),
+		new State_C2_G(g_pC2),
+		new State_C2_F(g_pC2),
+		new State_C1_G(g_pC1),
+		new State_C1_F(g_pC1),
+		NULL), "7");
 
 	return true;
 }
