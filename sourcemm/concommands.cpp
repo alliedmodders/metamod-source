@@ -547,6 +547,7 @@ void CAlwaysRegisterableCommand::BringToFront()
 			pPrev->SetNext(m_pNext);		// Remove us from the list
 		}
 		// Now, register us
+		SetNext(NULL);
 		m_pICvar->RegisterConCommandBase(this);
 	}
 }
