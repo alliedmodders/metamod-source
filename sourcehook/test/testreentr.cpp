@@ -581,3 +581,4 @@ bool TestReentr(std::string &error)
 
 	return true;
 }
+
