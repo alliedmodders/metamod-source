@@ -374,7 +374,7 @@ namespace SourceHook
 #define META_RESULT_PREVIOUS				SH_GLOB_SHPTR->GetPrevRes()
 #define META_RESULT_ORIG_RET(type)			*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOrigRet())
 #define META_RESULT_OVERRIDE_RET(type)		*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOverrideRet())
-#define META_IFACEPTR						SH_GLOB_SHPTR->GetIfacePtr()
+#define META_IFACEPTR(type)					reinterpret_cast<type*>(SH_GLOB_SHPTR->GetIfacePtr())
 
 
 /**

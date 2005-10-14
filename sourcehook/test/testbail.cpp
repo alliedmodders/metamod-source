@@ -17,7 +17,7 @@ namespace
 	SH_DECL_HOOK0_void(zomg_lolz, zomg, SH_NOATTRIB, 0);
 	void Handler()
 	{
-		SH_REMOVE_HOOK_STATICFUNC(zomg_lolz, zomg, reinterpret_cast<zomg_lolz*>(META_IFACEPTR),
+		SH_REMOVE_HOOK_STATICFUNC(zomg_lolz, zomg, META_IFACEPTR(zomg_lolz),
 			Handler, false);
 	}
 	void Handler2()

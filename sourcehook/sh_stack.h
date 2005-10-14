@@ -13,8 +13,6 @@
 
 #define SH_STACK_DEFAULT_SIZE 4
 
-#include <assert.h>
-
 namespace SourceHook
 {
 	// Vector
@@ -101,20 +99,18 @@ namespace SourceHook
 			m_AllocatedSize(SH_STACK_DEFAULT_SIZE),
 			m_UsedSize(0)
 		{
-			assert(m_Elements);
 		}
 		CStack(size_t size) : m_Elements(new T[size]),
 			m_AllocatedSize(size),
 			m_UsedSize(0)
 		{
-			assert(m_Elements);
 		}
 
 		CStack(const CStack &other) : m_Elements(NULL),
 			m_AllocatedSize(0),
 			m_UsedSize(0)
 		{
-			assert(reserve(other.m_AllocatedSize) && m_Elements);
+			reserve(other.m_AllocatedSize);
 			m_UsedSize = other.m_UsedSize;
 			for (size_t i = 0; i < m_UsedSize; ++i)
 				m_Elements[i] = other.m_Elements[i];
@@ -133,7 +129,6 @@ namespace SourceHook
 				if (m_Elements)
 					delete [] m_Elements;
 				m_Elements = new T[other.m_AllocatedSize];
-				assert(m_Elements);
 				m_AllocatedSize = other.m_AllocatedSize;
 			}
 			m_UsedSize = other.m_UsedSize;

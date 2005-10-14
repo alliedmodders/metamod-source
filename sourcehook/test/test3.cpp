@@ -55,15 +55,15 @@ namespace
 
 	void Handler_Func1()
 	{
-		ADD_STATE(State_Func1H_Called(reinterpret_cast<void*>(META_IFACEPTR)));
+		ADD_STATE(State_Func1H_Called(META_IFACEPTR(void)));
 	}
 	void Handler_Func2()
 	{
-		ADD_STATE(State_Func2H_Called(reinterpret_cast<void*>(META_IFACEPTR)));
+		ADD_STATE(State_Func2H_Called(META_IFACEPTR(void)));
 	}
 	void Handler_Func3()
 	{
-		ADD_STATE(State_Func3H_Called(reinterpret_cast<void*>(META_IFACEPTR)));
+		ADD_STATE(State_Func3H_Called(META_IFACEPTR(void)));
 	}
 }
 
