@@ -25,10 +25,13 @@
 #define SH_IFACE_VERSION 4
 #define SH_IMPL_VERSION 3
 
+// The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
+// It's used in various macros
 #ifndef SH_GLOB_SHPTR
 #define SH_GLOB_SHPTR g_SHPtr
 #endif
 
+// Used to identify the current plugin
 #ifndef SH_GLOB_PLUGPTR
 #define SH_GLOB_PLUGPTR g_PLID
 #endif
@@ -447,7 +450,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
 			return 1; \
 		\
-		if (action == ::SourceHook::HA_GetInfo) \
+		if (action == HA_GetInfo) \
 		{ \
 			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, ms_Proto); \
 			\
@@ -457,12 +460,12 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 				reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
 			return 0; \
 		} \
-		else if (action == ::SourceHook::HA_Register) \
+		else if (action == HA_Register) \
 		{ \
 			ms_HI = param; \
 			return 0; \
 		} \
-		else if (action == ::SourceHook::HA_Unregister) \
+		else if (action == HA_Unregister) \
 		{ \
 			ms_HI = NULL; \
 			return 0; \
@@ -1766,8 +1769,6 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 // SH_CALL
 
 #if SH_COMP == SH_COMP_MSVC
-
-// :TODO: TEST THIS ON MSVC
 
 # define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \

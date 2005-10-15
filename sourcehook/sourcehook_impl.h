@@ -17,10 +17,6 @@
 #include "sh_tinyhash.h"
 #include "sh_stack.h"
 
-// Set this to 1 to enable runtime code generation (faster)
-//  (unused at the moment, but may come back, so I'm leaving it in here!)
-#define SH_RUNTIME_CODEGEN 1
-
 namespace SourceHook
 {
 	/**

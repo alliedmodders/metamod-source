@@ -8,7 +8,6 @@
 // Tests sh_list, sh_tinyhash, sh_vector
 
 // :TODO: vector test
-// :TODO: stack test
 
 namespace
 {
