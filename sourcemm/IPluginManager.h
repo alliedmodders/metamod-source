@@ -110,7 +110,7 @@ public:
 	 * @param source By reference source of plugin
 	 * @return True on success, false if not found
 	 */
-	virtual bool Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source) =0;
+	virtual bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source) =0;
 
 	/** 
 	 * @brief Checks another plugin's QueryRunning() status.

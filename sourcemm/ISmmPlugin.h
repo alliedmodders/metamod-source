@@ -23,14 +23,6 @@
 #define PLAPI_VERSION	7
 #define PLAPI_NAME		"ISmmPlugin"
 
-struct factories
-{
-	CreateInterfaceFn engine;
-	CreateInterfaceFn server;
-	CreateInterfaceFn physics;
-	CreateInterfaceFn fileSystem;
-};
-
 class ISmmAPI;
 typedef int PluginId;
 
@@ -57,7 +49,7 @@ public:
 	 * @param maxlen Size of error message buffer
 	 * @return		True if successful, return false to reject the load.
 	 */
-	virtual bool Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlength, bool late) =0;
+	virtual bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlength, bool late) =0;
 
 	/**
 	 * @brief Called when your plugin is "queried".  This is useful for rejecting a loaded
@@ -151,6 +143,60 @@ public:
 	}
 };
 
+/**
+ * @brief Added in 1.2 so plugins could listen to specific events
+ */
+class IMetamodListener
+{
+public:
+	virtual ~IMetamodListener() { }
+public:
+	virtual void OnPluginLoad(PluginId id) { }
+
+	virtual void OnPluginUnload(PluginId id) { }
+
+	virtual void OnPluginPause(PluginId id) { }
+
+	virtual void OnPluginUnpause(PluginId id) { }
+
+	virtual void OnLevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background) { }
+
+	virtual void *OnEngineQuery(const char *iface, int *ret)
+	{
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL; 
+	}
+
+	virtual void *OnPhysicsQuery(const char *iface, int *ret)
+	{
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL; 
+	}
+
+	virtual void *OnFileSystemQuery(const char *iface, int *ret)
+	{
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL; 
+	}
+
+	virtual void *OnGameDLLQuery(const char *iface, int *ret)
+	{
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL; 
+	}
+
+	virtual void *OnMetamodQuery(const char *iface, int *ret)
+	{
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL; 	
+	}
+};
+
 #define PL_EXPOSURE		CreateInterface
 #define PL_EXPOSURE_C	"CreateInterface"
 
@@ -174,7 +220,7 @@ public:
 
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
-	g_SHPtr = ismm->SourceHook(); \
+	g_SHPtr = ismm->MetaQuery(MMIFACE_SOURCEHOOK, NULL); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 

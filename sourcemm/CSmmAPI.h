@@ -27,8 +27,6 @@ namespace SourceMM
 	public:
 		CSmmAPI::CSmmAPI();
 	public:
-		ISmmPluginManager *PluginManager();
-		SourceHook::ISourceHook *SourceHook();
 		void LogMsg(ISmmPlugin *pl, const char *msg, ...);
 	public:
 		CreateInterfaceFn engineFactory(bool syn=true);
@@ -50,6 +48,8 @@ namespace SourceMM
 		}
 		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin);
 		virtual void GetShVersions(int &shvers, int &shimpl);
+		virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);
+		virtual void *MetaFactory(const char *iface, int *ret);
 	public:
 		bool CacheCmds();
 	private:

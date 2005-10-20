@@ -28,14 +28,16 @@
 #endif //version check
 #endif //__GNUC__
 
+class IMetamodListener;
 class ISmmPluginManager;
 class ISmmPlugin;
+
+#define	MMIFACE_SOURCEHOOK		"ISourceHook"
+#define	MMIFACE_PLMANAGER		"IPluginManager"	
 
 class ISmmAPI
 {
 public:
-	virtual ISmmPluginManager *PluginManager() =0;
-	virtual SourceHook::ISourceHook *SourceHook() =0;
 	virtual void LogMsg(ISmmPlugin *pl, const char *msg, ...) =0;
 public:
 	virtual CreateInterfaceFn engineFactory(bool syn=true) =0;
@@ -64,7 +66,12 @@ public:		//Added in 1.10 (1:0)
 	virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) =0;
 	//Returns sourcehook API version and implementation version
 	virtual void GetShVersions(int &shvers, int &shimpl) =0;
+	//Binds an event listener to your plugin
+	virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener) =0;
+	//Queries the metamod factory
+	virtual void *MetaFactory(const char *iface, int *ret) =0;
 };
+
 
 /** Version history
  * 1.10 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.

@@ -61,9 +61,9 @@ namespace SourceMM
 			PluginId m_Source;
 			ISmmPlugin *m_API;
 			HINSTANCE m_Lib;
-			factories fac_list;
 			SourceHook::List<ConCommandBase *> m_Cvars;
 			SourceHook::List<ConCommandBase *> m_Cmds;
+			SourceHook::List<IMetamodListener *> m_Events;
 		};
 	public:
 		CPluginManager();
@@ -76,7 +76,7 @@ namespace SourceMM
 		bool Unpause(PluginId id, char *error, size_t maxlen);
 		bool UnloadAll();
 	public:
-		bool Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source);
+		bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
 		bool QueryRunning(PluginId id, char *error, size_t maxlength);
 
 		void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);

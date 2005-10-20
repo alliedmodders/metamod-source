@@ -28,16 +28,6 @@ CSmmAPI::CSmmAPI()
 	m_Cache = false;
 }
 
-ISmmPluginManager *CSmmAPI::PluginManager()
-{
-	return static_cast<ISmmPluginManager *>(&g_PluginMngr);
-}
-
-SourceHook::ISourceHook *CSmmAPI::SourceHook()
-{
-	return static_cast<SourceHook::ISourceHook *>(&g_SourceHook);
-}
-
 void CSmmAPI::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 {
 	va_list ap;
@@ -137,6 +127,58 @@ void CSmmAPI::ConPrintf(const char *fmt, ...)
 	vsnprintf(buf, sizeof(buf)-1, fmt, ap);
 	ConPrint(buf);
 	va_end(ap);
+}
+
+void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
+{
+	CPluginManager::CPlugin *pl = g_PluginMngr.FindByAPI(plugin);
+
+	pl->m_Events.push_back(pListener);
+}
+
+void *CSmmAPI::MetaFactory(const char *iface, int *_ret)
+{
+	if (!iface)
+		return NULL;
+
+	//first check ours... we get first chance!
+	if (strcmp(iface, MMIFACE_SOURCEHOOK)==0)
+	{
+		if (_ret)
+			*_ret = IFACE_OK;
+		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
+	} else if (strcmp(iface, MMIFACE_PLMANAGER)==0) {
+		if (_ret)
+			*_ret = IFACE_OK;
+		return static_cast<void *>(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
+	}
+
+	CPluginManager::CPlugin *pl;
+	SourceHook::List<IMetamodListener *>::iterator event;
+	IMetamodListener *api;
+	int ret = 0;
+	void *val = NULL;
+
+	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++)
+	{
+		pl = (*iter);
+		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++)
+		{
+			api = (*event);
+			ret = IFACE_FAILED;
+			if ( (val=api->OnMetamodQuery(iface, &ret)) != NULL )
+			{
+				if (_ret)
+					*_ret = ret;
+				return val;
+			}
+		}
+	}
+
+	if (_ret)
+		*_ret = IFACE_FAILED;
+
+	return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////

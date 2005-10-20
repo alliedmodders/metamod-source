@@ -15,7 +15,10 @@
 #include "sourcemm.h"
 #include "concommands.h"
 #include "CSmmAPI.h"
+#include "CPlugin.h"
 #include "util.h"
+
+using namespace SourceMM;
 
 /**
  * @brief Implementation of main SourceMM GameDLL functionality
@@ -44,6 +47,26 @@ SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *dllExec;
 
 void ClearGamedllList();
+
+//helper macro
+#define	IFACE_MACRO(orig,nam) \
+	CPluginManager::CPlugin *pl; \
+	SourceHook::List<IMetamodListener *>::iterator event; \
+	IMetamodListener *api; \
+	int mret = 0; \
+	void *val = NULL; \
+	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
+		pl = (*iter); \
+		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
+			api = (*event); \
+			mret = IFACE_FAILED; \
+			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
+				if (ret) *ret = mret; \
+				return val; \
+			} \
+		} \
+	} \
+	return (orig)(iface, ret);
 
 ///////////////////////////////////
 // Main code for HL2 Interaction //
@@ -115,7 +138,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 }
 
 //This is where the magic happens
-SMM_API void *CreateInterface(const char *name, int *ret)
+SMM_API void *CreateInterface(const char *iface, int *ret)
 {
 	if (!gParsedGameInfo)
 	{
@@ -317,10 +340,10 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 		const char *str = "ServerGameDLL";
 		size_t len = strlen(str);
 
-		if (strncmp(name, str, len) == 0)
+		if (strncmp(iface, str, len) == 0)
 		{
 			//This is the interface we want!  Right now we support versions 3 and 4.
-			int version = atoi(&(name[len]));
+			int version = atoi(&(iface[len]));
 			if (version < MIN_GAMEDLL_VERSION || version > MAX_GAMEDLL_VERSION)
 			{
 				Error("GameDLL version %d is not supported by Metamod!", version);
@@ -332,7 +355,7 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 			for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
 			{
 				pInfo = (*iter);
-				ptr = (pInfo->factory)(name, ret);
+				ptr = (pInfo->factory)(iface, ret);
 				if (ptr)
 				{
 					//this is our gamedll.  unload the others.
@@ -361,8 +384,7 @@ SMM_API void *CreateInterface(const char *name, int *ret)
 	}
 
 	//if we got here, there's definitely a gamedll.
-	//META_INTERFACE_MACRO(server, g_GameDll.factory);
-	return (g_GameDll.factory)(name, ret);
+	IFACE_MACRO(g_GameDll.factory, GameDLL);
 }
 
 void ClearGamedllList()
@@ -491,23 +513,23 @@ int LoadPluginsFromFile(const char *file)
 
 //Wrapper function.  This is called when the GameDLL thinks it's using
 // the engine's real engineFactory.
-void *EngineFactory(const char *name, int *ret)
+void *EngineFactory(const char *iface, int *ret)
 {
-	META_INTERFACE_MACRO(engine, g_Engine.engineFactory);
+	IFACE_MACRO(g_Engine.engineFactory, Engine);
 }
 
 //Wrapper function.  This is called when the GameDLL thinks it's using
 // the engine's real physicsFactory.
-void *PhysicsFactory(const char *name, int *ret)
+void *PhysicsFactory(const char *iface, int *ret)
 {
-	META_INTERFACE_MACRO(physics, g_Engine.physicsFactory);
+	IFACE_MACRO(g_Engine.physicsFactory, Physics);
 }
 
 //Wrapper function.  This is called when the GameDLL thinks it's using
 // the engine's real fileSystemFactory.
-void *FileSystemFactory(const char *name, int *ret)
+void *FileSystemFactory(const char *iface, int *ret)
 {
-	META_INTERFACE_MACRO(fileSystem, g_Engine.fileSystemFactory);
+	IFACE_MACRO(g_Engine.fileSystemFactory, FileSystem);
 }
 
 void LogMessage(const char *msg, ...)

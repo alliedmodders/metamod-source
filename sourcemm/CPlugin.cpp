@@ -39,7 +39,7 @@ CPluginManager::~CPluginManager()
 
 CPluginManager::CPlugin::CPlugin() : m_Lib(NULL), m_API(NULL), m_Id(0), m_Source(0)
 {
-	memset(&fac_list, 0, sizeof(factories));
+
 }
 
 PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen)
@@ -260,7 +260,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 							snprintf(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
 						pl->m_Status = Pl_Error;
 					} else {
-						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), &(pl->fac_list), error, maxlen, m_AllLoaded))
+						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), error, maxlen, m_AllLoaded))
 						{
 							pl->m_Status = Pl_Running;
 							if (m_AllLoaded)
@@ -409,7 +409,7 @@ bool CPluginManager::UnloadAll()
 	return status;
 }
 
-bool CPluginManager::Query(PluginId id, const char *&file, factories *&list, Pl_Status &status, PluginId &source)
+bool CPluginManager::Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source)
 {
 	CPlugin *pl = FindById(id);
 
@@ -417,7 +417,6 @@ bool CPluginManager::Query(PluginId id, const char *&file, factories *&list, Pl_
 		return false;
 
 	file = pl->m_File.c_str();
-	list = &(pl->fac_list);
 	status = pl->m_Status;
 	source = pl->m_Source;
 
