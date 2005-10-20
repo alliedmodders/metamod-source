@@ -136,8 +136,11 @@ void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
 	pl->m_Events.push_back(pListener);
 }
 
-void *CSmmAPI::MetaFactory(const char *iface, int *_ret)
+void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 {
+	if (id)
+		*id = 0;
+
 	if (!iface)
 		return NULL;
 
@@ -170,6 +173,8 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret)
 			{
 				if (_ret)
 					*_ret = ret;
+				if (id)
+					*id = pl->m_Id;
 				return val;
 			}
 		}

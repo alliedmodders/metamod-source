@@ -68,8 +68,15 @@ public:		//Added in 1.10 (1:0)
 	virtual void GetShVersions(int &shvers, int &shimpl) =0;
 	//Binds an event listener to your plugin
 	virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener) =0;
-	//Queries the metamod factory
-	virtual void *MetaFactory(const char *iface, int *ret) =0;
+	/**
+	  * @brief Queries the metamod factory
+	  *
+	  * @param iface	String containing interface name
+	  * @param ret		Optional pointer to store return status
+	  * @param id		Optional pointer to store id of plugin that overrode interface, 0 if none
+	  * @return			Returned pointer
+	  */
+	virtual void *MetaFactory(const char *iface, int *ret, PluginId *id) =0;
 };
 
 

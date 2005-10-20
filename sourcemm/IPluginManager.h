@@ -16,6 +16,8 @@
  * @file IPluginManager.h
  */
 
+typedef int PluginId;
+
 #include "ISmmPlugin.h"
 
 /**

@@ -24,7 +24,6 @@
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
-typedef int PluginId;
 
 class ISmmPlugin
 {
@@ -223,10 +222,6 @@ public:
 	g_SHPtr = ismm->MetaQuery(MMIFACE_SOURCEHOOK, NULL); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
-
-#define FACTORY_RETURN(mres, value) \
-	g_SMAPI->SetLastMetaReturn(mres); \
-	return value;
 
 #define META_LOG				g_SMAPI->LogMsg
 #define META_REGCMD(name)		g_SMAPI->RegisterConCmdBase(g_PLAPI, name##_command)

@@ -49,7 +49,7 @@ namespace SourceMM
 		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin);
 		virtual void GetShVersions(int &shvers, int &shimpl);
 		virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);
-		virtual void *MetaFactory(const char *iface, int *ret);
+		virtual void *MetaFactory(const char *iface, int *ret, PluginId *id);
 	public:
 		bool CacheCmds();
 	private:
