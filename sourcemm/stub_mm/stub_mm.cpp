@@ -24,7 +24,7 @@ void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 	RETURN_META(MRES_IGNORED);
 }
 
-bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen)
+bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 

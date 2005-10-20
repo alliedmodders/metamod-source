@@ -219,7 +219,7 @@ public:
 
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
-	g_SHPtr = ismm->MetaQuery(MMIFACE_SOURCEHOOK, NULL); \
+	g_SHPtr = static_cast<SourceHook::ISourceHook *>(ismm->MetaFactory(MMIFACE_SOURCEHOOK, NULL, NULL)); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 

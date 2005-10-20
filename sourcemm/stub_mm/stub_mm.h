@@ -16,7 +16,7 @@
 class StubPlugin : public ISmmPlugin
 {
 public:
-	bool Load(PluginId id, ISmmAPI *ismm, factories *list, char *error, size_t maxlen);
+	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 	bool Unload(char *error, size_t maxlen);
 	bool Pause(char *error, size_t maxlen);
 	bool Unpause(char *error, size_t maxlen);
