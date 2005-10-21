@@ -1,3 +1,16 @@
+2005/10/21 1.10:
+ - Rewrote GameDLL loading code to be API version generic.
+   As such, SourceMM will now easily support new API releases without
+   an SDK release, such as the case with Day of Defeat:Source
+ - Added more flexibility to plugin control by supplying an event system.
+ - Removed dependency on libstdc++.so by supplying a small template library.
+ - SourceHook internal API is now interface-based, meaning that future
+   updates to the API will not break older plugins.  This update, however,
+   breaks older plugins.
+ - SourceHook is now re-entrant.
+ - Added a basic automated installer (by Basic-Master).
+ - Fixed a bug where games with changing game names would not work.
+ - Fixed various bugs, including a cvarlist corruption bug on unloading plugins.
 
 2005/07/07 1.00-RC2:
  - Added API for dealing with ConCommandBase registration (cvars/concmds).
