@@ -160,6 +160,8 @@ public:
 
 	virtual void OnLevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background) { }
 
+	virtual void OnLevelShutdown() { }
+
 	virtual void *OnEngineQuery(const char *iface, int *ret)
 	{
 		if (ret)

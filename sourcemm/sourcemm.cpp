@@ -68,6 +68,18 @@ void ClearGamedllList();
 	} \
 	return (orig)(iface, ret);
 
+#define ITER_EVENT(evn, args) \
+	CPluginManager::CPlugin *pl; \
+	SourceHook::List<IMetamodListener *>::iterator event; \
+	IMetamodListener *api; \
+	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
+		pl = (*iter); \
+		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
+			api = (*event); \
+			api->evn##args; \
+		} \
+	}
+
 ///////////////////////////////////
 // Main code for HL2 Interaction //
 ///////////////////////////////////
@@ -566,6 +578,10 @@ void LevelShutdown_handler(void)
 	} else {
 		bInFirstLevel = false;
 	}
+
+	ITER_EVENT(OnLevelShutdown, ());
+
+	RETURN_META(MRES_IGNORED);
 }
 
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
@@ -575,6 +591,8 @@ bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char cons
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
+
+	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 
 	RETURN_META_VALUE(MRES_IGNORED, false);
 }

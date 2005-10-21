@@ -20,6 +20,20 @@
 
 using namespace SourceMM;
 
+#define ITER_PLEVENT(evn, plid) \
+	CPluginManager::CPlugin *_Xpl; \
+	SourceHook::List<IMetamodListener *>::iterator event; \
+	IMetamodListener *api; \
+	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
+		_Xpl = (*iter); \
+		if (_Xpl->m_Id == plid) \
+			continue; \
+		for (event=_Xpl->m_Events.begin(); event!=_Xpl->m_Events.end(); event++) { \
+			api = (*event); \
+			api->evn(plid); \
+		} \
+	}
+
 CPluginManager g_PluginMngr;
 
 CPluginManager::CPluginManager()
@@ -70,6 +84,8 @@ PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, 
 	if (!pl)
 		return Pl_BadLoad;
 
+	ITER_PLEVENT(OnPluginLoad, pl->m_Id);
+
 	return pl->m_Id;
 }
 
@@ -113,7 +129,14 @@ bool CPluginManager::Pause(PluginId id, char *error, size_t maxlen)
 		return false;
 	}
 
-	return _Pause(pl, error, maxlen);
+	bool ret;
+	
+	if ( (ret=_Pause(pl, error, maxlen)) == true )
+	{
+		ITER_PLEVENT(OnPluginPause, pl->m_Id);
+	}
+
+	return ret;
 }
 
 bool CPluginManager::Unpause(PluginId id, char *error, size_t maxlen)
@@ -126,7 +149,14 @@ bool CPluginManager::Unpause(PluginId id, char *error, size_t maxlen)
 		return false;
 	}
 
-	return _Unpause(pl, error, maxlen);
+	bool ret;
+	
+	if ( (ret=_Unpause(pl, error, maxlen)) == true )
+	{
+		ITER_PLEVENT(OnPluginUnpause, pl->m_Id);
+	}
+
+	return ret;
 }
 
 bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
@@ -139,7 +169,14 @@ bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
 		return false;
 	}
 
-	return _Unload(pl, force, error, maxlen);
+	bool ret;
+	PluginId old_id = pl->m_Id;
+	if ( (ret=_Unload(pl, force, error, maxlen)) == true )
+	{
+		ITER_PLEVENT(OnPluginUnload, old_id);
+	}
+
+	return ret;
 }
 
 bool CPluginManager::Retry(PluginId id, char *error, size_t len)
