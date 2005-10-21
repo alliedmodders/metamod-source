@@ -76,7 +76,7 @@ void ClearGamedllList();
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
 			api = (*event); \
-			api->evn##args; \
+			api->evn args; \
 		} \
 	}
 
