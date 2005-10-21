@@ -225,7 +225,7 @@ public:
 		unsigned int i = 0;
 		size_t len = size();
 		//check for bounds
-		if (num == npos || start+num > len-num+1)
+		if (num == npos || start+num > len-start)
 			num = len - start;
 		//do the erasing
 		bool copyflag = false;
