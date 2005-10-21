@@ -17,7 +17,7 @@
 
 #define SAMPLE_VERSION	"1.10"
 
-class SamplePlugin : public ISmmPlugin
+class SamplePlugin : public ISmmPlugin, public IMetamodListener
 {
 public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
@@ -106,6 +106,9 @@ public:
 	//Called when a client uses a command.  Unlike server plugins, it's void.
 	// You can still supercede the gamedll through RETURN_META(MRES_SUPERCEDE).
 	void ClientCommand(edict_t *pEntity);
+
+	//From IMetamodListener
+	virtual void OnLevelShutdown();
 
 private:
 	IGameEventManager2 *m_GameEventManager;	

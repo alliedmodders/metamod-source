@@ -25,6 +25,11 @@ bool SamplePlugin::LevelInit(const char *pMapName, const char *pMapEntities, con
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
+void SamplePlugin::OnLevelShutdown()
+{
+	META_LOG(g_PLAPI, "OnLevelShutdown() called from listener");
+}
+
 void SamplePlugin::ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
 {
 	META_LOG(g_PLAPI, "ServerActivate() called: edictCount=%d, clientMax=%d", edictCount, clientMax);
@@ -172,6 +177,8 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	m_Engine_CC = SH_GET_CALLCLASS(m_Engine);
 
 	SH_CALL(m_Engine_CC, &IVEngineServer::LogPrint)("All hooks started!\n");
+
+	g_SMAPI->AddListener(g_PLAPI, this);
 
 	return true;
 }
