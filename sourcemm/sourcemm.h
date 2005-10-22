@@ -39,7 +39,7 @@
  *  minor changes can also roll over, but a big change should ALWAYS roll over.
  * Increasing one grouping should make the lesser ones reset back to zero.
  */
-#define		SOURCEMM_VERSION	"1.10"
+#define		SOURCEMM_VERSION	"1.1.1"
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
