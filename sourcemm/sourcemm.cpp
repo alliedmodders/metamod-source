@@ -30,6 +30,7 @@ SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
+bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
@@ -99,6 +100,7 @@ void InitMainStates()
 	bInFirstLevel = true;
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLInit, g_GameDll.pGameDLL, DLLInit, false);
+	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLInit, g_GameDll.pGameDLL, DLLInit_Post, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, g_GameDll.pGameDLL, DLLShutdown_handler, false);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
@@ -140,12 +142,16 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	LoadPluginsFromFile(full_path);
 
-	g_PluginMngr.SetAllLoaded();
-
 	bInFirstLevel = true;
 
 	dllExec = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
 
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+{
+	g_PluginMngr.SetAllLoaded();
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
