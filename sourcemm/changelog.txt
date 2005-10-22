@@ -1,3 +1,6 @@
+2005/10/21 1.10.1:
+ - Fixed a bug where AllPluginsLoaded() was not called after DLLInit().
+
 2005/10/21 1.10:
  - Rewrote GameDLL loading code to be API version generic.
    As such, SourceMM will now easily support new API releases without
