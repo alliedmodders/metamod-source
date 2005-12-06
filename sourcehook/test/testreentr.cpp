@@ -579,6 +579,23 @@ bool TestReentr(std::string &error)
 		new State_C1_F(g_pC1),
 		NULL), "7");
 
+	SH_REMOVE_HOOK_STATICFUNC(C1, F, g_pC1, Handler_C1_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C1, G, g_pC1, Handler_C1_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C2, F, g_pC2, Handler_C2_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C2, G, g_pC2, Handler_C2_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C3, F, g_pC3, Handler_C3_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C3, G, g_pC3, Handler_C3_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C4, F, g_pC4, Handler_C4_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C4, G, g_pC4, Handler_C4_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C5, F, g_pC5, Handler_C5_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C5, G, g_pC5, Handler_C5_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C6, F, g_pC6, Handler_C6_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C6, G, g_pC6, Handler_C6_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C7, F, g_pC7, Handler_C7_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C7, G, g_pC7, Handler_C7_G, false);
+	SH_REMOVE_HOOK_STATICFUNC(C8, F, g_pC8, Handler_C8_F, false);
+	SH_REMOVE_HOOK_STATICFUNC(C8, G, g_pC8, Handler_C8_G, false);
+
 	return true;
 }
 

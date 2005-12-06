@@ -675,6 +675,9 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK_MEMFUNC(Test, F8, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	SH_REMOVE_HOOK_MEMFUNC(Test, F9, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	SH_REMOVE_HOOK_MEMFUNC(Test, F10, pTest, &f1_handlers, &HandlersF1::Pre, false);
+
+	g_SHImpl.CompleteShutdown();
+
 	return true;
 }
 

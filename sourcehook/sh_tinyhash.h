@@ -251,6 +251,7 @@ namespace SourceHook
 				// Remove this element and move to the next one
 				iterator tmp = *this;
 				++tmp;
+				delete (*iter);
 				hash->m_Buckets[curbucket]->erase(iter);
 				*this = tmp;
 

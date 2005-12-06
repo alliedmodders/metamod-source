@@ -1,6 +1,7 @@
 // Hello BAIL!
 //   hello pm how are you
 //    I'm fine, what about you?
+//     not bad, just looking for mem leaks
 // This is a test file
 
 #include <stdio.h>
@@ -11,6 +12,7 @@
 #include "sh_tinyhash.h"
 #include "sh_list.h"
 #include "sourcehook_impl.h"
+#include "sourcehook.h"
 
 using namespace std;
 

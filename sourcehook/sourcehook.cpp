@@ -751,6 +751,12 @@ namespace SourceHook
 			delete m_FreeIters;
 			m_FreeIters = iter;
 		}
+		while (m_UsedIters)
+		{
+			CIter *iter = m_UsedIters->m_pNext;
+			delete m_UsedIters;
+			m_UsedIters = iter;
+		}
 	}
 	IHookList::IIter *CSourceHookImpl::CHookList::GetIter()
 	{
