@@ -37,6 +37,11 @@ namespace SourceHook
 				key(k), val(v)
 				{
 				};
+			THashNode & operator =(const THashNode &other)
+			{
+				key = other.key;
+				val = other.val;
+			}
 			K key;
 			V val;
 		};

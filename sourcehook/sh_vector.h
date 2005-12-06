@@ -274,6 +274,15 @@ public:
 		clear();
 	}
 
+	CVector & operator =(const CVector<T> & other)
+	{
+		clear();
+		resize(other.size());
+		for (size_t i=0; i<other.size(); i++)
+			m_Data[i] = other.at(i);
+		return *this;
+	}
+
 	// interface
 	size_t size() const
 	{
