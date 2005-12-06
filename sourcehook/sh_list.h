@@ -254,7 +254,7 @@ public:
 		}
 		return end();
 	}
-	List & operator =(List &src)
+	List & operator =(const List &src)
 	{
 		clear();
 		iterator iter;

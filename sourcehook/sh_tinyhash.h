@@ -86,10 +86,18 @@ namespace SourceHook
 	private:
 		void _Clear()
 		{
+			typename List<THashNode *>::iterator iter, end;
 			for (size_t i=0; i<m_numBuckets; i++)
 			{
 				if (m_Buckets[i])
 				{
+					end = m_Buckets[i]->end();
+					iter = m_Buckets[i]->begin();
+					while (iter != end)
+					{
+						delete (*iter);
+						iter++;
+					}
 					delete m_Buckets[i];
 					m_Buckets[i] = NULL;
 				}
