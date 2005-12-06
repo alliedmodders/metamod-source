@@ -13,11 +13,27 @@
 #include "cvars.h"
 
 SamplePlugin g_SamplePlugin;
+MyListener g_Listener;
 
 PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
 
 //This has all of the necessary hook declarations.  Read it!
 #include "meta_hooks.h"
+
+#define	FIND_IFACE(func, assn_var, num_var, name, type) \
+	do { \
+		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
+			num = 0; \
+			break; \
+		} \
+		if (num >= 999) \
+			break; \
+	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
+	if (!assn_var) { \
+		if (error) \
+			snprintf(error, maxlen, "Could not find interface %s", name); \
+		return false; \
+	}
 
 bool SamplePlugin::LevelInit(const char *pMapName, const char *pMapEntities, const char *pOldLevel, const char *pLandmarkName, bool loadGame, bool background)
 {
@@ -107,33 +123,21 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 {
 	PLUGIN_SAVEVARS();
 
-	m_ServerDll = (IServerGameDLL *)((ismm->serverFactory())(INTERFACEVERSION_SERVERGAMEDLL, NULL));
-	m_Engine = (IVEngineServer *)((ismm->engineFactory())(INTERFACEVERSION_VENGINESERVER, NULL));
-	m_ServerClients = (IServerGameClients *)((ismm->serverFactory())(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
-	m_GameEventManager = (IGameEventManager2 *)((ismm->engineFactory())(INTERFACEVERSION_GAMEEVENTSMANAGER2, NULL));
+	char iface_buffer[255];
+	int num;
 
-	if (!m_ServerDll)
-	{
-		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_SERVERGAMEDLL);
-		return false;
-	}
-	if (!m_Engine)
-	{
-		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_VENGINESERVER);
-		return false;
-	}
-	if (!m_ServerClients)
-	{
-		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_SERVERGAMECLIENTS);
-		return false;
-	}
-	if (!m_GameEventManager)
-	{
-		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_GAMEEVENTSMANAGER2);
-		return false;
-	}
+	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
+	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *)
+	strcpy(iface_buffer, INTERFACEVERSION_VENGINESERVER);
+	FIND_IFACE(engineFactory, m_Engine, num, iface_buffer, IVEngineServer *)
+	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMECLIENTS);
+	FIND_IFACE(serverFactory, m_ServerClients, num, iface_buffer, IServerGameClients *)
+	strcpy(iface_buffer, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+	FIND_IFACE(engineFactory, m_GameEventManager, num, iface_buffer, IGameEventManager2 *);
 
 	META_LOG(g_PLAPI, "Starting plugin.\n");
+
+	ismm->AddListener(this, &g_Listener);
 
 	//Init our cvars/concmds
 	ConCommandBaseMgr::OneTimeInit(&g_Accessor);
@@ -219,3 +223,19 @@ void SamplePlugin::AllPluginsLoaded()
 	// interfaces we make.  In this callback, the plugin could be assured that either
 	// the interfaces it requires were either loaded in another plugin or not.
 }
+
+void *MyListener::OnMetamodQuery(const char *iface, int *ret)
+{
+	if (strcmp(iface, "SamplePlugin")==0)
+	{
+		if (ret)
+			*ret = IFACE_OK;
+		return static_cast<void *>(&g_SamplePlugin);
+	}
+
+	if (ret)
+		*ret = IFACE_FAILED;
+
+	return NULL;
+}
+

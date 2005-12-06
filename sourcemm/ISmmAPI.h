@@ -56,7 +56,7 @@ public:		//Added in 1.00-RC2 (0:0)
 	//these do not add newlines
 	virtual void ConPrint(const char *fmt) =0;
 	virtual void ConPrintf(const char *fmt, ...) =0;
-public:		//Added in 1.10 (1:0)
+public:		//Added in 1.1.0 (1:0)
 	//added by request.  Checks if ConPrint/ConPrintf will mirror to rcon.
 	virtual bool RemotePrintingAvailable() =0;
 	//Returns the Metamod Version numbers as major version and minor (API) version.
@@ -77,11 +77,18 @@ public:		//Added in 1.10 (1:0)
 	  * @return			Returned pointer
 	  */
 	virtual void *MetaFactory(const char *iface, int *ret, PluginId *id) =0;
+public:		//Added in 1.1.2 (1:1)
+	/**
+	 * @brief Given a base interface name, such as ServerGameDLL or ServerGameDLL003, 
+	 * reformats the string to increase the number, then returns the new number.
+	 */
+	virtual int FormatIface(char iface[], unsigned int maxlength) =0;
 };
 
 
 /** Version history
- * 1.10 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
+ * 1.1.0 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
+ * 1.1.2 added API call for generating iface names.
  */
 
 #endif //_INCLUDE_ISMM_API_H

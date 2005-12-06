@@ -18,6 +18,21 @@ PLUGIN_EXPOSE(SamplePlugin, g_StubPlugin);
 //This has all of the necessary hook declarations.  Read it!
 #include "meta_hooks.h"
 
+#define	FIND_IFACE(func, assn_var, num_var, name, type) \
+	do { \
+		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
+			num = 0; \
+			break; \
+		} \
+		if (num >= 999) \
+			break; \
+	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
+	if (!assn_var) { \
+		if (error) \
+			snprintf(error, maxlen, "Could not find interface %s", name); \
+		return false; \
+	}
+
 void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 {
 	META_LOG(g_PLAPI, "ServerActivate() called: edictCount=%d, clientMax=%d", edictCount, clientMax);
@@ -28,13 +43,11 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 {
 	PLUGIN_SAVEVARS();
 
-	m_ServerDll = (IServerGameDLL *)((ismm->serverFactory())(INTERFACEVERSION_SERVERGAMEDLL, NULL));
+	char iface_buffer[255];
+	int num;
 
-	if (!m_ServerDll)
-	{
-		snprintf(error, maxlen, "Could not find interface %s", INTERFACEVERSION_SERVERGAMEDLL);
-		return false;
-	}
+	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
+	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *)
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 
@@ -60,7 +73,15 @@ bool StubPlugin::Unpause(char *error, size_t maxlen)
 
 void StubPlugin::AllPluginsLoaded()
 {
-
+	//This is an example of inter-plugin communication
+	PluginId id;
+	void *ptr = g_SMAPI->MetaFactory("SamplePlugin", NULL, &id);
+	if (ptr)
+	{
+		META_LOG(g_PLAPI, "Found Sample Plugin[%d] at (%p)!", id, ptr);
+	} else {
+		META_LOG(g_PLAPI, "Did not find Sample Plugin!");
+	}
 }
 
 const char *StubPlugin::GetAuthor()
@@ -102,3 +123,4 @@ const char *StubPlugin::GetLogTag()
 {
 	return "STUB";
 }
+

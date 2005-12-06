@@ -118,6 +118,12 @@ private:
 	SourceHook::CallClass<IVEngineServer> *m_Engine_CC;
 };
 
+class MyListener : public IMetamodListener
+{
+public:
+	virtual void *OnMetamodQuery(const char *iface, int *ret);
+};
+
 extern SamplePlugin g_SamplePlugin;
 PLUGIN_GLOBALVARS();
 

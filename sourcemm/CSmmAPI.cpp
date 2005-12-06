@@ -288,3 +288,31 @@ void CSmmAPI::GetShVersions(int &shvers, int &shimpl)
 	shvers = SH_IFACE_VERSION;
 	shimpl = SH_IMPL_VERSION;
 }
+
+int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
+{
+	int length = (int)strlen(iface);
+	int i;
+	int num = 0;
+
+	for (i=length-1; i>=0; i--)
+	{
+		if (!isdigit(iface[i]))
+			break;
+	}
+
+	if ( (num && (maxlength <= length)) || (!num && (maxlength <= length+3)) )
+	{
+		return -1;
+	}
+
+	if (i != length-1)
+		num = atoi(&(iface[++i]));
+
+	num++;
+
+	snprintf(&(iface[i]), 4, "%03d", num);
+
+	return num;
+}
+

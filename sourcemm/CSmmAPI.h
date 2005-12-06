@@ -50,6 +50,7 @@ namespace SourceMM
 		virtual void GetShVersions(int &shvers, int &shimpl);
 		virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);
 		virtual void *MetaFactory(const char *iface, int *ret, PluginId *id);
+		virtual int FormatIface(char buffer[], unsigned int maxlength);
 	public:
 		bool CacheCmds();
 	private:
