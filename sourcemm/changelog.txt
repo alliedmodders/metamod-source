@@ -1,5 +1,6 @@
 2005/12/06 1.1.2:
  - Added interface overriding/sharing examples to sample plugins.
+ - Added API to help guessing at Valve interface versions.
  - Fixed various memory leaks.
  - Fixed memory corruption bug on vector copying.
  - Fixed other various template bugs.
