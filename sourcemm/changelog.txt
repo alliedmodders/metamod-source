@@ -1,7 +1,13 @@
-2005/10/21 1.10.1:
+2005/12/06 1.1.2:
+ - Added interface overriding/sharing examples to sample plugins.
+ - Fixed various memory leaks.
+ - Fixed memory corruption bug on vector copying.
+ - Fixed other various template bugs.
+
+2005/10/21 1.1.1:
  - Fixed a bug where AllPluginsLoaded() was not called after DLLInit().
 
-2005/10/21 1.10:
+2005/10/21 1.1:
  - Rewrote GameDLL loading code to be API version generic.
    As such, SourceMM will now easily support new API releases without
    an SDK release, such as the case with Day of Defeat:Source
