@@ -133,6 +133,17 @@ namespace SourceHook
 	*/
 	typedef int Plugin;
 
+	struct ProtoInfo
+	{
+		ProtoInfo(int rtsz, int nop, const int *p) : beginningNull(0), retTypeSize(rtsz), numOfParams(nop), params(p)
+		{
+		}
+		int beginningNull;		//!< To distinguish from old protos (which never begin with 0)
+		int retTypeSize;		//!< 0 if void
+		int numOfParams;		//!< number of parameters
+		const int *params;		//!< params[0]=0 (or -1 for vararg), params[1]=size of first param, ...
+	};
+
 	/**
 	*	@brief Specifies the actions for hook managers
 	*/
@@ -363,6 +374,14 @@ namespace SourceHook
 		virtual void SetOrigRetPtr(const void *ptr) = 0;		//!< Sets the original return pointer
 		virtual void SetOverrideRetPtr(const void *ptr) = 0;	//!< Sets the override result pointer
 		virtual bool ShouldContinue() = 0;						//!< Returns false if the hook loop should exit
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*   @param pubFunc The hook manager's info function
+		*/
+		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc) = 0;
 	};
 }
 
@@ -398,6 +417,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	shptr->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr));
 }
 
+#define SH_MANUALHOOK_RECONFIGURE(hookname, pvtblindex, pvtbloffs, pthisptroffs) \
+	do { \
+		SH_GLOB_SHPTR->RemoveHookManager(SH_GLOB_PLUGPTR, SH_MFHCls(hookname)::HookManPubFunc); \
+		SH_MFHCls(hookname)::ms_MFI.thisptroffs = pthisptroffs; \
+		SH_MFHCls(hookname)::ms_MFI.vtblindex = pvtblindex; \
+		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
+	} while (0)
+
 #define SH_GET_CALLCLASS(ptr) SH_GET_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 #define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 
@@ -417,6 +444,22 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_REMOVE_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
 	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
+
+#define SH_ADD_MANUALHOOK(hookname, ifaceptr, handler, post) \
+	__SourceHook_FHMAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
+#define SH_ADD_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
+#define SH_ADD_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
+
+#define SH_REMOVE_MANUALHOOK(hookname, ifaceptr, handler, post) \
+	__SourceHook_FHMRemove##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
+#define SH_REMOVE_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
+#define SH_REMOVE_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
+
+
 #define SH_NOATTRIB
 
 
@@ -435,6 +478,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 //////////////////////////////////////////////////////////////////////////
 #define SH_FHCls(ift, iff, ov) __SourceHook_FHCls_##ift##iff##ov
+#define SH_MFHCls(hookname) __SourceHook_MFHCls_##hookname
 
 #define SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr) \
 	SH_FHCls(ifacetype,ifacefunc,overload)() \
@@ -452,7 +496,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		\
 		if (action == HA_GetInfo) \
 		{ \
-			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, ms_Proto); \
+			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
+				reinterpret_cast<const char*>(&ms_Proto)); \
 			\
 			MemFuncInfo mfi; \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
@@ -483,15 +528,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		static SH_FHCls(ifacetype,ifacefunc,overload) ms_Inst; \
 		static ::SourceHook::MemFuncInfo ms_MFI; \
 		static ::SourceHook::IHookManagerInfo *ms_HI; \
-		static const char *ms_Proto; \
+		static ::SourceHook::ProtoInfo ms_Proto; \
 		SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
 
-#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto, funcptr) \
+#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, funcptr) \
 	}; \
 	SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
 	::SourceHook::MemFuncInfo SH_FHCls(ifacetype,ifacefunc,overload)::ms_MFI; \
 	::SourceHook::IHookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
-	const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 	bool __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
@@ -518,6 +562,77 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, &tmp, post); \
 	} \
+
+#define SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, pvtbloffs, pvtblidx, pthisptroffs) \
+	struct SH_MFHCls(hookname) \
+	{ \
+		static SH_MFHCls(hookname) ms_Inst; \
+		static ::SourceHook::MemFuncInfo ms_MFI; \
+		static ::SourceHook::IHookManagerInfo *ms_HI; \
+		static ::SourceHook::ProtoInfo ms_Proto; \
+		\
+		SH_MFHCls(hookname)() \
+		{ \
+			ms_MFI.isVirtual = true; \
+			ms_MFI.thisptroffs = pthisptroffs; \
+			ms_MFI.vtblindex = pvtblidx; \
+			ms_MFI.vtbloffs = pvtbloffs; \
+		} \
+		static int HookManPubFunc(::SourceHook::HookManagerAction action, ::SourceHook::IHookManagerInfo *param) \
+		{ \
+			using namespace ::SourceHook; \
+			/* we don't set ms_MFI here because manual hookmans can be reconfigured */ \
+			/* :FIXME: possible problem: someone adding a hook from a constructor of a global entity */ \
+			/* which is construced before SH_MFHCls(hookname)() gets called? */ \
+			/* Verify interface version */ \
+			if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
+				return 1; \
+			\
+			if (action == HA_GetInfo) \
+			{ \
+				param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
+					reinterpret_cast<const char*>(&ms_Proto)); \
+				\
+				MemFuncInfo mfi; \
+				GetFuncInfo(&SH_MFHCls(hookname)::Func, mfi); \
+				param->SetHookfuncVfnptr( \
+					reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
+				return 0; \
+			} \
+			else if (action == HA_Register) \
+			{ \
+				ms_HI = param; \
+				return 0; \
+			} \
+			else if (action == HA_Unregister) \
+			{ \
+				ms_HI = NULL; \
+				return 0; \
+			} \
+			else \
+				return 1; \
+		}
+
+#define SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, pvtbloffs, pvtblidx, pthisptroffs) \
+	}; \
+	SH_MFHCls(hookname) SH_MFHCls(hookname)::ms_Inst; \
+	::SourceHook::MemFuncInfo SH_MFHCls(hookname)::ms_MFI; \
+	::SourceHook::IHookManagerInfo *SH_MFHCls(hookname)::ms_HI; \
+	bool __SourceHook_FHMAdd##hookname(void *iface, bool post, \
+		SH_MFHCls(hookname)::FD handler) \
+	{ \
+		return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
+			SH_MFHCls(hookname)::HookManPubFunc, \
+			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
+	} \
+	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
+		SH_MFHCls(hookname)::FD handler) \
+	{ \
+		::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD> tmp(handler); \
+		return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
+			SH_MFHCls(hookname)::HookManPubFunc, &tmp, post); \
+	} \
+
 
 #define SH_SETUPCALLS(rettype, paramtypes, params) \
 	/* 1) Find the vfnptr */ \
@@ -580,7 +695,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		} \
 	}
 
-#define SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
+#define SH_CALL_ORIG(rettype, paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
 	{ \
 		rettype (EmptyClass::*mfp)paramtypes; \
@@ -594,10 +709,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_GLOB_SHPTR->HookLoopEnd(); \
 	return status >= MRES_OVERRIDE ? override_ret : orig_ret;
 
-#define SH_HANDLEFUNC(ifacetype, ifacefunc, paramtypes, params, rettype) \
+#define SH_HANDLEFUNC(paramtypes, params, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params) \
 	SH_CALL_HOOKS(pre, params) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
+	SH_CALL_ORIG(rettype, paramtypes, params) \
 	SH_CALL_HOOKS(post, params) \
 	SH_RETURN()
 
@@ -656,7 +771,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		} \
 	}
 
-#define SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
+#define SH_CALL_ORIG_void(paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
 	{ \
 		void (EmptyClass::*mfp)paramtypes; \
@@ -667,26 +782,26 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_RETURN_void() \
 	SH_GLOB_SHPTR->HookLoopEnd();
 
-#define SH_HANDLEFUNC_void(ifacetype, ifacefunc, paramtypes, params) \
+#define SH_HANDLEFUNC_void(paramtypes, params) \
 	SH_SETUPCALLS_void(paramtypes, params) \
 	SH_CALL_HOOKS_void(pre, params) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
+	SH_CALL_ORIG_void(paramtypes, params) \
 	SH_CALL_HOOKS_void(post, params) \
 	SH_RETURN_void()
 
 
 // Special vafmt handlers
-#define SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug, rettype) \
+#define SH_HANDLEFUNC_vafmt(paramtypes, params_orig, params_plug, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(pre, params_plug) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params_orig) \
+	SH_CALL_ORIG(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(post, params_plug) \
 	SH_RETURN()
 
-#define SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug) \
+#define SH_HANDLEFUNC_void_vafmt(paramtypes, params_orig, params_plug) \
 	SH_SETUPCALLS_void(paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(pre, params_plug) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params_orig) \
+	SH_CALL_ORIG_void(paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(post, params_plug) \
 	SH_RETURN_void()
 
@@ -699,18 +814,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate@$@<@param%%|, @@, @rettype> FD; \
 		virtual rettype Func(@param%% p%%|, @) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (@param%%|, @), (@p%%|, @), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @, \
-	(static_cast<rettype (ifacetype::*)(@param%%|, @) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((@param%%|, @), (@p%%|, @), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(@param%%|, @) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		@$@, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK@$@_void(ifacetype, ifacefunc, attr, overload@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(@param%%|, @) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate@$@<@param%%|, @> FD; \
 		virtual void Func(@param%% p%%|, @) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (@param%%|, @), (@p%%|, @)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @, \
-	(static_cast<void (ifacetype::*)(@param%%|, @) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((@param%%|, @), (@p%%|, @)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(@param%%|, @) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		@$@, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK@$@_vafmt(ifacetype, ifacefunc, attr, overload, rettype@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(@param%%|, @@, @const char *, ...) attr> \
@@ -723,10 +847,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf), rettype); \
+			SH_HANDLEFUNC_vafmt((@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype @"|" #param%%| @ "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(@param%%|, @@, @const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(@param%%|, @@, @const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		@$@, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK@$@_void_vafmt(ifacetype, ifacefunc, attr, overload@, param%%@) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(@param%%|, @@, @const char *, ...) attr> \
@@ -739,10 +867,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf)); \
+			SH_HANDLEFUNC_void_vafmt((@param%%|, @@, @...), (@p%%|, @@, @"%s", buf), (@p%%|, @@, @buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr @"|" #param%%| @ "|const char*|...", \
-	(static_cast<void (ifacetype::*)(@param%%|, @@, @const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(@param%%|, @@, @const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		@$@, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK@$@(hookname, vtblidx, vtbloffs, thisptroffs, rettype@, param%%@) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate@$@<@param%%|, @@, @rettype> FD; \
+		virtual rettype Func(@param%% p%%|, @) \
+		{ SH_HANDLEFUNC((@param%%|, @), (@p%%|, @), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		@$@, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK@$@_void(hookname, vtblidx, vtbloffs, thisptroffs@, param%%@) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate@$@<@param%%|, @> FD; \
+		virtual void Func(@param%% p%%|, @) \
+		{ SH_HANDLEFUNC_void((@param%%|, @), (@p%%|, @)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0@, sizeof(param%%)@ }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		@$@, __SourceHook_ParamSizesM_##hookname);
 
 @ENDARGS@
 

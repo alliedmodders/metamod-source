@@ -133,6 +133,17 @@ namespace SourceHook
 	*/
 	typedef int Plugin;
 
+	struct ProtoInfo
+	{
+		ProtoInfo(int rtsz, int nop, const int *p) : beginningNull(0), retTypeSize(rtsz), numOfParams(nop), params(p)
+		{
+		}
+		int beginningNull;		//!< To distinguish from old protos (which never begin with 0)
+		int retTypeSize;		//!< 0 if void
+		int numOfParams;		//!< number of parameters
+		const int *params;		//!< params[0]=0 (or -1 for vararg), params[1]=size of first param, ...
+	};
+
 	/**
 	*	@brief Specifies the actions for hook managers
 	*/
@@ -363,6 +374,14 @@ namespace SourceHook
 		virtual void SetOrigRetPtr(const void *ptr) = 0;		//!< Sets the original return pointer
 		virtual void SetOverrideRetPtr(const void *ptr) = 0;	//!< Sets the override result pointer
 		virtual bool ShouldContinue() = 0;						//!< Returns false if the hook loop should exit
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*   @param pubFunc The hook manager's info function
+		*/
+		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc) = 0;
 	};
 }
 
@@ -398,6 +417,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	shptr->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr));
 }
 
+#define SH_MANUALHOOK_RECONFIGURE(hookname, pvtblindex, pvtbloffs, pthisptroffs) \
+	do { \
+		SH_GLOB_SHPTR->RemoveHookManager(SH_GLOB_PLUGPTR, SH_MFHCls(hookname)::HookManPubFunc); \
+		SH_MFHCls(hookname)::ms_MFI.thisptroffs = pthisptroffs; \
+		SH_MFHCls(hookname)::ms_MFI.vtblindex = pvtblindex; \
+		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
+	} while (0)
+
 #define SH_GET_CALLCLASS(ptr) SH_GET_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 #define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 
@@ -417,6 +444,22 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_REMOVE_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
 	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
+
+#define SH_ADD_MANUALHOOK(hookname, ifaceptr, handler, post) \
+	__SourceHook_FHMAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
+#define SH_ADD_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
+#define SH_ADD_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
+
+#define SH_REMOVE_MANUALHOOK(hookname, ifaceptr, handler, post) \
+	__SourceHook_FHMRemove##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
+#define SH_REMOVE_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
+#define SH_REMOVE_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
+
+
 #define SH_NOATTRIB
 
 
@@ -435,6 +478,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 //////////////////////////////////////////////////////////////////////////
 #define SH_FHCls(ift, iff, ov) __SourceHook_FHCls_##ift##iff##ov
+#define SH_MFHCls(hookname) __SourceHook_MFHCls_##hookname
 
 #define SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr) \
 	SH_FHCls(ifacetype,ifacefunc,overload)() \
@@ -452,7 +496,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		\
 		if (action == HA_GetInfo) \
 		{ \
-			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, ms_Proto); \
+			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
+				reinterpret_cast<const char*>(&ms_Proto)); \
 			\
 			MemFuncInfo mfi; \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
@@ -483,15 +528,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		static SH_FHCls(ifacetype,ifacefunc,overload) ms_Inst; \
 		static ::SourceHook::MemFuncInfo ms_MFI; \
 		static ::SourceHook::IHookManagerInfo *ms_HI; \
-		static const char *ms_Proto; \
+		static ::SourceHook::ProtoInfo ms_Proto; \
 		SHINT_MAKE_HOOKMANPUBFUNC(ifacetype, ifacefunc, overload, funcptr)
 
-#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, proto, funcptr) \
+#define SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, funcptr) \
 	}; \
 	SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
 	::SourceHook::MemFuncInfo SH_FHCls(ifacetype,ifacefunc,overload)::ms_MFI; \
 	::SourceHook::IHookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
-	const char *SH_FHCls(ifacetype,ifacefunc,overload)::ms_Proto = proto; \
 	bool __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
@@ -518,6 +562,77 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, &tmp, post); \
 	} \
+
+#define SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, pvtbloffs, pvtblidx, pthisptroffs) \
+	struct SH_MFHCls(hookname) \
+	{ \
+		static SH_MFHCls(hookname) ms_Inst; \
+		static ::SourceHook::MemFuncInfo ms_MFI; \
+		static ::SourceHook::IHookManagerInfo *ms_HI; \
+		static ::SourceHook::ProtoInfo ms_Proto; \
+		\
+		SH_MFHCls(hookname)() \
+		{ \
+			ms_MFI.isVirtual = true; \
+			ms_MFI.thisptroffs = pthisptroffs; \
+			ms_MFI.vtblindex = pvtblidx; \
+			ms_MFI.vtbloffs = pvtbloffs; \
+		} \
+		static int HookManPubFunc(::SourceHook::HookManagerAction action, ::SourceHook::IHookManagerInfo *param) \
+		{ \
+			using namespace ::SourceHook; \
+			/* we don't set ms_MFI here because manual hookmans can be reconfigured */ \
+			/* :FIXME: possible problem: someone adding a hook from a constructor of a global entity */ \
+			/* which is construced before SH_MFHCls(hookname)() gets called? */ \
+			/* Verify interface version */ \
+			if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
+				return 1; \
+			\
+			if (action == HA_GetInfo) \
+			{ \
+				param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
+					reinterpret_cast<const char*>(&ms_Proto)); \
+				\
+				MemFuncInfo mfi; \
+				GetFuncInfo(&SH_MFHCls(hookname)::Func, mfi); \
+				param->SetHookfuncVfnptr( \
+					reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
+				return 0; \
+			} \
+			else if (action == HA_Register) \
+			{ \
+				ms_HI = param; \
+				return 0; \
+			} \
+			else if (action == HA_Unregister) \
+			{ \
+				ms_HI = NULL; \
+				return 0; \
+			} \
+			else \
+				return 1; \
+		}
+
+#define SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, pvtbloffs, pvtblidx, pthisptroffs) \
+	}; \
+	SH_MFHCls(hookname) SH_MFHCls(hookname)::ms_Inst; \
+	::SourceHook::MemFuncInfo SH_MFHCls(hookname)::ms_MFI; \
+	::SourceHook::IHookManagerInfo *SH_MFHCls(hookname)::ms_HI; \
+	bool __SourceHook_FHMAdd##hookname(void *iface, bool post, \
+		SH_MFHCls(hookname)::FD handler) \
+	{ \
+		return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
+			SH_MFHCls(hookname)::HookManPubFunc, \
+			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
+	} \
+	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
+		SH_MFHCls(hookname)::FD handler) \
+	{ \
+		::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD> tmp(handler); \
+		return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
+			SH_MFHCls(hookname)::HookManPubFunc, &tmp, post); \
+	} \
+
 
 #define SH_SETUPCALLS(rettype, paramtypes, params) \
 	/* 1) Find the vfnptr */ \
@@ -580,7 +695,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		} \
 	}
 
-#define SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
+#define SH_CALL_ORIG(rettype, paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
 	{ \
 		rettype (EmptyClass::*mfp)paramtypes; \
@@ -594,10 +709,10 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_GLOB_SHPTR->HookLoopEnd(); \
 	return status >= MRES_OVERRIDE ? override_ret : orig_ret;
 
-#define SH_HANDLEFUNC(ifacetype, ifacefunc, paramtypes, params, rettype) \
+#define SH_HANDLEFUNC(paramtypes, params, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params) \
 	SH_CALL_HOOKS(pre, params) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params) \
+	SH_CALL_ORIG(rettype, paramtypes, params) \
 	SH_CALL_HOOKS(post, params) \
 	SH_RETURN()
 
@@ -656,7 +771,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		} \
 	}
 
-#define SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
+#define SH_CALL_ORIG_void(paramtypes, params) \
 	if (status != MRES_SUPERCEDE) \
 	{ \
 		void (EmptyClass::*mfp)paramtypes; \
@@ -667,26 +782,26 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_RETURN_void() \
 	SH_GLOB_SHPTR->HookLoopEnd();
 
-#define SH_HANDLEFUNC_void(ifacetype, ifacefunc, paramtypes, params) \
+#define SH_HANDLEFUNC_void(paramtypes, params) \
 	SH_SETUPCALLS_void(paramtypes, params) \
 	SH_CALL_HOOKS_void(pre, params) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params) \
+	SH_CALL_ORIG_void(paramtypes, params) \
 	SH_CALL_HOOKS_void(post, params) \
 	SH_RETURN_void()
 
 
 // Special vafmt handlers
-#define SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug, rettype) \
+#define SH_HANDLEFUNC_vafmt(paramtypes, params_orig, params_plug, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(pre, params_plug) \
-	SH_CALL_ORIG(ifacetype, ifacefunc, rettype, paramtypes, params_orig) \
+	SH_CALL_ORIG(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(post, params_plug) \
 	SH_RETURN()
 
-#define SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, paramtypes, params_orig, params_plug) \
+#define SH_HANDLEFUNC_void_vafmt(paramtypes, params_orig, params_plug) \
 	SH_SETUPCALLS_void(paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(pre, params_plug) \
-	SH_CALL_ORIG_void(ifacetype, ifacefunc, paramtypes, params_orig) \
+	SH_CALL_ORIG_void(paramtypes, params_orig) \
 	SH_CALL_HOOKS_void(post, params_plug) \
 	SH_RETURN_void()
 
@@ -698,18 +813,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate0<rettype> FD; \
 		virtual rettype Func() \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (), (), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype , \
-	(static_cast<rettype (ifacetype::*)() attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((), (), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)() attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0 }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		0, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK0_void(ifacetype, ifacefunc, attr, overload) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)() attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate0<> FD; \
 		virtual void Func() \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (), ()); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr , \
-	(static_cast<void (ifacetype::*)() attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((), ()); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)() attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0 }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		0, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK0_vafmt(ifacetype, ifacefunc, attr, overload, rettype) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(const char *, ...) attr> \
@@ -722,10 +846,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (...), ("%s", buf), (buf), rettype); \
+			SH_HANDLEFUNC_vafmt((...), ("%s", buf), (buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype  "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1 }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		0, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK0_void_vafmt(ifacetype, ifacefunc, attr, overload) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(const char *, ...) attr> \
@@ -738,10 +866,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (...), ("%s", buf), (buf)); \
+			SH_HANDLEFUNC_void_vafmt((...), ("%s", buf), (buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr  "|const char*|...", \
-	(static_cast<void (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1 }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		0, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK0(hookname, vtblidx, vtbloffs, thisptroffs, rettype) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate0<rettype> FD; \
+		virtual rettype Func() \
+		{ SH_HANDLEFUNC((), (), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0 }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		0, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK0_void(hookname, vtblidx, vtbloffs, thisptroffs) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate0<> FD; \
+		virtual void Func() \
+		{ SH_HANDLEFUNC_void((), ()); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0 }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		0, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 1 arguments *********
 #define SH_DECL_HOOK1(ifacetype, ifacefunc, attr, overload, rettype, param1) \
@@ -749,18 +903,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate1<param1, rettype> FD; \
 		virtual rettype Func(param1 p1) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1), (p1), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1, \
-	(static_cast<rettype (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1), (p1), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		1, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK1_void(ifacetype, ifacefunc, attr, overload, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate1<param1> FD; \
 		virtual void Func(param1 p1) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1), (p1)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1, \
-	(static_cast<void (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1), (p1)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		1, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK1_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr> \
@@ -773,10 +936,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, ...), (p1, "%s", buf), (p1, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, ...), (p1, "%s", buf), (p1, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		1, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK1_void_vafmt(ifacetype, ifacefunc, attr, overload, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, const char *, ...) attr> \
@@ -789,10 +956,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, ...), (p1, "%s", buf), (p1, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, ...), (p1, "%s", buf), (p1, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		1, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK1(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate1<param1, rettype> FD; \
+		virtual rettype Func(param1 p1) \
+		{ SH_HANDLEFUNC((param1), (p1), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		1, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK1_void(hookname, vtblidx, vtbloffs, thisptroffs, param1) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate1<param1> FD; \
+		virtual void Func(param1 p1) \
+		{ SH_HANDLEFUNC_void((param1), (p1)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		1, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 2 arguments *********
 #define SH_DECL_HOOK2(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
@@ -800,18 +993,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate2<param1, param2, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2), (p1, p2), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2, \
-	(static_cast<rettype (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2), (p1, p2), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		2, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK2_void(ifacetype, ifacefunc, attr, overload, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate2<param1, param2> FD; \
 		virtual void Func(param1 p1, param2 p2) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2), (p1, p2)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2, \
-	(static_cast<void (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2), (p1, p2)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		2, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK2_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr> \
@@ -824,10 +1026,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, ...), (p1, p2, "%s", buf), (p1, p2, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, ...), (p1, p2, "%s", buf), (p1, p2, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		2, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK2_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr> \
@@ -840,10 +1046,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, ...), (p1, p2, "%s", buf), (p1, p2, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, ...), (p1, p2, "%s", buf), (p1, p2, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		2, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK2(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate2<param1, param2, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2) \
+		{ SH_HANDLEFUNC((param1, param2), (p1, p2), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		2, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK2_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate2<param1, param2> FD; \
+		virtual void Func(param1 p1, param2 p2) \
+		{ SH_HANDLEFUNC_void((param1, param2), (p1, p2)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		2, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 3 arguments *********
 #define SH_DECL_HOOK3(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
@@ -851,18 +1083,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate3<param1, param2, param3, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3), (p1, p2, p3), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3), (p1, p2, p3), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		3, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK3_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate3<param1, param2, param3> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3), (p1, p2, p3)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3), (p1, p2, p3)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		3, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK3_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr> \
@@ -875,10 +1116,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, ...), (p1, p2, p3, "%s", buf), (p1, p2, p3, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, ...), (p1, p2, p3, "%s", buf), (p1, p2, p3, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		3, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK3_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr> \
@@ -891,10 +1136,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, ...), (p1, p2, p3, "%s", buf), (p1, p2, p3, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, ...), (p1, p2, p3, "%s", buf), (p1, p2, p3, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		3, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK3(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate3<param1, param2, param3, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3) \
+		{ SH_HANDLEFUNC((param1, param2, param3), (p1, p2, p3), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		3, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK3_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate3<param1, param2, param3> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3), (p1, p2, p3)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		3, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 4 arguments *********
 #define SH_DECL_HOOK4(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
@@ -902,18 +1173,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate4<param1, param2, param3, param4, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4), (p1, p2, p3, p4), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4), (p1, p2, p3, p4), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		4, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK4_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate4<param1, param2, param3, param4> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4), (p1, p2, p3, p4)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4), (p1, p2, p3, p4)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		4, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK4_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr> \
@@ -926,10 +1206,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, ...), (p1, p2, p3, p4, "%s", buf), (p1, p2, p3, p4, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, ...), (p1, p2, p3, p4, "%s", buf), (p1, p2, p3, p4, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		4, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK4_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr> \
@@ -942,10 +1226,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, ...), (p1, p2, p3, p4, "%s", buf), (p1, p2, p3, p4, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, ...), (p1, p2, p3, p4, "%s", buf), (p1, p2, p3, p4, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		4, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK4(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate4<param1, param2, param3, param4, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4), (p1, p2, p3, p4), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		4, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK4_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate4<param1, param2, param3, param4> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4), (p1, p2, p3, p4)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		4, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 5 arguments *********
 #define SH_DECL_HOOK5(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
@@ -953,18 +1263,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, param5, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		5, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK5_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, param5> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		5, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK5_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr> \
@@ -977,10 +1296,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, ...), (p1, p2, p3, p4, p5, "%s", buf), (p1, p2, p3, p4, p5, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, ...), (p1, p2, p3, p4, p5, "%s", buf), (p1, p2, p3, p4, p5, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		5, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK5_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr> \
@@ -993,10 +1316,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, ...), (p1, p2, p3, p4, p5, "%s", buf), (p1, p2, p3, p4, p5, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, ...), (p1, p2, p3, p4, p5, "%s", buf), (p1, p2, p3, p4, p5, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		5, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK5(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, param5, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		5, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK5_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate5<param1, param2, param3, param4, param5> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5), (p1, p2, p3, p4, p5)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		5, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 6 arguments *********
 #define SH_DECL_HOOK6(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
@@ -1004,18 +1353,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, param6, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		6, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK6_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, param6> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		6, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK6_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr> \
@@ -1028,10 +1386,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, ...), (p1, p2, p3, p4, p5, p6, "%s", buf), (p1, p2, p3, p4, p5, p6, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, ...), (p1, p2, p3, p4, p5, p6, "%s", buf), (p1, p2, p3, p4, p5, p6, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		6, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK6_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr> \
@@ -1044,10 +1406,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, ...), (p1, p2, p3, p4, p5, p6, "%s", buf), (p1, p2, p3, p4, p5, p6, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, ...), (p1, p2, p3, p4, p5, p6, "%s", buf), (p1, p2, p3, p4, p5, p6, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		6, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK6(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, param6, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		6, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK6_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate6<param1, param2, param3, param4, param5, param6> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6), (p1, p2, p3, p4, p5, p6)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		6, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 7 arguments *********
 #define SH_DECL_HOOK7(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
@@ -1055,18 +1443,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, param7, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		7, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK7_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, param7> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		7, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK7_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr> \
@@ -1079,10 +1476,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, ...), (p1, p2, p3, p4, p5, p6, p7, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, ...), (p1, p2, p3, p4, p5, p6, p7, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		7, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK7_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr> \
@@ -1095,10 +1496,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, ...), (p1, p2, p3, p4, p5, p6, p7, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, ...), (p1, p2, p3, p4, p5, p6, p7, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		7, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK7(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, param7, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		7, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK7_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate7<param1, param2, param3, param4, param5, param6, param7> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7), (p1, p2, p3, p4, p5, p6, p7)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		7, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 8 arguments *********
 #define SH_DECL_HOOK8(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
@@ -1106,18 +1533,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, param8, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		8, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK8_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, param8> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		8, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK8_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr> \
@@ -1130,10 +1566,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, ...), (p1, p2, p3, p4, p5, p6, p7, p8, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, ...), (p1, p2, p3, p4, p5, p6, p7, p8, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		8, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK8_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr> \
@@ -1146,10 +1586,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, ...), (p1, p2, p3, p4, p5, p6, p7, p8, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, ...), (p1, p2, p3, p4, p5, p6, p7, p8, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		8, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK8(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, param8, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		8, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK8_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate8<param1, param2, param3, param4, param5, param6, param7, param8> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8), (p1, p2, p3, p4, p5, p6, p7, p8)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		8, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 9 arguments *********
 #define SH_DECL_HOOK9(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
@@ -1157,18 +1623,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, param9, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		9, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK9_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, param9> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		9, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK9_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr> \
@@ -1181,10 +1656,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		9, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK9_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr> \
@@ -1197,10 +1676,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		9, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK9(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, param9, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		9, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK9_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate9<param1, param2, param3, param4, param5, param6, param7, param8, param9> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9), (p1, p2, p3, p4, p5, p6, p7, p8, p9)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		9, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 10 arguments *********
 #define SH_DECL_HOOK10(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
@@ -1208,18 +1713,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		10, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK10_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		10, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK10_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr> \
@@ -1232,10 +1746,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		10, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK10_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr> \
@@ -1248,10 +1766,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		10, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK10(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		10, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK10_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate10<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		10, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 11 arguments *********
 #define SH_DECL_HOOK11(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
@@ -1259,18 +1803,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		11, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK11_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		11, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK11_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr> \
@@ -1283,10 +1836,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		11, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK11_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr> \
@@ -1299,10 +1856,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		11, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK11(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		11, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK11_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate11<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		11, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 12 arguments *********
 #define SH_DECL_HOOK12(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
@@ -1310,18 +1893,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		12, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK12_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		12, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK12_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr> \
@@ -1334,10 +1926,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		12, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK12_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr> \
@@ -1350,10 +1946,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		12, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK12(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		12, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK12_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate12<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		12, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 13 arguments *********
 #define SH_DECL_HOOK13(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
@@ -1361,18 +1983,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		13, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK13_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		13, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK13_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr> \
@@ -1385,10 +2016,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		13, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK13_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr> \
@@ -1401,10 +2036,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		13, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK13(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		13, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK13_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate13<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		13, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 14 arguments *********
 #define SH_DECL_HOOK14(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
@@ -1412,18 +2073,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		14, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK14_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		14, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK14_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr> \
@@ -1436,10 +2106,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		14, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK14_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr> \
@@ -1452,10 +2126,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		14, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK14(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		14, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK14_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate14<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		14, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 15 arguments *********
 #define SH_DECL_HOOK15(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
@@ -1463,18 +2163,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		15, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK15_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		15, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK15_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr> \
@@ -1487,10 +2196,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		15, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK15_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr> \
@@ -1503,10 +2216,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		15, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK15(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		15, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK15_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate15<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		15, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 16 arguments *********
 #define SH_DECL_HOOK16(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
@@ -1514,18 +2253,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		16, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK16_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		16, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK16_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr> \
@@ -1538,10 +2286,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		16, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK16_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr> \
@@ -1554,10 +2306,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		16, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK16(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		16, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK16_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate16<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		16, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 17 arguments *********
 #define SH_DECL_HOOK17(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
@@ -1565,18 +2343,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		17, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK17_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		17, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK17_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
@@ -1589,10 +2376,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		17, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK17_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
@@ -1605,10 +2396,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		17, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK17(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		17, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK17_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate17<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		17, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 18 arguments *********
 #define SH_DECL_HOOK18(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
@@ -1616,18 +2433,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		18, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK18_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		18, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK18_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr> \
@@ -1640,10 +2466,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		18, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK18_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr> \
@@ -1656,10 +2486,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		18, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK18(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		18, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK18_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate18<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		18, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 19 arguments *********
 #define SH_DECL_HOOK19(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
@@ -1667,18 +2523,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		19, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK19_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		19, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK19_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr> \
@@ -1691,10 +2556,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		19, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK19_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr> \
@@ -1707,10 +2576,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		19, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK19(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		19, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK19_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate19<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		19, __SourceHook_ParamSizesM_##hookname);
 
 // ********* Support for 20 arguments *********
 #define SH_DECL_HOOK20(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
@@ -1718,18 +2613,27 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, rettype> FD; \
 		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
-		{ SH_HANDLEFUNC(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), rettype); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20, \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		20, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK20_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20> FD; \
 		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
-		{ SH_HANDLEFUNC_void(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)); } \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20, \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc)))
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)); } \
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) attr>(&ifacetype::ifacefunc))) \
+	\
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		20, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK20_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr> \
@@ -1742,10 +2646,14 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf), rettype); \
+			SH_HANDLEFUNC_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf), rettype); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #rettype "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20 "|const char*|...", \
-	(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(sizeof(rettype), \
+		20, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
 
 #define SH_DECL_HOOK20_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr> \
@@ -1758,10 +2666,36 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			va_start(ap, fmt); \
 			vsnprintf(buf, sizeof(buf), fmt, ap); \
 			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt(ifacetype, ifacefunc, (param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf)); \
+			SH_HANDLEFUNC_void_vafmt((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, ...), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, "%s", buf), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, buf)); \
 		} \
-	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, #attr "|" #param1 "|" #param2 "|" #param3 "|" #param4 "|" #param5 "|" #param6 "|" #param7 "|" #param8 "|" #param9 "|" #param10 "|" #param11 "|" #param12 "|" #param13 "|" #param14 "|" #param15 "|" #param16 "|" #param17 "|" #param18 "|" #param19 "|" #param20 "|const char*|...", \
-	(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc)))
+	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
+		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, const char *, ...) attr>(&ifacetype::ifacefunc))) \
+	\
+	const int __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload[] = { -1, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto(0, \
+		20, __SourceHook_ParamSizes_##ifacetype##ifacefunc##overload);
+
+#define SH_DECL_MANUALHOOK20(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20, rettype> FD; \
+		virtual rettype Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
+		{ SH_HANDLEFUNC((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), rettype); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(sizeof(rettype), \
+		20, __SourceHook_ParamSizesM_##hookname);
+
+#define SH_DECL_MANUALHOOK20_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate20<param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20> FD; \
+		virtual void Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, param10 p10, param11 p11, param12 p12, param13 p13, param14 p14, param15 p15, param16 p16, param17 p17, param18 p18, param19 p19, param20 p20) \
+		{ SH_HANDLEFUNC_void((param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, param18, param19, param20), (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)); } \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const int __SourceHook_ParamSizesM_##hookname[] = { 0, sizeof(param1), sizeof(param2), sizeof(param3), sizeof(param4), sizeof(param5), sizeof(param6), sizeof(param7), sizeof(param8), sizeof(param9), sizeof(param10), sizeof(param11), sizeof(param12), sizeof(param13), sizeof(param14), sizeof(param15), sizeof(param16), sizeof(param17), sizeof(param18), sizeof(param19), sizeof(param20) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto(0, \
+		20, __SourceHook_ParamSizesM_##hookname);
 
 
 

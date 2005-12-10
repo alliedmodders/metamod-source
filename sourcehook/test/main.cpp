@@ -74,6 +74,7 @@ DO_TEST(ThisPtrOffs);
 DO_TEST(PlugSys);
 DO_TEST(Bail);
 DO_TEST(Reentr);
+DO_TEST(Manual);
 
 int main(int argc, char *argv[])
 {

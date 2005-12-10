@@ -241,6 +241,8 @@ namespace SourceHook
 
 		void SetPluginPaused(Plugin plug, bool paused);
 
+		bool ProtosEquiv(const char *p1, const char *p2);
+
 		HookLoopInfoStack m_HLIStack;
 	public:
 		CSourceHookImpl();
@@ -357,6 +359,14 @@ namespace SourceHook
 		void SetOrigRetPtr(const void *ptr);		//!< Sets the original return pointer
 		void SetOverrideRetPtr(const void *ptr);	//!< Sets the override result pointer
 		bool ShouldContinue();						//!< Returns false if the hook loop should exit
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*   @param pubFunc The hook manager's info function
+		*/
+		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
 	};
 }
 
