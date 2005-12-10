@@ -47,6 +47,7 @@ namespace SourceHook
 		};
 		typedef List<THashNode *> *	NodePtr;
 	public:
+		class const_iterator;
 		THash() : m_Buckets(NULL), m_numBuckets(0), m_percentUsed(0.0f)
 		{
 			_Refactor();
