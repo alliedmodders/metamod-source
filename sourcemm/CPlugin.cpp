@@ -62,7 +62,9 @@ PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, 
 
 	already = false;
 	//Check if we're about to reload an old plugin
-	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
+	PluginIter iter = m_Plugins.begin();
+	PluginIter end = m_Plugins.end();
+	while (iter != end)
 	{
 		if ( (*i) && (*i)->m_File.compare(file)==0 )
 		{
@@ -71,12 +73,14 @@ PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, 
 				//Attempt to load the plugin again
 				already = true;
 				i = m_Plugins.erase(i);
+				continue;
 			} else {
 				//No need to load it
 				already = true;
 				return (*i)->m_Id;
 			}
 		}
+		iter++;
 	}
 
 	CPlugin *pl = _Load(file, source, error, maxlen);
