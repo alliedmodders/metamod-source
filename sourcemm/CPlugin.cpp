@@ -58,13 +58,10 @@ CPluginManager::CPlugin::CPlugin() : m_Lib(NULL), m_API(NULL), m_Id(0), m_Source
 
 PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen)
 {
-	PluginIter i;
-
 	already = false;
 	//Check if we're about to reload an old plugin
-	PluginIter iter = m_Plugins.begin();
-	PluginIter end = m_Plugins.end();
-	while (iter != end)
+	PluginIter i = m_Plugins.begin();
+	while (i != m_Plugins.end())
 	{
 		if ( (*i) && (*i)->m_File.compare(file)==0 )
 		{
@@ -80,7 +77,7 @@ PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, 
 				return (*i)->m_Id;
 			}
 		}
-		iter++;
+		i++;
 	}
 
 	CPlugin *pl = _Load(file, source, error, maxlen);
