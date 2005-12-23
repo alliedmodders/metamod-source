@@ -86,6 +86,10 @@
 # define vsnprintf _vsnprintf
 #endif
 
+#if SH_SYS != SH_SYS_WIN32
+# include <unistd.h>
+#endif
+
 #define SH_PTRSIZE sizeof(void*)
 
 #include "FastDelegate.h"
