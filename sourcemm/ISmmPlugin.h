@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	7
+#define PLAPI_VERSION	8
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
@@ -143,7 +143,7 @@ public:
 };
 
 /**
- * @brief Added in 1.2 so plugins could listen to specific events
+ * @brief Added in 1.1 so plugins could listen to specific events
  */
 class IMetamodListener
 {

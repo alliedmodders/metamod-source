@@ -92,7 +92,7 @@ void InitMainStates()
 	GetFileOfAddress(g_GameDll.factory, full_path, sizeof(full_path)-1);
 	g_BinPath.assign(full_path);
 
-	UTIL_PathFmt(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
 	//Like metamod, reload plugins at the end of the map.
 	//This is so plugins can hook everything on load, BUT, new plugins will be reloaded
@@ -138,7 +138,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	}
 
 	char full_path[260];
-	UTIL_PathFmt(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
 	LoadPluginsFromFile(full_path);
 
@@ -304,9 +304,9 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				//no need to append "bin"
 				if (gamebin)
 				{
-					UTIL_PathFmt(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, ptr, SERVER_DLL);
+					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, ptr, SERVER_DLL);
 				} else {
-					UTIL_PathFmt(temp_path, sizeof(temp_path)-1, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
+					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
 				}
 				if (!UTIL_PathCmp(s_dllpath.c_str(), temp_path))
 				{
@@ -504,7 +504,7 @@ int LoadPluginsFromFile(const char *file)
 				ext = "";
 			}
 			//Format the new path
-			UTIL_PathFmt(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), buffer, ext);
+			g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), buffer, ext);
 			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error)-1);
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
@@ -597,6 +597,10 @@ bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char cons
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
+
+#if (defined _DEBUG || defined DEBUG) && (defined WIN32 || defined _WIN32)
+    SetUnhandledExceptionFilter(NULL);
+#endif
 
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 

@@ -159,23 +159,6 @@ void UTIL_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t 
 	buf2[c] = '\0';
 }
 
-/** 
- * Formats a path name for an OS
- */
-void UTIL_PathFmt(char *buffer, size_t len, const char *fmt, ...)
-{
-	va_list ap;
-	va_start(ap,fmt);
-	size_t mylen = vsnprintf(buffer, len, fmt, ap);
-	va_end(ap);
-
-	for (size_t i=0; i<mylen; i++)
-	{
-		if (buffer[i] == ALT_SEP_CHAR)
-			buffer[i] = PATH_SEP_CHAR;
-	}
-}
-
 bool UTIL_PathCmp(const char *path1, const char *path2)
 {
 	size_t len1=strlen(path1);

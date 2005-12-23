@@ -316,3 +316,45 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 	return num;
 }
 
+void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret)
+{
+	size_t len = strlen(iface);
+	int num = 0;
+	void *pf = NULL;
+	char *_if = new char[len + 2];
+
+	if (max > 999)
+		max = 999;
+
+	strcpy(_if, iface);
+
+	do
+	{
+		if ( (pf = (fn)(_if, NULL)) != NULL )
+			break;
+		if (num > max)
+			break;
+	} while ( num = FormatIface(_if, len) );
+
+	return pf;
+}
+
+const char *CSmmAPI::GetBaseDir()
+{
+	return g_ModPath.c_str();
+}
+
+void CSmmAPI::PathFormat(char *buffer, size_t len, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap,fmt);
+	size_t mylen = vsnprintf(buffer, len, fmt, ap);
+	va_end(ap);
+
+	for (size_t i=0; i<mylen; i++)
+	{
+		if (buffer[i] == ALT_SEP_CHAR)
+			buffer[i] = PATH_SEP_CHAR;
+	}
+}
+

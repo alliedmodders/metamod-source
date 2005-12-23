@@ -28,22 +28,17 @@
 
 /**
  * Versioning
- *  First grouping is major release version (1)
- *  Second grouping is minor release version.
- *  Third grouping is release change version.
- * For an entire code rehaul, we would change major.
- * For a simple bug-fix release, we would change the third grouping.
- * For an API change, we would increase the second grouping by one.
- * For a breaking API change, we would increase the second group up to the next bracket.
- *  (example: 1.45 -> 1.50.  1.12 -> 1.20.  1.19 -> 1.20)
- *  minor changes can also roll over, but a big change should ALWAYS roll over.
- * Increasing one grouping should make the lesser ones reset back to zero.
+ *   ?what the hell was I smoking when I wrote this
+ *   increase api_major when API breaks
+ *   increase api_minor when new functions are added (non-breaking)
+ *   increase vers_release when bug fix releases are made
+ *   never increase major
  */
-#define		SOURCEMM_VERSION	"1.1.2"
+#define		SOURCEMM_VERSION	"1.2"
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
-#define		SM_VERS_API_MINOR	1		//increase this on a non-breaking API change
+#define		SM_VERS_API_MINOR	2		//increase this on a non-breaking API change
 #define		SM_VERS_RELEASE		0		//increase this on a bug-fix release.
 
 //We need a good CServerGameDLL version to work properly.  We support these inclusively.

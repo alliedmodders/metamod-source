@@ -21,7 +21,6 @@ void UTIL_TrimComments(char *buffer);
 void UTIL_TrimLeft(char *buffer);
 void UTIL_TrimRight(char *buffer);
 void UTIL_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t len2);
-void UTIL_PathFmt(char *buffer, size_t len, const char *fmt, ...);
 bool UTIL_PathCmp(const char *path1, const char *path2);
 
 #endif //_INCLUDE_UTIL_H

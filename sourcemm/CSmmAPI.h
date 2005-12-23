@@ -51,6 +51,9 @@ namespace SourceMM
 		virtual void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);
 		virtual void *MetaFactory(const char *iface, int *ret, PluginId *id);
 		virtual int FormatIface(char buffer[], unsigned int maxlength);
+		virtual void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
+		virtual const char *GetBaseDir();
+		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...);
 	public:
 		bool CacheCmds();
 	private:

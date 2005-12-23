@@ -83,6 +83,21 @@ public:		//Added in 1.1.2 (1:1)
 	 * reformats the string to increase the number, then returns the new number.
 	 */
 	virtual int FormatIface(char iface[], unsigned int maxlength) =0;
+public:		//Added in 1.2 (1:2)
+	/**
+	 * @brief Searches for an interface for you.
+	 */
+	virtual void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret) =0;
+
+	/**
+	 * @brief Returns the base directory of the game/server, equivalent to IVEngineServer::GetGameDir
+	 */
+	virtual const char *GetBaseDir() =0;
+
+	/**
+	 * @brief Formats a file path to the local OS.  Does not include any base directories.
+	 */
+	virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...) =0;
 };
 
 
