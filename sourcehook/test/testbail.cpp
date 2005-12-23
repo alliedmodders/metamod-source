@@ -18,7 +18,6 @@
 		Then testbail2.cpp which has the new version adds a hook on the same function and 
 		does a recall and overrides the value in it.
 */
-
 #include "sourcehook_test.h"
 #include "testbail.h"
 

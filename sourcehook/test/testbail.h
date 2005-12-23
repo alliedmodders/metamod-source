@@ -37,3 +37,4 @@ namespace
 	SourceHook::Plugin g_PLID;
 	SH_DECL_HOOK1(IGaben, EatYams, SH_NOATTRIB, 0, int, int);
 }
+
