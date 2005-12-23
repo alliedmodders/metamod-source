@@ -1,23 +1,25 @@
 // TESTBAIL
 //  Different compilation unit
 
+#include "sourcehook.h"
+#include "sourcehook_test.h"
 #include "testbail.h"
 
-void ___TestBail2()
+// :TODO: Test new-old proto system compa
+
+bool ___TestBail2(std::string &error)
 {
-	SourceHook::CSourceHookImpl g_SHImpl;
-	g_SHPtr = &g_SHImpl;
+	g_SHPtr = ___testbail_shptr;
 	g_PLID = 2;
 
 	g_Gabgab = (IGaben*)___testbail_gabgab;
 
-	g_Gabgab->EatYams();
+	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, ___testbail_EatYams_Handler2, false);
+	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, ___testbail_EatYams_Handler3, false);
 
-	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams0_Handler, false);
-
-	g_Gabgab->EatYams();
+	int ret = g_Gabgab->EatYams(0xDEAD);
 	
-	SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams0_Handler, false);
-
-	g_Gabgab->EatYams();
+	CHECK_COND(ret == 6, "Part 2.1");
+	
+	return true;
 }

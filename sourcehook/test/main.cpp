@@ -2,6 +2,7 @@
 //   hello pm how are you
 //    I'm fine, what about you?
 //     not bad, just looking for mem leaks
+//      mem leaks in my code!? never! I have to preserve binary compatibility :(
 // This is a test file
 
 #include <stdio.h>
@@ -75,6 +76,7 @@ DO_TEST(PlugSys);
 DO_TEST(Bail);
 DO_TEST(Reentr);
 DO_TEST(Manual);
+DO_TEST(Recall);
 
 int main(int argc, char *argv[])
 {
@@ -90,3 +92,37 @@ int main(int argc, char *argv[])
 	cin.read(&x, 1);
 }
 
+SourceHook::ISourceHook *Test_Factory()
+{
+	return new SourceHook::CSourceHookImpl();
+}
+
+void Test_Delete(SourceHook::ISourceHook *shptr)
+{
+	delete static_cast<SourceHook::CSourceHookImpl *>(shptr);
+}
+
+void Test_CompleteShutdown(SourceHook::ISourceHook *shptr)
+{
+	static_cast<SourceHook::CSourceHookImpl *>(shptr)->CompleteShutdown();
+}
+
+bool Test_IsPluginInUse(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	return static_cast<SourceHook::CSourceHookImpl *>(shptr)->IsPluginInUse(plug);
+}
+
+void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnloadPlugin(plug);
+}
+
+void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	static_cast<SourceHook::CSourceHookImpl *>(shptr)->PausePlugin(plug);
+}
+
+void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
+}

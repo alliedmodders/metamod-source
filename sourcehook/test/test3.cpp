@@ -1,5 +1,5 @@
 #include <string>
-#include "sourcehook_impl.h"
+#include "sourcehook_test.h"
 #include "testevents.h"
 
 // TEST3
@@ -69,8 +69,7 @@ namespace
 
 bool TestThisPtrOffs(std::string &error)
 {
-	SourceHook::CSourceHookImpl g_SHImpl;
-	g_SHPtr = &g_SHImpl;
+	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
 	Derived inst;

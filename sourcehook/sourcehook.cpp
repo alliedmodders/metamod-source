@@ -627,6 +627,7 @@ namespace SourceHook
 		HookLoopInfo hli;
 		hli.pCurIface = pIface;
 		hli.shouldContinue = true;
+		hli.recall = false;
 		m_HLIStack.push(hli);
 	}
 
@@ -657,6 +658,20 @@ namespace SourceHook
 
 	const void *CSourceHookImpl::GetOverrideRet()
 	{
+		// pOverrideRet is always set since recalls were introduced
+		// GetOverrideRetPtr was added; a function which always returns pOverrideRet
+		// so that RETURN_META_VALUE_NEWPARAMS can provide an override result
+
+		// This means that we have to filter GetOverrideRet:
+		//  If the status variable is < MRES_OVERRIDE, return NULL.
+
+		return (*m_HLIStack.front().pStatus < MRES_OVERRIDE) ?
+			NULL : m_HLIStack.front().pOverrideRet;
+	}
+
+	void *CSourceHookImpl::GetOverrideRetPtr()
+	{
+		// As described in the comment above: always return pOverrideRet
 		return m_HLIStack.front().pOverrideRet;
 	}
 
@@ -673,11 +688,19 @@ namespace SourceHook
 	void CSourceHookImpl::SetPrevResPtr(META_RES *mres)
 	{
 		m_HLIStack.front().pPrevRes = mres;
+
+		// If we're recalling, drag the previous mres value to the new hookfunc
+		if (m_HLIStack.size() > 1 && m_HLIStack.second().recall)
+			*mres = *m_HLIStack.second().pPrevRes;
 	}
 
 	void CSourceHookImpl::SetStatusPtr(META_RES *mres)
 	{
 		m_HLIStack.front().pStatus = mres;
+
+		// If we're recalling, drag the previous mres value to the new hookfunc
+		if (m_HLIStack.size() > 1 && m_HLIStack.second().recall)
+			*mres = *m_HLIStack.second().pStatus;
 	}
 
 	void CSourceHookImpl::SetIfacePtrPtr(void **pp)
@@ -689,13 +712,61 @@ namespace SourceHook
 	{
 		m_HLIStack.front().pOrigRet = ptr;
 	}
-	void CSourceHookImpl::SetOverrideRetPtr(const void *ptr)
+	void CSourceHookImpl::SetOverrideRetPtr(void *ptr)
 	{
 		m_HLIStack.front().pOverrideRet = ptr;
 	}
+
+	// New function which does all of the above + more :)
+	void *CSourceHookImpl::SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
+		void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr)
+	{
+		HookLoopInfo &hli = m_HLIStack.front();
+		hli.pStatus = statusPtr;
+		hli.pPrevRes = prevResPtr;
+		hli.pCurRes = curResPtr;
+		hli.pIfacePtrPtr = ifacePtrPtr;
+		hli.pOrigRet = origRetPtr;
+
+		// Handle some recall stuff
+		if (m_HLIStack.size() > 1 && m_HLIStack.second().recall)
+		{
+			HookLoopInfo &other = m_HLIStack.second();
+			*statusPtr = *other.pStatus;
+			*prevResPtr = *other.pStatus;
+			hli.pOverrideRet = other.pOverrideRet;
+		}
+		else
+			hli.pOverrideRet = overrideRetPtr;
+
+		// Tell the hook func which override ret ptr to use
+		return hli.pOverrideRet;
+	}
+
 	bool CSourceHookImpl::ShouldContinue()
 	{
-		return m_HLIStack.front().shouldContinue;
+		// If recall is true, we shall not continue either.
+		// This is because, if it's true and ShouldContinue is called, it suggests that the
+		// actual recall is done and that we are back in the original handler which shall return
+		// immediately.
+
+		return m_HLIStack.front().shouldContinue && !m_HLIStack.front().recall;
+	}
+
+	void CSourceHookImpl::DoRecall()
+	{
+		if (!m_HLIStack.empty())
+		{
+			m_HLIStack.front().recall = true;
+			CHookList *mlist = static_cast<CHookList*>(m_HLIStack.front().pCurIface->GetPreHooks());
+			mlist->m_Recall = true;
+
+			// The hookfunc usually do this, but it won't have a chance to see it, 
+			// so for recalls, we update status here if it's required
+			if (*m_HLIStack.front().pCurRes > *m_HLIStack.front().pStatus) 
+				*m_HLIStack.front().pStatus = *m_HLIStack.front().pCurRes;
+
+		}
 	}
 
 	////////////////////////////
@@ -897,12 +968,15 @@ namespace SourceHook
 	// CHookList
 	////////////////////////////
 
-	CSourceHookImpl::CHookList::CHookList() : m_FreeIters(NULL), m_UsedIters(NULL)
+	CSourceHookImpl::CHookList::CHookList() : m_FreeIters(NULL), m_UsedIters(NULL),
+		m_Recall(false)
 	{
 	}
-	CSourceHookImpl::CHookList::CHookList(const CHookList &other) : m_List(other.m_List), m_FreeIters(NULL), m_UsedIters(NULL)
+	CSourceHookImpl::CHookList::CHookList(const CHookList &other) : m_List(other.m_List),
+		m_FreeIters(NULL), m_UsedIters(NULL), m_Recall(false)
 	{
 	}
+
 	CSourceHookImpl::CHookList::~CHookList()
 	{
 		while (m_FreeIters)
@@ -932,11 +1006,21 @@ namespace SourceHook
 			ret = new CIter(this);
 		}
 		
+		// Muuuh, if we're recalling, it shall be a copy of the last iterator, incremented by one
+		if (m_Recall && m_UsedIters)
+		{
+			ret->Set(m_UsedIters);		// m_UsedIters is the last returned and not released iterator
+			ret->Next();				// Use next instead of directly incrementing its m_Iter:
+										// skips paused plugins
+		}
+
 		ret->m_pNext = m_UsedIters;
 		ret->m_pPrev = NULL;
 		if (m_UsedIters)
 			m_UsedIters->m_pPrev = ret;
 		m_UsedIters = ret;
+
+		m_Recall = false;
 
 		return ret;
 	}
@@ -958,6 +1042,9 @@ namespace SourceHook
 		pIter2->m_pNext = m_FreeIters;
 
 		m_FreeIters = pIter2;
+
+		// Reset recall state.
+		m_Recall = false;
 	}
 
 	CSourceHookImpl::CHookList::CIter::CIter(CHookList *pList) : m_pList(pList), m_pNext(NULL)
@@ -966,6 +1053,11 @@ namespace SourceHook
 	}
 	CSourceHookImpl::CHookList::CIter::~CIter()
 	{
+	}
+
+	void CSourceHookImpl::CHookList::CIter::Set(CIter *pOther)
+	{
+		m_Iter = pOther->m_Iter;
 	}
 
 	void CSourceHookImpl::CHookList::CIter::GoToBegin()

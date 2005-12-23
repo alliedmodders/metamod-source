@@ -2,7 +2,7 @@
 // = calling hooks from hook handlers, etc
 
 #include <string>
-#include "sourcehook_impl.h"
+#include "sourcehook_test.h"
 #include "testevents.h"
 
 namespace
@@ -294,8 +294,7 @@ namespace
 
 bool TestReentr(std::string &error)
 {
-	SourceHook::CSourceHookImpl g_SHImpl;
-	g_SHPtr = &g_SHImpl;
+	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
 	g_pC1 = &g_C1;

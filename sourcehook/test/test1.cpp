@@ -1,5 +1,5 @@
 #include <string>
-#include "sourcehook_impl.h"
+#include "sourcehook_test.h"
 #include "testevents.h"
 
 #include "sh_memory.h"
@@ -92,7 +92,7 @@ namespace
 		virtual void F57(){}
 		virtual void F58(){}
 		virtual void F59(){}
-		virtual void F60(){}
+		virtual void F60(int &hello){}
 		virtual void F61(){}
 		virtual void F62(){}
 		virtual void F63(){}
@@ -350,6 +350,8 @@ namespace
 	SH_DECL_HOOK0_void(Test, F9, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, F10, SH_NOATTRIB, 0);
 
+	SH_DECL_HOOK1_void(Test, F60, SH_NOATTRIB, 0, int&);
+
 	META_RES g_F1Pre_WhatToDo;
 	META_RES g_F1Post_WhatToDo;
 
@@ -384,7 +386,17 @@ namespace
 			!META_RESULT_ORIG_RET(bool));
 	}
 
+	void F60_Pre(int &hello)
+	{
+		hello = 10;
+	}
 }
+
+template <class T> T func(T a)
+{
+	return a;
+}
+
 
 bool TestBasic(std::string &error)
 {
@@ -399,8 +411,7 @@ bool TestBasic(std::string &error)
 		new State_ModuleInMemory(false),
 		NULL), "ModuleInMemory");
 
-	SourceHook::CSourceHookImpl g_SHImpl;
-	g_SHPtr = &g_SHImpl;
+	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
 	HandlersF1 f1_handlers;
@@ -676,7 +687,13 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK_MEMFUNC(Test, F9, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	SH_REMOVE_HOOK_MEMFUNC(Test, F10, pTest, &f1_handlers, &HandlersF1::Pre, false);
 
-	g_SHImpl.CompleteShutdown();
+	SH_ADD_HOOK_STATICFUNC(Test, F60, pTest, F60_Pre, false);
+
+	int a = 0;
+	pTest->F60(a);
+	Test_CompleteShutdown(g_SHPtr);
+
+	CHECK_COND(a == 10, "Part12.a");
 
 	return true;
 }

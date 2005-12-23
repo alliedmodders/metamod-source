@@ -1,5 +1,6 @@
 #include <string>
-#include "sourcehook_impl.h"
+#include "sourcehook.h"
+#include "sourcehook_test.h"
 #include "testevents.h"
 
 // TESTMANUAL
@@ -94,8 +95,7 @@ namespace
 
 bool TestManual(std::string &error)
 {
-	SourceHook::CSourceHookImpl g_SHImpl;
-	g_SHPtr = &g_SHImpl;
+	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
 	TheWall inst;

@@ -174,6 +174,16 @@ namespace SourceHook
 			return m_Elements[m_UsedSize - 1];
 		}
 
+		T &second()
+		{
+			return m_Elements[m_UsedSize - 2];
+		}
+
+		const T &second() const
+		{
+			return m_Elements[m_UsedSize - 2];
+		}
+
 		iterator begin()
 		{
 			return iterator(this, 0);

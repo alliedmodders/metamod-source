@@ -76,6 +76,7 @@ namespace SourceHook
 				virtual ~CIter();
 
 				void GoToBegin();
+				void Set(CIter *pOther);
 
 				bool End();
 				void Next();
@@ -89,7 +90,16 @@ namespace SourceHook
 			};
 
 			CIter *m_FreeIters;
-			CIter *m_UsedIters;
+			CIter *m_UsedIters;		// The last returned and not-yet-released iter is always m_UsedIters
+
+			// For recalls
+			bool m_Recall;
+
+			void SetRecallState();	// Sets the list into a state where the next returned
+									// iterator (from GetIter) will be a copy of the last
+									// returned iterator, incremented by one. This is used in Recalls.
+									// The hook resets this state automatically on:
+									// GetIter, ReleaseIter
 
 			CHookList();
 			CHookList(const CHookList &other);
@@ -165,6 +175,8 @@ namespace SourceHook
 
 			VfnPtrList m_VfnPtrs;
 
+			int m_HookFuncVersion;
+
 		public:
 			virtual ~CHookManagerInfo();
 
@@ -221,10 +233,11 @@ namespace SourceHook
 			META_RES *pCurRes;
 
 			bool shouldContinue;
+			bool recall;							//!< True if we're in a recall, eh.
 
 			IIface *pCurIface;
 			const void *pOrigRet;
-			const void *pOverrideRet;
+			void *pOverrideRet;
 			void **pIfacePtrPtr;
 		};
 		typedef CStack<HookLoopInfo> HookLoopInfoStack;
@@ -357,7 +370,7 @@ namespace SourceHook
 		void SetStatusPtr(META_RES *mres);			//!< Sets pointer to the status variable
 		void SetIfacePtrPtr(void **pp);				//!< Sets pointer to the interface this pointer
 		void SetOrigRetPtr(const void *ptr);		//!< Sets the original return pointer
-		void SetOverrideRetPtr(const void *ptr);	//!< Sets the override result pointer
+		void SetOverrideRetPtr(void *ptr);			//!< Sets the override result pointer
 		bool ShouldContinue();						//!< Returns false if the hook loop should exit
 
 		/**
@@ -367,6 +380,11 @@ namespace SourceHook
 		*   @param pubFunc The hook manager's info function
 		*/
 		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
+		virtual void DoRecall();					//!< Initiates a recall sequence
+		virtual void *GetOverrideRetPtr();			//!< Returns the pointer set by SetOverrideRetPtr
+
+		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
+			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr);
 	};
 }
 

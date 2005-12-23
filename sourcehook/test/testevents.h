@@ -39,9 +39,6 @@ namespace
 
 	typedef std::list<State*> StateList;
 
-	#define ADD_STATE(name) g_States.push_back(new name)
-
-
 	void DumpStates(StateList *sl)
 	{
 		for (StateList::iterator iter = sl->begin(); iter != sl->end(); ++iter)
@@ -100,6 +97,9 @@ namespace
 		return ok;
 	}
 }
+
+#define ADD_STATE(name) g_States.push_back(new name)
+#define ADD_STATE_PTR(statesptr, name) statesptr->push_back(new name)
 
 #define CHECK_STATES(mwah, myerr) if (!StatesOk mwah) { error=myerr; return false; } else if (g_Verbose) { std::cout << "No error: " << myerr << std::endl; }
 

@@ -372,7 +372,7 @@ namespace SourceHook
 		virtual void SetStatusPtr(META_RES *mres) = 0;			//!< Sets pointer to the status variable
 		virtual void SetIfacePtrPtr(void **pp) = 0;				//!< Sets pointer to the interface this pointer
 		virtual void SetOrigRetPtr(const void *ptr) = 0;		//!< Sets the original return pointer
-		virtual void SetOverrideRetPtr(const void *ptr) = 0;	//!< Sets the override result pointer
+		virtual void SetOverrideRetPtr(void *ptr) = 0;			//!< Sets the override result pointer
 		virtual bool ShouldContinue() = 0;						//!< Returns false if the hook loop should exit
 
 		/**
@@ -382,22 +382,89 @@ namespace SourceHook
 		*   @param pubFunc The hook manager's info function
 		*/
 		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc) = 0;
+
+		virtual void DoRecall() = 0;							//!< Initiates a recall sequence
+		/*
+			HOW RECALLS WORK:
+			
+			The problem:
+				Users want the ability to change parameters of the called function
+				from inside their handler.
+			The solution:
+				1) Mark as "recall"
+				2) Recall the function
+				3) => SH's hook func gets called:
+				  4) The first iterator points at the first hook the last hookfunc didn't execute yet
+				  5) does all iteration and returns normally
+		        6) The user's handler returns immediately
+				7) The hook func returns immediately as well
+
+				Also note that the recalled hookfunc starts with the status the recalling hookfunc
+				ended with. The last handler (doing the recall) is also able to specify its own
+				META_RES.
+		*/
+
+		virtual void *GetOverrideRetPtr() = 0;		//!< Returns the pointer set by SetOverrideRetPtr
+
+		/**
+		*	@brief Set up the hook loop. Equivalent to calling:
+		*	SetStatusPtr, SetPrevResPtr, SetCurResPtr, SetIfacePtrPtr, SetOrigRetPtr, Get/SetOverrideRetPtr
+		*
+		*	@param statusPtr		pointer to status variable
+		*	@param prevResPtr		pointer to previous result variable
+		*	@param curResPtr		pointer to current result variable
+		*	@param ifacePtrPtr		pointer to interface this pointer variable
+		*	@param origRetPr		pointer to original return value variable. NULL for void funcs
+		*	@param overrideRetPtr	pointer to override return value variable. NULL for void funcs
+		*	
+		*	@return Override Return Pointer the hookfunc should use (may differ from overrideRetPtr
+		*		when the hook func is being called as part of a recall
+		*/
+		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
+			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr) = 0;
 	};
 }
 
 /************************************************************************/
 /* High level interface                                                 */
 /************************************************************************/
-#define SET_META_RESULT(result)				SH_GLOB_SHPTR->SetRes(result)
-#define RETURN_META(result)					do { SET_META_RESULT(result); return; } while(0)
-#define RETURN_META_VALUE(result, value)	do { SET_META_RESULT(result); return (value); } while(0)
-
 #define META_RESULT_STATUS					SH_GLOB_SHPTR->GetStatus()
 #define META_RESULT_PREVIOUS				SH_GLOB_SHPTR->GetPrevRes()
 #define META_RESULT_ORIG_RET(type)			*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOrigRet())
 #define META_RESULT_OVERRIDE_RET(type)		*reinterpret_cast<const type*>(SH_GLOB_SHPTR->GetOverrideRet())
 #define META_IFACEPTR(type)					reinterpret_cast<type*>(SH_GLOB_SHPTR->GetIfacePtr())
 
+#define SET_META_RESULT(result)				SH_GLOB_SHPTR->SetRes(result)
+#define RETURN_META(result)					do { SET_META_RESULT(result); return; } while(0)
+#define RETURN_META_VALUE(result, value)	do { SET_META_RESULT(result); return (value); } while(0)
+
+
+// NEVER-EVER call these from post hooks!
+// also, only call it from the hook handlers directly!
+// :TODO: enforce it
+// :TODO: problems with SetOverrideResult and overloaded iface::func ?
+
+// SourceHook::SetOverrideRet is defined later.
+#define RETURN_META_NEWPARAMS(result, iface, func, newparams) \
+	do { \
+		SET_META_RESULT(result); \
+		SH_GLOB_SHPTR->DoRecall(); \
+		META_IFACEPTR(iface)->func newparams; \
+		RETURN_META(MRES_SUPERCEDE); \
+	} while (0)
+
+#define RETURN_META_VALUE_NEWPARAMS(result, value, iface, func, newparams) \
+	do { \
+		SET_META_RESULT(result); \
+		SH_GLOB_SHPTR->DoRecall(); \
+		if ((result) >= MRES_OVERRIDE) \
+		{ \
+			/* meh, set the override result here because we don't get a chance to return */ \
+			/* before continuing the hook loop through the recall */ \
+			SourceHook::SetOverrideResult(SH_GLOB_SHPTR, &iface::func, value); \
+		} \
+		RETURN_META_VALUE(MRES_SUPERCEDE, META_IFACEPTR(iface)->func newparams); \
+	} while (0)
 
 /**
 *	@brief Get/generate callclass for an interface pointer
@@ -542,8 +609,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		using namespace ::SourceHook; \
 		MemFuncInfo mfi; \
 		GetFuncInfo(funcptr, mfi); \
-		if (mfi.thisptroffs < 0) \
-			return false; /* No virtual inheritance supported */ \
+		if (mfi.thisptroffs < 0 || !mfi.isVirtual) \
+			return false; /* No non-virtual functions / virtual inheritance supported */ \
 		\
 		return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
@@ -659,16 +726,12 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	META_RES status = MRES_IGNORED; \
 	META_RES prev_res; \
 	META_RES cur_res; \
-	SH_GLOB_SHPTR->SetStatusPtr(&status); \
-	SH_GLOB_SHPTR->SetPrevResPtr(&prev_res); \
-	SH_GLOB_SHPTR->SetCurResPtr(&cur_res); \
 	rettype orig_ret; \
 	rettype override_ret; \
 	rettype plugin_ret; \
 	void* ifptr; \
-	SH_GLOB_SHPTR->SetIfacePtrPtr(&ifptr); \
-	SH_GLOB_SHPTR->SetOrigRetPtr(reinterpret_cast<void*>(&orig_ret)); \
-	SH_GLOB_SHPTR->SetOverrideRetPtr(NULL);
+	rettype *pOverrideRet = reinterpret_cast<rettype*>(SH_GLOB_SHPTR->SetupHookLoop( \
+		&status, &prev_res, &cur_res, &ifptr, &orig_ret, &override_ret));
 
 #define SH_CALL_HOOKS(post, params) \
 	if (SH_GLOB_SHPTR->ShouldContinue()) \
@@ -683,10 +746,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			if (cur_res > status) \
 				status = cur_res; \
 			if (cur_res >= MRES_OVERRIDE) \
-			{ \
-				override_ret = plugin_ret; \
-				SH_GLOB_SHPTR->SetOverrideRetPtr(&override_ret); \
-			} \
+				*pOverrideRet = plugin_ret; \
 			if (!SH_GLOB_SHPTR->ShouldContinue()) \
 			{ \
 				iter.SetToZero(); \
@@ -703,11 +763,11 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		orig_ret = (reinterpret_cast<EmptyClass*>(this)->*mfp)params; \
 	} \
 	else \
-		orig_ret = override_ret;
+		orig_ret = override_ret; \
 
 #define SH_RETURN() \
 	SH_GLOB_SHPTR->HookLoopEnd(); \
-	return status >= MRES_OVERRIDE ? override_ret : orig_ret;
+	return status >= MRES_OVERRIDE ? *pOverrideRet : orig_ret;
 
 #define SH_HANDLEFUNC(paramtypes, params, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params) \
@@ -743,13 +803,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	META_RES status = MRES_IGNORED; \
 	META_RES prev_res; \
 	META_RES cur_res; \
-	SH_GLOB_SHPTR->SetStatusPtr(&status); \
-	SH_GLOB_SHPTR->SetPrevResPtr(&prev_res); \
-	SH_GLOB_SHPTR->SetCurResPtr(&cur_res); \
 	void* ifptr; \
-	SH_GLOB_SHPTR->SetIfacePtrPtr(&ifptr); \
-	SH_GLOB_SHPTR->SetOverrideRetPtr(NULL); \
-	SH_GLOB_SHPTR->SetOrigRetPtr(NULL);
+	SH_GLOB_SHPTR->SetupHookLoop(&status, &prev_res, &cur_res, &ifptr, NULL, NULL); \
 
 #define SH_CALL_HOOKS_void(post, params) \
 	if (SH_GLOB_SHPTR->ShouldContinue()) \
@@ -791,6 +846,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 
 // Special vafmt handlers
+// :TODO: what
 #define SH_HANDLEFUNC_vafmt(paramtypes, params_orig, params_plug, rettype) \
 	SH_SETUPCALLS(rettype, paramtypes, params_orig) \
 	SH_CALL_HOOKS(pre, params_plug) \
@@ -1024,6 +1080,23 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @@
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
 
 #undef SH_MAKE_EXECUTABLECLASS_OB
+
+//////////////////////////////////////////////////////////////////////////
+// SetOverrideRet for recalls
+// These take a ISourceHook pointer instead of using SH_GLOB_SHPTR directly
+// The reason is that the user may want to redefine SH_GLOB_SHPTR - then the macros
+// (META_RETURN_VALUE_NEWPARAMS) should obey the new pointer.
+
+namespace SourceHook
+{
+@VARARGS@
+	template <class Iface, class RetType@, class Param%%@>
+	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(@Param%%|, @), const RetType res)
+	{
+		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+@ENDARGS@
+}
 
 #endif
 	// The pope is dead. -> :(
