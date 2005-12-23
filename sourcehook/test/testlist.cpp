@@ -7,7 +7,7 @@
 // TEST LIST
 // Tests sh_list, sh_tinyhash, sh_vector
 
-// :TODO: vector test
+// :TODO: vector test, list insert test
 
 namespace
 {

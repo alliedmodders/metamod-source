@@ -21,9 +21,12 @@
 //  2 - Changed to virtual functions for iterators and all queries
 //  3 - Added "hook loop status variable"
 //  4 - Reentrant
-
 #define SH_IFACE_VERSION 4
 #define SH_IMPL_VERSION 3
+
+// Hookman version:
+//  1 - Support for recalls, performance optimisations
+#define SH_HOOKMAN_VERSION 1
 
 // The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
 // It's used in various macros
@@ -235,6 +238,11 @@ namespace SourceHook
 
 		virtual void SetInfo(int vtbloffs, int vtblidx, const char *proto) = 0;
 		virtual void SetHookfuncVfnptr(void *hookfunc_vfnptr) = 0;
+
+		// Added 23.12.2005 (yup! I'm coding RIGHT BEFORE CHRISTMAS!)
+		// If the hookman doesn't set this, it defaults 0
+		// SourceHook prefers hookmans with higher version numbers
+		virtual void SetVersion(int version) = 0;
 	};
 
 	class AutoHookIter
@@ -422,6 +430,8 @@ namespace SourceHook
 		*/
 		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
 			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr) = 0;
+
+		//!< 
 	};
 }
 
@@ -442,18 +452,20 @@ namespace SourceHook
 // NEVER-EVER call these from post hooks!
 // also, only call it from the hook handlers directly!
 // :TODO: enforce it
-// :TODO: problems with SetOverrideResult and overloaded iface::func ?
+
+// Why take a memfuncptr instead of iface and func when we have to deduce the iface anyway now?
+// Well, without it, there'd be no way to specify which overloaded version we want in _VALUE
 
 // SourceHook::SetOverrideRet is defined later.
-#define RETURN_META_NEWPARAMS(result, iface, func, newparams) \
+#define RETURN_META_NEWPARAMS(result, memfuncptr, newparams) \
 	do { \
 		SET_META_RESULT(result); \
 		SH_GLOB_SHPTR->DoRecall(); \
-		META_IFACEPTR(iface)->func newparams; \
+		(SourceHook::RecallGetIface(SH_GLOB_SHPTR, memfuncptr)->*(memfuncptr)) newparams; \
 		RETURN_META(MRES_SUPERCEDE); \
 	} while (0)
 
-#define RETURN_META_VALUE_NEWPARAMS(result, value, iface, func, newparams) \
+#define RETURN_META_VALUE_NEWPARAMS(result, value, memfuncptr, newparams) \
 	do { \
 		SET_META_RESULT(result); \
 		SH_GLOB_SHPTR->DoRecall(); \
@@ -461,9 +473,10 @@ namespace SourceHook
 		{ \
 			/* meh, set the override result here because we don't get a chance to return */ \
 			/* before continuing the hook loop through the recall */ \
-			SourceHook::SetOverrideResult(SH_GLOB_SHPTR, &iface::func, value); \
+			SourceHook::SetOverrideResult(SH_GLOB_SHPTR, memfuncptr, value); \
 		} \
-		RETURN_META_VALUE(MRES_SUPERCEDE, META_IFACEPTR(iface)->func newparams); \
+		RETURN_META_VALUE(MRES_SUPERCEDE, \
+			(SourceHook::RecallGetIface(SH_GLOB_SHPTR, memfuncptr)->*(memfuncptr)) newparams); \
 	} while (0)
 
 /**
@@ -563,6 +576,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		\
 		if (action == HA_GetInfo) \
 		{ \
+			param->SetVersion(SH_HOOKMAN_VERSION); \
 			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 				reinterpret_cast<const char*>(&ms_Proto)); \
 			\
@@ -657,6 +671,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			\
 			if (action == HA_GetInfo) \
 			{ \
+				param->SetVersion(SH_HOOKMAN_VERSION); \
 				param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 					reinterpret_cast<const char*>(&ms_Proto)); \
 				\
@@ -3554,7 +3569,7 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param
 #undef SH_MAKE_EXECUTABLECLASS_OB
 
 //////////////////////////////////////////////////////////////////////////
-// SetOverrideRet for recalls
+// SetOverrideRet and RecallGetIface for recalls
 // These take a ISourceHook pointer instead of using SH_GLOB_SHPTR directly
 // The reason is that the user may want to redefine SH_GLOB_SHPTR - then the macros
 // (META_RETURN_VALUE_NEWPARAMS) should obey the new pointer.
@@ -3566,105 +3581,231 @@ namespace SourceHook
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)())
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
 	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 }
 

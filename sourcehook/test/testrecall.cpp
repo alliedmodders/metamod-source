@@ -33,17 +33,23 @@ namespace
 			ADD_STATE(State_Func2(a));
 			return 1000;
 		}
+
+		// Overloaded version
+		virtual int Func2(int a, int b)
+		{
+			return 0xDEADFC;
+		}
 	};
 
 	void Handler1_Func1(int a)
 	{
 		ADD_STATE(State_H1_Func1(a));
-		RETURN_META_NEWPARAMS(MRES_IGNORED, Test, Func1, (5));
+		RETURN_META_NEWPARAMS(MRES_IGNORED, &Test::Func1, (5));
 	}
 	void Handler2_Func1(int a)
 	{
 		ADD_STATE(State_H2_Func1(a));
-		RETURN_META_NEWPARAMS(MRES_IGNORED, Test, Func1, (a - 5));
+		RETURN_META_NEWPARAMS(MRES_IGNORED, &Test::Func1, (a - 5));
 	}
 	void HandlerPost_Func1(int a)
 	{
@@ -54,7 +60,9 @@ namespace
 	int Handler1_Func2(int a)
 	{
 		ADD_STATE(State_H1_Func2(a));
-		RETURN_META_VALUE_NEWPARAMS(MRES_OVERRIDE, 500, Test, Func2, (a - 10));
+		// Pfeeehhh, ugly, I know, but I had to test it :)
+		RETURN_META_VALUE_NEWPARAMS(MRES_OVERRIDE, 500, 
+			static_cast<int (Test::*)(int)>(&Test::Func2), (a - 10));
 	}
 
 	int HandlerPost_Func2(int a)

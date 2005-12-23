@@ -16,253 +16,276 @@
 
 namespace SourceHook
 {
-//This class is from CSDM for AMX Mod X
-template <class T>
-class List
-{
-public:
-	class iterator;
-	friend class iterator;
-	class ListNode
+
+	//This class is from CSDM for AMX Mod X
+	/*
+		A circular, doubly-linked list with one sentinel node
+
+		Empty:
+			m_Head = sentinel
+			m_Head->next = m_Head;
+			m_Head->prev = m_Head;
+		One element:
+			m_Head = sentinel
+			m_Head->next = node1
+			m_Head->prev = node1
+			node1->next = m_Head
+			node1->prev = m_Head
+		Two elements:
+			m_Head = sentinel
+			m_Head->next = node1
+			m_Head->prev = node2
+			node1->next = node2
+			node1->prev = m_Head
+			node2->next = m_Head
+			node2->prev = node1
+	*/
+	template <class T>
+	class List
 	{
 	public:
-		ListNode(const T & o) : obj(o) { };
-		ListNode() { };
-		T obj;
-		ListNode *next;
-		ListNode *prev;
-	};
-private:
-	ListNode *_Initialize()
-	{
-		ListNode *n = (ListNode *)malloc(sizeof(ListNode));
-		n->next = NULL;
-		n->prev = NULL;
-		return n;
-	}
-public:
-	List() : m_Head(_Initialize()), m_Size(0)
-	{
-	}
-	List(const List &src) : m_Head(_Initialize()), m_Size(0)
-	{
-		iterator iter;
-		for (iter=src.begin(); iter!=src.end(); iter++)
-			push_back( (*iter) );
-	}
-	~List()
-	{
-		clear();
-		if (m_Head)
+		class iterator;
+		friend class iterator;
+		class ListNode
 		{
-			free(m_Head);
-			m_Head = NULL;
+		public:
+			ListNode(const T & o) : obj(o) { };
+			ListNode() { };
+			T obj;
+			ListNode *next;
+			ListNode *prev;
+		};
+	private:
+		// Initializes the sentinel node.
+		// BAIL used malloc instead of new in order to bypass the need for a constructor.
+		ListNode *_Initialize()
+		{
+			ListNode *n = (ListNode *)malloc(sizeof(ListNode));
+			n->next = n;
+			n->prev = n;
+			return n;
 		}
-	}
-	void push_back(const T &obj)
-	{
-		ListNode *node = new ListNode(obj);
-
-		if (!m_Head->prev)
+	public:
+		List() : m_Head(_Initialize()), m_Size(0)
 		{
-			//link in the node as the first item 
-			node->next = m_Head;
-			node->prev = m_Head;
-			m_Head->prev = node;
-			m_Head->next = node;
-		} else {
+		}
+		List(const List &src) : m_Head(_Initialize()), m_Size(0)
+		{
+			iterator iter;
+			for (iter=src.begin(); iter!=src.end(); iter++)
+				push_back( (*iter) );
+		}
+		~List()
+		{
+			clear();
+
+			// Don't forget to free the sentinel
+			if (m_Head)
+			{
+				free(m_Head);
+				m_Head = NULL;
+			}
+		}
+		void push_back(const T &obj)
+		{
+			ListNode *node = new ListNode(obj);
+
 			node->prev = m_Head->prev;
 			node->next = m_Head;
 			m_Head->prev->next = node;
 			m_Head->prev = node;
+
+			m_Size++;
 		}
-		m_Size++;
-	}
-	size_t size()
-	{
-		return m_Size;
-	}
-	void clear()
-	{
-		ListNode *node = m_Head->next;
-		ListNode *temp;
-		m_Head->next = NULL;
-		m_Head->prev = NULL;
-		while (node && node != m_Head)
+		size_t size()
 		{
-			temp = node->next;
-			delete node;
-			node = temp;
+			return m_Size;
 		}
-		m_Size = 0;
-	}
-	bool empty()
-	{
-		return (m_Head->next == NULL);
-	}
-	T & back()
-	{
-		return m_Head->prev->obj;
-	}
-private:
-	ListNode *m_Head;
-	size_t m_Size;
-public:
-	class iterator
-	{
-	friend class List;
-	public:
-		iterator()
+
+		void clear()
 		{
-			m_This = NULL;
+			ListNode *node = m_Head->next;
+			ListNode *temp;
+			m_Head->next = m_Head;
+			m_Head->prev = m_Head;
+
+			// Iterate through the nodes until we find g_Head (the sentinel) again
+			while (node != m_Head)
+			{
+				temp = node->next;
+				delete node;
+				node = temp;
+			}
+			m_Size = 0;
 		}
-		iterator(const List &src)
+		bool empty()
 		{
-			m_This = src.m_Head;
+			return (m_Size == 0);
 		}
-		iterator(ListNode *n) : m_This(n)
+		T & back()
 		{
-		}
-		iterator(const iterator &where)
-		{
-			m_This = where.m_This;
-		}
-		//pre decrement
-		iterator & operator--()
-		{
-			if (m_This)
-				m_This = m_This->prev;
-			return *this;
-		}
-		//post decrement
-		iterator operator--(int)
-		{
-			iterator old(*this);
-			if (m_This)
-				m_This = m_This->prev;
-			return old;
-		}	
-		
-		//pre increment
-		iterator & operator++()
-		{
-			if (m_This)
-				m_This = m_This->next;
-			return *this;
-		}
-		//post increment
-		iterator operator++(int)
-		{
-			iterator old(*this);
-			if (m_This)
-				m_This = m_This->next;
-			return old;
-		}
-		
-		const T & operator * () const
-		{
-			return m_This->obj;
-		}
-		T & operator * ()
-		{
-			return m_This->obj;
-		}
-		
-		T * operator -> ()
-		{
-			return &(m_This->obj);
-		}
-		const T * operator -> () const
-		{
-			return &(m_This->obj);
-		}
-		
-		bool operator != (const iterator &where) const
-		{
-			return (m_This != where.m_This);
-		}
-		bool operator ==(const iterator &where) const
-		{
-			return (m_This == where.m_This);
+			return m_Head->prev->obj;
 		}
 	private:
-		ListNode *m_This;
-	};
-public:
-	iterator begin() const
-	{
-		if (m_Size)
-			return iterator(m_Head->next);
-		else
-			return iterator(m_Head);
-	}
-	iterator end() const
-	{
-		return iterator(m_Head);
-	}
-	iterator erase(iterator &where)
-	{
-		ListNode *pNode = where.m_This;
-		iterator iter(where);
-		iter++;
-
-		//If we are both the head and tail...
-		if (m_Head->next == pNode && m_Head->prev == pNode)
+		ListNode *m_Head;
+		size_t m_Size;
+	public:
+		class iterator
 		{
-			m_Head->next = NULL;
-			m_Head->prev = NULL;
-		} else if (m_Head->next == pNode) {
-			//we are only the first
-			pNode->next->prev = m_Head;
-			m_Head->next = pNode->next;
-		} else if (m_Head->prev == pNode) {
-			//we are the tail
-			pNode->prev->next = m_Head;
-			m_Head->prev = pNode->prev;
-		} else {
-			//middle unlink
+		friend class List;
+		public:
+			iterator()
+			{
+				m_This = NULL;
+			}
+			iterator(const List &src)
+			{
+				m_This = src.m_Head;
+			}
+			iterator(ListNode *n) : m_This(n)
+			{
+			}
+			iterator(const iterator &where)
+			{
+				m_This = where.m_This;
+			}
+			//pre decrement
+			iterator & operator--()
+			{
+				if (m_This)
+					m_This = m_This->prev;
+				return *this;
+			}
+			//post decrement
+			iterator operator--(int)
+			{
+				iterator old(*this);
+				if (m_This)
+					m_This = m_This->prev;
+				return old;
+			}	
+			
+			//pre increment
+			iterator & operator++()
+			{
+				if (m_This)
+					m_This = m_This->next;
+				return *this;
+			}
+			//post increment
+			iterator operator++(int)
+			{
+				iterator old(*this);
+				if (m_This)
+					m_This = m_This->next;
+				return old;
+			}
+			
+			const T & operator * () const
+			{
+				return m_This->obj;
+			}
+			T & operator * ()
+			{
+				return m_This->obj;
+			}
+			
+			T * operator -> ()
+			{
+				return &(m_This->obj);
+			}
+			const T * operator -> () const
+			{
+				return &(m_This->obj);
+			}
+			
+			bool operator != (const iterator &where) const
+			{
+				return (m_This != where.m_This);
+			}
+			bool operator ==(const iterator &where) const
+			{
+				return (m_This == where.m_This);
+			}
+		private:
+			ListNode *m_This;
+		};
+	public:
+		iterator begin() const
+		{
+			return iterator(m_Head->next);
+		}
+		iterator end() const
+		{
+			return iterator(m_Head);
+		}
+		iterator erase(iterator &where)
+		{
+			ListNode *pNode = where.m_This;
+			iterator iter(where);
+			iter++;
+
+
+			// Works for all cases: empty list, erasing first element, erasing tail, erasing in the middle...
 			pNode->prev->next = pNode->next;
 			pNode->next->prev = pNode->prev;
+
+			delete pNode;
+			m_Size--;
+
+			return iter;
 		}
 
-		delete pNode;
-		m_Size--;
-
-		return iter;
-	}
-public:
-	void remove(const T & obj)
-	{
-		iterator b;
-		for (b=begin(); b!=end(); b++)
+		iterator insert(iterator where, const T &obj)
 		{
-			if ( (*b) == obj )
+			// Insert obj right before where
+
+			ListNode *node = new ListNode(obj);
+			ListNode *pWhereNode = where.m_This;
+			
+			pWhereNode->prev->next = node;
+			node->prev = pWhereNode->prev;
+			pWhereNode->prev = node;
+			node->next = pWhereNode;
+
+			m_Size++;
+
+			return iterator(node);
+		}
+
+	public:
+		void remove(const T & obj)
+		{
+			iterator b;
+			for (b=begin(); b!=end(); b++)
 			{
-				erase( b );
-				break;
+				if ( (*b) == obj )
+				{
+					erase( b );
+					break;
+				}
 			}
 		}
-	}
-	template <typename U>
-	iterator find(const U & equ)
-	{
-		iterator iter;
-		for (iter=begin(); iter!=end(); iter++)
+		template <typename U>
+		iterator find(const U & equ)
 		{
-			if ( (*iter) == equ )
-				return iter;
+			iterator iter;
+			for (iter=begin(); iter!=end(); iter++)
+			{
+				if ( (*iter) == equ )
+					return iter;
+			}
+			return end();
 		}
-		return end();
-	}
-	List & operator =(const List &src)
-	{
-		clear();
-		iterator iter;
-		for (iter=src.begin(); iter!=src.end(); iter++)
-			push_back( (*iter) );
-		return *this;
-	}
-};
+		List & operator =(const List &src)
+		{
+			clear();
+			iterator iter;
+			for (iter=src.begin(); iter!=src.end(); iter++)
+				push_back( (*iter) );
+			return *this;
+		}
+	};
 };	//NAMESPACE
 
 #endif //_INCLUDE_CSDM_LIST_H

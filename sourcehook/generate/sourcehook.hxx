@@ -21,9 +21,12 @@
 //  2 - Changed to virtual functions for iterators and all queries
 //  3 - Added "hook loop status variable"
 //  4 - Reentrant
-
 #define SH_IFACE_VERSION 4
 #define SH_IMPL_VERSION 3
+
+// Hookman version:
+//  1 - Support for recalls, performance optimisations
+#define SH_HOOKMAN_VERSION 1
 
 // The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
 // It's used in various macros
@@ -235,6 +238,11 @@ namespace SourceHook
 
 		virtual void SetInfo(int vtbloffs, int vtblidx, const char *proto) = 0;
 		virtual void SetHookfuncVfnptr(void *hookfunc_vfnptr) = 0;
+
+		// Added 23.12.2005 (yup! I'm coding RIGHT BEFORE CHRISTMAS!)
+		// If the hookman doesn't set this, it defaults 0
+		// SourceHook prefers hookmans with higher version numbers
+		virtual void SetVersion(int version) = 0;
 	};
 
 	class AutoHookIter
@@ -422,6 +430,8 @@ namespace SourceHook
 		*/
 		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
 			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr) = 0;
+
+		//!< 
 	};
 }
 
@@ -442,18 +452,20 @@ namespace SourceHook
 // NEVER-EVER call these from post hooks!
 // also, only call it from the hook handlers directly!
 // :TODO: enforce it
-// :TODO: problems with SetOverrideResult and overloaded iface::func ?
+
+// Why take a memfuncptr instead of iface and func when we have to deduce the iface anyway now?
+// Well, without it, there'd be no way to specify which overloaded version we want in _VALUE
 
 // SourceHook::SetOverrideRet is defined later.
-#define RETURN_META_NEWPARAMS(result, iface, func, newparams) \
+#define RETURN_META_NEWPARAMS(result, memfuncptr, newparams) \
 	do { \
 		SET_META_RESULT(result); \
 		SH_GLOB_SHPTR->DoRecall(); \
-		META_IFACEPTR(iface)->func newparams; \
+		(SourceHook::RecallGetIface(SH_GLOB_SHPTR, memfuncptr)->*(memfuncptr)) newparams; \
 		RETURN_META(MRES_SUPERCEDE); \
 	} while (0)
 
-#define RETURN_META_VALUE_NEWPARAMS(result, value, iface, func, newparams) \
+#define RETURN_META_VALUE_NEWPARAMS(result, value, memfuncptr, newparams) \
 	do { \
 		SET_META_RESULT(result); \
 		SH_GLOB_SHPTR->DoRecall(); \
@@ -461,9 +473,10 @@ namespace SourceHook
 		{ \
 			/* meh, set the override result here because we don't get a chance to return */ \
 			/* before continuing the hook loop through the recall */ \
-			SourceHook::SetOverrideResult(SH_GLOB_SHPTR, &iface::func, value); \
+			SourceHook::SetOverrideResult(SH_GLOB_SHPTR, memfuncptr, value); \
 		} \
-		RETURN_META_VALUE(MRES_SUPERCEDE, META_IFACEPTR(iface)->func newparams); \
+		RETURN_META_VALUE(MRES_SUPERCEDE, \
+			(SourceHook::RecallGetIface(SH_GLOB_SHPTR, memfuncptr)->*(memfuncptr)) newparams); \
 	} while (0)
 
 /**
@@ -563,6 +576,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		\
 		if (action == HA_GetInfo) \
 		{ \
+			param->SetVersion(SH_HOOKMAN_VERSION); \
 			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 				reinterpret_cast<const char*>(&ms_Proto)); \
 			\
@@ -657,6 +671,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			\
 			if (action == HA_GetInfo) \
 			{ \
+				param->SetVersion(SH_HOOKMAN_VERSION); \
 				param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 					reinterpret_cast<const char*>(&ms_Proto)); \
 				\
@@ -1082,7 +1097,7 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@Param%%|, @@
 #undef SH_MAKE_EXECUTABLECLASS_OB
 
 //////////////////////////////////////////////////////////////////////////
-// SetOverrideRet for recalls
+// SetOverrideRet and RecallGetIface for recalls
 // These take a ISourceHook pointer instead of using SH_GLOB_SHPTR directly
 // The reason is that the user may want to redefine SH_GLOB_SHPTR - then the macros
 // (META_RETURN_VALUE_NEWPARAMS) should obey the new pointer.
@@ -1094,6 +1109,12 @@ namespace SourceHook
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(@Param%%|, @), const RetType res)
 	{
 		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
+	template <class Iface, class RetType@, class Param%%@>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@Param%%|, @))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 @ENDARGS@
 }

@@ -67,22 +67,28 @@ namespace SourceHook
 		if (hook_iter->plug == plug) \
 			return true;
 
-		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
 		{
-			if (hmil_iter->m_Plug != plug)
-				continue;
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
-				vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
+			for (CHookManagerContainer::iterator hmil_iter = hmcl_iter->begin();
+				hmil_iter != hmcl_iter->end(); ++hmil_iter)
 			{
-				for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
-					iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+				if (hmil_iter->m_Plug != plug)
+					continue;
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
+					vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
 				{
-					List<HookInfo>::iterator hook_iter;
-					TMP_CHECK_LIST(m_PreHooks);
-					TMP_CHECK_LIST(m_PostHooks);
+					for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
+						iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+					{
+						List<HookInfo>::iterator hook_iter;
+						TMP_CHECK_LIST(m_PreHooks);
+						TMP_CHECK_LIST(m_PostHooks);
+					}
 				}
 			}
 		}
+		
 #undef TMP_CHECK_LIST
 		return false;
 	}
@@ -90,26 +96,37 @@ namespace SourceHook
 	void CSourceHookImpl::UnloadPlugin(Plugin plug)
 	{
 		// 1) Manually remove all hooks by this plugin
+		// 2) Manually remove all hook mans by this plugin
+
 		List<RemoveHookInfo> hookstoremove;
+		List<RemoveHookManInfo> hookmanstoremove;
 		HookManInfoList::iterator hmil_iter;
 
 #define TMP_CHECK_LIST(name, ispost) \
 	for (hook_iter = iface_iter->name.m_List.begin(); hook_iter != iface_iter->name.m_List.end(); ++hook_iter) \
 		if (hook_iter->plug == plug) \
 			hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->m_Ptr, \
-			hook_iter->thisptr_offs, hmil_iter->m_Func, hook_iter->handler, ispost))
+			hook_iter->thisptr_offs, hmil_iter->m_Func, hook_iter->handler, ispost)); \
 
-		for (hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
 		{
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
-				vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
+			for (CHookManagerContainer::iterator hmil_iter = hmcl_iter->begin();
+				hmil_iter != hmcl_iter->end(); ++hmil_iter)
 			{
-				for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
-					iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+				if (hmil_iter->m_Plug == plug)
+					hookmanstoremove.push_back(RemoveHookManInfo(plug, hmil_iter->m_Func));
+
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
+					vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
 				{
-					List<HookInfo>::iterator hook_iter;
-					TMP_CHECK_LIST(m_PreHooks, false);
-					TMP_CHECK_LIST(m_PostHooks, true);
+					for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
+						iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+					{
+						List<HookInfo>::iterator hook_iter;
+						TMP_CHECK_LIST(m_PreHooks, false);
+						TMP_CHECK_LIST(m_PostHooks, true);
+					}
 				}
 			}
 		}
@@ -118,68 +135,8 @@ namespace SourceHook
 		for (List<RemoveHookInfo>::iterator rmiter = hookstoremove.begin(); rmiter != hookstoremove.end(); ++rmiter)
 			RemoveHook(*rmiter);
 
-		// 2) Other plugins may use hook managers in this plugin.
-		// Get a list of hook managers that are in this plugin and are used by other plugins
-		// Delete all hook managers that are in this plugin
-
-		HookManInfoList tmphookmans;
-		bool erase = false;
-		for (hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end();
-			erase ? hmil_iter=m_HookMans.erase(hmil_iter) : ++hmil_iter)
-		{
-			if (hmil_iter->m_Plug == plug)
-			{
-				if (!hmil_iter->m_VfnPtrs.empty())
-				{
-					// All hooks by this plugin are already removed
-					// So if there is a vfnptr, it has to be used by an other plugin
-					tmphookmans.push_back(*hmil_iter);
-				}
-				erase = true;
-			}
-			else
-				erase = false;
-		}
-
-		// For each hook manager that is used in an other plugin:
-		for (hmil_iter = tmphookmans.begin(); hmil_iter != tmphookmans.end(); ++hmil_iter)
-		{
-			// Find a suitable hook manager in an other plugin
-			HookManInfoList::iterator newHookMan = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
-				hmil_iter->m_Proto, hmil_iter->m_VtblOffs, hmil_iter->m_VtblIdx);
-
-			// This should _never_ happen.
-			// If there is a hook from an other plugin, the plugin must have provided a hook manager as well.
-			SH_ASSERT(newHookMan != m_HookMans.end(),
-				("Could not find a suitable hook manager in an other plugin!"));
-
-			// AddHook should make sure that every plugin only has _one_ hook manager for _one_ proto/vi/vo
-			SH_ASSERT(newHookMan->m_Plug != plug, ("New hook manager from same plugin!"));
-
-			// The first hook manager should be always used - so the new hook manager has to be empty
-			SH_ASSERT(newHookMan->m_VfnPtrs.empty(), ("New hook manager not empty!"));
-
-			// Move the vfnptrs from the old hook manager to the new one
-			newHookMan->m_VfnPtrs = hmil_iter->m_VfnPtrs;
-
-			// Unregister the old one, register the new one
-			hmil_iter->m_Func(HA_Unregister, NULL);
-			newHookMan->m_Func(HA_Register, &(*newHookMan));
-
-			// zOMG BAIL, here is part of what you wanted:
-
-			// Go through all vfnptrs in this hookman and patch them to point to the new manager's handler!
-			// or whatever
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = newHookMan->m_VfnPtrs.begin();
-				vfnptr_iter != newHookMan->m_VfnPtrs.end(); ++vfnptr_iter)
-			{
-				// And DEREFERENCE newHookMan->m_HookfuncVfnptr!
-				// otherwise it will be executing the vtable... had to find out the hard way
-				*reinterpret_cast<void**>(vfnptr_iter->m_Ptr) = *reinterpret_cast<void**>(newHookMan->m_HookfuncVfnptr);
-			}
-
-			// That should fix it, bail!
-		}
+		for (List<RemoveHookManInfo>::iterator rmiter = hookmanstoremove.begin(); rmiter != hookmanstoremove.end(); ++rmiter)
+			RemoveHookManager(*rmiter);
 	}
 
 	void CSourceHookImpl::RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc)
@@ -190,12 +147,22 @@ namespace SourceHook
 		if (pubFunc(HA_GetInfo, &tmp) != 0)
 			return;
 
-		HookManInfoList::iterator hmil_iter = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
-			tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx);
+		
+		HookManContList::iterator hmcl_iter = m_HookMans.find(
+			CHookManagerContainer::HMCI(tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx));
 
-		if (hmil_iter == m_HookMans.end())
+		if (hmcl_iter == m_HookMans.end())
 		{
-			 // Moo ?
+			// Moo?
+			return;
+		}
+
+		CHookManagerContainer::iterator hmil_iter = hmcl_iter->find(
+			CHookManagerInfo::Descriptor(plug, pubFunc));
+
+		if (hmil_iter == hmcl_iter->end())
+		{
+			// Moo?
 			return;
 		}
 
@@ -230,63 +197,75 @@ namespace SourceHook
 		CHookManagerInfo info = *hmil_iter;
 
 		// Unlink the hook manager from the list
-		m_HookMans.erase(hmil_iter);
+		hmcl_iter->erase(hmil_iter);
 
 		// If there were any hooks from other plugins, find a new suitable hook manager.
 		if (stillInUse)
 		{
 			// Find a suitable hook manager in an other plugin
-			HookManInfoList::iterator newHookMan = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
-				info.m_Proto, info.m_VtblOffs, info.m_VtblIdx);
+			hmil_iter = hmcl_iter->begin();
 
 			// This should _never_ happen.
 			// If there is a hook from an other plugin, the plugin must have provided a hook manager as well.
-			SH_ASSERT(newHookMan != m_HookMans.end(),
+			SH_ASSERT(hmil_iter != hmcl_iter->end(),
 				("Could not find a suitable hook manager in an other plugin!"));
 
 			// AddHook should make sure that every plugin only has _one_ hook manager for _one_ proto/vi/vo
-			SH_ASSERT(newHookMan->m_Plug != plug, ("New hook manager from same plugin!"));
+			SH_ASSERT(hmil_iter->m_Plug != plug, ("New hook manager from same plugin!"));
 
 			// The first hook manager should be always used - so the new hook manager has to be empty
-			SH_ASSERT(newHookMan->m_VfnPtrs.empty(), ("New hook manager not empty!"));
+			SH_ASSERT(hmil_iter->m_VfnPtrs.empty(), ("New hook manager not empty!"));
 
 			// Move the vfnptrs from the old hook manager to the new one
-			newHookMan->m_VfnPtrs = info.m_VfnPtrs;
+			hmil_iter->m_VfnPtrs = info.m_VfnPtrs;
 
 			// Unregister the old one, register the new one
 			info.m_Func(HA_Unregister, NULL);
-			newHookMan->m_Func(HA_Register, &(*newHookMan));
+			hmil_iter->m_Func(HA_Register, &(*hmil_iter));
 
 			// Go through all vfnptrs in this hookman and patch them to point to the new manager's handler!
 			// or whatever
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = newHookMan->m_VfnPtrs.begin();
-				vfnptr_iter != newHookMan->m_VfnPtrs.end(); ++vfnptr_iter)
+			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
+				vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
 			{
 				// And DEREFERENCE newHookMan->m_HookfuncVfnptr!
 				// otherwise it will be executing the vtable... had to find out the hard way
-				*reinterpret_cast<void**>(vfnptr_iter->m_Ptr) = *reinterpret_cast<void**>(newHookMan->m_HookfuncVfnptr);
+				*reinterpret_cast<void**>(vfnptr_iter->m_Ptr) = *reinterpret_cast<void**>(hmil_iter->m_HookfuncVfnptr);
 			}
 		}
 	}
 
+	void CSourceHookImpl::RemoveHookManager(RemoveHookManInfo info)
+	{
+		RemoveHookManager(info.plug, info.hookman);
+	}
+
 	void CSourceHookImpl::CompleteShutdown()
 	{
+		// Remove all hooks
+
 		List<RemoveHookInfo> hookstoremove;
+
 #define TMP_CHECK_LIST(name, ispost) \
 	for (hook_iter = iface_iter->name.m_List.begin(); hook_iter != iface_iter->name.m_List.end(); ++hook_iter) \
 		hookstoremove.push_back(RemoveHookInfo(hook_iter->plug, iface_iter->m_Ptr, \
 			hook_iter->thisptr_offs, hmil_iter->m_Func, hook_iter->handler, ispost))
-		for (HookManInfoList::iterator hmil_iter = m_HookMans.begin(); hmil_iter != m_HookMans.end(); ++hmil_iter)
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
 		{
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
-				vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
+			for (CHookManagerContainer::iterator hmil_iter = hmcl_iter->begin();
+				hmil_iter != hmcl_iter->end(); ++hmil_iter)
 			{
-				for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
-					iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hmil_iter->m_VfnPtrs.begin();
+					vfnptr_iter != hmil_iter->m_VfnPtrs.end(); ++vfnptr_iter)
 				{
-					List<HookInfo>::iterator hook_iter;
-					TMP_CHECK_LIST(m_PreHooks, false);
-					TMP_CHECK_LIST(m_PostHooks, true);
+					for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
+						iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+					{
+						List<HookInfo>::iterator hook_iter;
+						TMP_CHECK_LIST(m_PreHooks, false);
+						TMP_CHECK_LIST(m_PostHooks, true);
+					}
 				}
 			}
 		}
@@ -307,40 +286,42 @@ namespace SourceHook
 		if (myHookMan(HA_GetInfo, &tmp) != 0)
 			return false;
 
+		tmp.m_Func = myHookMan;
+		tmp.m_Plug = plug;
+
+		CHookManagerContainer::HMCI hmci(tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx);
+
 		void **cur_vtptr = *reinterpret_cast<void***>(
 			reinterpret_cast<char*>(adjustediface) + tmp.m_VtblOffs);
 		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.m_VtblIdx);
 
-		// Add the proposed hook manager to the _end_ of the list if the plugin doesn't have a hook manager
-		// with this proto/vo/vi registered
-		HookManInfoList::iterator hkmi_iter;
-		for (hkmi_iter = m_HookMans.begin(); hkmi_iter != m_HookMans.end(); ++hkmi_iter)
+		// Add the container if not already added
+		HookManContList::iterator hmcl_iter = m_HookMans.find(hmci);
+		if (hmcl_iter == m_HookMans.end())
 		{
-			if (hkmi_iter->m_Plug == plug && ProtosEquiv(hkmi_iter->m_Proto, tmp.m_Proto) &&
-				hkmi_iter->m_VtblOffs == tmp.m_VtblOffs && hkmi_iter->m_VtblIdx == tmp.m_VtblIdx)
-				break;
-		}
-		if (hkmi_iter == m_HookMans.end())
-		{
-			// No such hook manager from this plugin yet, add it!
-			tmp.m_Func = myHookMan;
-			tmp.m_Plug = plug;
-			m_HookMans.push_back(tmp);
+			m_HookMans.push_back(CHookManagerContainer(hmci));
+			hmcl_iter = m_HookMans.end();
+			--hmcl_iter;
 		}
 
-		// Then, search for a suitable hook manager (from the beginning)
-		HookManInfoList::iterator hookman = FindHookMan(m_HookMans.begin(), m_HookMans.end(), tmp.m_Proto,
-			tmp.m_VtblOffs, tmp.m_VtblIdx);
-		SH_ASSERT(hookman != m_HookMans.end(), ("No hookman found - but if there was none, we've just added one!"));
+		hmcl_iter->AddHookManager(plug, tmp);
 
-		// Check whether there is already an other hook manager for the same vfnptr but with other values before
+		CHookManagerContainer::iterator hookman = hmcl_iter->begin();
+		SH_ASSERT(hookman != hmcl_iter->end(), ("No hookman found - but we've just added one!"));
+
+		// Check whether any other container holds a hook manager which holds this vfnptr
 		// If yes, it means that the two are incompatible, so return false.
-		for (hkmi_iter = m_HookMans.begin(); hkmi_iter != m_HookMans.end(); ++hkmi_iter)
+		for (HookManContList::iterator hmcl_iter2 = m_HookMans.begin();
+			hmcl_iter2 != m_HookMans.end(); ++hmcl_iter2)
 		{
-			if (hkmi_iter != hookman)
+			if (hmcl_iter2 != hmcl_iter)
 			{
-				if (hkmi_iter->m_VfnPtrs.find(cur_vfnptr) != hkmi_iter->m_VfnPtrs.end())
-					return false;
+				for (CHookManagerContainer::iterator hmil_iter = hmcl_iter2->begin();
+					hmil_iter != hmcl_iter2->end(); ++hmil_iter)
+				{
+					if (hmil_iter->m_VfnPtrs.find(cur_vfnptr) != hmil_iter->m_VfnPtrs.end())
+						return false;
+				}
 			}
 		}
 
@@ -409,10 +390,13 @@ namespace SourceHook
 			return false;
 
 		// Find the hook manager and the hook
-		HookManInfoList::iterator hookman = FindHookMan(m_HookMans.begin(), m_HookMans.end(),
-			tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx);
-		if (hookman == m_HookMans.end())
+
+		HookManContList::iterator hmcl_iter = m_HookMans.find(
+			CHookManagerContainer::HMCI(tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx));
+		if (hmcl_iter == m_HookMans.end() || hmcl_iter->empty())
 			return false;
+		
+		CHookManagerContainer::iterator hookman = hmcl_iter->begin();
 
 		if (!ModuleInMemory(reinterpret_cast<char*>(adjustediface) + tmp.m_VtblOffs,
 			sizeof(void*) * (tmp.m_VtblIdx + 1)))
@@ -532,20 +516,25 @@ namespace SourceHook
 
 	void CSourceHookImpl::ApplyCallClassPatches(CCallClassImpl &cc)
 	{
-		for (HookManInfoList::iterator hookman = m_HookMans.begin(); hookman != m_HookMans.end(); ++hookman)
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
 		{
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->m_VfnPtrs.begin();
-				vfnptr_iter != hookman->m_VfnPtrs.end(); ++vfnptr_iter)
+			for (CHookManagerContainer::iterator hookman = hmcl_iter->begin();
+				hookman != hmcl_iter->end(); ++hookman)
 			{
-				for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
-					iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->m_VfnPtrs.begin();
+					vfnptr_iter != hookman->m_VfnPtrs.end(); ++vfnptr_iter)
 				{
-					if (iface_iter->m_Ptr >= cc.m_Ptr &&
-						iface_iter->m_Ptr < (reinterpret_cast<char*>(cc.m_Ptr) + cc.m_ObjSize))
+					for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
+						iface_iter != vfnptr_iter->m_Ifaces.end(); ++iface_iter)
 					{
-						cc.ApplyCallClassPatch(static_cast<int>(reinterpret_cast<char*>(iface_iter->m_Ptr) -
-							reinterpret_cast<char*>(cc.m_Ptr)) + hookman->m_VtblOffs,
-							hookman->m_VtblIdx, vfnptr_iter->m_OrigEntry);
+						if (iface_iter->m_Ptr >= cc.m_Ptr &&
+							iface_iter->m_Ptr < (reinterpret_cast<char*>(cc.m_Ptr) + cc.m_ObjSize))
+						{
+							cc.ApplyCallClassPatch(static_cast<int>(reinterpret_cast<char*>(iface_iter->m_Ptr) -
+								reinterpret_cast<char*>(cc.m_Ptr)) + hookman->m_VtblOffs,
+								hookman->m_VtblIdx, vfnptr_iter->m_OrigEntry);
+						}
 					}
 				}
 			}
@@ -579,38 +568,34 @@ namespace SourceHook
 		}
 	}
 
-	CSourceHookImpl::HookManInfoList::iterator CSourceHookImpl::FindHookMan(HookManInfoList::iterator begin,
-		HookManInfoList::iterator end, const char *proto, int vtblofs, int vtblidx)
-	{
-		HookManInfoList::iterator hookmaniter;
-		for (hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
-		{
-			if (ProtosEquiv(hookmaniter->m_Proto, proto) && hookmaniter->m_VtblOffs == vtblofs &&
-				hookmaniter->m_VtblIdx == vtblidx)
-				break;
-		}
-		return hookmaniter;
-	}
-
 	void CSourceHookImpl::SetPluginPaused(Plugin plug, bool paused)
 	{
 		// Go through all hook managers, all interfaces, and set the status of all hooks of this plugin to paused
-		for (HookManInfoList::iterator hookmaniter = m_HookMans.begin(); hookmaniter != m_HookMans.end(); ++hookmaniter)
-			for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookmaniter->m_VfnPtrs.begin();
-				vfnptr_iter != hookmaniter->m_VfnPtrs.end(); ++vfnptr_iter)
-				for (CVfnPtr::IfaceListIter ifaceiter = vfnptr_iter->m_Ifaces.begin();
-					ifaceiter != vfnptr_iter->m_Ifaces.end(); ++ifaceiter)
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
+		{
+			for (CHookManagerContainer::iterator hookmaniter = hmcl_iter->begin();
+				hookmaniter != hmcl_iter->end(); ++hookmaniter)
+			{
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookmaniter->m_VfnPtrs.begin();
+					vfnptr_iter != hookmaniter->m_VfnPtrs.end(); ++vfnptr_iter)
 				{
-					for (List<HookInfo>::iterator hookiter = ifaceiter->m_PreHooks.m_List.begin();
-						hookiter != ifaceiter->m_PreHooks.m_List.end(); ++hookiter)
-						if (plug == hookiter->plug)
-							hookiter->paused = paused;
+					for (CVfnPtr::IfaceListIter ifaceiter = vfnptr_iter->m_Ifaces.begin();
+						ifaceiter != vfnptr_iter->m_Ifaces.end(); ++ifaceiter)
+					{
+						for (List<HookInfo>::iterator hookiter = ifaceiter->m_PreHooks.m_List.begin();
+							hookiter != ifaceiter->m_PreHooks.m_List.end(); ++hookiter)
+							if (plug == hookiter->plug)
+								hookiter->paused = paused;
 
-					for (List<HookInfo>::iterator hookiter = ifaceiter->m_PostHooks.m_List.begin();
-						hookiter != ifaceiter->m_PostHooks.m_List.end(); ++hookiter)
-						if (plug == hookiter->plug)
-							hookiter->paused = paused;
+						for (List<HookInfo>::iterator hookiter = ifaceiter->m_PostHooks.m_List.begin();
+							hookiter != ifaceiter->m_PostHooks.m_List.end(); ++hookiter)
+							if (plug == hookiter->plug)
+								hookiter->paused = paused;
+					}
 				}
+			}
+		}
 	}
 	void CSourceHookImpl::PausePlugin(Plugin plug)
 	{
@@ -828,68 +813,12 @@ namespace SourceHook
 		}
 	}
 
-	bool CSourceHookImpl::ProtosEquiv(const char *p1, const char *p2)
-	{
-		/*
-		 Old protos look like this:
-
-		 0_void:
-			"attrib"
-		 1_void:
-			"attrib|param1_type"
-		 2_void:
-			"attrib|param1_type|param2_type
-		 0:
-			"attrib|ret_type"
-		 1:
-			"attrib|ret_type|param1_type"
-		 2:
-			"attrib|ret_type|param2_type"
-
-		New protos are in fact pointers to the ProtoInfo sturcture (see sourcehook.h for details)
-
-		 Old protos _never_ begin with a null character
-		 New protos _always_ begin with a null character
-		*/
-
-		if (*p1 && *p2)			// Case1: Both old
-		{
-			// As in old versions
-			return strcmp(p1, p2) == 0;
-		}
-		else if (!*p1 && !*p2)	// Case2: Both new
-		{
-			const ProtoInfo *pi1 = reinterpret_cast<const ProtoInfo*>(p1);
-			const ProtoInfo *pi2 = reinterpret_cast<const ProtoInfo*>(p2);
-
-			if (pi1->retTypeSize == pi2->retTypeSize &&
-				pi1->numOfParams == pi2->numOfParams)
-			{
-				// params[0] is 0 for "normal" functions and -1 for vararg functions
-				// params[1] is size of first parameter
-				// params[2] is size of second parameter ...
-				for (int i = 0; i <= pi1->numOfParams; ++i)
-				{
-					if (pi1->params[i] != pi2->params[i])
-						return false;
-				}
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else					// Case3: Mixed old/new
-		{
-			// Trust the user
-			return true;
-		}
-	}
-
 	////////////////////////////
 	// CHookManagerInfo
 	////////////////////////////
+	CSourceHookImpl::CHookManagerInfo::CHookManagerInfo() : m_HookManVersion(0)
+	{
+	}
 	CSourceHookImpl::CHookManagerInfo::~CHookManagerInfo()
 	{
 	}
@@ -909,7 +838,10 @@ namespace SourceHook
 	{
 		m_HookfuncVfnptr = hookfunc_vfnptr;
 	}
-
+	void CSourceHookImpl::CHookManagerInfo::SetVersion(int version)
+	{
+		m_HookManVersion = version;
+	}
 	////////////////////////////
 	// CVfnPtr
 	////////////////////////////
@@ -1096,5 +1028,103 @@ namespace SourceHook
 	int CSourceHookImpl::CHookList::CIter::ThisPtrOffs()
 	{
 		return m_Iter->thisptr_offs;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// CProto
+	//////////////////////////////////////////////////////////////////////////
+	bool CSourceHookImpl::CProto::Equal(const char *p1, const char *p2)
+	{
+		if (*p1 && *p2)			// Case1: Both old
+		{
+			// As in old versions
+			return strcmp(p1, p2) == 0;
+		}
+		else if (!*p1 && !*p2)	// Case2: Both new
+		{
+			const ProtoInfo *pi1 = reinterpret_cast<const ProtoInfo*>(p1);
+			const ProtoInfo *pi2 = reinterpret_cast<const ProtoInfo*>(p2);
+
+			if (pi1->retTypeSize == pi2->retTypeSize &&
+				pi1->numOfParams == pi2->numOfParams)
+			{
+				// params[0] is 0 for "normal" functions and -1 for vararg functions
+				// params[1] is size of first parameter
+				// params[2] is size of second parameter ...
+				for (int i = 0; i <= pi1->numOfParams; ++i)
+				{
+					if (pi1->params[i] != pi2->params[i])
+						return false;
+				}
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else					// Case3: Mixed old/new
+		{
+			// Trust the user
+			return true;
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// CHookManagerContainer
+	//////////////////////////////////////////////////////////////////////////
+	void CSourceHookImpl::CHookManagerContainer::AddHookManager(Plugin plug, const CHookManagerInfo &hookman)
+	{
+		iterator iter;
+		// Check whether such a hook manager already exists; if yes, ignore.
+		for (iter = begin(); iter != end(); ++iter)
+		{
+			if (iter->m_Plug == plug && iter->m_Func == hookman.m_Func)
+				return;
+		}
+
+		// It doesn't -> add it. Add it to the end of its version group.
+		for (iter = begin(); iter != end(); ++iter)
+		{
+			if (iter->m_HookManVersion < hookman.m_HookManVersion)
+				break;
+		}
+
+		bool isBeginning = iter == begin();
+
+		insert(iter, hookman);
+
+		// If we inserted it at the beginning and if the dam breaks open many years too soon
+		// and if there is more than one hookman and if the second one isn't empty, transfer
+		// hooks from second to first
+
+		if (isBeginning && size() > 1)
+		{
+			iter = begin();
+			iterator second = iter;
+			++second;
+
+			if (!second->m_VfnPtrs.empty())
+			{
+				// Move the vfnptrs from the old hook manager to the new one
+				iter->m_VfnPtrs = second->m_VfnPtrs;
+				second->m_VfnPtrs.clear();
+
+				// Unregister the old one, register the new one
+				second->m_Func(HA_Unregister, NULL);
+				iter->m_Func(HA_Register, &(*iter));
+
+				// Go through all vfnptrs in this hookman and patch them to point to the new manager's handler!
+				// or whatever
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = iter->m_VfnPtrs.begin();
+					vfnptr_iter != iter->m_VfnPtrs.end(); ++vfnptr_iter)
+				{
+					// And DEREFERENCE newHookMan->m_HookfuncVfnptr!
+					// otherwise it will be executing the vtable... had to find out the hard way
+					*reinterpret_cast<void**>(vfnptr_iter->m_Ptr) = *reinterpret_cast<void**>(iter->m_HookfuncVfnptr);
+				}
+			}
+		}
 	}
 }

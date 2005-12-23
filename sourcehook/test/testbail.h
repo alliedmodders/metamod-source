@@ -4,14 +4,11 @@
 #include <string>
 #include "testevents.h"
 
-bool ___TestBail2(std::string &error);
-
-namespace
+namespace N_TestBail
 {
-	StateList g_States;
-	SourceHook::ISourceHook *g_SHPtr;
-	SourceHook::Plugin g_PLID;
-
+	extern StateList g_States;
+	extern SourceHook::ISourceHook *g_SHPtr;
+	
 	MAKE_STATE_1(State_EatYams_Called, int);
 	MAKE_STATE_1(State_EatYams_Handler1_Called, int);
 	MAKE_STATE_1(State_EatYams_Handler2_Called, int);
@@ -28,12 +25,15 @@ namespace
 		}
 	};
 
-	SH_DECL_HOOK1(IGaben, EatYams, SH_NOATTRIB, 0, int, int);
+	extern IGaben *g_Gabgab;
 
-	IGaben *g_Gabgab;
+	bool TestBail2(std::string &error);
 }
 
-extern void *___testbail_gabgab;
-extern SourceHook::ISourceHook *___testbail_shptr;
-extern int ___testbail_EatYams_Handler2(int a);
-extern int ___testbail_EatYams_Handler3(int a);
+using namespace N_TestBail;
+
+namespace
+{
+	SourceHook::Plugin g_PLID;
+	SH_DECL_HOOK1(IGaben, EatYams, SH_NOATTRIB, 0, int, int);
+}

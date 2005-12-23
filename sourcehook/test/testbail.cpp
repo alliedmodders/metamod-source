@@ -22,8 +22,12 @@
 #include "sourcehook_test.h"
 #include "testbail.h"
 
-void *___testbail_gabgab;
-SourceHook::ISourceHook *___testbail_shptr;
+namespace N_TestBail
+{
+	StateList g_States;
+	SourceHook::ISourceHook *g_SHPtr;
+	IGaben *g_Gabgab;
+}
 
 namespace
 {
@@ -34,27 +38,12 @@ namespace
 	}
 }
 
-// These are here so they can access this CU's g_States
-int ___testbail_EatYams_Handler2(int a)
-{
-	ADD_STATE(State_EatYams_Handler2_Called(a));
-	RETURN_META_VALUE_NEWPARAMS(MRES_OVERRIDE, 6, IGaben, EatYams, (0xBEEF));
-}
-
-int ___testbail_EatYams_Handler3(int a)
-{
-	ADD_STATE(State_EatYams_Handler3_Called(a));
-	RETURN_META_VALUE(MRES_IGNORED, 0);
-}
-
 bool TestBail(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1;
 
 	g_Gabgab = new IGaben;
-	___testbail_gabgab = (void*)g_Gabgab;
-	___testbail_shptr = g_SHPtr;
 
 	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
 
@@ -66,7 +55,7 @@ bool TestBail(std::string &error)
 		new State_EatYams_Return(5),
 		NULL), "Part 1");
 
-	if (!___TestBail2(error))
+	if (!TestBail2(error))
 		return false;
 
 	CHECK_STATES((&g_States,
@@ -95,6 +84,31 @@ bool TestBail(std::string &error)
 		new State_EatYams_Called(0xDEAD),
 		new State_EatYams_Return(5),
 		NULL), "Part 4");
+
+	// Now, heh, try it the other way round.
+
+	Test_CompleteShutdown(g_SHPtr);
+
+	if (!TestBail2(error))
+		return false;
+
+	CHECK_STATES((&g_States,
+		new State_EatYams_Handler2_Called(0xDEAD),
+		new State_EatYams_Handler3_Called(0xBEEF),
+		new State_EatYams_Called(0xBEEF),
+		NULL), "Part 5");
+
+	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
+
+	ADD_STATE(State_EatYams_Return(g_Gabgab->EatYams(0xDEAD)));
+
+	CHECK_STATES((&g_States,
+		new State_EatYams_Handler2_Called(0xDEAD),
+		new State_EatYams_Handler3_Called(0xBEEF),
+		new State_EatYams_Handler1_Called(0xBEEF),
+		new State_EatYams_Called(0xBEEF),
+		new State_EatYams_Return(6),
+		NULL), "Part 6");
 
 	delete g_Gabgab;
 

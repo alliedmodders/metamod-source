@@ -19,26 +19,24 @@
 
 extern bool g_Verbose;
 
+struct State
+{
+	virtual ~State()
+	{
+
+	}
+
+	virtual bool IsEqual(State *other)
+	{
+		return (typeid(other) == typeid(this)) ? true : false;
+	}
+
+	virtual void Dump() = 0;
+};
+
+typedef std::list<State*> StateList;
 namespace
 {
-
-	struct State
-	{
-		virtual ~State()
-		{
-
-		}
-
-		virtual bool IsEqual(State *other)
-		{
-			return (typeid(other) == typeid(this)) ? true : false;
-		}
-
-		virtual void Dump() = 0;
-	};
-
-	typedef std::list<State*> StateList;
-
 	void DumpStates(StateList *sl)
 	{
 		for (StateList::iterator iter = sl->begin(); iter != sl->end(); ++iter)
