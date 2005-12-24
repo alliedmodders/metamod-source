@@ -104,6 +104,7 @@ public:		//Added in 1.2 (1:2)
 /** Version history
  * 1.1.0 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
  * 1.1.2 added API call for generating iface names.
+ * 1.2   added API more helper functions and new SourceHook version.
  */
 
 #endif //_INCLUDE_ISMM_API_H
