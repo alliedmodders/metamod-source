@@ -72,7 +72,7 @@ begin
   WriteLn('| |_| | |     __) |    | |   / _` | | | | ''_ \ / __| ''_ \ / _ \ ''__|');
   WriteLn('|  _  | |___ / __/     | |__| (_| | |_| | | | | (__| | | |  __/ |   ');
   WriteLn('|_| |_|_____|_____|    |_____\__,_|\__,_|_| |_|\___|_| |_|\___|_|   ');
-  WriteLn('  for Metamod:Source listen servers');
+  WriteLn('  for listen servers using Metamod:Source');
   WriteLn('');
   SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
   { Check files }
