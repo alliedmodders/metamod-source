@@ -361,7 +361,7 @@ begin
   Screen.Cursor := crDefault;
 
   if ListenInstall then
-    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. Start it if you want to use Metamod:Source on your listen server, default starts won''t work.'), PChar(Application.Title), MB_ICONINFORMATION); 
+    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. Use it to start Half-Life 2 with a Mod using Metamod:Source. Due to Steam''s Auto-Correction, MM:S won''t work if you start it through the Steam menu.'), PChar(Application.Title), MB_ICONINFORMATION);
 end;
 
 { Dedicated Server }
@@ -529,6 +529,7 @@ begin
   end;
   { Remove created files }
   AddStatus('Removing temporary files...', clBlack);
+  DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'hl2launch.exe'));
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server.dll'));
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server_i486.so'));
   AddDone;
