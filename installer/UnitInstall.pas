@@ -13,7 +13,7 @@ procedure AddSkipped;
 procedure AddNotFound;
 procedure DownloadFile(eFile: String; eDestination: String);
 
-procedure BasicInstallation(ePath: String; SteamInstall: Boolean; OS: TOS);
+procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS);
 procedure InstallDedicated(eModPath: String; UseSteam: Boolean);
 procedure InstallListen(ePath: String);
 procedure InstallCustom(ePath: String; eOS: TOS);
@@ -218,13 +218,13 @@ end;
 
 { Basic Installation }   
 
-procedure BasicInstallation(ePath: String; SteamInstall: Boolean; OS: TOS);
+procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS);
 var eStr: TStringList;
     i: integer;
     CopyConfig: Boolean;
     eFound: Boolean;
 begin
-  frmMain.ggeAll.MaxValue := 7;
+  frmMain.ggeAll.MaxValue := 8;
   frmMain.ggeAll.Progress := 0;
   frmMain.ggeItem.MaxValue := 1;
   frmMain.ggeItem.Progress := 0;
@@ -257,8 +257,9 @@ begin
   AddDone;
   frmMain.ggeAll.Progress := 2;
   frmMain.ggeItem.Progress := 1;
-  { Check for installation }
+  { Check for installation / Create directories }
   CopyConfig := True;
+  AddStatus('Creating directories...', clBlack);
   if DirectoryExists(ePath + 'addons\metamod\bin') then begin
     case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
       mrNo: CopyConfig := False;
@@ -267,16 +268,13 @@ begin
         exit;
       end;
     end;
-  end;
-  AddStatus('Creating directories...', clBlack);
-  if not eFound then begin
-    { Create directories }
+    AddSkipped;
+  end
+  else begin
     frmMain.ggeItem.Progress := 0;
     ForceDirectories(ePath + 'addons\metamod\bin');
     AddDone;
-  end
-  else
-    AddSkipped;
+  end;
   frmMain.ggeItem.Progress := 1;
   frmMain.ggeAll.Progress := 3;
 
@@ -322,9 +320,9 @@ begin
           break;
         end;
       end;
-      FileSetAttr(ePath + 'gameinfo.txt', 0);
+      SetFileAttributes(PChar(ePath + 'gameinfo.txt'), 0);
       eStr.SaveToFile(ePath + 'gameinfo.txt');
-      FileSetAttr(ePath + 'gameinfo.txt', faReadOnly); // important for listen servers
+      SetFileAttributes(PChar(ePath + 'gameinfo.txt'), faReadOnly); // important for listen servers
       AddDone;
     end
     else
@@ -340,21 +338,30 @@ begin
   AddDone;
   frmMain.ggeItem.Progress := 1;
   frmMain.ggeAll.Progress := 6;
+  if ListenInstall then begin
+    ePath := ExtractFilePath(Copy(ePath, 1, Length(ePath)-1));
+    AddStatus('Copying hl2launch.exe...', clBlack);
+    CopyFile(PChar(ExtractFilePath(ParamStr(0)) + 'hl2launch.exe'), PChar(ePath + 'hl2launch.exe'), False);
+    AddDone;
+  end;
   { Remove files }
   frmMain.ggeItem.Progress := 0;
   AddStatus('Removing temporary files...', clBlack);
+  DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'hl2launch.exe'));
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server.dll'));
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server_i486.so'));
   AddDone;
   frmMain.ggeItem.Progress := 1;
-  frmMain.ggeAll.Progress := 7;
+  frmMain.ggeAll.Progress := 8;
   { Finish }
   AddStatus('', clBlack, False);
   AddStatus('Finished installation!', clBlack, False);
   frmMain.cmdNext.Enabled := True;
   frmMain.cmdCancel.Hide;
-
   Screen.Cursor := crDefault;
+
+  if ListenInstall then
+    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. Start it if you want to use Metamod:Source on your listen server, default starts won''t work.'), PChar(Application.Title), MB_ICONINFORMATION); 
 end;
 
 { Dedicated Server }
@@ -364,7 +371,7 @@ begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation on dedicated server...', clBlack, False);
-  BasicInstallation(eModPath, UseSteam, osWindows);
+  BasicInstallation(eModPath, UseSteam, False, osWindows);
 end;
 
 { Listen Server }
@@ -374,7 +381,7 @@ begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation on the listen server...', clBlack);
-  BasicInstallation(ePath, True, osWindows);
+  BasicInstallation(ePath, True, True, osWindows);
 end;
 
 { Custom mod }
@@ -384,7 +391,7 @@ begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation...', clBlack);
-  BasicInstallation(ePath, False, eOS);
+  BasicInstallation(ePath, False, False, eOS);
 end;
 
 { FTP }
@@ -407,10 +414,7 @@ label CreateAgain;
 label UploadAgain;
 var eStr: TStringList;
     i: integer;
-    ePath: String;
-    CurNode: TTreeNode;
     CopyConfig, eFound: Boolean;
-    eGoBack: Boolean;
 begin
   frmMain.cmdCancel.Show;
   frmMain.cmdNext.Hide;

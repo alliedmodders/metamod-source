@@ -13,6 +13,13 @@ begin
   WriteLn('');
   WriteLn('// Looking up files...');
   { Check files }
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\hl2launch.exe') then
+    WriteLn('// Found files\hl2launch.exe')
+  else begin
+    WriteLn('// Error: Couldn''t find files\hl2launch.exe!');
+    ReadLn;
+    exit;
+  end;
   if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server.dll') then
     WriteLn('// Found files\server.dll')
   else begin
@@ -37,6 +44,7 @@ begin
   { Compress files }
   WriteLn('// Compressing files...');
   eFiles := TStringList.Create;
+  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\hl2launch.exe');
   eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server.dll');
   eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so');
   eStream := TMemoryStream.Create;
