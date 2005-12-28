@@ -66,7 +66,7 @@ begin
   SetConsoleTitle('HL2 Launcher');
   Sleep(200); // wait a few ms until the launch program is closed
 
-  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8);
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
   WriteLn(' _   _ _     ____       _                           _               ');
   WriteLn('| | | | |   |___ \     | |    __ _ _   _ _ __   ___| |__   ___ _ __ ');
   WriteLn('| |_| | |     __) |    | |   / _` | | | | ''_ \ / __| ''_ \ / _ \ ''__|');
@@ -79,7 +79,7 @@ begin
   WriteLn('Checking files...');
   if not FileExists(ePath + 'hl2.exe') then begin
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
-    WriteLn('Error: hl2.exe is missing! Maybe wrong directory? If not, start your Source game again via Steam and then run hl2launcher.exe one more time.');
+    WriteLn('Error: hl2.exe is missing! Maybe wrong directory? If not, start your HL2 Mod again via Steam and try again.');
     ReadLn;
     exit;
   end;
