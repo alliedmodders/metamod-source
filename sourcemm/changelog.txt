@@ -3,6 +3,7 @@
  - Added SourceHook API for declaring and hooking manual vtable hooks.
  - Added better API for querying an interface factory.
  - Added API for formatting an OS-independent path.
+ - Added Listen Server Launcher to the graphical installer.
  - Fixed bug where failed plugins could crash the plugin list.
  - NOTE: SourceHook changes may require plugins to be recompiled against
     the new API.
