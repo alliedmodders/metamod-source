@@ -330,7 +330,7 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 
 	do
 	{
-		if ( (pf = (fn)(_if, NULL)) != NULL )
+		if ( (pf = (fn)(_if, ret)) != NULL )
 			break;
 		if (num > max)
 			break;
