@@ -419,6 +419,11 @@ namespace SourceHook
 		for (CVfnPtr::IfaceListIter iface_iter = vfnptr_iter->m_Ifaces.begin();
 			iface_iter != vfnptr_iter->m_Ifaces.end();)
 		{
+			if (iface_iter->m_Ptr != adjustediface)
+			{
+				iface_iter++;
+				continue;
+			}
 			List<HookInfo> &hooks =
 				post ? iface_iter->m_PostHooks.m_List : iface_iter->m_PreHooks.m_List;
 

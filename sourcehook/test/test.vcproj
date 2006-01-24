@@ -263,9 +263,6 @@
 				RelativePath=".\testbail.cpp">
 			</File>
 			<File
-				RelativePath=".\testbail.h">
-			</File>
-			<File
 				RelativePath=".\testbail2.cpp">
 			</File>
 			<File
@@ -279,6 +276,9 @@
 						Name="VCCLCompilerTool"
 						GeneratePreprocessedFile="0"/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\testmulti.cpp">
 			</File>
 			<File
 				RelativePath=".\testrecall.cpp">
@@ -313,6 +313,9 @@
 			</File>
 			<File
 				RelativePath=".\sourcehook_test.h">
+			</File>
+			<File
+				RelativePath=".\testbail.h">
 			</File>
 			<File
 				RelativePath="testevents.h">

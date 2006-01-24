@@ -77,6 +77,7 @@ DO_TEST(Bail);
 DO_TEST(Reentr);
 DO_TEST(Manual);
 DO_TEST(Recall);
+DO_TEST(Multi);
 
 int main(int argc, char *argv[])
 {
