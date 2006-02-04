@@ -7,9 +7,9 @@ SRCDS = ~/srcds_l
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
-OPT_FLAGS = -O3 -fno-rtti -funroll-loops -s -pipe
+OPT_FLAGS = -O2 -fno-rtti -funroll-loops -s -pipe
 DEBUG_FLAGS = -g -ggdb3
-CPP = gcc
+CPP = gcc-3.4
 BINARY = server_i486.so
 
 OBJECTS = oslink.cpp util.cpp convar.cpp concommands.cpp \
