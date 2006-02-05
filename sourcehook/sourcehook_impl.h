@@ -116,6 +116,32 @@ Recalls
 	When this recurisvely called hookfunc returns, the macro returns what it returned
 	(using MRES_SUPERCEDE). CSourceHookImpl returns false from ShouldContinue so the original hook loop
 	is abandonned.
+
+Post Recalls
+	People wanted to be able to use META_RETURN_(VALUE_)NEWPARAMS from post hooks as well. Crazy people!
+	Anyway, for this, we have to know where a hook handler is. Is it executing pre or post hooks at the moment?
+	The only way we can know this is watching when it calls CHookList::GetIter(). So CHookList gets a new variable:
+	m_RequestedFlag. It also gets two new functions: RQFlagReset() and RQFlagGet().
+	HookLoopBegin() calls RQFlagReset on both hooklists of the iface; then DoRecall() checks whether the postlist's 
+	RQ flag is set. if yes, the hook loop is in post mode.
+
+	So, what a about a recall in post mode? The first ShouldContinue returns false and sets Status to supercede. 
+	This way the pre hooks and the function call will be skipped. Then, then next ShouldContinue returns true, so we get
+	into the post hooks. HA!
+
+Return Values in Post Recalls
+	The easy case is when we already have an override return value. In this case, the status register gets transferred,
+	and so does the override return pointer. So, basically, everything is ok.
+
+	However, what happens if we don't? ie. the status register is on MRES_IGNORED? In this case we'd have to transfer the
+	orig ret value. But we can't: There's no way to tell the hookfunc: "Use this as orig ret pointer". It uses its own.
+	So, we emulate it. GetOrigRet will return the orig ret pointer from the old hook loop. If still no one overrides it,
+	we'd have to return it. BUT! HOW TO DO THIS? Check out SH_RETURN(). First calls HookLoopEnd(), then decides whether
+	to return the override retval or the orig retval. But it doesn't ask for a new override return. So we give the function
+	the last orig return value as its new override return value; but leave status where it is so everything works, and in
+	HookLoopEnd we make sure that status is high enough so that the override return will be returned. crazy.
+
+	All this stuff could be much less complicated if I didn't try to preserve binary compatibility :)
 */
 
 namespace SourceHook
@@ -240,6 +266,7 @@ namespace SourceHook
 
 			// For recalls
 			bool m_Recall;
+			bool m_RQFlag;
 
 			void SetRecallState();	// Sets the list into a state where the next returned
 									// iterator (from GetIter) will be a copy of the last
@@ -247,6 +274,8 @@ namespace SourceHook
 									// The hook resets this state automatically on:
 									// GetIter, ReleaseIter
 
+			void RQFlagReset() { m_RQFlag = false; }
+			bool RQFlagGet() { return m_RQFlag; }
 			CHookList();
 			CHookList(const CHookList &other);
 			virtual ~CHookList();
@@ -452,12 +481,21 @@ namespace SourceHook
 
 		struct HookLoopInfo
 		{
+			enum RecallType
+			{
+				Recall_No=0,
+				Recall_Pre,
+				Recall_Post1,
+				Recall_Post2
+			};
+
 			META_RES *pStatus;
 			META_RES *pPrevRes;
 			META_RES *pCurRes;
 
+			META_RES temporaryStatus;				//!< Stored during Post1 recall phase
 			bool shouldContinue;
-			bool recall;							//!< True if we're in a recall, eh.
+			RecallType recall;						//!< Specifies which kind of recall we're in.
 
 			IIface *pCurIface;
 			const void *pOrigRet;

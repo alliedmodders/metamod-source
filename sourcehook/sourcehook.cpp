@@ -617,12 +617,19 @@ namespace SourceHook
 		HookLoopInfo hli;
 		hli.pCurIface = pIface;
 		hli.shouldContinue = true;
-		hli.recall = false;
+		hli.recall = HookLoopInfo::Recall_No;
+
+		static_cast<CIface*>(pIface)->m_PreHooks.RQFlagReset();
+		static_cast<CIface*>(pIface)->m_PostHooks.RQFlagReset();
+
 		m_HLIStack.push(hli);
 	}
 
 	void CSourceHookImpl::HookLoopEnd()
 	{
+		// When in a post recall... make sure status is high enough so that it returns the orig ret.
+		if (m_HLIStack.size() > 1 && m_HLIStack.second().recall == HookLoopInfo::Recall_Post2)
+			*m_HLIStack.front().pStatus = MRES_SUPERCEDE;			// THAT'LL TEACH THEM!
 		m_HLIStack.pop();
 	}
 
@@ -643,6 +650,10 @@ namespace SourceHook
 
 	const void *CSourceHookImpl::GetOrigRet()
 	{
+		// When in a post recall... return the orig ret of the previous hookloop.
+		if (m_HLIStack.size() > 1 && m_HLIStack.second().recall == HookLoopInfo::Recall_Post2)
+			return m_HLIStack.second().pOrigRet;
+
 		return m_HLIStack.front().pOrigRet;
 	}
 
@@ -724,7 +735,13 @@ namespace SourceHook
 			HookLoopInfo &other = m_HLIStack.second();
 			*statusPtr = *other.pStatus;
 			*prevResPtr = *other.pStatus;
-			hli.pOverrideRet = other.pOverrideRet;
+
+			// When the status is low so there's no override return value and we're in a post recall,
+			// give it the orig return value as override return value.
+			if (*statusPtr < MRES_OVERRIDE && other.recall == HookLoopInfo::Recall_Post1)
+				hli.pOverrideRet = const_cast<void*>(other.pOrigRet);
+			else	// Otherwise, transfer override ret normally
+				hli.pOverrideRet = other.pOverrideRet;
 		}
 		else
 			hli.pOverrideRet = overrideRetPtr;
@@ -740,6 +757,27 @@ namespace SourceHook
 		// actual recall is done and that we are back in the original handler which shall return
 		// immediately.
 
+		// Post-recalls:
+		//  The second element on the stack has recall set to Recall_Post1.
+		//  This means that we want to skip this part and the original function calling thing, so
+		//  we store the status mres value, set status to MRES_SUPERCEDE, and return false.
+		//  We also set the recall flag to Recall_Post2, so the next time the thing calls us, we
+		//  can return true (so that the thing goes into post hooks).
+		if (m_HLIStack.size() > 1)
+		{
+			if (m_HLIStack.second().recall == HookLoopInfo::Recall_Post1)
+			{
+				m_HLIStack.front().temporaryStatus = *m_HLIStack.front().pStatus;
+				*m_HLIStack.front().pStatus = MRES_SUPERCEDE;
+				m_HLIStack.second().recall = HookLoopInfo::Recall_Post2;
+				return false;
+			}
+			else if (m_HLIStack.second().recall == HookLoopInfo::Recall_Post2)
+			{
+				*m_HLIStack.front().pStatus = m_HLIStack.front().temporaryStatus;
+				return m_HLIStack.front().shouldContinue;
+			}
+		}
 		return m_HLIStack.front().shouldContinue && !m_HLIStack.front().recall;
 	}
 
@@ -747,11 +785,16 @@ namespace SourceHook
 	{
 		if (!m_HLIStack.empty())
 		{
-			m_HLIStack.front().recall = true;
-			CHookList *mlist = static_cast<CHookList*>(m_HLIStack.front().pCurIface->GetPreHooks());
+			// Also watch out for post recalls! Described at the beginning of sourcehook_impl.h
+			m_HLIStack.front().recall =
+				static_cast<CIface*>(m_HLIStack.front().pCurIface)->m_PostHooks.RQFlagGet() ?
+				HookLoopInfo::Recall_Post1 : HookLoopInfo::Recall_Pre;
+			
+			CHookList *mlist = static_cast<CHookList*>(m_HLIStack.front().recall == HookLoopInfo::Recall_Pre ? 
+				m_HLIStack.front().pCurIface->GetPreHooks() : m_HLIStack.front().pCurIface->GetPostHooks());
 			mlist->m_Recall = true;
 
-			// The hookfunc usually do this, but it won't have a chance to see it, 
+			// The hookfunc usually does this, but it won't have a chance to see it, 
 			// so for recalls, we update status here if it's required
 			if (*m_HLIStack.front().pCurRes > *m_HLIStack.front().pStatus) 
 				*m_HLIStack.front().pStatus = *m_HLIStack.front().pCurRes;
@@ -931,6 +974,8 @@ namespace SourceHook
 	}
 	IHookList::IIter *CSourceHookImpl::CHookList::GetIter()
 	{
+		m_RQFlag = true;
+
 		CIter *ret;
 		if (m_FreeIters)
 		{
