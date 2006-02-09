@@ -1083,6 +1083,38 @@ namespace SourceHook
 	//////////////////////////////////////////////////////////////////////////
 	// CProto
 	//////////////////////////////////////////////////////////////////////////
+	char *CSourceHookImpl::CProto::DupProto(const char *p)
+	{
+		char *newproto;
+		if (*p)
+		{
+			size_t len = strlen(p);
+			newproto = new char[len+1];
+			memcpy(newproto, p, len+1);
+		} else {
+			const ProtoInfo *pi1 = reinterpret_cast<const ProtoInfo *>(p);
+			int *ar_copy = new int[pi1->numOfParams + 1];
+			for (int i = 0; i <= pi1->numOfParams; i++)
+				ar_copy[i] = pi1->params[i];
+			ProtoInfo *copy = new ProtoInfo(pi1->retTypeSize, pi1->numOfParams, ar_copy);
+			newproto = reinterpret_cast<char *>(copy);
+		}
+
+		return newproto;
+	}
+
+	void CSourceHookImpl::CProto::FreeProto(char *prot)
+	{
+		if (*prot)
+		{
+			delete [] prot;
+		} else {
+			ProtoInfo *pi = reinterpret_cast<ProtoInfo *>(prot);
+			delete [] pi->params;
+			delete pi;
+		}
+	}
+
 	bool CSourceHookImpl::CProto::Equal(const char *p1, const char *p2)
 	{
 		if (*p1 && *p2)			// Case1: Both old

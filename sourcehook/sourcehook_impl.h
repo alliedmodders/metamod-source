@@ -154,25 +154,34 @@ namespace SourceHook
 	private:
 		class CProto
 		{
-			const char *m_Proto;
+			char *m_Proto;
 
 			static bool Equal(const char *p1, const char *p2);
+			char *DupProto(const char *src);
+			void FreeProto(char *prot);
 		public:
-			CProto(const char *szProto) : m_Proto(szProto)
+			CProto(const char *szProto) : m_Proto(DupProto(szProto))
 			{
 			}
 
-			CProto(const CProto &other) : m_Proto(other.m_Proto)
+			CProto(const CProto &other) : m_Proto(DupProto(other.m_Proto))
 			{
+			}
+
+			~CProto()
+			{
+				FreeProto(m_Proto);
+				m_Proto = NULL;
 			}
 
 			void operator = (const char *szProto)
 			{
-				m_Proto = szProto;
+				m_Proto = DupProto(szProto);
 			}
+
 			void operator = (const CProto &other)
 			{
-				m_Proto = other.m_Proto;
+				m_Proto = DupProto(other.m_Proto);
 			}
 
 			bool operator == (const char *szProto) const
