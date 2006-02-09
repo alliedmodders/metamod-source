@@ -376,16 +376,16 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
 				{
+					g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s", file);
 					snprintf(full_path, sizeof(full_path)-1, "%s", file);
 				} else {
 					const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
 					ext = ext ? "" : ".dll";
-					snprintf(full_path, sizeof(full_path)-1, "%s\\%s%s", g_ModPath.c_str(), file, ext);
 #else
 					ext = ext ? "" : "_i486.so";
-					snprintf(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
 #endif
+					g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
 				}
 
 				char error[255]={0};

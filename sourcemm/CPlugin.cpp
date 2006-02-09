@@ -63,7 +63,7 @@ PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, 
 	PluginIter i = m_Plugins.begin();
 	while (i != m_Plugins.end())
 	{
-		if ( (*i) && (*i)->m_File.compare(file)==0 )
+		if ( (*i) && UTIL_PathCmp(file, (*i)->m_File.c_str()) )
 		{
 			if ( (*i)->m_Status < Pl_Paused )
 			{
