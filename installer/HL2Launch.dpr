@@ -54,6 +54,10 @@ var eStream: TFileStream;
     i: integer;
     CheckSuccessful: Boolean;
 begin
+  WriteLn(FindWindow(nil, 'STEAM'));
+  readln;
+  exit;
+
   ePath := ExtractFilePath(ParamStr(0));
   for i := 1 to ParamCount do
     eParams := eParams + #32 + ParamStr(i);
@@ -80,6 +84,12 @@ begin
   if not FileExists(ePath + 'hl2.exe') then begin
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
     WriteLn('Error: hl2.exe is missing! Maybe wrong directory? If not, start your HL2 Mod again via Steam and try again.');
+    ReadLn;
+    exit;
+  end;
+  if not FileExists(Copy(ePath, 1, Pos('\SteamApps\', ePath)) + 'steam.exe') then begin
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+    WriteLn('Error: Cannot find steam.exe! Make sure this application is located in your listen server''s directory.');
     ReadLn;
     exit;
   end;
@@ -150,6 +160,10 @@ begin
     WriteLn('Warning: Couldn''t set GameInfo.txt to write-protected!');
     eStream := nil;
   end;
+  { Launch Steam if not opened }
+
+  ShellExecute(0, 'open', PChar(Copy(ePath, 1, Pos('\SteamApps\', ePath)) + 'steam.exe'), nil, PChar(Copy(ePath, 1, Pos('\SteamApps\', ePath))), SW_SHOW);
+  //ShellExecute(0, 'open',
   { Launch game }
   SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
   Write('Starting HL2...');
