@@ -1,6 +1,6 @@
 2006/02/15 1.2.1:
  - Fixed bug where returning newparams in a post hook would cause infinite recursion.
- - Fixed bug where "meta load" could load multiple plugins.
+ - Fixed bug where "meta load" could load the same plugin multiple times.
  - Fixed bug where unloading a plugin could crash internal hook states.
  - Fixed bug where unhooking a single hook would clear the hook chain.
 
