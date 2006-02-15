@@ -1,3 +1,9 @@
+2006/02/15 1.2.1:
+ - Fixed bug where returning newparams in a post hook would cause infinite recursion.
+ - Fixed bug where "meta load" could load multiple plugins.
+ - Fixed bug where unloading a plugin could crash internal hook states.
+ - Fixed bug where unhooking a single hook would clear the hook chain.
+
 2006/01/07 1.2:
  - Added SourceHook API for modifying parameters in the hook chain.
  - Added SourceHook API for declaring and hooking manual vtable hooks.
