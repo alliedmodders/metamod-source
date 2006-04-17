@@ -23,10 +23,10 @@ PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
 #define	FIND_IFACE(func, assn_var, num_var, name, type) \
 	do { \
 		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
-			num = 0; \
+			num_var = 0; \
 			break; \
 		} \
-		if (num >= 999) \
+		if (num_var >= 999) \
 			break; \
 	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
 	if (!assn_var) { \
@@ -124,14 +124,14 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	PLUGIN_SAVEVARS();
 
 	char iface_buffer[255];
-	int num;
+	int num = 0;
 
 	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
-	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *)
+	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
 	strcpy(iface_buffer, INTERFACEVERSION_VENGINESERVER);
-	FIND_IFACE(engineFactory, m_Engine, num, iface_buffer, IVEngineServer *)
+	FIND_IFACE(engineFactory, m_Engine, num, iface_buffer, IVEngineServer *);
 	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMECLIENTS);
-	FIND_IFACE(serverFactory, m_ServerClients, num, iface_buffer, IServerGameClients *)
+	FIND_IFACE(serverFactory, m_ServerClients, num, iface_buffer, IServerGameClients *);
 	strcpy(iface_buffer, INTERFACEVERSION_GAMEEVENTSMANAGER2);
 	FIND_IFACE(engineFactory, m_GameEventManager, num, iface_buffer, IGameEventManager2 *);
 

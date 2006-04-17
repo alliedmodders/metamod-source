@@ -21,10 +21,10 @@ PLUGIN_EXPOSE(SamplePlugin, g_StubPlugin);
 #define	FIND_IFACE(func, assn_var, num_var, name, type) \
 	do { \
 		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
-			num = 0; \
+			num_var = 0; \
 			break; \
 		} \
-		if (num >= 999) \
+		if (num_var >= 999) \
 			break; \
 	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
 	if (!assn_var) { \
@@ -44,10 +44,10 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	PLUGIN_SAVEVARS();
 
 	char iface_buffer[255];
-	int num;
+	int num = 0;
 
 	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
-	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *)
+	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 
