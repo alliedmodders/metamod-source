@@ -173,7 +173,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			const char *name=NULL;
 			const char *author=NULL;
 
-			CONMSG("-Id- %-16.15s  %-8.7s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
+			CONMSG("-Id- %-20.19s  %-10.9s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
@@ -214,7 +214,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					name = pl->m_File.c_str();
 
 
-				CONMSG("[%02d] %-16.15s  %-8.7s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("[%02d] %-20.19s  %-10.9s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
 
 			//CONMSG("\n");
