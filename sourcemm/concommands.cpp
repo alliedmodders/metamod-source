@@ -157,11 +157,8 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
 			char full_path[255];
-#if defined WIN32 || defined _WIN32
-			snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
-#else
-			snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
-#endif
+			g_SmmAPI.PathFormat(full_path, sizeof(full_path) - 1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+
 			LoadPluginsFromFile(full_path);
 
 			return;

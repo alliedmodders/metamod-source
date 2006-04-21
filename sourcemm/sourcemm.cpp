@@ -92,8 +92,6 @@ void InitMainStates()
 	GetFileOfAddress(g_GameDll.factory, full_path, sizeof(full_path)-1);
 	g_BinPath.assign(full_path);
 
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
-
 	//Like metamod, reload plugins at the end of the map.
 	//This is so plugins can hook everything on load, BUT, new plugins will be reloaded
 	// if the server is shut down (silly, but rare case).
@@ -138,7 +136,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	}
 
 	char full_path[260];
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), g_Engine.icvar->GetCommandLineValue("mm_pluginsfile"));
 
 	LoadPluginsFromFile(full_path);
 
@@ -575,11 +573,8 @@ void LevelShutdown_handler(void)
 	if (!bInFirstLevel)
 	{
 		char full_path[255];
-#if defined WIN32 || defined _WIN32
-		snprintf(full_path, sizeof(full_path)-1, "%s\\addons\\metamod\\%s", g_ModPath.c_str(), "metaplugins.ini");
-#else
-		snprintf(full_path, sizeof(full_path)-1, "%s/addons/metamod/%s", g_ModPath.c_str(), "metaplugins.ini");
-#endif
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path) - 1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+
 		LoadPluginsFromFile(full_path);
 	} else {
 		bInFirstLevel = false;
@@ -591,14 +586,14 @@ void LevelShutdown_handler(void)
 }
 
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
-{ 
+{
 	if (!g_SmmAPI.CacheSuccessful())
 	{
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
 
-#if (defined _DEBUG || defined DEBUG) && (defined WIN32 || defined _WIN32)
+#if (defined _DEBUG || defined DEBUG) && (defined OS_WIN32)
     SetUnhandledExceptionFilter(NULL);
 #endif
 
