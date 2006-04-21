@@ -32,7 +32,7 @@
  *    4: Added AllPluginsLoaded() callback (2005-04-18)
  *    5: Bumped version for SourceHook V4 (2005-05-01)
  *    6: Added functions for console printing (2005-05-26)
- * M  7: Changed template libraries (2005-08-11)
+ *  M 7: Changed template libraries (2005-08-11)
  *		 New loading structure mechanism
  *	     New SourceHook version
  *  C 8: New SourceHook version (2005-12-23)

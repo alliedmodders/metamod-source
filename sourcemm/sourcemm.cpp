@@ -29,13 +29,14 @@ SH_DECL_HOOK4(IServerGameDLL, DLLInit, SH_NOATTRIB, false, bool, CreateInterface
 SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
+SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
 
-GameDllInfo g_GameDll = {false, NULL, NULL, NULL};
+GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
 EngineInfo g_Engine;
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
@@ -102,6 +103,15 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, g_GameDll.pGameDLL, DLLShutdown_handler, false);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
+
+	if (g_GameDll.pGameClients)
+		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
+	else
+	{
+		// If IServerGameClients isn't found, this really isn't a fatal error so...
+		LogMessage("[META] Warning: Could not find IServerGameClients!");
+		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
+	}
 }
 
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
@@ -349,6 +359,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					pInfo->lib = gamedll;
 					pInfo->loaded = true;
 					pInfo->pGameDLL = NULL;
+					pInfo->pGameClients = (IServerGameClients *)((fn)(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
 					gamedll_list.push_back(pInfo);
 				}
 			}

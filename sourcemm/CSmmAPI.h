@@ -54,6 +54,7 @@ namespace SourceMM
 		virtual void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 		virtual const char *GetBaseDir();
 		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...);
+		void ClientConPrintf(edict_t *client, const char *fmt, ...);
 	public:
 		bool CacheCmds();
 	private:
@@ -65,6 +66,7 @@ namespace SourceMM
 
 extern SourceMM::CSmmAPI g_SmmAPI;
 
-#define	CONMSG	g_SmmAPI.ConPrintf
+#define	CONMSG			g_SmmAPI.ConPrintf
+#define CLIENT_CONMSG	g_SmmAPI.ClientConPrintf
 
 #endif //_INCLUDE_CSMM_API_H

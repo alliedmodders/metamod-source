@@ -549,8 +549,82 @@ void CAlwaysRegisterableCommand::BringToFront()
 	}
 }
 
+void ClientCommand_handler(edict_t *client)
+{
+	IVEngineServer *e = g_Engine.engine;
+	const char *cmd = e->Cmd_Argv(0);
+
+	if (strcmp(cmd, "meta") == 0)
+	{
+		int args = e->Cmd_Argc();
+		if (args == 2)
+		{
+			const char *subcmd = e->Cmd_Argv(1);
+
+			if (strcmp(subcmd, "credits") == 0)
+			{
+				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
+				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
+				CLIENT_CONMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
+				CLIENT_CONMSG(client, "  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
+				CLIENT_CONMSG(client, "For more information, see the official website\n");
+				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+			}
+			else if(strcmp(subcmd, "version") == 0)
+			{
+				CLIENT_CONMSG(client, "Metamod:Source version %s\n", SOURCEMM_VERSION);
+				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
+				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
+				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+			}
+			else if(strcmp(subcmd, "list") == 0)
+			{
+				SourceMM::CPluginManager::CPlugin *pl;
+				PluginIter i;
+				const char *version=NULL;
+				const char *name=NULL;
+				const char *author=NULL;
+
+				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-12.11s\n", "Name", "Version", "Author");
+
+				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
+				{
+					pl = (*i);
+					if (!pl)
+						break;
+
+					// Should paused plugins really show up in the list too?
+					if (pl->m_API && (pl->m_Status == Pl_Running || pl->m_Status == Pl_Paused))
+					{
+						version = pl->m_API->GetVersion();
+						author = pl->m_API->GetAuthor();
+						name = pl->m_API->GetName();
+
+						if (!version || !author || !name)
+							break;
+
+						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-12.11s\n", pl->m_Id, name, version, author);
+					}
+				}
+			}
+		}
+		else
+		{
+			CLIENT_CONMSG(client, "Metamod:Source Menu\n");
+			CLIENT_CONMSG(client, "usage: meta <command>\n");
+			CLIENT_CONMSG(client, "  credits - About Metamod:Source\n");
+			CLIENT_CONMSG(client, "  list    - List plugins\n");
+			CLIENT_CONMSG(client, "  version - Version information\n");
+		}
+
+		RETURN_META(MRES_SUPERCEDE);
+	}
+
+	RETURN_META(MRES_IGNORED);
+}
+
 const char *GetPluginsFile()
 {
 	return mm_pluginsfile.GetString();
 }
-

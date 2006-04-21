@@ -44,6 +44,8 @@ public:
 	void BringToFront();
 };
 
+void ClientCommand_handler(edict_t *client);
+
 const char *GetPluginsFile();
 
 extern SMConVarAccessor g_SMConVarAccessor;

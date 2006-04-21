@@ -34,11 +34,11 @@
  *   increase vers_release when bug fix releases are made
  *   never increase major
  */
-#define		SOURCEMM_VERSION	"1.2.1"
+#define		SOURCEMM_VERSION	"1.2.2"
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
-#define		SM_VERS_API_MINOR	2		//increase this on a non-breaking API change
+#define		SM_VERS_API_MINOR	3		//increase this on a non-breaking API change
 #define		SM_VERS_RELEASE		1		//increase this on a bug-fix release.
 
 //We need a good CServerGameDLL version to work properly.  We support these inclusively.
@@ -72,6 +72,7 @@ struct GameDllInfo
 	HINSTANCE lib;
 	CreateInterfaceFn factory;
 	IServerGameDLL *pGameDLL;
+	IServerGameClients *pGameClients;
 };
 
 /** @brief Stores information about the HL2 Engine pointers */

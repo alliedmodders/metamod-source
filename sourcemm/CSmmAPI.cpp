@@ -360,3 +360,12 @@ void CSmmAPI::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 	}
 }
 
+void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
+{
+	va_list ap;
+	static char buf[4096];
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
+	g_Engine.engine->ClientPrintf(client, buf);
+	va_end(ap);
+}

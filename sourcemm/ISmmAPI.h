@@ -98,6 +98,12 @@ public:		//Added in 1.2 (1:2)
 	 * @brief Formats a file path to the local OS.  Does not include any base directories.
 	 */
 	virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...) =0;
+public:		// Added in 1.2.2 (1:3)
+	/**
+	 * @brief Prints text in the specified client's console. Same as IVEngineServer::ClientPrintf 
+	 *  except that it allows for string formatting.
+	 */
+	virtual void ClientConPrintf(edict_t *client, const char *fmt, ...) =0;
 };
 
 
@@ -105,6 +111,7 @@ public:		//Added in 1.2 (1:2)
  * 1.1.0 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
  * 1.1.2 added API call for generating iface names.
  * 1.2   added API more helper functions and new SourceHook version.
+ * 1.2.2 added API for printing to client console (with string formatting)
  */
 
 #endif //_INCLUDE_ISMM_API_H
