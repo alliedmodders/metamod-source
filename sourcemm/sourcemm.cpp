@@ -135,8 +135,13 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
 
+
+	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
+	if (!pluginFile) 
+		pluginFile = GetPluginsFile();
+
 	char full_path[260];
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), g_Engine.icvar->GetCommandLineValue("mm_pluginsfile"));
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), pluginFile);
 
 	LoadPluginsFromFile(full_path);
 
