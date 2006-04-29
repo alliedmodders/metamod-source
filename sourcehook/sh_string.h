@@ -96,7 +96,7 @@ public:
 			v[0] = '\0';
 	}
 
-	int compare (const char *d)
+	int compare (const char *d) const
 	{
 		if (!v)
 			return strcmp("", d);
@@ -105,7 +105,7 @@ public:
 	}
 
 	//Added this for amxx inclusion
-	bool empty()
+	bool empty() const
 	{
 		if (!v)
 			return true;
@@ -116,7 +116,7 @@ public:
 		return false;
 	}
 
-	size_t size()
+	size_t size() const
 	{
 		if (v)
 			return strlen(v);
@@ -124,7 +124,7 @@ public:
 			return 0;
 	}
 
-	int find(const char c, int index = 0)
+	int find(const char c, int index = 0) const
 	{
 		int len = static_cast<int>(size());
 		if (len < 1)
@@ -143,7 +143,7 @@ public:
 		return npos;
 	}
 
-	bool is_space(int c)
+	bool is_space(int c) const
 	{
 		if (c == '\f' || c == '\n' ||
 			c == '\t' || c == '\r' ||
