@@ -170,7 +170,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			const char *name=NULL;
 			const char *author=NULL;
 
-			CONMSG("-Id- %-20.19s  %-10.9s  %-12.11s %-8.7s\n", "Name", "Version", "Author", "Status");
+			CONMSG("-Id- %-20.19s  %-10.9s  %-16.15s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
@@ -211,7 +211,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					name = pl->m_File.c_str();
 
 
-				CONMSG("[%02d] %-20.19s  %-10.9s  %-12.11s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("[%02d] %-20.19s  %-10.9s  %-16.15s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
 
 			//CONMSG("\n");
@@ -586,7 +586,7 @@ void ClientCommand_handler(edict_t *client)
 				const char *name=NULL;
 				const char *author=NULL;
 
-				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-12.11s\n", "Name", "Version", "Author");
+				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-16.15s\n", "Name", "Version", "Author");
 
 				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 				{
@@ -604,7 +604,7 @@ void ClientCommand_handler(edict_t *client)
 						if (!version || !author || !name)
 							break;
 
-						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-12.11s\n", pl->m_Id, name, version, author);
+						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-16.15s\n", pl->m_Id, name, version, author);
 					}
 				}
 			}
