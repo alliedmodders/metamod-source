@@ -289,42 +289,41 @@ namespace SourceHook
 	}
 
 	// Versions which do take a this
-@VARARGS@
-	template<class X, class Y, class RetType@, @@class Param%%|, @>
-	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @), MemFuncInfo &out)
+@[$1,0,$a:
+	template<class X, class Y, class RetType@[$1!=0:, @]@[$2,1,$1|, :class Param$2@]>
+	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$2@]), MemFuncInfo &out)
 	{
-		RetType(Y::*mfp2)(@Param%%|, @) = mfp;
+		RetType(Y::*mfp2)(@[$2,1,$1|, :Param$2@]) = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
-	template<class X, class Y, class RetType@, @@class Param%%|, @>
-		inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @) const, MemFuncInfo &out)
+	template<class X, class Y, class RetType@[$1!=0:, @]@[$2,1,$1|, :class Param$2@]>
+		inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$2@]) const, MemFuncInfo &out)
 	{
-		RetType(Y::*mfp2)(@Param%%|, @) const = mfp;
+		RetType(Y::*mfp2)(@[$2,1,$1|, :Param$2@]) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
-
-@ENDARGS@
+@]
 
 	// GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
 #if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
 
-@VARARGS@
-	template<class X, class Y, class RetType@, @@class Param%%|, @>
-	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @@, @...), MemFuncInfo &out)
+@[$1,0,$a:
+	template<class X, class Y, class RetType@[$1!=0:, @]@[$2,1,$1|, :class Param$2@]>
+	inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...), MemFuncInfo &out)
 	{
-		RetType(Y::*mfp2)(@Param%%|, @@, @...) = mfp;
+		RetType(Y::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...) = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
-	template<class X, class Y, class RetType@, @@class Param%%|, @>
-		inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@Param%%|, @@, @...) const, MemFuncInfo &out)
+	template<class X, class Y, class RetType@[$1!=0:, @]@[$2,1,$1|, :class Param$2@]>
+		inline void GetFuncInfo(Y *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...) const, MemFuncInfo &out)
 	{
-		RetType(Y::*mfp2)(@Param%%|, @@, @...) const = mfp;
+		RetType(Y::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...) const = mfp;
 		MFI_Impl<sizeof(mfp2)>::GetFuncInfo(mfp2, out);
 	}
 
-@ENDARGS@
+@]
 
 #endif
 

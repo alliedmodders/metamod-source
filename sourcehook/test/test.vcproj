@@ -252,6 +252,12 @@
 			</File>
 			<File
 				RelativePath="test2.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="test3.cpp">
@@ -285,6 +291,9 @@
 			</File>
 			<File
 				RelativePath=".\testreentr.cpp">
+			</File>
+			<File
+				RelativePath=".\testref.cpp">
 			</File>
 		</Filter>
 		<Filter

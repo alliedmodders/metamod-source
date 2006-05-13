@@ -70,7 +70,7 @@ SourceHook::List<Test *> Test::ms_Tests;
 
 DO_TEST(List);
 DO_TEST(Basic);
-DO_TEST(VafmtAndOverload);
+//DO_TEST(VafmtAndOverload);
 DO_TEST(ThisPtrOffs);
 DO_TEST(PlugSys);
 DO_TEST(Bail);
@@ -78,6 +78,7 @@ DO_TEST(Reentr);
 DO_TEST(Manual);
 DO_TEST(Recall);
 DO_TEST(Multi);
+DO_TEST(Ref);
 
 int main(int argc, char *argv[])
 {

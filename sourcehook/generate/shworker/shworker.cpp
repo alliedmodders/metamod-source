@@ -6,7 +6,7 @@
 
 	INPUT FILE DIRECTIVES
 
-	$a is the first additional argument, %b the second, ...
+	$a is the first additional argument, $b the second, ...
 
 	---
 	ITERATION
