@@ -3,6 +3,11 @@
 #include "sourcehook_test.h"
 #include "testevents.h"
 
+// This should probably be done the other way round!
+#ifdef __linux__
+#define _snprintf snprintf
+#endif
+
 namespace
 {
 	SourceHook::ISourceHook *g_SHPtr;
