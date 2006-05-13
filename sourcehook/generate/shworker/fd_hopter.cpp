@@ -330,7 +330,7 @@ void PrintVarArgs(FILE *fout, CString bigblock, int num) {
 	fprintf(fout, bigblock);				
 }
 
-int hopter(int numargs, const char *filenamein, const char *filenameout)
+int action_hopter(int numargs, const char *filenamein, const char *filenameout)
 {
 
 	MaxNumArgs = numargs;
