@@ -64,6 +64,11 @@ namespace
 	SH_DECL_MANUALHOOK0(TheWall_Func3, 2, 0, 0, short);
 	SH_DECL_MANUALHOOK1(TheWall_Func4, 3, 0, 0, short, int);
 
+	typedef void (SourceHook::EmptyClass::*MFP_Func1)();
+	typedef void (SourceHook::EmptyClass::*MFP_Func2)(int);
+	typedef short (SourceHook::EmptyClass::*MFP_Func3)();
+	typedef short (SourceHook::EmptyClass::*MFP_Func4)(int);
+
 	void Handler_Func1()
 	{
 		ADD_STATE(State_Func1H_Called(META_IFACEPTR(void)));
@@ -101,6 +106,8 @@ bool TestManual(std::string &error)
 	TheWall inst;
 	TheWall *p = &inst;
 
+	SourceHook::ManualCallClass *cc = SH_GET_MCALLCLASS(p, sizeof(void*));
+
 	// 1)
 	// Call each function
 	p->Func1();
@@ -117,8 +124,34 @@ bool TestManual(std::string &error)
 		new State_Return(4),
 		NULL), "Part 1");
 
+	// 1.1)
+	// Now call each function through the manual call class, using the hook decl and manually
+	SH_MCALL(cc, TheWall_Func1)();
+	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(cc, TheWall_Func2)(200);
+	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+
+	CHECK_STATES((&g_States,
+		new State_Func1_Called(p),
+		new State_Func1_Called(p),
+		new State_Func2_Called(p, 200),
+		new State_Func2_Called(p, 200),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		NULL), "Part 1.1");
+
 	// 2)
-	// Hook each function normally, call them, unhook them
+	// Hook each function normally, call them
 	SH_ADD_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
 	SH_ADD_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
 	SH_ADD_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
@@ -142,13 +175,41 @@ bool TestManual(std::string &error)
 		new State_Return(4),
 		NULL), "Part 2");
 
+	// Call them through the mcallclass
+	// 2.1)
+	// Now call each function through the manual call class, using the hook decl and manually
+	SH_MCALL(cc, TheWall_Func1)();
+	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(cc, TheWall_Func2)(200);
+	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+
+	CHECK_STATES((&g_States,
+		new State_Func1_Called(p),
+		new State_Func1_Called(p),
+		new State_Func2_Called(p, 200),
+		new State_Func2_Called(p, 200),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		NULL), "Part 2.1");
+
+	// Unhook them
 	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
 	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
 	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
 	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func4, p, Handler_Func4, false);
 
 	// 3)
-	// Hook each function manually, call them, unhook them
+	// Hook each function manually, call them
 
 	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func1, p, Handler_Func1, false);
 	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
@@ -173,6 +234,36 @@ bool TestManual(std::string &error)
 		new State_Return(4),
 		NULL), "Part 3");
 
+	// Now through the mcallclass
+
+	// Call them through the mcallclass
+	// 3.1)
+	// Now call each function through the manual call class, using the hook decl and manually
+	SH_MCALL(cc, TheWall_Func1)();
+	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(cc, TheWall_Func2)(200);
+	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+
+	CHECK_STATES((&g_States,
+		new State_Func1_Called(p),
+		new State_Func1_Called(p),
+		new State_Func2_Called(p, 200),
+		new State_Func2_Called(p, 200),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func3_Called(p),
+		new State_Return(3),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		new State_Func4_Called(p, 400),
+		new State_Return(4),
+		NULL), "Part 3.1");
+
+	// Unhook them
 	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func1, p, Handler_Func1, false);
 	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
 	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func3, p, Handler_Func3, false);
