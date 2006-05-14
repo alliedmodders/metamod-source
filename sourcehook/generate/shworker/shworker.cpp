@@ -444,14 +444,14 @@ void replace_vars(string &buf, int argc, int *argv, const varmap &vars)
 	for (int i = 0; i < argc; ++i)
 	{
 		varname[1] = 'a' + i;
-		itoa(argv[i], value, 10);
+		sprintf(value, "%d", argv[i]);
 		DoReplace(buf, varname, value);
 	}
 
 	for (varmap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter)
 	{
 		varname[1] = '0' + iter->first;
-		itoa(iter->second, value, 10);
+		sprintf(value, "%d", iter->second);
 		DoReplace(buf, varname, value);
 	}
 }
@@ -608,8 +608,8 @@ int do_input(int argc, int *argv, ofstream &outfile, string &buf, varmap &curvar
 					// Add separator if required
 					if (sepbegin != string::npos && i != expr_max)
 					{
-						do_input(argc, argv, outfile, 
-							string(sect.begin() + sepbegin, sect.begin() + sepend), curvars);
+						string tmp(sect.begin() + sepbegin, sect.begin() + sepend);
+						do_input(argc, argv, outfile, tmp, curvars);
 					}
 				}
 				// Remove the var!
@@ -654,7 +654,8 @@ int do_input(int argc, int *argv, ofstream &outfile, string &buf, varmap &curvar
 					// Condition is true, process it!
 					// The text may still contain arithmetic exprs or other cond. exprs
 					// so send it through do_input
-					do_input(argc, argv, outfile, sect.substr(colon+1, sect.size() - colon - 3), curvars);
+					string tmp(sect.substr(colon+1, sect.size() - colon - 3));
+					do_input(argc, argv, outfile, tmp, curvars);
 				}
 			}
 		}
@@ -687,7 +688,8 @@ int action_iter(const char *filenamein, const char *filenameout, int argc, const
 	const int MAX_ARGC = 10;
 	int converted_argv[MAX_ARGC];
 
-	for (int i = 0; i < argc && i < MAX_ARGC; ++i)
+	int i;
+	for (i = 0; i < argc && i < MAX_ARGC; ++i)
 		converted_argv[i] = atoi(argv[i]);
 
 	if (argc != i)
