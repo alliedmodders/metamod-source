@@ -238,16 +238,26 @@ bool CSmmAPI::CacheCmds()
 			//callback = //*((FnCommandCallback *)((char *)pBase + offsetof(ConCommand, m_fnCommandCallback)));
 			callback = ((ConCommand *)pBase)->GetCallback();
 			ptr = (unsigned char *)callback;
+		#ifdef OS_LINUX
 			if (vcmp(ptr, ENGINE486_SIG, SIGLEN))
 			{
 				offs = ENGINE486_OFFS;
-			} else if (vcmp(ptr, ENGINE686_SIG, SIGLEN)) {
+			}
+			else if (vcmp(ptr, ENGINE686_SIG, SIGLEN))
+			{
 				offs = ENGINE686_OFFS;
-			} else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN)) {
+			}
+			else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN))
+			{
 				offs = ENGINEAMD_OFFS;
-			} else if (vcmp(ptr, ENGINEW32_SIG, SIGLEN)) {
+			}
+		#elif defined OS_WIN32 // Only one Windows engine binary so far...
+			if (vcmp(ptr, ENGINEW32_SIG, SIGLEN))
+			{
 				offs = ENGINEW32_OFFS;
 			}
+		#endif
+
 			if (!offs || ptr[offs-1] != IA32_CALL)
 			{
 				m_ConPrintf = (CONPRINTF_FUNC)Msg;
