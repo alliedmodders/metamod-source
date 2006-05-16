@@ -1,8 +1,11 @@
-2006/XX/XX 1.2.2:
- - Added ClientConPrintf to API for printing text in a client's console. This does the
-   same thing as IVEngineServer::ClientPrintf except that it allows string formatting.
+2006/xx/xx 1.2.2:
+ - Added SourceHook API for manual callclasses.
+ - Added support for the Source engine beta (and ServerGameDLL005).
+ - Added API for printing text in a client's console with ClientConPrintf. This does the
+    same thing as IVEngineServer::ClientPrintf except that it allows string formatting.
  - Added client version of "meta" command in order to allow clients to view version 
-   information and a list of loaded plugins.
+    information and a list of loaded plugins.
+ - Fixed issues with SourceHook's SH_CALL and reference parameters.
  - Fixed a bug where the mm_pluginsfile cvar was being ignored.
  - Fixed a memory leak when using ISmmAPI::InterfaceSearch.
 
