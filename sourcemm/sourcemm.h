@@ -43,7 +43,7 @@
 
 //We need a good CServerGameDLL version to work properly.  We support these inclusively.
 #define	MIN_GAMEDLL_VERSION	3
-#define	MAX_GAMEDLL_VERSION	4
+#define	MAX_GAMEDLL_VERSION	5
 
 /**
  * @brief Entry point for HL2 Engine
