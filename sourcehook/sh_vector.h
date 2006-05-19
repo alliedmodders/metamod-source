@@ -277,7 +277,8 @@ public:
 	CVector & operator =(const CVector<T> & other)
 	{
 		clear();
-		resize(other.size());
+		ChangeSize(other.size());
+		m_CurrentUsedSize = other.size();
 		for (size_t i=0; i<other.size(); i++)
 			m_Data[i] = other.at(i);
 		return *this;
@@ -342,8 +343,15 @@ public:
 
 	bool resize(size_t newSize)
 	{
+		return resize(newSize, T());
+	}
+
+	bool resize(size_t newSize, T defval)
+	{
 		if (!ChangeSize(newSize))
 			return false;
+		for (size_t i = m_CurrentUsedSize; i < newSize; ++i)
+			m_Data[i] = defval;
 		m_CurrentUsedSize = newSize;
 		return true;
 	}

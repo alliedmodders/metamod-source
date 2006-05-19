@@ -2,6 +2,7 @@
 #include "sh_list.h"
 #include "sh_stack.h"
 #include "sh_tinyhash.h"
+#include "sh_vector.h"
 #include "testevents.h"
 
 // TEST LIST
@@ -210,6 +211,57 @@ namespace
 
 		return true;
 	}
+
+	bool DoTestVec(std::string &error)
+	{
+		typedef SourceHook::CVector<int> IntVector;
+		IntVector vec1;
+		IntVector::iterator iter;
+		int i;
+		
+		CHECK_COND(vec1.size() == 0 && vec1.empty(), "V1");
+		for (i = 0; i < 500; ++i)
+			vec1.push_back(i);
+
+		CHECK_COND(vec1.size() == 500 && !vec1.empty(), "V2");
+
+		for (i = 0; i < 500; ++i)
+			CHECK_COND(vec1[i] == i, "V3");
+
+		for (i = 0, iter = vec1.begin(); iter != vec1.end(); ++iter, ++i)
+			CHECK_COND(*iter == i, "V4");
+
+		vec1.resize(1000);
+		for (i = 0; i < 500; ++i)
+			CHECK_COND(vec1[i] == i, "V5.1");
+		for (i = 500; i < 1000; ++i)
+			CHECK_COND(vec1[i] == 0, "V5.2");
+
+		vec1.resize(200);
+		for (i = 0; i < 200; ++i)
+			CHECK_COND(vec1[i] == i, "V6");
+
+		vec1.resize(500, 0x12345678);
+		for (i = 0; i < 200; ++i)
+			CHECK_COND(vec1[i] == i, "V7.1");
+		for (i = 200; i < 500; ++i)
+			CHECK_COND(vec1[i] == 0x12345678, "V7.2");
+
+		IntVector vec2(vec1);
+		CHECK_COND(vec2.size() == vec1.size() && vec2.empty() == vec1.empty(), "V8.0");
+		for (i = 0; i < 200; ++i)
+			CHECK_COND(vec2[i] == i, "V8.1");
+		for (i = 200; i < 500; ++i)
+			CHECK_COND(vec2[i] == 0x12345678, "V8.2");
+
+
+		vec1.clear();
+		CHECK_COND(vec1.size() == 0 && vec1.empty() && vec1.begin() == vec1.end(), "V9");
+		vec2 = vec1;
+		CHECK_COND(vec2.size() == 0 && vec2.empty() && vec2.begin() == vec2.end(), "V9");
+
+		return true;
+	}
 }
 
 bool TestList(std::string &error)
@@ -221,6 +273,9 @@ bool TestList(std::string &error)
 		return false;
 
 	if (!DoTestStack(error))
+		return false;
+
+	if (!DoTestVec(error))
 		return false;
 
 	return true;

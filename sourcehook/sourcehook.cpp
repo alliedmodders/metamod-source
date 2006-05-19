@@ -831,7 +831,7 @@ namespace SourceHook
 	{
 		OrigFuncs &tmpvec = m_VT[vtbl_offs];
 		if (tmpvec.size() <= (size_t)vtbl_idx)
-			tmpvec.resize(vtbl_idx+1);
+			tmpvec.resize(vtbl_idx+1, NULL);
 		tmpvec[vtbl_idx] = orig_entry;
 	}
 	void CSourceHookImpl::CCallClassImpl::RemoveCallClassPatch(int vtbl_offs, int vtbl_idx)
