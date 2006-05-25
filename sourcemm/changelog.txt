@@ -1,10 +1,13 @@
-2006/xx/xx 1.2.2:
+2006/05/25 1.2.2:
+ - Added the ability to "alias" plugin names in metaplugins.ini.
+ - Added 'meta alias" command.
  - Added SourceHook API for manual callclasses.
- - Added support for the Source engine beta (and ServerGameDLL005).
+ - Added support for the latest Source engine (ServerGameDLL005).
  - Added API for printing text in a client's console with ClientConPrintf. This does the
     same thing as IVEngineServer::ClientPrintf except that it allows string formatting.
  - Added client version of "meta" command in order to allow clients to view version 
     information and a list of loaded plugins.
+ - Fixed a bug causing old mods on newer engines to fail loading.
  - Fixed issues with SourceHook's SH_CALL and reference parameters.
  - Fixed a bug where the mm_pluginsfile cvar was being ignored.
  - Fixed a memory leak when using ISmmAPI::InterfaceSearch.
