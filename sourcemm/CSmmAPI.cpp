@@ -301,7 +301,7 @@ void CSmmAPI::GetShVersions(int &shvers, int &shimpl)
 
 int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 {
-	unsigned int length = (unsigned int)strlen(iface);
+	int length = (int)strlen(iface);
 	int i;
 	int num = 0;
 
@@ -311,7 +311,7 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 			break;
 	}
 
-	if ( (num && (maxlength <= length)) || (!num && (maxlength <= length+3)) )
+	if ( (num && ((int)maxlength <= length)) || (!num && ((int)maxlength <= length+3)) )
 	{
 		return -1;
 	}
