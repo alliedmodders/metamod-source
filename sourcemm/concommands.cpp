@@ -581,7 +581,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	CONMSG("Metamod:Source Menu\n");
 	CONMSG("usage: meta <command> [arguments]\n");
-	CONMSG("  alias        - list or set an alias\n");
+	CONMSG("  alias        - List or set an alias\n");
 	CONMSG("  clear        - Unload all plugins forcefully\n");
 	CONMSG("  cmds         - Show plugin commands\n");
 	CONMSG("  cvars        - Show plugin cvars\n");
