@@ -130,7 +130,7 @@ type
 var
   frmMain: TfrmMain;
 
-const VERSION = '1.2.1';
+var VERSION: String = '1.4.2';
 
 implementation
 
@@ -185,7 +185,7 @@ begin
 
     if optWindows.Checked then
       eOS := osWindows
-    else if optLinux.Checked then
+    else
       eOS := osLinux;
 
     jspInstallProgress.Show;
