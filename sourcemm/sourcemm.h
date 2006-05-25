@@ -39,11 +39,11 @@
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
 #define		SM_VERS_API_MINOR	3		//increase this on a non-breaking API change
-#define		SM_VERS_RELEASE		1		//increase this on a bug-fix release.
+#define		SM_VERS_RELEASE		2		//increase this on a bug-fix release.
 
 //We need a good CServerGameDLL version to work properly.  We support these inclusively.
 #define	MIN_GAMEDLL_VERSION	3
-#define	MAX_GAMEDLL_VERSION	5
+#define	MAX_GAMEDLL_VERSION	4
 
 /**
  * @brief Entry point for HL2 Engine

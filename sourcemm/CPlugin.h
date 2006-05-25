@@ -43,6 +43,11 @@
 
 namespace SourceMM
 {
+	struct CNameAlias
+	{
+		SourceHook::String alias;
+		SourceHook::String value;
+	};
 	/**
 	 * @brief Implements Plugin Manager API
 	 */
@@ -77,6 +82,7 @@ namespace SourceMM
 		bool Pause(PluginId id, char *error, size_t maxlen);
 		bool Unpause(PluginId id, char *error, size_t maxlen);
 		bool UnloadAll();
+		void SetAlias(const char *alias, const char *value);
 	public:
 		bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
 		bool QueryRunning(PluginId id, char *error, size_t maxlength);
@@ -106,6 +112,11 @@ namespace SourceMM
 		 */
 		bool Retry(PluginId id, char *error, size_t len);
 
+		//get alias info
+		const char *LookupAlias(const char *alias);
+		SourceHook::List<SourceMM::CNameAlias *>::iterator _alias_begin();
+		SourceHook::List<SourceMM::CNameAlias *>::iterator _alias_end();
+
 		//Internal iterators
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
@@ -119,6 +130,7 @@ namespace SourceMM
 	private:
 		PluginId m_LastId;
 		SourceHook::List<CPlugin *> m_Plugins;
+		SourceHook::List<CNameAlias *> m_Aliases;
 		bool m_AllLoaded;
 	};
 };

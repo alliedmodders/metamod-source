@@ -376,10 +376,13 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		{
 			//This is the interface we want!  Right now we support versions 3 and 4.
 			int version = atoi(&(iface[len]));
+			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
 			if (version < MIN_GAMEDLL_VERSION || version > MAX_GAMEDLL_VERSION)
 			{
-				Error("GameDLL version %d is not supported by Metamod!", version);
-				return NULL;
+				//maybe this will get used in the future
+				sizeTooBig = version;
+				if (ret)
+					*ret = IFACE_FAILED;
 			}
 			SourceHook::List<GameDllInfo *>::iterator iter;
 			GameDllInfo *pInfo = NULL;
@@ -401,8 +404,17 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			}
 			if (g_GameDll.loaded)
 			{
-				InitMainStates();
+				if (sizeTooBig)
+				{
+					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!", sizeTooBig);
+					if (ret)
+						*ret = IFACE_FAILED;
+					return NULL;
+				} else {
+					InitMainStates();
+				}
 			} else {
+				sizeTooBig = 0;
 				if (ret)
 					*ret = IFACE_FAILED;
 				return NULL;
@@ -457,22 +469,22 @@ void DLLShutdown_handler()
 	RETURN_META(MRES_SUPERCEDE);
 }
 
-int LoadPluginsFromFile(const char *file)
+int LoadPluginsFromFile(const char *_file)
 {
 	FILE *fp;
 	int total = 0, skipped=0;
 	PluginId id;
 	bool already;
 
-	fp = fopen(file, "rt");
+	fp = fopen(_file, "rt");
 	if (!fp)
 	{
-		LogMessage("[META] Could not open plugins file %s\n", file);
+		LogMessage("[META] Could not open plugins file %s\n", _file);
 		return -1;
 	}
 
 	char buffer[255], error[255], full_path[128];
-	const char *ptr, *ext;
+	const char *ptr, *ext, *file;
 	size_t length;
 	while (!feof(fp))
 	{
@@ -482,18 +494,58 @@ int LoadPluginsFromFile(const char *file)
 		if (!length)
 			continue;
 		if (buffer[length-1] == '\n')
-			buffer[length-1] = '\0';
+			buffer[--length] = '\0';
 
 		UTIL_TrimLeft(buffer);
 		UTIL_TrimRight(buffer);
 
 		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
 			continue;
+		file = buffer;
+		if (buffer[0] == '"')
+		{
+			char *cptr = buffer;
+			file = ++cptr;
+
+			while (*cptr)
+			{
+				if (*cptr == '"')
+				{
+					*cptr = '\0';
+					break;
+				}
+				cptr++;
+			}
+		} else {
+			char *cptr = buffer;
+			while (*cptr)
+			{
+				if (isspace(*cptr))
+				{
+					char *optr = cptr;
+					while (*cptr && isspace(*cptr))
+						cptr++;
+					*optr = '\0';
+					UTIL_TrimRight(cptr);
+					if (*cptr && isalpha(*cptr))
+					{
+						g_PluginMngr.SetAlias(buffer, cptr);
+						file = cptr;
+					}
+					break;
+				}
+				cptr++;
+			}
+		}
+		if (!file[0])
+		{
+			continue;
+		}
 		//First find if it's an absolute path or not...
-		if (buffer[0] == '/' || strncmp(&(buffer[1]), ":\\", 2) == 0)
+		if (file[0] == '/' || strncmp(&(file[1]), ":\\", 2) == 0)
 		{
 			//If we're in an absolute path, ignore our normal heuristics
-			id = g_PluginMngr.Load(buffer, Pl_File, already, error, sizeof(error)-1);
+			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error)-1);
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
@@ -505,7 +557,7 @@ int LoadPluginsFromFile(const char *file)
 			}
 		} else {
 			//Attempt to find a file extension
-			ptr = UTIL_GetExtension(buffer);
+			ptr = UTIL_GetExtension(file);
 			//Add an extension if there's none there
 			if (!ptr)
 			{
@@ -518,7 +570,7 @@ int LoadPluginsFromFile(const char *file)
 				ext = "";
 			}
 			//Format the new path
-			g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), buffer, ext);
+			g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
 			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error)-1);
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{

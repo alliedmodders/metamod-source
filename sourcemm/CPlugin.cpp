@@ -44,11 +44,73 @@ CPluginManager::CPluginManager()
 
 CPluginManager::~CPluginManager()
 {
-	/*if (m_Plugins.size())
+	SourceHook::List<CNameAlias *>::iterator iter;
+
+	for (iter=m_Aliases.begin(); iter!=m_Aliases.end(); iter++)
 	{
-		UnloadAll();
-		m_Plugins.clear();
-	}*/
+		delete (*iter);
+	}
+
+	m_Aliases.clear();
+}
+
+const char *CPluginManager::LookupAlias(const char *alias)
+{
+	SourceHook::List<CNameAlias *>::iterator iter;
+	CNameAlias *p;
+
+	for (iter=m_Aliases.begin(); iter!=m_Aliases.end(); iter++)
+	{
+		p = (*iter);
+		if (p->alias.compare(alias) == 0)
+		{
+			return p->value.c_str();
+		}
+	}
+
+	return NULL;
+}
+
+SourceHook::List<SourceMM::CNameAlias *>::iterator CPluginManager::_alias_begin()
+{
+	return m_Aliases.begin();
+}
+
+SourceHook::List<SourceMM::CNameAlias *>::iterator CPluginManager::_alias_end()
+{
+	return m_Aliases.end();
+}
+
+void CPluginManager::SetAlias(const char *alias, const char *value)
+{
+	SourceHook::List<CNameAlias *>::iterator iter;
+	CNameAlias *p;
+
+	for (iter=m_Aliases.begin(); iter!=m_Aliases.end(); iter++)
+	{
+		p = (*iter);
+		if (p->alias.compare(alias) == 0)
+		{
+			if (value[0] == '\0')
+			{
+				iter = m_Aliases.erase(iter);
+				return;
+			} else {
+				p->value.assign(value);
+				return;
+			}
+		}
+	}
+
+	if (value[0] != '\0')
+	{
+		p = new CNameAlias;
+	
+		p->alias.assign(alias);
+		p->value.assign(value);
+	
+		m_Aliases.push_back(p);
+	}
 }
 
 CPluginManager::CPlugin::CPlugin() : m_Lib(NULL), m_API(NULL), m_Id(0), m_Source(0)
@@ -261,7 +323,10 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		if (error)
 			snprintf(error, maxlen, "File not found: %s", file);
 		pl->m_Status = Pl_NotFound;
-	} else {
+	}
+
+	if (fp)
+	{
 		fclose(fp);
 		fp = NULL;
 		

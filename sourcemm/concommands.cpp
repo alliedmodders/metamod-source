@@ -371,6 +371,12 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				const char *file = e->Cmd_Argv(2);
 				char full_path[255];
 
+				const char *alias = g_PluginMngr.LookupAlias(file);
+				if (alias)
+				{
+					file = alias;
+				}
+
 				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
 				{
 					g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s", file);
@@ -410,11 +416,104 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				return;
 			}
+		} else if ( (strcmp(command, "alias") == 0) ||
+					(strcmp(command, "aliases") == 0) ) {
+			if (args >= 4)
+			{
+				const char *alias = e->Cmd_Argv(2);
+				const char *value = e->Cmd_Argv(3);
+
+				g_PluginMngr.SetAlias(alias, value);
+				if (value[0] == '\0')
+				{
+					CONMSG("Deleted alias: %s.\n", alias);
+				} else {
+					CONMSG("Set alias \"%s\" to: %s\n", alias, value);
+				}
+			} else if (args >= 3) {
+				const char *alias = e->Cmd_Argv(2);
+				const char *value = g_PluginMngr.LookupAlias(alias);
+				if (value)
+				{
+					CONMSG("Alias \"%s\" is set to: %s\n", alias, value);
+				} else {
+					CONMSG("Alias \"%s\" was not found.\n", alias);
+				}
+			} else {
+				SourceHook::List<SourceMM::CNameAlias *>::iterator iter, end;
+				SourceMM::CNameAlias *p;
+
+				iter = g_PluginMngr._alias_begin();
+				end = g_PluginMngr._alias_end();
+				size_t total = 0;
+				if (iter != end)
+				{
+					CONMSG("%-10.9s %s\n", "Alias", "File");
+					CONMSG(" --- \n");
+					for (; iter!=end; iter++)
+					{
+						p = (*iter);
+						CONMSG("%-10.9s %s\n", p->alias.c_str(), p->value.c_str());
+						total++;
+					}
+					CONMSG(" --- \n");
+					CONMSG("%d aliases total.\n", total);
+				} else {
+					CONMSG("No aliases found.\n");
+				}
+			}
+			return;
 		} else if (strcmp(command, "unload") == 0) {
 			if (args >= 3)
 			{
-				int id = atoi(e->Cmd_Argv(2));
+				const char *file = e->Cmd_Argv(2);
+				int id = atoi(file);
 				char error[255]={0};
+
+				if (id == 0 && isalpha(file[0]))
+				{
+					char full_path[255];
+					const char *alias = g_PluginMngr.LookupAlias(file);
+
+					if (alias)
+					{
+						file = alias;
+					}
+
+					/* first check if it's a known filename */
+					if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
+					{
+						g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s", file);
+						snprintf(full_path, sizeof(full_path)-1, "%s", file);
+					} else {
+						const char *ext = UTIL_GetExtension(file);
+#if defined WIN32 || defined _WIN32
+						ext = ext ? "" : ".dll";
+#else
+						ext = ext ? "" : "_i486.so";
+#endif
+						g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
+					}
+
+					SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator iter, end;
+					SourceMM::CPluginManager::CPlugin *pl;
+					iter = g_PluginMngr._begin();
+					end = g_PluginMngr._end();
+					for (; iter!=end; iter++)
+					{
+						pl = (*iter);
+						if (strcmp(pl->m_File.c_str(), full_path) == 0)
+						{
+							id = pl->m_Id;
+							break;
+						}
+					}
+					if (id == 0)
+					{
+						CONMSG("Plugin \"%s\" not found.\n", full_path);
+						return;
+					}
+				}
 
 				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
 				{
@@ -423,13 +522,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				}
 
 				CONMSG("Plugin %d unloaded.\n", id);
-
-				return;
 			} else {
 				CONMSG("Usage: meta unload <id>\n");
-
-				return;
 			}
+			return;
 		} else if (strcmp(command, "force_unload") == 0) {
 			if (args >= 3)
 			{
@@ -485,6 +581,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	CONMSG("Metamod:Source Menu\n");
 	CONMSG("usage: meta <command> [arguments]\n");
+	CONMSG("  alias        - list or set an alias\n");
 	CONMSG("  clear        - Unload all plugins forcefully\n");
 	CONMSG("  cmds         - Show plugin commands\n");
 	CONMSG("  cvars        - Show plugin cvars\n");
