@@ -76,6 +76,7 @@ namespace
 	void Handler_Func2(int x)
 	{
 		ADD_STATE(State_Func2H_Called(META_IFACEPTR(void), x));
+		RETURN_META_MNEWPARAMS(MRES_IGNORED, TheWall_Func2, (0x87654321));
 	}
 	short Handler_Func3()
 	{
@@ -85,7 +86,9 @@ namespace
 	short Handler_Func4(int x)
 	{
 		ADD_STATE(State_Func4H_Called(META_IFACEPTR(void), x));
-		return 0;
+
+		// newparams (recall) using the manual hook declaration!
+		RETURN_META_VALUE_MNEWPARAMS(MRES_IGNORED, 0, TheWall_Func4, (0x12345678));
 	}
 
 	struct AnotherBrick
@@ -166,12 +169,12 @@ bool TestManual(std::string &error)
 		new State_Func1H_Called(p),
 		new State_Func1_Called(p),
 		new State_Func2H_Called(p, 200),
-		new State_Func2_Called(p, 200),
+		new State_Func2_Called(p, 0x87654321),
 		new State_Func3H_Called(p),
 		new State_Func3_Called(p),
 		new State_Return(3),
 		new State_Func4H_Called(p, 400),
-		new State_Func4_Called(p, 400),
+		new State_Func4_Called(p, 0x12345678),
 		new State_Return(4),
 		NULL), "Part 2");
 
@@ -225,12 +228,12 @@ bool TestManual(std::string &error)
 		new State_Func1H_Called(p),
 		new State_Func1_Called(p),
 		new State_Func2H_Called(p, 200),
-		new State_Func2_Called(p, 200),
+		new State_Func2_Called(p, 0x87654321),
 		new State_Func3H_Called(p),
 		new State_Func3_Called(p),
 		new State_Return(3),
 		new State_Func4H_Called(p, 400),
-		new State_Func4_Called(p, 400),
+		new State_Func4_Called(p, 0x12345678),
 		new State_Return(4),
 		NULL), "Part 3");
 
@@ -304,15 +307,15 @@ bool TestManual(std::string &error)
 		new State_Func1H_Called(p),
 		//new State_Func1_Called(p),
 		new State_Func2H_Called(p, 200),
-		new State_Func2H_Called(p, 200),
-		new State_Func2_Called(p, 200),
+		new State_Func2H_Called(p, 0x87654321),
+		new State_Func2_Called(p, 0x87654321),
 		new State_Func3H_Called(p),
 		new State_Func3H_Called(p),
 		new State_Func3_Called(p),
 		new State_Return(3),
 		new State_Func4H_Called(p, 400),
-		new State_Func4H_Called(p, 400),
-		new State_Func4_Called(p, 400),
+		new State_Func4H_Called(p, 0x12345678),
+		new State_Func4_Called(p, 0x12345678),
 		new State_Return(4),
 		NULL), "Part 4");
 

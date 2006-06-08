@@ -454,9 +454,8 @@ namespace SourceHook
 #define RETURN_META_VALUE(result, value)	do { SET_META_RESULT(result); return (value); } while(0)
 
 
-// NEVER-EVER call these from post hooks!
-// also, only call it from the hook handlers directly!
-// :TODO: enforce it
+// only call these from the hook handlers directly!
+// :TODO: enforce it ?
 
 // Why take a memfuncptr instead of iface and func when we have to deduce the iface anyway now?
 // Well, without it, there'd be no way to specify which overloaded version we want in _VALUE
@@ -482,6 +481,61 @@ namespace SourceHook
 		} \
 		RETURN_META_VALUE(MRES_SUPERCEDE, \
 			(SourceHook::RecallGetIface(SH_GLOB_SHPTR, memfuncptr)->*(memfuncptr)) newparams); \
+	} while (0)
+
+// :TODO: thisptroffs in MNEWPARAMS ??
+
+#if SH_COMP == SH_COMP_MSVC
+
+#define SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname) \
+	union \
+	{ \
+		SH_MFHCls(hookname)::ECMFP mfp; \
+		void *addr; \
+	} u; \
+	SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
+	u.addr = (*reinterpret_cast<void***>(reinterpret_cast<char*>(thisptr) + SH_MFHCls(hookname)::ms_MFI.vtbloffs))[ \
+		SH_MFHCls(hookname)::ms_MFI.vtblindex];
+
+#elif SH_COMP == SH_COMP_GCC
+
+#define SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname) \
+	union \
+	{ \
+		SH_MFHCls(hookname)::ECMFP mfp; \
+		struct \
+		{ \
+			void *addr; \
+			intptr_t adjustor; \
+		} s; \
+	} u; \
+	SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
+	u.s.addr = (*reinterpret_cast<void***>(reinterpret_cast<char*>(thisptr) + SH_MFHCls(hookname)::ms_MFI.vtbloffs))[ \
+		SH_MFHCls(hookname)::ms_MFI.vtblindex]; \
+	u.s.adjustor = 0;
+
+#endif
+
+#define RETURN_META_MNEWPARAMS(result, hookname, newparams) \
+	do { \
+		SET_META_RESULT(result); \
+		SH_GLOB_SHPTR->DoRecall(); \
+		SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname); \
+		(thisptr->*(u.mfp)) newparams; \
+		RETURN_META(MRES_SUPERCEDE); \
+	} while (0)
+
+#define RETURN_META_VALUE_MNEWPARAMS(result, value, hookname, newparams) \
+	do { \
+		SET_META_RESULT(result); \
+		SH_GLOB_SHPTR->DoRecall(); \
+		if ((result) >= MRES_OVERRIDE) \
+		{ \
+			/* see RETURN_META_VALUE_NEWPARAMS */ \
+			SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(SH_GLOB_SHPTR, value); \
+		} \
+		SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname); \
+		RETURN_META_VALUE(MRES_SUPERCEDE, (thisptr->*(u.mfp)) newparams); \
 	} while (0)
 
 /**
@@ -966,6 +1020,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		virtual rettype Func(@[$2,1,$1|, :param$2 p$2@]) \
 		{ SH_HANDLEFUNC((@[$2,1,$1|, :param$2@]), (@[$2,1,$1|, :p$2@]), rettype); } \
 		typedef rettype(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1|, :param$2@]); \
+		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
 	const int __SourceHook_ParamSizesM_##hookname[] = { 0@[$2,1,$1:, sizeof(param$2)@] }; \
@@ -1185,6 +1240,12 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :
 
 namespace SourceHook
 {
+	template <class RetType>
+	void SetOverrideResult(ISourceHook *shptr, const RetType res)
+	{
+		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
+	}
+
 @[$1,0,$a:
 	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
 	void SetOverrideResult(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]), const RetType res)
