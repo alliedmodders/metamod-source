@@ -1,3 +1,7 @@
+2006/06/14 1.2.3:
+ - Added SourceHook API for manual recalls: RETURN_META_(VALUE_)MNEWPARAMS
+ - Added support for ServerGameDLL005 (latest HL2DM update)
+
 2006/05/25 1.2.2:
  - Added the ability to "alias" plugin names in metaplugins.ini.
  - Added 'meta alias" command.
