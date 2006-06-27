@@ -253,7 +253,11 @@ begin
   { Unpack }
   frmMain.ggeItem.Progress := 0;
   AddStatus('Unpacking files...', clBlack);
-  Unpack;
+  if not Unpack() then begin
+    AddStatus('No files attached!', clRed);
+    Screen.Cursor := crDefault;
+    exit;
+  end;
   AddDone;
   frmMain.ggeAll.Progress := 2;
   frmMain.ggeItem.Progress := 1;
@@ -428,7 +432,11 @@ begin
   { Unpack }
   frmMain.ggeItem.Progress := 0;
   AddStatus('Unpacking files...', clBlack);
-  Unpack;
+  if not Unpack() then begin
+    AddStatus('No files attached!', clRed);
+    Screen.Cursor := crDefault;
+    exit;
+  end;
   AddDone;
   frmMain.ggeAll.Progress := 2;
   frmMain.ggeItem.Progress := 1;

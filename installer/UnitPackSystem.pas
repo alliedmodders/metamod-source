@@ -8,7 +8,7 @@ procedure CompressFiles(Files : TStrings; const Filename : String);
 function DecompressStream(Stream : TMemoryStream; DestDirectory : String): Boolean;
 function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
 function LoadFromFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
-procedure Unpack;
+function Unpack: Boolean;
 
 implementation
 
@@ -164,15 +164,17 @@ end;
 
 { Unpack function }
 
-procedure Unpack;
+function Unpack: Boolean;
 var eStream: TMemoryStream;
 begin
   eStream := TMemoryStream.Create;
   try
     LoadFromFile(ParamStr(0), eStream); // Get ZIP
     DecompressStream(eStream, ExtractFilePath(ParamStr(0))); // Unpack files
+
+    Result := True;
   except
-    raise Exception.Create('No files attached!'); 
+    Result := False;
   end;
   eStream.Free;
 end;

@@ -66,7 +66,7 @@ type
     lblStep4: TLabel;
     jspInstallProgress: TJvStandardPage;
     pnlHeader5: TPanel;
-    imgIcon5: TImage;
+    imgIcon4: TImage;
     lblTitle5: TLabel;
     lblSubTitle5: TLabel;
     ggeAll: TFlatGauge;
@@ -82,12 +82,11 @@ type
     bvlSpacer5: TBevel;
     jspSelectMod: TJvStandardPage;
     pnlSelectMod: TPanel;
-    imgIcon6: TImage;
+    imgIcon5: TImage;
     lblSelectMod: TLabel;
     lblSelectModInfo: TLabel;
     bvlSelectMod: TBevel;
     lblInfo: TLabel;
-    lstMods: TmxFlatListBox;
     chkPassive: TFlatCheckBox;
     lblStep3: TLabel;
     pnlOS: TPanel;
@@ -99,6 +98,9 @@ type
     frbStandaloneServer: TFlatRadioButton;
     tmrSpeed: TTimer;
     IdLogFile: TIdLogFile;
+    shpMods: TShape;
+    trvMods: TTreeView;
+    FlatRadioButton1: TFlatRadioButton;
     procedure jvwStepsCancelButtonClick(Sender: TObject);
     procedure cmdCancelClick(Sender: TObject);
     procedure cmdNextClick(Sender: TObject);
@@ -107,7 +109,6 @@ type
     procedure cmdConnectClick(Sender: TObject);
     procedure jplWizardChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure lstModsClick(Sender: TObject);
     procedure cmdProxySettingsClick(Sender: TObject);
     procedure txtPortChange(Sender: TObject);
     procedure trvDirectoriesExpanded(Sender: TObject; Node: TTreeNode);
@@ -120,6 +121,7 @@ type
       var AllowExpansion: Boolean);
     procedure trvDirectoriesCollapsing(Sender: TObject; Node: TTreeNode;
       var AllowCollapse: Boolean);
+    procedure trvModsClick(Sender: TObject);
   private
     OldProgress: Integer;
     CurrProgress: Integer;
@@ -130,7 +132,7 @@ type
 var
   frmMain: TfrmMain;
 
-var VERSION: String = '1.2.3';
+var VERSION: String = '1.2.4';
 
 implementation
 
@@ -154,6 +156,7 @@ var ePath: String;
     eStr: TStringList;
     CurNode: TTreeNode;
     eOS: TOS;
+    i: integer;
 begin
   { FTP }
   if jplWizard.ActivePage = jspFTP then begin
@@ -198,55 +201,58 @@ begin
   else if jplWizard.ActivePage = jspSelectMod then begin
     { Dedicated Server }
     if (frbDedicatedServer.Checked) or (frbStandaloneServer.Checked) then begin
-      jspInstallProgress.Show;
-      ePath := lstMods.Items[lstMods.ItemIndex];
+      ePath := trvMods.Selected.Text;
       if ePath = 'Counter-Strike:Source' then
         ePath := 'cstrike'
       else if ePath = 'Day of Defeat:Source' then
         ePath := 'dod'
       else
         ePath := 'hl2mp';
+      ePath := 'SteamApps\' + trvMods.Selected.Parent.Text + '\source dedicated server\' + ePath;
       // install it
       if frbDedicatedServer.Checked then begin
-        if DirectoryExists(SteamPath + ePath) then
-          InstallDedicated(IncludeTrailingPathDelimiter(SteamPath + ePath), True)
+        if DirectoryExists(SteamPath + ePath) then begin
+          jspInstallProgress.Show;
+          InstallDedicated(IncludeTrailingPathDelimiter(SteamPath + ePath), True);
+        end
         else begin
           MessageBox(Handle, 'Error: The directory of the mod you selected doesn''t exist any more. Run Dedicated Server with the chosen mod and try again.', PChar(Application.Title), MB_ICONERROR);
-          Application.Terminate;
+          jspSelectMod.Show;
           exit;
         end;
       end
       else begin
-        if DirectoryExists(StandaloneServer + ePath) then
+        if DirectoryExists(StandaloneServer + ePath) then begin
+          jspInstallProgress.Show;
           InstallDedicated(IncludeTrailingPathDelimiter(StandaloneServer + ePath), False)
+        end
         else begin
           MessageBox(Handle, 'Error: The directory of the mod you selected doesn''t exist (any more). Run Half-Life Dedicated Server with the chosen mod again and restart.', PChar(Application.Title), MB_ICONERROR);
-          Application.Terminate;
+          jspSelectMod.Show;
           exit;
         end;
       end;
     end;
     { Listen Server }
     if frbListenServer.Checked then begin
-      ePath := lstMods.Items[lstMods.ItemIndex];
+      ePath := trvMods.Selected.Text;
       if ePath = 'Counter-Strike:Source' then
-        ePath := SteamPath + 'counter-strike source\cstrike'
+        ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\counter-strike source\cstrike'
       else if ePath = 'Half-Life 2 Deathmatch' then
-        ePath := SteamPath + 'half-life 2 deathmatch\hl2mp'
+        ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\half-life 2 deathmatch\hl2mp'
       else
-        ePath := SteamPath + 'Day Of Defeat source\dod';
+        ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\day of defeat source\dod';
 
       if Pos(SteamPath, ePath) = 0 then
         MessageBox(Handle, 'An error occured. Please report this bug to the Metamod:Source team and post a new thread on the forums of www.amxmodx.org.', PChar(Application.Title), MB_ICONSTOP)
       else begin
-        if not FileExists(ePath + '\gameinfo.txt') then begin
-          MessageBox(Handle, 'You have to play this game once before installing Metamod:Source. Do this and try again.', PChar(Application.Title), MB_ICONWARNING);
+         if not FileExists(ePath + '\gameinfo.txt') then begin
+          MessageBox(Handle, 'You have to play this game once before installing Metamod:Source. Do that and try again.', PChar(Application.Title), MB_ICONWARNING);
           exit;
         end;
 
         jspInstallProgress.Show;
-        ePath := IncludeTrailingPathDelimiter(ePath);
-        InstallListen(ePath);
+        InstallListen(IncludeTrailingPathDelimiter(ePath));
       end;
     end;
     { Custom mod below }
@@ -259,21 +265,33 @@ begin
       try
         eRegistry.RootKey := HKEY_CURRENT_USER;
         if eRegistry.OpenKey('Software\Valve\Steam', False) then begin
-          ePath := eRegistry.ReadString('ModInstallPath');
-          ePath := Copy(ePath, 1, Length(ePath) -10) + '\source dedicated server\';
+          ePath := eRegistry.ReadString('SteamPath');
+          ePath := IncludeTrailingPathDelimiter(StringReplace(ePath, '/', '\', [rfReplaceAll]));
+          SteamPath := ePath;
+
+          ePath := ePath + 'SteamApps\';
           if DirectoryExists(ePath) then begin
-            SteamPath := ePath;
-            lstMods.Clear;
+            trvMods.Items.Clear;
             // Check Mods
-            if DirectoryExists(SteamPath + 'cstrike') then
-              lstMods.Items.Add('Counter-Strike:Source');
-            if DirectoryExists(SteamPath + 'dod') then
-              lstMods.Items.Add('Day of Defeat:Source');
-            if DirectoryExists(SteamPath + 'hl2mp') then
-              lstMods.Items.Add('Half-Life 2 Deatmatch');
+            eStr := GetAllFiles(ePath + '*.*', faDirectory, False, True, False);
+            for i := 0 to eStr.Count -1 do begin
+              CurNode := trvMods.Items.Add(nil, eStr[i]);
+
+              if DirectoryExists(ePath + eStr[i] + '\source dedicated server\cstrike') then
+                trvMods.Items.AddChild(CurNode, 'Counter-Strike:Source');
+              if DirectoryExists(ePath + eStr[i] + '\source dedicated server\dod') then
+                trvMods.Items.AddChild(CurNode, 'Day of Defeat:Source');
+              if DirectoryExists(ePath + eStr[i] + '\source dedicated server\hl2mp') then
+                trvMods.Items.AddChild(CurNode, 'Half-Life 2 Deatmatch');
+
+              if CurNode.Count = 0 then
+                CurNode.Free
+              else
+                CurNode.Expand(False);
+            end;
             // Misc
             jspSelectMod.Show;
-            lstMods.ItemIndex := -1;
+            trvMods.Selected := nil;
             cmdNext.Enabled := False;
           end
           else
@@ -290,21 +308,33 @@ begin
       try
         eRegistry.RootKey := HKEY_CURRENT_USER;
         if eRegistry.OpenKey('Software\Valve\Steam', False) then begin
-          ePath := eRegistry.ReadString('ModInstallPath') + '\';
-          lstMods.Clear;
-          ePath := Copy(ePath, 1, Length(ePath) -10);
+          ePath := eRegistry.ReadString('SteamPath');
+          ePath := IncludeTrailingPathDelimiter(StringReplace(ePath, '/', '\', [rfReplaceAll]));
+          SteamPath := ePath;
+
+          ePath := ePath + 'SteamApps\';
           if DirectoryExists(ePath) then begin
-            SteamPath := ePath;
+            trvMods.Items.Clear;
             // Check Mods
-            if DirectoryExists(SteamPath + 'counter-strike source') then
-              lstMods.Items.Add('Counter-Strike:Source');
-            if DirectoryExists(SteamPath + 'half-life 2 deathmatch') then
-              lstMods.Items.Add('Half-Life 2 Deathmatch');
-            if DirectoryExists(SteamPath + 'Day Of Defeat source') then
-              lstMods.Items.Add('Day of Defeat: Source');
+            eStr := GetAllFiles(ePath + '*.*', faDirectory, False, True, False);
+            for i := 0 to eStr.Count -1 do begin
+              CurNode := trvMods.Items.Add(nil, eStr[i]);
+
+              if DirectoryExists(ePath + eStr[i] + '\counter-strike source') then
+                trvMods.Items.AddChild(CurNode, 'Counter-Strike:Source');
+              if DirectoryExists(ePath + eStr[i] + '\day of defeat source') then
+                trvMods.Items.AddChild(CurNode, 'Day of Defeat:Source');
+              if DirectoryExists(ePath + eStr[i] + '\half-life 2 deathmatch') then
+                trvMods.Items.AddChild(CurNode, 'Half-Life 2 Deatmatch');
+
+              if CurNode.Count = 0 then
+                CurNode.Free
+              else
+                CurNode.Expand(False);
+            end;
             // Misc
             jspSelectMod.Show;
-            lstMods.ItemIndex := -1;
+            trvMods.Selected := nil;
             cmdNext.Enabled := False;
           end
           else
@@ -323,12 +353,13 @@ begin
         if eRegistry.OpenKey('Software\Valve\HLServer', False) then begin
           StandaloneServer := IncludeTrailingPathDelimiter(eRegistry.ReadString('InstallPath'));
           if DirectoryExists(StandaloneServer + 'cstrike') then
-            lstMods.Items.Add('Counter-Strike:Source');
+            trvMods.Items.Add(nil, 'Counter-Strike:Source');
           if DirectoryExists(StandaloneServer + 'dod') then
-            lstMods.Items.Add('Day of Defeat:Source');
+            trvMods.Items.Add(nil, 'Day of Defeat:Source');
           if DirectoryExists(StandaloneServer + 'hl2mp') then
-            lstMods.Items.Add('Half-Life 2 Deatmatch');    
+            trvMods.Items.Add(nil, 'Half-Life 2 Deatmatch');
           jspSelectMod.Show;
+          cmdNext.Enabled := False;
         end
         else
           MessageBox(Handle, 'You haven''t installed Half-Life Dedicated Server yet!',  'Error', MB_ICONWARNING);
@@ -512,11 +543,6 @@ begin
   rtfDetails.Clear;
 end;
 
-procedure TfrmMain.lstModsClick(Sender: TObject);
-begin
-  cmdNext.Enabled := lstMods.ItemIndex <> -1;
-end;
-
 procedure TfrmMain.cmdProxySettingsClick(Sender: TObject);
 begin
   frmProxy.ShowModal;
@@ -646,6 +672,14 @@ procedure TfrmMain.trvDirectoriesCollapsing(Sender: TObject;
 begin
   Node.ImageIndex := 0;
   Node.SelectedIndex := 0;
+end;
+
+procedure TfrmMain.trvModsClick(Sender: TObject);
+begin
+  if Assigned(trvMods.Selected) then
+    cmdNext.Enabled := Assigned(trvMods.Selected.Parent)
+  else
+    cmdNext.Enabled := False;
 end;
 
 end.
