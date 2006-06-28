@@ -314,10 +314,13 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				size_t ptr_len = strlen(ptr);
 				if (ptr[ptr_len] == '/' || ptr[ptr_len] == '\\')
 					ptr[--ptr_len] = '\0';
+
 				//no need to append "bin"
 				if (gamebin)
 				{
 					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, ptr, SERVER_DLL);
+				} else if (ptr[0] == NULL) {
+					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, "bin", SERVER_DLL);
 				} else {
 					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
 				}
@@ -361,6 +364,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					pInfo->pGameDLL = NULL;
 					pInfo->pGameClients = (IServerGameClients *)((fn)(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
 					gamedll_list.push_back(pInfo);
+					break;
 				}
 			}
 		}
@@ -374,7 +378,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 		if (strncmp(iface, str, len) == 0)
 		{
-			//This is the interface we want!  Right now we support versions 3 and 4.
+			//This is the interface we want!  Right now we support versions 3 through 5.
 			int version = atoi(&(iface[len]));
 			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
 			if (version < MIN_GAMEDLL_VERSION || version > MAX_GAMEDLL_VERSION)

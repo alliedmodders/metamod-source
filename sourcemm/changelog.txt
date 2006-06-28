@@ -1,3 +1,8 @@
+2006/xx/xx 1.2.4:
+ - Fixed bug where Metamod:Source could load the wrong GameDLL and/or load more than one
+    GameDLL. This issue occured in HL2 CTF, SourceForts, or any other mod that relied on
+    files from another mod directory.
+
 2006/06/14 1.2.3:
  - Added SourceHook API for manual recalls: RETURN_META_(VALUE_)MNEWPARAMS
  - Added support for ServerGameDLL005 (latest HL2DM update)
