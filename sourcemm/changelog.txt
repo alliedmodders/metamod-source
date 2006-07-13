@@ -1,4 +1,6 @@
 2006/xx/xx 1.2.4:
+ - Added some extra information to the "meta game" command: Description and Interface. For
+    example, CS:S would display "Counter-Strike: Source" and "ServerGameDLL004."
  - Fixed bug where Metamod:Source could load the wrong GameDLL and/or load more than one
     GameDLL. This issue occured in HL2 CTF, SourceForts, or any other mod that relied on
     files from another mod directory.
@@ -9,7 +11,7 @@
 
 2006/05/25 1.2.2:
  - Added the ability to "alias" plugin names in metaplugins.ini.
- - Added 'meta alias" command.
+ - Added "meta alias" command.
  - Added SourceHook API for manual callclasses.
  - Added support for the latest Source engine (ServerGameDLL005).
  - Added API for printing text in a client's console with ClientConPrintf. This does the

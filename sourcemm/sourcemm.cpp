@@ -47,6 +47,7 @@ bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *dllExec;
+int g_GameDllVersion = 0;
 
 void ClearGamedllList();
 
@@ -379,12 +380,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		if (strncmp(iface, str, len) == 0)
 		{
 			//This is the interface we want!  Right now we support versions 3 through 5.
-			int version = atoi(&(iface[len]));
+			g_GameDllVersion = atoi(&(iface[len]));
 			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
-			if (version < MIN_GAMEDLL_VERSION || version > MAX_GAMEDLL_VERSION)
+			if (g_GameDllVersion < MIN_GAMEDLL_VERSION || g_GameDllVersion > MAX_GAMEDLL_VERSION)
 			{
 				//maybe this will get used in the future
-				sizeTooBig = version;
+				sizeTooBig = g_GameDllVersion;
 				if (ret)
 					*ret = IFACE_FAILED;
 			}

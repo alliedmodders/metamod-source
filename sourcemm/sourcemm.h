@@ -112,4 +112,7 @@ extern SourceHook::ISourceHook *g_SHPtr;
 /** @brief We have our own internal plugin id... */
 extern PluginId g_PLID;
 
+/** @brief ServerGameDLL version that is currently loaded */
+extern int g_GameDllVersion;
+
 #endif //_INCLUDE_SOURCEMM_H

@@ -151,8 +151,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "game") == 0) {
 			CONMSG("GameDLL Information\n");
-			CONMSG("  Mod path: %s\n", g_ModPath.c_str());
-			CONMSG("  Dll path: %s\n", g_BinPath.c_str());
+			CONMSG("  Description: %s\n", g_GameDll.pGameDLL->GetGameDescription());
+			CONMSG("  Mod Path: %s\n", g_ModPath.c_str());
+			CONMSG("  DLL Path: %s\n", g_BinPath.c_str());
+			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
 
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
