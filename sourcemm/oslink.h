@@ -19,10 +19,14 @@
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define WIN32_LEAN_AND_MEAN
 	#define OS_WIN32
+	#if defined _MSC_VER && _MSC_VER >= 1400
+		#undef ARRAYSIZE
+	#else
+		#define mkdir _mkdir
+	#endif
 	#include <windows.h>
 	#include <io.h>
 	#include <direct.h>
-	#define mkdir(a) _mkdir(a)
 	#define		dlmount(x)		LoadLibrary(x)
 	#define		dlsym(x, s)		GetProcAddress(x, s)
 	#define		dlclose(x)		FreeLibrary(x)
