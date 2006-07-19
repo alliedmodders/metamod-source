@@ -31,10 +31,6 @@
 	#define		dlsym(x, s)		GetProcAddress(x, s)
 	#define		dlclose(x)		FreeLibrary(x)
 	const char*	dlerror();
-	#define	PATH_SEP_STR	"\\"
-	#define PATH_SEP_CHAR	'\\'
-	#define ALT_SEP_CHAR	'/'
-	#define SERVER_DLL		"server.dll"
 #elif defined __linux__
 	#define OS_LINUX
 	#include <dlfcn.h>
@@ -43,19 +39,12 @@
 	#include <dirent.h>
 	#define		dlmount(x)		dlopen(x,RTLD_NOW)
 	typedef		void*			HINSTANCE;
-	#define	PATH_SEP_STR	"/"
-	#define PATH_SEP_CHAR	'/'
-	#define ALT_SEP_CHAR	'\\'
-	#define	stricmp				strcasecmp
-	#define SERVER_DLL		"server_i486.so"
 #endif
 
 #if defined __linux__
 	extern int errno;
 	int GetLastError();
 #endif
-
-bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define SMM_API extern "C" __declspec(dllexport)
@@ -67,11 +56,10 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
 #elif defined __GNUC__
-#include <stdint.h>
-#if !__GLIBC_HAVE_LONG_LONG
+# if !__GLIBC_HAVE_LONG_LONG
 	typedef long long			int64_t;
+# endif
 	typedef unsigned long long	uint64_t;
-#endif
 #endif
 
 #ifndef __linux__
