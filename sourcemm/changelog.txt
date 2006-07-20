@@ -4,6 +4,8 @@
  - Fixed bug where Metamod:Source could load the wrong GameDLL and/or load more than one
     GameDLL. This issue occured in HL2 CTF, SourceForts, or any other mod that relied on
     files from another mod directory.
+ - Fixed bug where returning false in Load() after adding a Metamod event listener or
+    hooking a function could cause a crash.
 
 2006/06/14 1.2.3:
  - Added SourceHook API for manual recalls: RETURN_META_(VALUE_)MNEWPARAMS

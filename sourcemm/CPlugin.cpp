@@ -384,6 +384,10 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 
 	if (pl->m_Lib && (pl->m_Status < Pl_Paused))
 	{
+		pl->m_Events.clear();
+		g_SourceHook.UnloadPlugin(pl->m_Id);
+		UnregAllConCmds(pl);
+
 		dlclose(pl->m_Lib);
 		pl->m_Lib = NULL;
 		pl->m_API = NULL;
