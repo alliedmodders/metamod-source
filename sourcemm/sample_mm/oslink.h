@@ -21,12 +21,13 @@
 	#define OS_WIN32
 	#if defined _MSC_VER && _MSC_VER >= 1400
 		#undef ARRAYSIZE
-	#else
-		#define mkdir _mkdir
 	#endif
 	#include <windows.h>
 	#include <io.h>
 	#include <direct.h>
+	#ifndef mkdir
+		#define mkdir(a) _mkdir(a)
+	#endif
 	#define		dlmount(x)		LoadLibrary(x)
 	#define		dlsym(x, s)		GetProcAddress(x, s)
 	#define		dlclose(x)		FreeLibrary(x)
@@ -56,10 +57,11 @@
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
 #elif defined __GNUC__
-# if !__GLIBC_HAVE_LONG_LONG
+#include <stdint.h>
+#if !__GLIBC_HAVE_LONG_LONG
 	typedef long long			int64_t;
-# endif
 	typedef unsigned long long	uint64_t;
+#endif
 #endif
 
 #ifndef __linux__

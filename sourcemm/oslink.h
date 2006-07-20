@@ -21,12 +21,13 @@
 	#define OS_WIN32
 	#if defined _MSC_VER && _MSC_VER >= 1400
 		#undef ARRAYSIZE
-	#else
-		#define mkdir _mkdir
 	#endif
 	#include <windows.h>
 	#include <io.h>
 	#include <direct.h>
+	#ifndef mkdir
+		#define mkdir(a) _mkdir(a)
+	#endif
 	#define		dlmount(x)		LoadLibrary(x)
 	#define		dlsym(x, s)		GetProcAddress(x, s)
 	#define		dlclose(x)		FreeLibrary(x)
