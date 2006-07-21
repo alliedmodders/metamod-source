@@ -172,6 +172,17 @@ bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFact
 //This is where the magic happens
 SMM_API void *CreateInterface(const char *iface, int *ret)
 {
+	// Prevent loading of self as a SourceMM plugin or Valve server plugin :x
+	const char *vspIface = "ISERVERPLUGINCALLBACKS";
+	if (strcmp(iface, PLAPI_NAME) == 0 || strnicmp(iface, vspIface, strlen(vspIface)) == 0)
+	{
+		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
+
+		if (ret)
+			*ret = IFACE_FAILED;
+		return NULL;
+	}
+
 	if (!gParsedGameInfo)
 	{
 		gParsedGameInfo = true;
@@ -180,7 +191,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		getcwd(curpath, sizeof(curpath)-1);
 		if (!GetFileOfAddress((void *)CreateInterface, dllpath, sizeof(dllpath)-1))
 		{
-			Error("GetFileOfAddress() failed! Metamod cannot load.");
+			Error("GetFileOfAddress() failed! Metamod cannot load.\n");
 			return NULL;
 		}
 		SourceHook::String s_dllpath(dllpath);
@@ -213,7 +224,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		//     c:\gaben.dll
 		if (path_len > dll_len)
 		{
-			Error("Could not detect GameDLL path! Metamod cannot load[1].");
+			Error("Could not detect GameDLL path! Metamod cannot load[1].\n");
 			return NULL;
 		}
 
@@ -229,7 +240,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		if ( ((cmp)(curpath, dllpath, path_len)) != 0 )
 		{
 			//:TODO: In this case, we should read /proc/self/maps and find srcds!
-			Error("Could not detect GameDLL path! Metamod cannot load[2].");
+			Error("Could not detect GameDLL path! Metamod cannot load[2].\n");
 			return NULL;
 		}
 		//this will skip past the dir and its separator char
@@ -241,7 +252,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			{
 				if (i == 0)
 				{
-					Error("Could not detect GameDLL path! Metamod cannot load[3].");
+					Error("Could not detect GameDLL path! Metamod cannot load[3].\n");
 					return NULL;
 				} else {
 					ptr[i] = '\0';
@@ -269,7 +280,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		FILE *fp = fopen(temp_path, "rt");
 		if (!fp)
 		{
-			Error("Unable to open gameinfo.txt!  Metamod cannot load.");
+			Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
 			return NULL;
 		}
 		char buffer[255];
@@ -411,7 +422,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			{
 				if (sizeTooBig)
 				{
-					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!", sizeTooBig);
+					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!\n", sizeTooBig);
 					if (ret)
 						*ret = IFACE_FAILED;
 					return NULL;
@@ -427,7 +438,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		} else {
 			//wtf do we do...
 			//:TODO: .. something a bit more intelligent?
-			Error("Engine requested unknown interface before GameDLL was known!");
+			Error("Engine requested unknown interface before GameDLL was known!\n");
 			return NULL;
 		}
 	}

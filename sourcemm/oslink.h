@@ -47,6 +47,7 @@
 	#define PATH_SEP_CHAR	'/'
 	#define ALT_SEP_CHAR	'\\'
 	#define	stricmp				strcasecmp
+	#define strnicmp			strncasecmp
 	#define SERVER_DLL		"server_i486.so"
 #endif
 
