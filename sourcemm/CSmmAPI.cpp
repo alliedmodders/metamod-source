@@ -145,15 +145,15 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 		return NULL;
 
 	//first check ours... we get first chance!
-	if (strcmp(iface, MMIFACE_SOURCEHOOK)==0)
+	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
 	{
 		if (_ret)
 			*_ret = IFACE_OK;
 		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
-	} else if (strcmp(iface, MMIFACE_PLMANAGER)==0) {
+	} else if (strcmp(iface, MMIFACE_PLMANAGER) == 0) {
 		if (_ret)
 			*_ret = IFACE_OK;
-		return static_cast<void *>(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
+		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
 
 	CPluginManager::CPlugin *pl;
