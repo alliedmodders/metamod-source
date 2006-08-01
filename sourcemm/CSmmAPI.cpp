@@ -308,7 +308,13 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 	for (i=length-1; i>=0; i--)
 	{
 		if (!isdigit(iface[i]))
+		{
+			if (i != length-1)
+			{
+				num = 1;
+			}
 			break;
+		}
 	}
 
 	if ( (num && ((int)maxlength <= length)) || (!num && ((int)maxlength <= length+3)) )
@@ -344,7 +350,7 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 			break;
 		if (num > max)
 			break;
-	} while ( num = FormatIface(_if, len) );
+	} while ( num = FormatIface(_if, len+1) );
 
 	delete[] _if;
 
