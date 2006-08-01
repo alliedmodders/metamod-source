@@ -1,6 +1,7 @@
 2006/xx/xx 1.2.4:
  - Added some extra information to the "meta game" command: Description and Interface. For
     example, CS:S would display "Counter-Strike: Source" and "ServerGameDLL004."
+ - Added some extra functionality to ISmmPluginManager.
  - Fixed bug where Metamod:Source could load the wrong GameDLL and/or load more than one
     GameDLL. This issue occured in HL2 CTF, SourceForts, or any other mod that relied on
     files from another mod directory.
@@ -10,6 +11,7 @@
     hooking a function could cause a crash instead of rejecting the plugin.
  - Fixed bug where trying to load Metamod:Source a second time as a SourceMM or Valve
     server plugin could cause a crash.
+ - Fixed a bug in FormatIface() that caused InterfaceSearch() to infinite loop.
 
 2006/06/14 1.2.3:
  - Added SourceHook API for manual recalls: RETURN_META_(VALUE_)MNEWPARAMS
