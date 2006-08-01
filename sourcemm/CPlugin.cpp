@@ -544,6 +544,20 @@ bool CPluginManager::QueryRunning(PluginId id, char *error, size_t maxlength)
 	return pl->m_API->QueryRunning(error, maxlength);
 }
 
+bool CPluginManager::QueryHandle(PluginId id, void *&handle)
+{
+	CPlugin *pl = FindById(id);
+
+	if (!pl)
+	{
+		return false;
+	}
+
+	handle = static_cast<void *>(pl->m_Lib);
+
+	return true;
+}
+
 PluginIter CPluginManager::_begin()
 {
 	return m_Plugins.begin();

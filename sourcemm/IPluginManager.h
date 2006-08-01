@@ -123,6 +123,15 @@ public:
 	 * @return			Status value
 	 */
 	virtual bool QueryRunning(PluginId id, char *error, size_t maxlength) =0;
+
+	/**
+	 * @brief Returns the handle of a plugin (OS dependent meaning)
+	 * 
+	 * @param id		Id of plugin
+	 * @param handle	By reference handle of plugin, if any
+	 * @return			True if plugin id is valid, false otherwise
+	 */
+	virtual bool QueryHandle(PluginId id, void *&handle) =0;
 };
 
 #endif //_INCLUDE_PLUGINMANAGER_H

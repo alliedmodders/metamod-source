@@ -35,8 +35,9 @@
  *  M 7: Changed template libraries (2005-08-11)
  *		 New loading structure mechanism
  *	     New SourceHook version
- *  C 8: New SourceHook version (2005-12-23)
+ *    8: New SourceHook version (2005-12-23)
  *       New ISmmAPI additions
+ *  C 9: New ISmmPluginManager additions
  */
 
 #define PLAPI_MIN_VERSION	7
@@ -86,6 +87,7 @@ namespace SourceMM
 	public:
 		bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
 		bool QueryRunning(PluginId id, char *error, size_t maxlength);
+		bool QueryHandle(PluginId id, void *&handle);
 
 		void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
 		void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
