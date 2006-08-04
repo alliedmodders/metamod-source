@@ -289,6 +289,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook\sh_stack.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\sourcehook\sh_string.h"
 				>
 			</File>
