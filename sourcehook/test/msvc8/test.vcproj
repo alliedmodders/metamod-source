@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="test"
 	ProjectGUID="{456BBA64-FF14-4292-8443-3BA79E4D84CC}"
 	RootNamespace="test"
@@ -427,6 +427,10 @@
 				RelativePath="..\testref.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\testrefret.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -491,7 +495,7 @@
 						>
 						<Tool
 							Name="VCCustomBuildTool"
-							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
+							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h 16&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
 							Outputs="..\..\sourcehook.h"
 						/>
 					</FileConfiguration>

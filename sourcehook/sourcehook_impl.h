@@ -25,8 +25,8 @@ IMPLEMENTATION INFO
 Protos ("Prototypes")
 	The purpose of protos is to provide the amount of type information about a function
 	which is required to be able to execute a function call without corrupting the stack.
-	Our protos do not fully do this, but they provide the size of the return value, the amount of
-	parameters, and the size of each parameter, which is enough for most situations,
+	Our protos do not fully do this, but they provide the size of the return value, the number of
+	parameters, and the size of each parameter, which is enough for most situations.
 
 	There are two version of protos:
 	OLD:

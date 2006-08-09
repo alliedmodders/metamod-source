@@ -79,6 +79,7 @@ DO_TEST(Manual);
 DO_TEST(Recall);
 DO_TEST(Multi);
 DO_TEST(Ref);
+DO_TEST(RefRet);
 
 int main(int argc, char *argv[])
 {
