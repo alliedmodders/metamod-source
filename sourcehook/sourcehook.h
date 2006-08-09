@@ -501,12 +501,12 @@ namespace SourceHook
 	{
 		inline static T* GetOrigRet(ISourceHook *shptr)
 		{
-			T &ref = *reinterpret_cast<const ReferenceCarrier<T&>::type *>(shptr->GetOrigRet());
+			T &ref = *reinterpret_cast<const typename ReferenceCarrier<T&>::type *>(shptr->GetOrigRet());
 			return &ref;
 		}
 		inline static T* GetOverrideRet(ISourceHook *shptr)
 		{
-			T &ref = *reinterpret_cast<const ReferenceCarrier<T&>::type *>(shptr->GetOverrideRet());
+			T &ref = *reinterpret_cast<const typename ReferenceCarrier<T&>::type *>(shptr->GetOverrideRet());
 			return &ref;
 		}
 	};
@@ -5842,7 +5842,7 @@ namespace SourceHook
 		void operator()(ISourceHook *shptr, T &res)
 		{
 			// overrideretptr points to ReferenceCarrier<T&>
-			*reinterpret_cast<ReferenceCarrier<T&>::type *>(shptr->GetOverrideRetPtr()) = res;
+			*reinterpret_cast<typename ReferenceCarrier<T&>::type *>(shptr->GetOverrideRetPtr()) = res;
 		}
 	};
 

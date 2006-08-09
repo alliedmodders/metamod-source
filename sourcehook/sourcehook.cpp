@@ -24,12 +24,12 @@
 namespace SourceHook
 {
 	template<>
-	int SourceHook::HashFunction<int>(const int & k)
+	int HashFunction<int>(const int & k)
 	{
 		return k;
 	}
 	template<>
-	int SourceHook::Compare<int>(const int & k1, const int & k2)
+	int Compare<int>(const int & k1, const int & k2)
 	{
 		if (k1 == k2)
 			return 0;

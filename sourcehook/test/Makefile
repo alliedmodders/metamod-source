@@ -33,13 +33,13 @@ $(BIN_DIR)/%.o: %.cpp $(HEADERS)
 	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
 
 ../sourcehook.h: ../generate/sourcehook.hxx
-	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) sourcehook.hxx sourcehook.h; cp sourcehook.h ..)
+	(cd ../generate; ./shworker.bin iter sourcehook.hxx sourcehook.h $(MAX_PARAMS); cp sourcehook.h ..)
 
 ../sourcehook.hxx: ../generate/sh_memfuncinfo.hxx
-	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) sh_memfuncinfo.hxx sh_memfuncinfo.h; cp sh_memfuncino.h ..)
+	(cd ../generate; ./shworker.bin iter sh_memfuncinfo.hxx sh_memfuncinfo.h $(MAX_PARAMS); cp sh_memfuncino.h ..)
 
 ../FastDelegate.hxx: ../generate/FastDelegate.hxx
-	(cd ../generate; ./shworker.bin iter $(MAX_PARAMS) FastDelegate.hxx FastDelegate.h; cp FastDelegate.h ..)
+	(cd ../generate; ./shworker.bin iter FastDelegate.hxx FastDelegate.h $(MAX_PARAMS); cp FastDelegate.h ..)
 	
 debug:
 	$(MAKE) all DEBUG=true
