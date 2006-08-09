@@ -686,21 +686,21 @@ bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char cons
 	RETURN_META_VALUE(MRES_IGNORED, false);
 }
 
-#if defined __GNUC__ && (__GNUC__ == 3)
-void * ::operator new(size_t size) {
+#if defined __GNUC__ && (__GNUC__ == 3 || __GNUC__ == 4)
+void * operator new(size_t size) {
 	return(calloc(1, size)); 
 }
 
-void * ::operator new[](size_t size) {
+void * operator new[](size_t size) {
 	return(calloc(1, size)); 
 }
 
-void ::operator delete(void * ptr) {
+void operator delete(void * ptr) {
 	if(ptr)
 		free(ptr);
 }
 
-void ::operator delete[](void * ptr) {
+void operator delete[](void * ptr) {
 	if(ptr)
 		free(ptr);
 }

@@ -25,7 +25,7 @@ namespace SourceMM
 	class CSmmAPI : public ISmmAPI
 	{
 	public:
-		CSmmAPI::CSmmAPI();
+		CSmmAPI();
 	public:
 		void LogMsg(ISmmPlugin *pl, const char *msg, ...);
 	public:

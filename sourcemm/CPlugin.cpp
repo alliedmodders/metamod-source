@@ -338,7 +338,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				snprintf(error, maxlen, "%s", dlerror());
 			pl->m_Status = Pl_Error;
 		} else {
-			CreateInterfaceFn pfn = reinterpret_cast<CreateInterfaceFn>(dlsym(pl->m_Lib, PL_EXPOSURE_C));
+			CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
 			if (!pfn)
 			{
 				if (error)

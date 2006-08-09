@@ -204,7 +204,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 #define ENGINEW32_OFFS	38
 #define IA32_CALL		0xE8
 
-bool vcmp(void *_addr1, void *_addr2, size_t len)
+bool vcmp(const void *_addr1, const void *_addr2, size_t len)
 {
 	unsigned char *addr1 = (unsigned char *)_addr1;
 	unsigned char *addr2 = (unsigned char *)_addr2;
