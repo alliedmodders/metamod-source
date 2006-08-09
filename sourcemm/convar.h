@@ -17,18 +17,36 @@
 
 #include "tier0/dbg.h"
 
+#ifdef _WIN32
+#define FORCEINLINE_CVAR FORCEINLINE
+#elif _LINUX
+#define FORCEINLINE_CVAR __inline__ FORCEINLINE
+#else
+#error "implement me"
+#endif
+
 // The default, no flags at all
 #define FCVAR_NONE				0 
 
 // Command to ConVars and ConCommands
+// ConVar Systems
 #define FCVAR_UNREGISTERED		(1<<0)	// If this is set, don't add to linked list, etc.
-#define FCVAR_LAUNCHER			(1<<1) // defined by launcher
+#define FCVAR_LAUNCHER			(1<<1)	// defined by launcher
 #define FCVAR_GAMEDLL			(1<<2)	// defined by the game DLL
 #define FCVAR_CLIENTDLL			(1<<3)  // defined by the client DLL
 #define FCVAR_MATERIAL_SYSTEM	(1<<4)	// Defined by the material system.
-#define FCVAR_STUDIORENDER		(1<<15)	// Defined by the material system.
+#define FCVAR_DATACACHE			(1<<19)	// Defined by the datacache system.
+#define FCVAR_STUDIORENDER		(1<<15)	// Defined by the studiorender system.
+#define FCVAR_FILESYSTEM		(1<<21)	// Defined by the file system.
 #define FCVAR_PLUGIN			(1<<18)	// Defined by a 3rd party plugin.
-#define FCVAR_CHEAT				(1<<14) // Only useable in singleplayer / debug / multiplayer & sv_cheats
+#define FCVAR_TOOLSYSTEM		(1<<20)	// Defined by an IToolSystem library
+#define FCVAR_SOUNDSYSTEM		(1<<23)	// Defined by the soundsystem library
+#define FCVAR_INPUTSYSTEM		(1<<25)	// Defined by the inputsystem dll
+#define FCVAR_NETWORKSYSTEM		(1<<26) // Defined by the network system
+// NOTE!! if you add a cvar system, add it here too!!!!
+// the engine lacks a cvar flag, but needs it for xbox
+// an engine cvar is thus a cvar not marked with any other system
+#define FCVAR_NON_ENGINE		((FCVAR_LAUNCHER|FCVAR_GAMEDLL|FCVAR_CLIENTDLL|FCVAR_MATERIAL_SYSTEM|FCVAR_DATACACHE|FCVAR_STUDIORENDER|FCVAR_FILESYSTEM|FCVAR_PLUGIN|FCVAR_TOOLSYSTEM|FCVAR_SOUNDSYSTEM|FCVAR_INPUTSYSTEM|FCVAR_NETWORKSYSTEM))
 
 // ConVar only
 #define FCVAR_PROTECTED			(1<<5)  // It's a server cvar, but we don't send the data since it's a password, etc.  Sends 1 if it's not bland/zero, 0 otherwise as value
@@ -36,6 +54,7 @@
 #define	FCVAR_ARCHIVE			(1<<7)	// set to cause it to be saved to vars.rc
 #define	FCVAR_NOTIFY			(1<<8)	// notifies players when changed
 #define	FCVAR_USERINFO			(1<<9)	// changes the client's info string
+#define FCVAR_CHEAT				(1<<14) // Only useable in singleplayer / debug / multiplayer & sv_cheats
 
 #define FCVAR_PRINTABLEONLY		(1<<10)  // This cvar's string cannot contain unprintable characters ( e.g., used for player name etc ).
 #define FCVAR_UNLOGGED			(1<<11)  // If this is a FCVAR_SERVER, don't log changes to the log file / console if we are creating a log
@@ -50,7 +69,16 @@
 #define FCVAR_DEMO				(1<<16)  // record this cvar when starting a demo file
 #define FCVAR_DONTRECORD		(1<<17)  // don't record these command in demofiles
 
-#define FCVAR_NOT_CONNECTED		(1<<19)	// cvar cannot be changed by a client that is connected to a server
+#define FCVAR_NOT_CONNECTED		(1<<22)	// cvar cannot be changed by a client that is connected to a server
+
+#define FCVAR_ARCHIVE_XBOX		(1<<24) // cvar written to config.cfg on the Xbox
+
+
+// #define FCVAR_AVAILABLE			(1<<27)
+// #define FCVAR_AVAILABLE			(1<<28)
+// #define FCVAR_AVAILABLE			(1<<29)
+// #define FCVAR_AVAILABLE			(1<<30)
+// #define FCVAR_AVAILABLE			(1<<31)
 
 
 class ConVar;
@@ -75,6 +103,12 @@ class ConCommandBaseMgr
 public:
 	// Call this ONCE when the executable starts up.
 	static void	OneTimeInit( IConCommandBaseAccessor *pAccessor );
+#ifdef _XBOX
+	static bool Fixup( ConCommandBase* pConCommandBase );
+#ifndef _RETAIL
+	static void PublishCommands( bool bForce );
+#endif
+#endif
 };
 
 // Called when a ConVar changes value
@@ -173,6 +207,13 @@ class ConCommand : public ConCommandBase
 {
 friend class ConCommandBaseMgr;
 friend class CCvar;
+#ifdef _STATIC_LINKED
+friend class G_ConCommand;
+friend class C_ConCommand;
+friend class M_ConCommand;
+friend class S_ConCommand;
+friend class D_ConCommand;
+#endif
 
 public:
 	typedef ConCommandBase BaseClass;
@@ -191,19 +232,17 @@ public:
 
 	// Invoke the function
 	virtual void				Dispatch( void );
-
 private:
 	virtual void				Create( char const *pName, FnCommandCallback callback, 
 									char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
-public:
+
 	// Call this function when executing the command
 	FnCommandCallback			m_fnCommandCallback;
 
 	FnCommandCompletionCallback	m_fnCompletionCallback;
 	bool						m_bHasCompletionCallback;
 public:
-//HACKHACK from BAILOPAN - we want to access this okay!
-	FnCommandCallback			GetCallback() { return m_fnCommandCallback; }
+	FnCommandCallback		GetCallback() { return m_fnCommandCallback; }
 };
 
 //-----------------------------------------------------------------------------
@@ -214,6 +253,13 @@ class ConVar : public ConCommandBase
 friend class ConCommandBaseMgr;
 friend class CCvar;
 friend class CDefaultCvar;
+#ifdef _STATIC_LINKED
+friend class G_ConVar;
+friend class C_ConVar;
+friend class M_ConVar;
+friend class S_ConVar;
+friend class D_ConVar;
+#endif
 
 public:
 	typedef ConCommandBase BaseClass;
@@ -243,10 +289,10 @@ public:
 	void InstallChangeCallback( FnChangeCallback callback );
 
 	// Retrieve value
-	FORCEINLINE float			GetFloat( void ) const;
-	FORCEINLINE int				GetInt( void ) const;
-	FORCEINLINE bool			GetBool() const	{  return !!GetInt(); }
-	FORCEINLINE char const	   *GetString( void ) const;
+	FORCEINLINE_CVAR float			GetFloat( void ) const;
+	FORCEINLINE_CVAR int				GetInt( void ) const;
+	FORCEINLINE_CVAR bool			GetBool() const {  return !!GetInt(); }
+	FORCEINLINE_CVAR char const	   *GetString( void ) const;
 
 	// Any function that allocates/frees memory needs to be virtual or else you'll have crashes
 	//  from alloc/free across dll/exe boundaries.
@@ -311,11 +357,12 @@ private:
 	FnChangeCallback			m_fnChangeCallback;
 };
 
+
 //-----------------------------------------------------------------------------
 // Purpose: Return ConVar value as a float
 // Output : float
 //-----------------------------------------------------------------------------
-FORCEINLINE float ConVar::GetFloat( void ) const
+FORCEINLINE_CVAR float ConVar::GetFloat( void ) const
 {
 	return m_pParent->m_fValue;
 }
@@ -324,7 +371,7 @@ FORCEINLINE float ConVar::GetFloat( void ) const
 // Purpose: Return ConVar value as an int
 // Output : int
 //-----------------------------------------------------------------------------
-FORCEINLINE int ConVar::GetInt( void ) const 
+FORCEINLINE_CVAR int ConVar::GetInt( void ) const 
 {
 	return m_pParent->m_nValue;
 }
@@ -334,7 +381,7 @@ FORCEINLINE int ConVar::GetInt( void ) const
 // Purpose: Return ConVar value as a string, return "" for bogus string pointer, etc.
 // Output : char const *
 //-----------------------------------------------------------------------------
-FORCEINLINE char const *ConVar::GetString( void ) const 
+FORCEINLINE_CVAR char const *ConVar::GetString( void ) const 
 {
 	if ( m_nFlags & FCVAR_NEVER_AS_STRING )
 	{
@@ -344,6 +391,117 @@ FORCEINLINE char const *ConVar::GetString( void ) const
 	return ( m_pParent->m_pszString ) ? m_pParent->m_pszString : "";
 }
 
+
+#ifdef _STATIC_LINKED
+// identifies subsystem via piggybacking constructors with flags
+class G_ConCommand : public ConCommand
+{
+public:
+	G_ConCommand(char const *pName, FnCommandCallback callback, char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 ) :	ConCommand(pName, callback, pHelpString, flags|FCVAR_GAMEDLL, completionFunc) {}
+};
+
+class C_ConCommand : public ConCommand
+{
+public:
+	C_ConCommand(char const *pName, FnCommandCallback callback, char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 ) :	ConCommand(pName, callback, pHelpString, flags|FCVAR_CLIENTDLL, completionFunc) {}
+};
+
+class M_ConCommand : public ConCommand
+{
+public:
+	M_ConCommand(char const *pName, FnCommandCallback callback, char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 ) :	ConCommand(pName, callback, pHelpString, flags|FCVAR_MATERIAL_SYSTEM, completionFunc) {}
+};
+
+class S_ConCommand : public ConCommand
+{
+public:
+	S_ConCommand(char const *pName, FnCommandCallback callback, char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 ) :	ConCommand(pName, callback, pHelpString, flags|FCVAR_STUDIORENDER, completionFunc) {}
+};
+
+class D_ConCommand : public ConCommand
+{
+public:
+	D_ConCommand(char const *pName, FnCommandCallback callback, char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 ) :	ConCommand(pName, callback, pHelpString, flags|FCVAR_DATACACHE, completionFunc) {}
+};
+
+typedef void ( *G_FnChangeCallback )( G_ConVar *var, char const *pOldString );
+typedef void ( *C_FnChangeCallback )( C_ConVar *var, char const *pOldString );
+typedef void ( *M_FnChangeCallback )( M_ConVar *var, char const *pOldString );
+typedef void ( *S_FnChangeCallback )( S_ConVar *var, char const *pOldString );
+typedef void ( *D_FnChangeCallback )( D_ConVar *var, char const *pOldString );
+
+class G_ConVar : public ConVar
+{
+public:
+	G_ConVar( char const *pName, char const *pDefaultValue, int flags = 0) : ConVar(pName, pDefaultValue, flags|FCVAR_GAMEDLL) {}
+	G_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString ) : ConVar(pName, pDefaultValue, flags|FCVAR_GAMEDLL, pHelpString ) {}
+	G_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) : ConVar(pName, pDefaultValue, flags|FCVAR_GAMEDLL, pHelpString, bMin, fMin, bMax, fMax) {}
+	G_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, G_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_GAMEDLL, pHelpString, (FnChangeCallback)callback ) {}
+	G_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax, G_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_GAMEDLL, pHelpString, bMin, fMin, bMax, fMax, (FnChangeCallback)callback ) {}
+};
+
+class C_ConVar : public ConVar
+{
+public:
+	C_ConVar( char const *pName, char const *pDefaultValue, int flags = 0) : ConVar(pName, pDefaultValue, flags|FCVAR_CLIENTDLL) {}
+	C_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString ) : ConVar(pName, pDefaultValue, flags|FCVAR_CLIENTDLL, pHelpString ) {}
+	C_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) : ConVar(pName, pDefaultValue, flags|FCVAR_CLIENTDLL, pHelpString, bMin, fMin, bMax, fMax) {}
+	C_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, C_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_CLIENTDLL, pHelpString, (FnChangeCallback)callback ) {}
+	C_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax, C_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_CLIENTDLL, pHelpString, bMin, fMin, bMax, fMax, (FnChangeCallback)callback ) {}
+};
+
+class M_ConVar : public ConVar
+{
+public:
+	M_ConVar( char const *pName, char const *pDefaultValue, int flags = 0) : ConVar(pName, pDefaultValue, flags|FCVAR_MATERIAL_SYSTEM) {}
+	M_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString ) : ConVar(pName, pDefaultValue, flags|FCVAR_MATERIAL_SYSTEM, pHelpString ) {}
+	M_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) : ConVar(pName, pDefaultValue, flags|FCVAR_MATERIAL_SYSTEM, pHelpString, bMin, fMin, bMax, fMax) {}
+	M_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, M_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_MATERIAL_SYSTEM, pHelpString, (FnChangeCallback)callback ) {}
+	M_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax, M_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_MATERIAL_SYSTEM, pHelpString, bMin, fMin, bMax, fMax, (FnChangeCallback)callback ) {}
+};
+
+class S_ConVar : public ConVar
+{
+public:
+	S_ConVar( char const *pName, char const *pDefaultValue, int flags = 0) : ConVar(pName, pDefaultValue, flags|FCVAR_STUDIORENDER) {}
+	S_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString ) : ConVar(pName, pDefaultValue, flags|FCVAR_STUDIORENDER, pHelpString ) {}
+	S_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) : ConVar(pName, pDefaultValue, flags|FCVAR_STUDIORENDER, pHelpString, bMin, fMin, bMax, fMax) {}
+	S_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, M_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_STUDIORENDER, pHelpString, (FnChangeCallback)callback ) {}
+	S_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax, S_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_STUDIORENDER, pHelpString, bMin, fMin, bMax, fMax, (FnChangeCallback)callback ) {}
+};
+
+class D_ConVar : public ConVar
+{
+public:
+	D_ConVar( char const *pName, char const *pDefaultValue, int flags = 0) : ConVar(pName, pDefaultValue, flags|FCVAR_DATACACHE) {}
+	D_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString ) : ConVar(pName, pDefaultValue, flags|FCVAR_DATACACHE, pHelpString ) {}
+	D_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax ) : ConVar(pName, pDefaultValue, flags|FCVAR_DATACACHE, pHelpString, bMin, fMin, bMax, fMax) {}
+	D_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, M_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_DATACACHE, pHelpString, (FnChangeCallback)callback ) {}
+	D_ConVar( char const *pName, char const *pDefaultValue, int flags, char const *pHelpString, bool bMin, float fMin, bool bMax, float fMax, D_FnChangeCallback callback ) : ConVar(pName, pDefaultValue, flags|FCVAR_DATACACHE, pHelpString, bMin, fMin, bMax, fMax, (FnChangeCallback)callback ) {}
+};
+
+// redirect these declarations to their specific subsystem
+#ifdef GAME_DLL
+#define ConCommand	G_ConCommand
+#define ConVar		G_ConVar
+#endif
+#ifdef CLIENT_DLL
+#define ConCommand	C_ConCommand
+#define ConVar		C_ConVar
+#endif
+#ifdef MATERIALSYSTEM_DLL
+#define ConCommand	M_ConCommand
+#define ConVar		M_ConVar
+#endif
+#ifdef STUDIORENDER_DLL
+#define ConCommand	S_ConCommand
+#define ConVar		S_ConVar
+#endif
+#ifdef DATACACHE_DLL
+#define ConCommand	D_ConCommand
+#define ConVar		D_ConVar
+#endif
+#endif // _STATIC_LINKED
 
 //-----------------------------------------------------------------------------
 // Purpose: Utility to quicky generate a simple console command

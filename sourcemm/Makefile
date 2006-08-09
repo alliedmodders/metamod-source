@@ -1,13 +1,13 @@
 #(C)2004-2005 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-HL2SDK = ../hl2sdk
+HL2SDK = /home/users/dvander/BRANCHES/newsdk
 SMM_ROOT = ..
 SRCDS = ~/srcds
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
-OPT_FLAGS = -O2 -fno-rtti -funroll-loops -s -pipe
+OPT_FLAGS = -O2 -fno-rtti -funroll-loops -s -pipe 
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-3.4
 BINARY = server_i486.so
@@ -30,7 +30,7 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-CFLAGS += -fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -fPIC -Wno-deprecated -fno-exceptions -fno-rtti
+CFLAGS += -fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -fPIC -Wno-deprecated -fno-exceptions -fno-rtti -msse
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 

@@ -6,28 +6,216 @@
 //
 //=============================================================================//
 
+#ifdef _XBOX
+#include "xbox/xbox_platform.h"
+#include "xbox/xbox_win32stubs.h"
+#include "xbox/xbox_core.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "basetypes.h"
 #include "convar.h"
 #include "vstdlib/strtools.h"
+#include "icvar.h"
 #include "tier0/dbg.h"
+#ifdef _XBOX
+#include "vstdlib/ICommandLine.h"
+#endif
 #include "tier0/memdbgon.h"
-
 
 ConCommandBase			*ConCommandBase::s_pConCommandBases = NULL;
 IConCommandBaseAccessor	*ConCommandBase::s_pAccessor = NULL;
+
+#ifdef _XBOX
+static char const* GetCommandLineValue( char const *pVariableName )
+{
+	int nLen = Q_strlen(pVariableName);
+	char *pSearch = (char*)stackalloc(nLen + 2);
+	pSearch[0] = '+';
+	memcpy(&pSearch[1], pVariableName, nLen + 1);
+	return CommandLine()->ParmValue(pSearch);
+}
+#endif
+
+#if defined( _XBOX ) && !defined( _RETAIL )
+void ConCommandBaseMgr::PublishCommands( bool bForce )
+{
+	ConCommandBase	*pCur;
+	const char		*commands[2048];
+	const char		*helptext[2048];
+	int				numCommands = 0;
+
+	if ( bForce )
+	{
+		for ( pCur=ConCommandBase::s_pConCommandBases; pCur; pCur=pCur->m_pNext )
+		{
+			pCur->m_bRegistered = false;
+		}
+	}
+
+	// iterate and publish commands to the remote console
+	for ( pCur=ConCommandBase::s_pConCommandBases; pCur; pCur=pCur->m_pNext )
+	{
+		if ( !pCur->m_bRegistered )
+		{
+			// add unregistered commands to list
+			if ( numCommands < sizeof(commands)/sizeof(commands[0]) )
+			{
+				commands[numCommands] = pCur->m_pszName;
+				helptext[numCommands] = pCur->m_pszHelpString;
+				numCommands++;
+			}
+
+			// mark as registered
+			pCur->m_bRegistered = true;
+		}
+	}
+	if ( numCommands )
+	{
+		XBX_rAddCommands( numCommands, commands, helptext );
+	}
+}
+#endif
+
+#ifdef _XBOX
+bool ConCommandBaseMgr::Fixup(ConCommandBase* pConCommand)
+{
+	ConCommandBase	*pCur;
+	ConCommandBase	*pPrev2;
+	ConCommandBase	*pCur2;
+	ConCommandBase	*pNext2;
+	const char		*name;
+	static int		initCount = 0;
+
+	// xboxissue - cvars and its class hierarchy could not be made to instance per subsystem
+	// without massive mangling and re-arranging, instead...
+	// there is only a single chain and therefore single /init/fixup
+	// missing: need to identify which subsystem
+	// could pass as part of declaration in constructor, but how to hide parameter for pc
+	// the accessors (aka callbacks to subsystems) to register with engine 
+	// cannot be invoked as their unlink logic expect private lists
+	// so this just mimics the expected end result
+	// must handle early and late constructors
+	// late constructors are usually function scoped static
+	if (!pConCommand)
+	{
+		// the caller is one-time-init 
+		if (++initCount > 1)
+		{
+			// the list has already been fixed
+			return true;
+		}
+	}
+	else
+	{
+		// the caller is a console command constructor
+		if (!initCount)
+		{
+			// the list has not been fixed yet 
+			// no special behavior
+			return false;
+		}
+		else
+		{
+			// the list has already been fixed
+			// the console command is a late constructor
+			// add in to fixed list 
+			bool hasParent = false;
+			if (!pConCommand->IsCommand())
+			{
+				pCur  = ConCommandBase::s_pConCommandBases;
+				while (pCur)
+				{
+					if (pCur->IsCommand() && !stricmp(pCur->m_pszName, pConCommand->m_pszName))
+					{
+						// set its parent
+						((ConVar*)pConCommand)->m_pParent = ((ConVar*)pCur)->m_pParent;
+						hasParent = true;
+						break;
+					}
+					pCur = pCur->m_pNext;
+				}
+			}
+			if (!hasParent)
+			{
+				// add to head of list
+				pConCommand->m_pNext = ConCommandBase::s_pConCommandBases;
+				ConCommandBase::s_pConCommandBases = pConCommand;
+			}
+			else
+				return true;
+		}
+	}
+
+	if (initCount == 1)
+	{
+		// iterate the cvars and set their possible proxy parents
+		// skip over registered (fixed) entries
+		pCur = ConCommandBase::s_pConCommandBases;
+		while (pCur)
+		{
+			if (!pCur->IsCommand() && !pCur->m_bRegistered)
+			{
+				// iterate from the next node until end of list
+				name   = pCur->m_pszName; 
+				pPrev2 = pCur;		
+				pCur2  = pCur->m_pNext;
+				while (pCur2)
+				{
+					pNext2 = pCur2->m_pNext;
+					if (!pCur2->IsCommand() && !stricmp(pCur2->m_pszName, name))
+					{
+						// found duplicate
+						// unlink and fixup
+						pCur2->m_pNext  = NULL;
+						pPrev2->m_pNext = pNext2;
+
+						// set its parent
+						((ConVar*)pCur2)->m_pParent = ((ConVar*)pCur)->m_pParent;
+					}
+					else
+					{
+						// no unlink, advance to next node
+						pPrev2 = pCur2;
+					}
+
+					pCur2 = pNext2;
+				}
+
+				char const *pValue = GetCommandLineValue(name);
+				if (pValue)
+					((ConVar*)pCur)->SetValue(pValue);
+			}
+			pCur = pCur->m_pNext;
+		}
+	}
+
+#if !defined( _RETAIL )
+	XBX_rTimeStampLog( Plat_FloatTime(), "xbx PublishCommands:Start" );
+
+	PublishCommands( false );
+
+	XBX_rTimeStampLog( Plat_FloatTime(), "xbx PublishCommands:Done" );
+#endif
+
+	// fixup has been performed
+	return true;
+}
+#endif
 
 // ----------------------------------------------------------------------------- //
 // ConCommandBaseMgr.
 // ----------------------------------------------------------------------------- //
 void ConCommandBaseMgr::OneTimeInit( IConCommandBaseAccessor *pAccessor )
 {
+#ifdef _XBOX
+	// fixup the list
+	ConCommandBaseMgr::Fixup(NULL);
+#else
 	ConCommandBase *pCur, *pNext;
 
 	ConCommandBase::s_pAccessor = pAccessor;
-
 	pCur = ConCommandBase::s_pConCommandBases;
 	while ( pCur )
 	{
@@ -35,6 +223,7 @@ void ConCommandBaseMgr::OneTimeInit( IConCommandBaseAccessor *pAccessor )
 		pCur->Init();
 		pCur = pNext;
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -42,12 +231,12 @@ void ConCommandBaseMgr::OneTimeInit( IConCommandBaseAccessor *pAccessor )
 //-----------------------------------------------------------------------------
 ConCommandBase::ConCommandBase( void )
 {
-	m_bRegistered			= false;
-	m_pszName				= NULL;
-	m_pszHelpString			= NULL;
+	m_bRegistered   = false;
+	m_pszName       = NULL;
+	m_pszHelpString = NULL;
 
-	m_nFlags				= 0;
-	m_pNext					= NULL;
+	m_nFlags = 0;
+	m_pNext  = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -89,24 +278,55 @@ void ConCommandBase::Create( char const *pName, char const *pHelpString /*= 0*/,
 {
 	static char *empty_string = "";
 
-	m_bRegistered		= false;
+	m_bRegistered = false;
 
 	// Name should be static data
 	Assert( pName );
-	m_pszName			= pName;
-	m_pszHelpString		= pHelpString ? pHelpString : empty_string;
+	m_pszName = pName;
+	m_pszHelpString = pHelpString ? pHelpString : empty_string;
 
 	m_nFlags = flags;
 
+#ifdef _XBOX
+	if (ConCommandBaseMgr::Fixup(this))
+		return;
+#endif
+
 	if ( !( m_nFlags & FCVAR_UNREGISTERED ) )
 	{
-		m_pNext		= s_pConCommandBases;
-		s_pConCommandBases	= this;
+#ifndef _XBOX
+		m_pNext = s_pConCommandBases;
+		s_pConCommandBases = this;
+#else
+		// xboxissue - engine cvars should be at head of list to
+		// ensure they are set as the cvar master/parent during fixup
+		if (!s_pConCommandBases || !(flags & FCVAR_NON_ENGINE))
+		{
+			// engine cvars, place at head of list
+			m_pNext = s_pConCommandBases;
+			s_pConCommandBases = this;
+		}
+		else
+		{
+			// non-engine cvars, place at end of list
+			ConCommandBase *cur = s_pConCommandBases;
+			while (1)
+			{
+				if (!cur->m_pNext)
+				{
+					cur->m_pNext = this;
+					m_pNext      = NULL;
+					break;
+				}
+				cur = cur->m_pNext;
+			}
+		}
+#endif
 	}
 	else
 	{
 		// It's unregistered
-		m_pNext		= NULL;
+		m_pNext = NULL;
 	}
 
 	// If s_pAccessor is already set (this ConVar is not a global variable),
@@ -329,7 +549,6 @@ ConCommand::ConCommand( char const *pName, FnCommandCallback callback, char cons
 //-----------------------------------------------------------------------------
 ConCommand::~ConCommand( void )
 {
-
 }
 
 //-----------------------------------------------------------------------------
@@ -565,12 +784,8 @@ void ConVar::ChangeStringValue( char const *tempVal )
 {
 	Assert( !( m_nFlags & FCVAR_NEVER_AS_STRING ) );
 
-	char* pszOldValue = (char*)stackalloc( m_StringLength );
-
-	if ( m_fnChangeCallback )
-	{
-		memcpy( pszOldValue, m_pszString, m_StringLength );
-	}
+ 	char* pszOldValue = (char*)stackalloc( m_StringLength );
+	memcpy( pszOldValue, m_pszString, m_StringLength );
 	
 	int len = Q_strlen(tempVal) + 1;
 
@@ -590,6 +805,8 @@ void ConVar::ChangeStringValue( char const *tempVal )
 	{
 		m_fnChangeCallback( this, pszOldValue );
 	}
+
+	GetCVarIF()->CallGlobalChangeCallback( this, pszOldValue );
 
 	stackfree( pszOldValue );
 }
