@@ -3,7 +3,7 @@ object frmMain: TfrmMain
   Top = 491
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'nee'
+  Caption = 'Metamod:Source Installer'
   ClientHeight = 355
   ClientWidth = 527
   Color = clBtnFace
