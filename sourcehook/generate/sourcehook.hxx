@@ -723,7 +723,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 				reinterpret_cast<const char*>(&ms_Proto)); \
 			\
-			MemFuncInfo mfi; \
+			MemFuncInfo mfi = {true, -1, 0, 0}; \
 			GetFuncInfo(&SH_FHCls(ifacetype,ifacefunc,overload)::Func, mfi); \
 			param->SetHookfuncVfnptr( \
 				reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
@@ -764,7 +764,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
 		using namespace ::SourceHook; \
-		MemFuncInfo mfi; \
+		MemFuncInfo mfi = {true, -1, 0, 0}; \
 		GetFuncInfo(funcptr, mfi); \
 		if (mfi.thisptroffs < 0 || !mfi.isVirtual) \
 			return false; /* No non-virtual functions / virtual inheritance supported */ \
@@ -777,7 +777,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
 		using namespace ::SourceHook; \
-		MemFuncInfo mfi; \
+		MemFuncInfo mfi = {true, -1, 0, 0}; \
 		GetFuncInfo(funcptr, mfi); \
 		if (mfi.thisptroffs < 0) \
 			return false; /* No virtual inheritance supported */ \
@@ -818,7 +818,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 				param->SetInfo(ms_MFI.vtbloffs, ms_MFI.vtblindex, \
 					reinterpret_cast<const char*>(&ms_Proto)); \
 				\
-				MemFuncInfo mfi; \
+				MemFuncInfo mfi = {true, -1, 0, 0}; \
 				GetFuncInfo(&SH_MFHCls(hookname)::Func, mfi); \
 				param->SetHookfuncVfnptr( \
 					reinterpret_cast<void**>(reinterpret_cast<char*>(&ms_Inst) + mfi.vtbloffs)[mfi.vtblindex]); \
@@ -1132,7 +1132,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 # define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \
 	using namespace ::SourceHook; \
-	MemFuncInfo mfi; \
+	MemFuncInfo mfi = {true, -1, 0, 0}; \
 	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
 	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
 	if (!origfunc) \
@@ -1171,7 +1171,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 # define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \
 	using namespace ::SourceHook; \
-	MemFuncInfo mfi; \
+	MemFuncInfo mfi = {true, -1, 0, 0}; \
 	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
 	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
 	if (!origfunc) \

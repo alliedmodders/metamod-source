@@ -161,9 +161,7 @@ void UTIL_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t 
 
 bool UTIL_PathCmp(const char *path1, const char *path2)
 {
-	size_t len1=strlen(path1);
-	size_t len2=strlen(path2);
-	size_t pos1=0,pos2=0;
+	size_t pos1 = 0, pos2 = 0;
 
 	while (true)
 	{

@@ -32,9 +32,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib vstdlib.lib"
+				AdditionalDependencies="tier0.lib tier1.lib vstdlib.lib"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
+				IgnoreDefaultLibraryNames="libc.lib;libcmt.lib;libcmtd.lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/sourcemm.pdb"
 				SubSystem="2"
@@ -86,10 +87,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib vstdlib.lib"
+				AdditionalDependencies="tier0.lib tier1.lib vstdlib.lib"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="1"
-				IgnoreDefaultLibraryNames=""
+				IgnoreDefaultLibraryNames="libcd.lib;libcmt.lib;libcmtd.lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -238,9 +239,6 @@
 		<Filter
 			Name="HL2SDK"
 			Filter="">
-			<File
-				RelativePath="..\convar.cpp">
-			</File>
 			<File
 				RelativePath="..\convar.h">
 			</File>

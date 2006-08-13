@@ -91,7 +91,7 @@ void ClearGamedllList();
 void InitMainStates()
 {
 	char full_path[260] = {0};
-	GetFileOfAddress(g_GameDll.factory, full_path, sizeof(full_path)-1);
+	GetFileOfAddress((void *)g_GameDll.factory, full_path, sizeof(full_path)-1);
 	g_BinPath.assign(full_path);
 
 	//Like metamod, reload plugins at the end of the map.
@@ -331,7 +331,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				if (gamebin)
 				{
 					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, ptr, SERVER_DLL);
-				} else if (ptr[0] == NULL) {
+				} else if (!ptr[0]) {
 					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, "bin", SERVER_DLL);
 				} else {
 					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
@@ -348,7 +348,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
 					{
 						pCheck = (*iter);
-						if (GetFileOfAddress(pCheck->factory, buffer, sizeof(buffer)-1))
+						if (GetFileOfAddress((void *)pCheck->factory, buffer, sizeof(buffer)-1))
 						{
 							if (UTIL_PathCmp(temp_path, buffer))
 							{

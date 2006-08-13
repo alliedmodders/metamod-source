@@ -26,7 +26,7 @@ PLUGIN_EXPOSE(SamplePlugin, g_StubPlugin);
 		} \
 		if (num_var >= 999) \
 			break; \
-	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
+	} while (( num_var=ismm->FormatIface(name, sizeof(name)-1) )); \
 	if (!assn_var) { \
 		if (error) \
 			snprintf(error, maxlen, "Could not find interface %s", name); \
@@ -46,7 +46,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	char iface_buffer[255];
 	int num = 0;
 
-	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
+	strcpy(iface_buffer, "ServerGameDLL003");
 	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);

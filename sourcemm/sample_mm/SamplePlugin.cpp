@@ -28,7 +28,7 @@ PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
 		} \
 		if (num_var >= 999) \
 			break; \
-	} while ( num_var=ismm->FormatIface(name, sizeof(name)-1) ); \
+	} while (( num_var=ismm->FormatIface(name, sizeof(name)-1) )); \
 	if (!assn_var) { \
 		if (error) \
 			snprintf(error, maxlen, "Could not find interface %s", name); \
@@ -126,7 +126,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	char iface_buffer[255];
 	int num = 0;
 
-	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMEDLL);
+	strcpy(iface_buffer, "ServerGameDLL003");
 	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
 	strcpy(iface_buffer, INTERFACEVERSION_VENGINESERVER);
 	FIND_IFACE(engineFactory, m_Engine, num, iface_buffer, IVEngineServer *);

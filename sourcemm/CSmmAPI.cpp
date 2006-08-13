@@ -350,7 +350,7 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 			break;
 		if (num > max)
 			break;
-	} while ( num = FormatIface(_if, len+1) );
+	} while (( num = FormatIface(_if, len+1) ));
 
 	delete[] _if;
 

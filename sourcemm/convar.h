@@ -242,7 +242,7 @@ private:
 	FnCommandCompletionCallback	m_fnCompletionCallback;
 	bool						m_bHasCompletionCallback;
 public:
-	FnCommandCallback		GetCallback() { return m_fnCommandCallback; }
+	FnCommandCallback			GetCallback() { return m_fnCommandCallback; }
 };
 
 //-----------------------------------------------------------------------------
