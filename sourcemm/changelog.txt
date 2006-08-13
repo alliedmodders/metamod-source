@@ -3,6 +3,7 @@
  - Added some extra information to the "meta game" command: Description and Interface. For
     example, CS:S would display "Counter-Strike: Source" and "ServerGameDLL004."
  - Added some extra functionality to ISmmPluginManager.
+ - Added compiling support for MSVC 8.0 (Visual Studio 2005) and GCC 4.x
  - Fixed bug where Metamod:Source could load the wrong GameDLL and/or load more than one
     GameDLL. This issue occured in HL2 CTF, SourceForts, or any other mod that relied on
     files from another mod directory.

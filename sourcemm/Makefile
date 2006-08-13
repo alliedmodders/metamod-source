@@ -60,4 +60,4 @@ clean:
 	rm -rf Release/$(BINARY)
 	rm -rf Debug/*.o
 	rm -rf Debug/$(BINARY)
-
+	
