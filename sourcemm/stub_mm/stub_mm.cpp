@@ -1,37 +1,21 @@
 /* ======== stub_mm ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #include <oslink.h>
 #include "stub_mm.h"
 
+SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, int, int);
+
 StubPlugin g_StubPlugin;
 
 PLUGIN_EXPOSE(SamplePlugin, g_StubPlugin);
-
-//This has all of the necessary hook declarations.  Read it!
-#include "meta_hooks.h"
-
-#define	FIND_IFACE(func, assn_var, num_var, name, type) \
-	do { \
-		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
-			num_var = 0; \
-			break; \
-		} \
-		if (num_var >= 999) \
-			break; \
-	} while (( num_var=ismm->FormatIface(name, sizeof(name)-1) )); \
-	if (!assn_var) { \
-		if (error) \
-			snprintf(error, maxlen, "Could not find interface %s", name); \
-		return false; \
-	}
 
 void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 {
@@ -39,15 +23,20 @@ void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 	RETURN_META(MRES_IGNORED);
 }
 
+#define GET_V_IFACE(v_factory, v_var, v_type, v_name) \
+	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
+	if (!v_var) { \
+		if (error && maxlen) { \
+			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+		} \
+		return false; \
+	}
+
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 
-	char iface_buffer[255];
-	int num = 0;
-
-	strcpy(iface_buffer, "ServerGameDLL003");
-	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
+	GET_V_IFACE(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 
