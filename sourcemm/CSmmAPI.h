@@ -55,6 +55,7 @@ namespace SourceMM
 		virtual const char *GetBaseDir();
 		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...);
 		void ClientConPrintf(edict_t *client, const char *fmt, ...);
+		void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool chop=true);
 	public:
 		bool CacheCmds();
 	private:
