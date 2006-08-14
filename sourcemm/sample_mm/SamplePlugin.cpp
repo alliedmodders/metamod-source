@@ -1,39 +1,38 @@
 /* ======== sample_mm ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #include <oslink.h>
 #include "SamplePlugin.h"
 #include "cvars.h"
 
+//Declare the hooks we will be using in this file.  Hooking will not compile without these.
+//The macro naming scheme is SH_DECL_HOOKn[_void].
+//If you have 5 parameters, it would be HOOK5.  If the function is void, add _void.
+//It stands for "SourceHook, Declare Hook".
+SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
+SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, int, int);
+SH_DECL_HOOK1_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool);
+SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
+SH_DECL_HOOK2_void(IServerGameClients, ClientActive, SH_NOATTRIB, 0, edict_t *, bool);
+SH_DECL_HOOK1_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, edict_t *);
+SH_DECL_HOOK2_void(IServerGameClients, ClientPutInServer, SH_NOATTRIB, 0, edict_t *, char const *);
+SH_DECL_HOOK1_void(IServerGameClients, SetCommandClient, SH_NOATTRIB, 0, int);
+SH_DECL_HOOK1_void(IServerGameClients, ClientSettingsChanged, SH_NOATTRIB, 0, edict_t *);
+SH_DECL_HOOK5(IServerGameClients, ClientConnect, SH_NOATTRIB, 0, bool, edict_t *, const char*, const char *, char *, int);
+SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
+SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, 0, bool, IGameEvent *, bool);
+
 SamplePlugin g_SamplePlugin;
 MyListener g_Listener;
 
 PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
-
-//This has all of the necessary hook declarations.  Read it!
-#include "meta_hooks.h"
-
-#define	FIND_IFACE(func, assn_var, num_var, name, type) \
-	do { \
-		if ( (assn_var=(type)((ismm->func())(name, NULL))) != NULL ) { \
-			num_var = 0; \
-			break; \
-		} \
-		if (num_var >= 999) \
-			break; \
-	} while (( num_var=ismm->FormatIface(name, sizeof(name)-1) )); \
-	if (!assn_var) { \
-		if (error) \
-			snprintf(error, maxlen, "Could not find interface %s", name); \
-		return false; \
-	}
 
 bool SamplePlugin::LevelInit(const char *pMapName, const char *pMapEntities, const char *pOldLevel, const char *pLandmarkName, bool loadGame, bool background)
 {
@@ -112,6 +111,13 @@ bool FireEvent_Handler(IGameEvent *event, bool bDontBroadcast)
 	if (!event || !event->GetName())
 		RETURN_META_VALUE(MRES_IGNORED, false);
 
+	/**
+	 * Note that this will only fire on game events that are already being listened to.
+	 * For events that are not firing (such as item_pickup), you must actually
+	 *  register an event listener in the event manager.  This hook is provided
+	 *  as an example for non-eiface hooks only.
+	 */
+
 	const char *name = event->GetName();
 
 	META_LOG(g_PLAPI, "FireGameEvent called: name=%s", name); 
@@ -119,21 +125,28 @@ bool FireEvent_Handler(IGameEvent *event, bool bDontBroadcast)
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
+#define GET_V_IFACE(v_factory, v_var, v_type, v_name) \
+	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
+	if (!v_var) \
+	{ \
+		if (error && maxlen) \
+		{ \
+			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+		} \
+		return false; \
+	}
+	
+
 bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 
-	char iface_buffer[255];
 	int num = 0;
 
-	strcpy(iface_buffer, "ServerGameDLL003");
-	FIND_IFACE(serverFactory, m_ServerDll, num, iface_buffer, IServerGameDLL *);
-	strcpy(iface_buffer, INTERFACEVERSION_VENGINESERVER);
-	FIND_IFACE(engineFactory, m_Engine, num, iface_buffer, IVEngineServer *);
-	strcpy(iface_buffer, INTERFACEVERSION_SERVERGAMECLIENTS);
-	FIND_IFACE(serverFactory, m_ServerClients, num, iface_buffer, IServerGameClients *);
-	strcpy(iface_buffer, INTERFACEVERSION_GAMEEVENTSMANAGER2);
-	FIND_IFACE(engineFactory, m_GameEventManager, num, iface_buffer, IGameEventManager2 *);
+	GET_V_IFACE(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
+	GET_V_IFACE(engineFactory, m_Engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
+	GET_V_IFACE(serverFactory, m_ServerClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
+	GET_V_IFACE(engineFactory, m_GameEventManager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
 
 	META_LOG(g_PLAPI, "Starting plugin.\n");
 

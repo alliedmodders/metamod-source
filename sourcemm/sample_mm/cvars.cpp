@@ -1,12 +1,12 @@
 /* ======== sample_mm ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #include "SamplePlugin.h"
 #include "cvars.h"
