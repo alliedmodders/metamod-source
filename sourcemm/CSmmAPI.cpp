@@ -362,7 +362,7 @@ void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool cho
 	char buffer[256];	/* assume no interface will go beyond this */
 	int len = static_cast<int>(strlen(iface));
 
-	if (len > sizeof(buffer) - 4)
+	if (len > static_cast<int>(sizeof(buffer) - 4))
 	{
 		return NULL;
 	}
