@@ -141,8 +141,6 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 {
 	PLUGIN_SAVEVARS();
 
-	int num = 0;
-
 	GET_V_IFACE(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE(engineFactory, m_Engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE(serverFactory, m_ServerClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
