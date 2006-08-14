@@ -4,11 +4,11 @@
 HL2SDK = ../../hl2sdk
 SMM_ROOT = ../..
 SRCDS = ~/srcds
-EXTRA_FLAGS = 
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
 OPT_FLAGS = -O3 -funroll-loops -s -pipe
+GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-4.1
 BINARY = stub_mm_i486.so
@@ -30,7 +30,13 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse $(EXTRA_FLAGS)
+GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
+
+CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse
+
+ifeq "$(GCC_VERSION)" "4"
+	CFLAGS += $(GCC4_FLAGS)
+endif
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 
