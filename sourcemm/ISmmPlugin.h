@@ -240,7 +240,11 @@ public:
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define SMM_API extern "C" __declspec(dllexport)
 #elif defined __GNUC__
-	#define SMM_API	extern "C"
+	#if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 1)
+		#define SMM_API extern "C" __attribute__ ((visibility("default")))	
+	#else
+		#define SMM_API	extern "C" 
+	#endif	
 #endif
 #endif //!defined SMM_API
 
