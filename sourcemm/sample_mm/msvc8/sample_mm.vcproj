@@ -206,10 +206,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\meta_hooks.h"
-				>
-			</File>
-			<File
 				RelativePath="..\SamplePlugin.h"
 				>
 			</File>
