@@ -248,4 +248,43 @@ public:
 #endif
 #endif //!defined SMM_API
 
+/**
+ * @brief Macro for automatically getting a current or newer Valve interface.
+ *
+ * @param v_factory		Factory method to use from ISmmAPI (such as engineFactory).
+ * @param v_var			Variable name to store into.
+ * @param v_type		Interface type (do not include the pointer/asterisk).
+ * @param v_name		Inteface name.
+ */
+#define GET_V_IFACE_CURRENT(v_factory, v_var, v_type, v_name) \
+	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
+	if (!v_var) \
+	{ \
+		if (error && maxlen) \
+		{ \
+			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+		} \
+		return false; \
+	}
+
+ /**
+  * @brief Same as GET_V_IFACE, except searches for any.
+  *
+  * @param v_factory		Factory method to use from ISmmAPI (such as engineFactory).
+  * @param v_var			Variable name to store into.
+  * @param v_type		Interface type (do not include the pointer/asterisk).
+  * @param v_name		Inteface name.
+  */
+#define GET_V_IFACE_ANY(v_factory, v_var, v_type, v_name) \
+	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name, 0); \
+	if (!v_var) \
+	{ \
+		if (error && maxlen) \
+		{ \
+			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+		} \
+		return false; \
+	}
+	
+
 #endif //_INCLUDE_ISMM_PLUGIN_H

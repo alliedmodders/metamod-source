@@ -254,11 +254,14 @@ public:		// Added in 1.3 (1:4)
 	 *
 	 * @param fn			Interface factory function.
 	 * @param iface			Interface string.
-	 * @param chop			If true, chops an interface version number off and searches 
-	 *                      from the beginning.
+	 * @param min			Minimum value to search from.  If zero, searching begins from the
+	 *                       first available version regardless of the interface.  
+	 *                      Note that this can return interfaces EARLIER than the version specified.
+	 *                      A value of -1 (default) specifies the string version as the minimum.
+	 *                      Any other value specifices the minimum value to search from.
 	 * @return				Interface pointer, or NULL if not found.
 	 */
-	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool chop=true) =0;
+	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1) =0;
 };
 
 

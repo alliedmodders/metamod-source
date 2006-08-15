@@ -23,20 +23,11 @@ void ServerActivate_handler(edict_t *pEdictList, int edictCount, int clientMax)
 	RETURN_META(MRES_IGNORED);
 }
 
-#define GET_V_IFACE(v_factory, v_var, v_type, v_name) \
-	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
-	if (!v_var) { \
-		if (error && maxlen) { \
-			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
-		} \
-		return false; \
-	}
-
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 
-	GET_V_IFACE(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
+	GET_V_IFACE_ANY(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, m_ServerDll, ServerActivate_handler, true);
 

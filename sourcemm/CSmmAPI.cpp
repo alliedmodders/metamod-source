@@ -357,10 +357,11 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 	return pf;
 }
 
-void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool chop)
+void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min)
 {
 	char buffer[256];	/* assume no interface will go beyond this */
 	int len = static_cast<int>(strlen(iface));
+	int ret;			/* just in case something doesn't handle NULL properly */
 
 	if (len > static_cast<int>(sizeof(buffer) - 4))
 	{
@@ -369,7 +370,7 @@ void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool cho
 
 	strcpy(buffer, iface);
 
-	if (chop)
+	if (min != -1)
 	{
 		char *ptr = &buffer[len-1];
 		int digits = 0;
@@ -383,12 +384,15 @@ void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, bool cho
 		{
 			/* for now, assume this is an error */
 			strcpy(buffer, iface);
+		} else {
+			char num[4];
+			min = (min == 0) ? 1 : min;
+			snprintf(num, sizeof(num), "%03d", min);
+			strcat(buffer, num);
 		}
 	}
 
-	strcat(buffer, "001");
-
-	return InterfaceSearch(fn, buffer, IFACE_MAXNUM, NULL);
+	return InterfaceSearch(fn, buffer, IFACE_MAXNUM, &ret);
 }
 
 const char *CSmmAPI::GetBaseDir()

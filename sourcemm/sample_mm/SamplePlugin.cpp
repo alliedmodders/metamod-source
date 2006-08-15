@@ -125,26 +125,14 @@ bool FireEvent_Handler(IGameEvent *event, bool bDontBroadcast)
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-#define GET_V_IFACE(v_factory, v_var, v_type, v_name) \
-	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
-	if (!v_var) \
-	{ \
-		if (error && maxlen) \
-		{ \
-			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
-		} \
-		return false; \
-	}
-	
-
 bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 
-	GET_V_IFACE(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
-	GET_V_IFACE(engineFactory, m_Engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
-	GET_V_IFACE(serverFactory, m_ServerClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
-	GET_V_IFACE(engineFactory, m_GameEventManager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+	GET_V_IFACE_ANY(serverFactory, m_ServerDll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
+	GET_V_IFACE_CURRENT(engineFactory, m_Engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
+	GET_V_IFACE_ANY(serverFactory, m_ServerClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
+	GET_V_IFACE_CURRENT(engineFactory, m_GameEventManager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
 
 	META_LOG(g_PLAPI, "Starting plugin.\n");
 
