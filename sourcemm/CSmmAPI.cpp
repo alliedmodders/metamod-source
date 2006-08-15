@@ -334,13 +334,22 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 
 void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret)
 {
+	char _if[256];	/* assume no interface goes beyond this */
 	size_t len = strlen(iface);
 	int num = 0;
 	void *pf = NULL;
-	char *_if = new char[len + 2];
 
 	if (max > 999)
 		max = 999;
+
+	if (len + 4 > sizeof(_if))
+	{
+		if (ret)
+		{
+			*ret = IFACE_FAILED;
+		}
+		return NULL;
+	}
 
 	strcpy(_if, iface);
 
@@ -351,8 +360,6 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 		if (num > max)
 			break;
 	} while (( num = FormatIface(_if, len+1) ));
-
-	delete[] _if;
 
 	return pf;
 }
