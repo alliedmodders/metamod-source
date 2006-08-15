@@ -1,12 +1,12 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): Pavol "PM OnoTo" Marko
-* ============================
-*/
+ * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): Pavol "PM OnoTo" Marko
+ * ============================
+ */
 
 #ifndef __SH_STACK_H__
 #define __SH_STACK_H__
@@ -159,9 +159,15 @@ namespace SourceHook
 			m_Elements[m_UsedSize++] = val;
 			return true;
 		}
+
 		void pop()
 		{
 			--m_UsedSize;
+		}
+
+		void popall()
+		{
+			m_UsedSize = 0;
 		}
 
 		T &front()
