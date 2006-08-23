@@ -58,9 +58,8 @@ void UTIL_TrimLeft(char *buffer)
 			i++;
 
 		// If whitespace chars in buffer then adjust string so first non-whitespace char is at start of buffer
-		// :TODO: change this to not use memcpy()!
 		if (i != buffer)
-			memcpy(buffer, i, (strlen(i) + 1) * sizeof(char));
+			memmove(buffer, i, (strlen(i) + 1) * sizeof(char));
 	}
 }
 
@@ -95,7 +94,7 @@ void UTIL_TrimComments(char *buffer)
 	}
 }
 
-/* UTIL_TrimLeft
+/* UTIL_TrimRight
  * Removes whitespace characters from right side of string
  */
 void UTIL_TrimRight(char *buffer)
