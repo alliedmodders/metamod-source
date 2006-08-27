@@ -1,7 +1,7 @@
 #(C)2004-2005 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-HL2SDK = ../hl2sdk
+HL2SDK = ../../hl2sdk
 SMM_ROOT = ..
 SRCDS = ~/srcds
 
