@@ -52,7 +52,7 @@ namespace
 		virtual void F17(){}
 		virtual void F18(){}
 		virtual void F19(){}
-		virtual void F20(){}
+		virtual float F20() const { return 1.0f; }		// Look! F20 is const-ed and returns a float
 		virtual void F21(){}
 		virtual void F22(){}
 		virtual void F23(){}
@@ -350,6 +350,7 @@ namespace
 	SH_DECL_HOOK0_void(Test, F9, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, F10, SH_NOATTRIB, 0);
 
+	SH_DECL_HOOK0(Test, F20, const, 0, float);
 	SH_DECL_HOOK1_void(Test, F60, SH_NOATTRIB, 0, int&);
 
 	META_RES g_F1Pre_WhatToDo;
