@@ -34,7 +34,7 @@
  *   increase vers_release when bug fix releases are made
  *   never increase major
  */
-#define		SOURCEMM_VERSION	"1.3"
+#define		SOURCEMM_VERSION	"1.3a"
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change

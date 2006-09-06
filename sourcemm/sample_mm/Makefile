@@ -13,7 +13,7 @@ DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-4.1
 BINARY = sample_mm_i486.so
 
-OBJECTS = SamplePlugin.cpp cvars.cpp convar.cpp
+OBJECTS = SamplePlugin.cpp cvars.cpp convar.cpp strtools.cpp
 
 LINK = vstdlib_i486.so tier0_i486.so -static-libgcc
 
@@ -48,6 +48,7 @@ all:
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(HL2SDK)/tier1/convar.cpp convar.cpp
+	ln -sf $(HL2SDK)/tier1/strtools.cpp strtools.cpp
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
