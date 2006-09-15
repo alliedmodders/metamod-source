@@ -1,6 +1,6 @@
 2006/09/06 1.3a:
  - Fixed a building issue on Linux which caused unresolved symbol errors when trying to
-   to load Metamod:Source on a game using an older set of engine libraries. This fix should
+   load Metamod:Source on a game using an older set of engine libraries. This fix should
    now allow Metamod:Source to run with The Ship on Linux.
 
 2006/08/16 1.3:

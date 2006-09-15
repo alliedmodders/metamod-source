@@ -13,14 +13,15 @@ DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-4.1
 BINARY = sample_mm_i486.so
 
-OBJECTS = SamplePlugin.cpp cvars.cpp convar.cpp strtools.cpp
-
-LINK = vstdlib_i486.so tier0_i486.so -static-libgcc
-
 HL2PUB = $(HL2SDK)/public
+HL2LIB = $(HL2SDK)/linux_sdk
+
+OBJECTS = SamplePlugin.cpp cvars.cpp
+
+LINK = vstdlib_i486.so tier0_i486.so -static-libgcc $(HL2LIB)/tier1_i486.a
 
 INCLUDE = -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
-	-I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook -I$(SMM_ROOT)/sourcemm
+          -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook -I$(SMM_ROOT)/sourcemm
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
@@ -47,8 +48,6 @@ all:
 	mkdir -p $(BIN_DIR)
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
-	ln -sf $(HL2SDK)/tier1/convar.cpp convar.cpp
-	ln -sf $(HL2SDK)/tier1/strtools.cpp strtools.cpp
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
