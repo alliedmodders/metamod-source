@@ -18,7 +18,7 @@ HL2LIB = $(HL2SDK)/linux_sdk
 
 OBJECTS = SamplePlugin.cpp cvars.cpp
 
-LINK = vstdlib_i486.so tier0_i486.so -static-libgcc $(HL2LIB)/tier1_i486.a
+LINK = $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
 INCLUDE = -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
           -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook -I$(SMM_ROOT)/sourcemm
