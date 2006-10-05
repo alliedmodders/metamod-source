@@ -51,6 +51,16 @@ public:
 		assign(src.c_str()); 
 	}
 
+	bool operator ==(const String &other)
+	{
+		return (compare(other.c_str()) == 0);
+	}
+
+	bool operator ==(const char *other)
+	{
+		return (compare(other) == 0);
+	}
+
 	const char *c_str() { return v?v:""; }
 
 	const char *c_str() const { return v?v:""; }
