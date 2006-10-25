@@ -280,8 +280,20 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		FILE *fp = fopen(temp_path, "rt");
 		if (!fp)
 		{
-			Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
-			return NULL;
+			/* Do not error out here! It's possible the mod exists in the root directory, i.e.
+			 * Dark Messiah.  Let's check that just in case!
+			 */
+			g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s", curpath);
+			g_ModPath.assign(temp_path);
+			g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s", g_ModPath.c_str(), "gameinfo.txt");
+
+			fp = fopen(temp_path, "rt");
+			if (!fp)
+			{
+				/* Okay, we have to concede here. */
+				Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
+				return NULL;
+			}
 		}
 		char buffer[255];
 		char key[128], val[128];

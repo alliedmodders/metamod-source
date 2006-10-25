@@ -168,6 +168,9 @@
 				RelativePath="..\oslink.h">
 			</File>
 			<File
+				RelativePath="..\resource.h">
+			</File>
+			<File
 				RelativePath="..\sourcemm.h">
 			</File>
 			<File
