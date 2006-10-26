@@ -11,6 +11,8 @@
 #ifndef __SH_STACK_H__
 #define __SH_STACK_H__
 
+#include <stddef.h>
+
 #define SH_STACK_DEFAULT_SIZE 4
 
 namespace SourceHook

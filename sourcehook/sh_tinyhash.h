@@ -20,6 +20,12 @@ namespace SourceHook
 	template <class K>
 	int HashFunction(const K & k);
 
+	template <class U>
+	int HashAlt(const U &u);
+
+	template <class U, class K>
+	int CompareAlt(const U &k1, const K &k2);
+
 	template <class K>
 	int Compare(const K & k1, const K & k2);
 
@@ -113,6 +119,38 @@ namespace SourceHook
 			m_Buckets = NULL;
 			m_numBuckets = 0;
 		}
+	public:
+		template <typename U>
+		V & AltFindOrInsert(const U & ukey)
+		{
+			size_t place = HashAlt(ukey) % m_numBuckets;
+			THashNode *pNode = NULL;
+			if (!m_Buckets[place])
+			{
+				m_Buckets[place] = new List<THashNode *>;
+				pNode = new THashNode(ukey, V());
+				m_Buckets[place]->push_back(pNode);
+				m_percentUsed += (1.0f / (float)m_numBuckets);
+			} else {
+				typename List<THashNode *>::iterator iter;
+				for (iter=m_Buckets[place]->begin(); iter!=m_Buckets[place]->end(); iter++)
+				{
+					if (CompareAlt(ukey, (*iter)->key) == 0)
+					{
+						return (*iter)->val;
+					}
+				}
+				//node does not exist
+				pNode = new THashNode(ukey, V());
+				m_Buckets[place]->push_back(pNode);
+			}
+			if (PercentUsed() > 0.75f)
+			{
+				_Refactor();
+			}
+			return pNode->val;
+		}
+	private:
 		THashNode *_FindOrInsert(const K & key)
 		{
 			size_t place = HashFunction(key) % m_numBuckets;
@@ -135,7 +173,9 @@ namespace SourceHook
 				m_Buckets[place]->push_back(pNode);
 			}
 			if (PercentUsed() > 0.75f)
+			{
 				_Refactor();
+			}
 			return pNode;
 		}
 		void _Refactor()
@@ -457,7 +497,20 @@ namespace SourceHook
 			}
 			return end();
 		}
-
+		template <typename U>
+		iterator FindAlt(const U & u)
+		{
+			iterator b = begin();
+			iterator e = end();
+			for (iterator iter = b; iter != e; iter++)
+			{
+				if (CompareAlt(u, (*iter).key) == 0)
+				{
+					return iter;
+				}
+			}
+			return e;
+		}
 		iterator erase(iterator where)
 		{
 			where.erase();
@@ -479,3 +532,4 @@ namespace SourceHook
 };
 
 #endif //_INCLUDE_SH_TINYHASH_H_
+
