@@ -7,6 +7,7 @@ uses
 
 var eStream: TMemoryStream;
     eFiles: TStringList;
+    Version: String;
 begin
   WriteLn('// File attacher for the MM:S installer');
   WriteLn('// by Basic-Master');
@@ -41,6 +42,14 @@ begin
     ReadLn;
     exit;
   end;
+  { Get version number }
+  WriteLn('// Please enter the version number:');
+  ReadLn(Version);
+  if (Trim(Version) = '') then begin
+    WriteLn('// Error: Invalid version number!');
+    ReadLn;
+    exit;
+  end;
   { Compress files }
   WriteLn('// Compressing files...');
   eFiles := TStringList.Create;
@@ -51,7 +60,7 @@ begin
   CompressFiles(eFiles, ExtractFilePath(ParamStr(0)) + 'temp.zip');
   eStream.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'temp.zip');
   WriteLn('// Attaching output to MMS_Installer.exe...');
-  AttachToFile(ExtractFilePath(ParamStr(0)) + 'MMS_Installer.exe', eStream);
+  AttachToFile(ExtractFilePath(ParamStr(0)) + 'MMS_Installer.exe', eStream, Version);
   DeleteFile(ExtractFilePath(ParamStr(0)) + 'temp.zip');
   eStream.Free;
   WriteLn('// Done.');

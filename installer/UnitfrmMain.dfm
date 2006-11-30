@@ -68,7 +68,7 @@ object frmMain: TfrmMain
     Top = 0
     Width = 527
     Height = 314
-    ActivePage = jspLicense
+    ActivePage = jspWelcome
     PropagateEnable = False
     Align = alClient
     OnChange = jplWizardChange

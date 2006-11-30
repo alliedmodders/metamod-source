@@ -6,11 +6,14 @@ uses SysUtils, Classes, Zlib;
 
 procedure CompressFiles(Files : TStrings; const Filename : String);
 function DecompressStream(Stream : TMemoryStream; DestDirectory : String): Boolean;
-function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
+function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream; Version: String): Boolean;
 function LoadFromFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
 function Unpack: Boolean;
+function GetVersion: String;
 
 implementation
+
+uses UnitfrmMain;
 
 procedure CompressFiles(Files : TStrings; const Filename : String);
 var
@@ -103,7 +106,7 @@ begin
   end;
 end;
 
-function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
+function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream; Version: String): Boolean;
 var
   aStream: TFileStream;
   iSize: Integer;
@@ -124,6 +127,10 @@ begin
     // die Streamgröße speichern
     iSize := MemoryStream.Size + SizeOf(Integer);
     aStream.Write(iSize, SizeOf(iSize));
+    // save version number+length
+    iSize := aStream.Position;
+    aStream.Write(Version[1], Length(Version));
+    aStream.Write(iSize, SizeOf(iSize));
   finally
     aStream.Free;
   end;
@@ -132,15 +139,21 @@ end;
 
 function LoadFromFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
 var
-  aStream: TFileStream;
+  aStream: TMemoryStream;
   iSize: Integer;
+  EndPos: Integer;
 begin
   Result := False;
   if not FileExists(AFileName) then
     Exit;
 
   try
-    aStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyWrite);
+    aStream := TMemoryStream.Create;
+    aStream.LoadFromFile(AFileName);
+    // drop version part
+    aStream.Seek(-SizeOf(Integer), soFromEnd);
+    aStream.Read(EndPos, SizeOf(Integer));
+    aStream.SetSize(EndPos);
     // seek to position where Stream-Size is saved
     // zur Position seeken wo Streamgröße gespeichert
     aStream.Seek(-SizeOf(Integer), soFromEnd);
@@ -169,7 +182,8 @@ var eStream: TMemoryStream;
 begin
   eStream := TMemoryStream.Create;
   try
-    LoadFromFile(ParamStr(0), eStream); // Get ZIP
+    // Get ZIP
+    LoadFromFile(ParamStr(0), eStream);
     DecompressStream(eStream, ExtractFilePath(ParamStr(0))); // Unpack files
 
     Result := True;
@@ -177,6 +191,21 @@ begin
     Result := False;
   end;
   eStream.Free;
+end;
+
+function GetVersion: String;
+var FileStream: TFileStream;
+    EndPos, Size: Integer;
+    Version: String;
+begin
+   FileStream := TFileStream.Create(ParamStr(0), fmOpenRead or fmShareDenyWrite);
+   FileStream.Seek(-SizeOf(Integer), soFromEnd);
+   FileStream.Read(EndPos, SizeOf(EndPos));
+   FileStream.Position := EndPos;
+   Size := FileStream.Size - EndPos - SizeOf(Integer);
+   SetString(Result, nil, Size);
+   FileStream.Read(Pointer(Result)^, Size); // YAMS
+   FileStream.Free;
 end;
 
 end.

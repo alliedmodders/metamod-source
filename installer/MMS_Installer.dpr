@@ -26,6 +26,7 @@ begin
   Application.Initialize;
   Application.Title := 'Metamod:Source Installer';
   Application.CreateForm(TfrmMain, frmMain);
+  UnitfrmMain.VERSION := GetVersion;
   frmMain.lblWelcome.Caption := 'Welcome to the Metamod:Source ' + VERSION + ' Setup Wizard';
   frmMain.lblInfo1.Caption := 'This wizard will guide you through the installation of Metamod:Source ' + VERSION + '.';
   frmMain.lblSubTitle1.Caption := 'Please review the following license terms before installing Metamod:Source ' + VERSION + '.';
