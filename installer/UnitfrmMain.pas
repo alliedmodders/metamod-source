@@ -132,7 +132,7 @@ type
 var
   frmMain: TfrmMain;
 
-var VERSION: String = '1.3';
+var VERSION: String = '1.3d';
 
 implementation
 

@@ -1,6 +1,6 @@
 object frmMain: TfrmMain
-  Left = 311
-  Top = 491
+  Left = 333
+  Top = 271
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Metamod:Source Installer'
@@ -6584,6 +6584,8 @@ object frmMain: TfrmMain
         Width = 509
         Height = 24
         AdvColorBorder = 0
+        Color = clBtnFace
+        ColorBorder = 8623776
         MaxValue = 8
         Progress = 0
         Font.Charset = DEFAULT_CHARSET
@@ -6607,6 +6609,8 @@ object frmMain: TfrmMain
         Width = 509
         Height = 24
         AdvColorBorder = 0
+        Color = clBtnFace
+        ColorBorder = 8623776
         Progress = 0
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
