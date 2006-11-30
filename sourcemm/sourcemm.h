@@ -34,7 +34,7 @@
  *   increase vers_release when bug fix releases are made
  *   never increase major
  */
-#define		SOURCEMM_VERSION	"1.3b"
+#define		SOURCEMM_VERSION	"1.3d"
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_MAJOR_VERSION	1		//never need to increase this
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
@@ -43,7 +43,7 @@
 
 //We need a good CServerGameDLL version to work properly.  We support these inclusively.
 #define	MIN_GAMEDLL_VERSION	3
-#define	MAX_GAMEDLL_VERSION	5
+#define	MAX_GAMEDLL_VERSION	7
 
 /**
  * @brief Entry point for HL2 Engine
