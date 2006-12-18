@@ -5377,7 +5377,7 @@ object frmMain: TfrmMain
     Top = 0
     Width = 527
     Height = 314
-    ActivePage = jspFTP
+    ActivePage = jspWelcome
     PropagateEnable = False
     Align = alClient
     OnChange = jplWizardChange
