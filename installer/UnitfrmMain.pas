@@ -122,6 +122,8 @@ type
     procedure trvDirectoriesCollapsing(Sender: TObject; Node: TTreeNode;
       var AllowCollapse: Boolean);
     procedure trvModsClick(Sender: TObject);
+    procedure trvDirectoriesMouseDown(Sender: TObject;
+      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
     OldProgress: Integer;
     CurrProgress: Integer;
@@ -682,6 +684,17 @@ begin
     cmdNext.Enabled := Assigned(trvMods.Selected.Parent)
   else
     cmdNext.Enabled := False;
+end;
+
+procedure TfrmMain.trvDirectoriesMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var Node: TTreeNode;
+begin
+  Node := trvDirectories.GetNodeAt(X, Y);
+  if (Assigned(Node)) then begin
+    if (Node.DisplayRect(True).Right < X) then
+      trvDirectories.Selected := nil;
+  end;
 end;
 
 end.

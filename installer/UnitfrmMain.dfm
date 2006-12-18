@@ -11109,6 +11109,7 @@ object frmMain: TfrmMain
           OnCollapsing = trvDirectoriesCollapsing
           OnExpanding = trvDirectoriesExpanding
           OnExpanded = trvDirectoriesExpanded
+          OnMouseDown = trvDirectoriesMouseDown
         end
       end
       object pnlOS: TPanel
