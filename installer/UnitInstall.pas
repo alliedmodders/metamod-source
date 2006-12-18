@@ -365,7 +365,7 @@ begin
   Screen.Cursor := crDefault;
 
   if ListenInstall then
-    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. Use it to start Half-Life 2 with a Mod using Metamod:Source. Due to Steam''s Auto-Correction, MM:S won''t work if you start it through the Steam menu.'), PChar(Application.Title), MB_ICONINFORMATION);
+    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. You can use it if you want to start your Source game with Metamod:Source enabled.'), PChar(Application.Title), MB_ICONINFORMATION);
 end;
 
 { Dedicated Server }

@@ -165,11 +165,13 @@ begin
     eStr := TStringList.Create;
     ePath := '/';
     CurNode := trvDirectories.Selected;
-    repeat
-      ePath := '/' + CurNode.Text + ePath;
-      CurNode := CurNode.Parent;
-    until (not Assigned(CurNode));
-    IdFTP.ChangeDir(ePath); 
+    if (Assigned(CurNode)) then begin
+      repeat
+        ePath := '/' + CurNode.Text + ePath;
+        CurNode := CurNode.Parent;
+      until (not Assigned(CurNode));
+    end;
+    IdFTP.ChangeDir(ePath);
     IdFTP.List(eStr, '', False);
     if eStr.IndexOf('gameinfo.txt') = -1 then begin
       MessageBox(Handle, 'Invalid directory. Please select your mod directory and try again.', PChar(Application.Title), MB_ICONWARNING);
