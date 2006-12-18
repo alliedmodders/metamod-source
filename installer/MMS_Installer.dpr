@@ -1,6 +1,6 @@
 program MMS_Installer;
 
-{ Metamod:Source installer ported from the AMX Mod X installer
+{ Metamod:Source installer is a port of the AMX Mod X installer
 
   Used components:
 
@@ -8,7 +8,10 @@ program MMS_Installer;
   - FlatStyle Components (www.torry.net)
   - FlatPack Component Pack (www.torry.net)
   - JVCL Lib Pack 3.0 (jvcl.sourceforge.net)
-  
+
+  Half-Life 2 Icons by Vasili "vaksa" Vorotnikov, Thanks!
+  Visit www.vaksa.net for further information
+
 }
 
 uses

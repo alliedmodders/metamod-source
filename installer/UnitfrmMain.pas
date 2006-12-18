@@ -9,7 +9,7 @@ uses
   TFlatGaugeUnit, ImgList, FileCtrl, Registry, CheckLst, TFlatComboBoxUnit,
   TFlatCheckBoxUnit, IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdFTP, IdException, IdAntiFreezeBase, IdAntiFreeze,
-  IdIntercept, IdLogBase, IdLogFile;
+  IdIntercept, IdLogBase, IdLogFile, pngimage;
 
 type
   TfrmMain = class(TForm)
