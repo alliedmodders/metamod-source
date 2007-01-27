@@ -511,7 +511,7 @@ int LoadPluginsFromFile(const char *_file)
 		return -1;
 	}
 
-	char buffer[255], error[255], full_path[128];
+	char buffer[255], error[255], full_path[255];
 	const char *ptr, *ext, *file;
 	size_t length;
 	while (!feof(fp))
