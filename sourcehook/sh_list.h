@@ -97,7 +97,7 @@ namespace SourceHook
 
 			m_Size++;
 		}
-		size_t size()
+		size_t size() const
 		{
 			return m_Size;
 		}
@@ -118,7 +118,7 @@ namespace SourceHook
 			}
 			m_Size = 0;
 		}
-		bool empty()
+		bool empty() const
 		{
 			return (m_Size == 0);
 		}
@@ -267,7 +267,7 @@ namespace SourceHook
 			}
 		}
 		template <typename U>
-		iterator find(const U & equ)
+		iterator find(const U & equ) const
 		{
 			iterator iter;
 			for (iter=begin(); iter!=end(); iter++)
