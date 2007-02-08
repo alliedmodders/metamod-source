@@ -18,7 +18,6 @@
 
 #include <interface.h>
 #include <eiface.h>
-#include <convar.h>
 #include <sourcehook/sourcehook.h>
 #include "IPluginManager.h"
 

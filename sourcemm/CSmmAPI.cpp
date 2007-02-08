@@ -8,6 +8,7 @@
 * ============================
 */
 
+#include "convar_smm.h"
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"

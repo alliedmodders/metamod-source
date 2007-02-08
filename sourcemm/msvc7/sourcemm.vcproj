@@ -243,7 +243,7 @@
 			Name="HL2SDK"
 			Filter="">
 			<File
-				RelativePath="..\convar.h">
+				RelativePath="..\convar_smm.h">
 			</File>
 		</Filter>
 	</Files>

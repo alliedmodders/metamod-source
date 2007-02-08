@@ -19,7 +19,7 @@
 #include <interface.h>
 #include <eiface.h>
 #include "sourcemm.h"
-#include <convar.h>
+#include "convar_smm.h"
 #include "sh_list.h"
 
 class SMConVarAccessor : public IConCommandBaseAccessor

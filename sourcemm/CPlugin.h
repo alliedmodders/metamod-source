@@ -18,7 +18,7 @@
 
 #include <interface.h>
 #include <eiface.h>
-#include <convar.h>
+#include "convar_smm.h"
 #include "IPluginManager.h"
 #include "oslink.h"
 #include "sh_list.h"
