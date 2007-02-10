@@ -1,12 +1,12 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #include <ctype.h>
 #include "CSmmAPI.h"

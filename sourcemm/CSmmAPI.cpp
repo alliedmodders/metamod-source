@@ -1,18 +1,19 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #include "convar_smm.h"
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"
 #include "CPlugin.h"
+#include "vsp_listener.h"
 
 /**
  * @brief Implementation of main API interface
@@ -27,6 +28,7 @@ CSmmAPI::CSmmAPI()
 {
 	m_ConPrintf = NULL;
 	m_Cache = false;
+	m_VSP = false;
 }
 
 void CSmmAPI::LogMsg(ISmmPlugin *pl, const char *msg, ...)
@@ -140,20 +142,28 @@ void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
 void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 {
 	if (id)
+	{
 		*id = 0;
+	}
 
 	if (!iface)
+	{
 		return NULL;
+	}
 
 	//first check ours... we get first chance!
 	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
 	{
 		if (_ret)
+		{
 			*_ret = IFACE_OK;
+		}
 		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
 	} else if (strcmp(iface, MMIFACE_PLMANAGER) == 0) {
 		if (_ret)
+		{
 			*_ret = IFACE_OK;
+		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
 
@@ -435,4 +445,56 @@ void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
 	vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
 	g_Engine.engine->ClientPrintf(client, buf);
 	va_end(ap);
+}
+
+void CSmmAPI::LoadAsVSP()
+{
+	g_Engine.engine->ServerCommand("plugin_load \n");
+	g_Engine.engine->ServerExecute();
+
+	IServerPluginCallbacks *iface = NULL;
+	if (g_VspListener.IsLoaded())
+	{
+		iface = &g_VspListener;
+	}
+
+	PluginIter iter;
+	CPluginManager::CPlugin *pPlugin;
+	SourceHook::List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 10 (v1:5, SourceMM 1.4) */
+		if (pPlugin->m_API->GetApiVersion() < 10)
+		{
+			continue;
+		}
+		for (event=pPlugin->m_Events.begin();
+			 event!=pPlugin->m_Events.end();
+			 event++)
+		{
+			pML = (*event);
+			pML->OnVSPListening(iface);
+		}
+	}
+}
+
+void CSmmAPI::EnableVSPListener()
+{
+	/* If GameInit already passed and we're not already enabled or loaded, go ahead and LoadAsVSP load */
+	if (bGameInit && !m_VSP && !g_VspListener.IsLoaded())
+	{
+		LoadAsVSP();
+	}
+	m_VSP = true;
+}
+
+int CSmmAPI::GetGameDLLVersion()
+{
+	return g_GameDllVersion;
 }

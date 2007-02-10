@@ -1,14 +1,14 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* Contributor(s): Scott "Damaged Soul" Ehlert
-*				: Pavol "PM OnoTo" Marko
-* ============================
-*/
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * Contributor(s): Scott "Damaged Soul" Ehlert
+ *				: Pavol "PM OnoTo" Marko
+ * ============================
+ */
 
 #include <interface.h>
 #include <eiface.h>
@@ -17,6 +17,7 @@
 #include "CSmmAPI.h"
 #include "CPlugin.h"
 #include "util.h"
+#include "vsp_listener.h"
 
 using namespace SourceMM;
 
@@ -30,11 +31,13 @@ SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
+SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, false, bool);
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
+bool GameInit_handler();
 
 GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
 EngineInfo g_Engine;
@@ -45,6 +48,7 @@ SourceHook::String g_BinPath;
 PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
 bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
+bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *dllExec;
 int g_GameDllVersion = 0;
@@ -104,11 +108,12 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, g_GameDll.pGameDLL, DLLShutdown_handler, false);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
+	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
 
 	if (g_GameDll.pGameClients)
-		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
-	else
 	{
+		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
+	} else {
 		// If IServerGameClients isn't found, this really isn't a fatal error so...
 		LogMessage("[META] Warning: Could not find IServerGameClients!");
 		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
@@ -149,7 +154,9 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
 	if (!pluginFile) 
+	{
 		pluginFile = GetPluginsFile();
+	}
 
 	char full_path[260];
 	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), pluginFile);
@@ -163,6 +170,23 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
+bool GameInit_handler()
+{
+	if (bGameInit)
+	{
+		return true;
+	}
+
+	if (g_SmmAPI.VSPEnabled())
+	{
+		g_SmmAPI.LoadAsVSP();
+	}
+
+	bGameInit = true;
+
+	return true;
+}
+
 bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
 {
 	g_PluginMngr.SetAllLoaded();
@@ -174,13 +198,26 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 {
 	// Prevent loading of self as a SourceMM plugin or Valve server plugin :x
 	const char *vspIface = "ISERVERPLUGINCALLBACKS";
-	if (strcmp(iface, PLAPI_NAME) == 0 || strnicmp(iface, vspIface, strlen(vspIface)) == 0)
+	if (strcmp(iface, PLAPI_NAME) == 0)
 	{
 		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
 
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+
 		return NULL;
+	}
+
+	if (strncmp(iface, vspIface, 22) == 0)
+	{
+		if (ret)
+		{
+			*ret = IFACE_OK;
+		}
+
+		return &g_VspListener;
 	}
 
 	if (!gParsedGameInfo)
@@ -410,7 +447,9 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				//maybe this will get used in the future
 				sizeTooBig = g_GameDllVersion;
 				if (ret)
+				{
 					*ret = IFACE_FAILED;
+				}
 			}
 			SourceHook::List<GameDllInfo *>::iterator iter;
 			GameDllInfo *pInfo = NULL;
@@ -436,7 +475,9 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				{
 					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!\n", sizeTooBig);
 					if (ret)
+					{
 						*ret = IFACE_FAILED;
+					}
 					return NULL;
 				} else {
 					InitMainStates();
@@ -688,10 +729,6 @@ bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char cons
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
-
-#if (defined _DEBUG || defined DEBUG) && (defined OS_WIN32)
-    SetUnhandledExceptionFilter(NULL);
-#endif
 
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 

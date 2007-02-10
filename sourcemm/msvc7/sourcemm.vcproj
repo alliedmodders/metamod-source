@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib tier1.lib vstdlib.lib"
+				AdditionalDependencies="tier1.lib vstdlib.lib tier0.lib"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libc.lib;libcmt.lib;libcmtd.lib"
@@ -150,6 +150,9 @@
 			<File
 				RelativePath="..\util.cpp">
 			</File>
+			<File
+				RelativePath="..\vsp_listener.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -175,6 +178,9 @@
 			</File>
 			<File
 				RelativePath="..\util.h">
+			</File>
+			<File
+				RelativePath="..\vsp_listener.h">
 			</File>
 		</Filter>
 		<Filter

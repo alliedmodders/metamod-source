@@ -31,8 +31,8 @@ class IMetamodListener;
 class ISmmPluginManager;
 class ISmmPlugin;
 
-#define	MMIFACE_SOURCEHOOK		"ISourceHook"
-#define	MMIFACE_PLMANAGER		"IPluginManager"
+#define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
+#define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define IFACE_MAXNUM			999
 
 class ISmmAPI
@@ -219,9 +219,9 @@ public:		//Added in 1.2 (1:2)
 
 	/**
 	 * @brief Returns the base directory of the game/server, equivalent to 
-	 *  IVEngineServer::GetGameDir().
+	 *  IVEngineServer::GetGameDir(), except the path is absolute.
 	 *
-	 * @return				Static pointer to game's basedir.
+	 * @return				Static pointer to game's absolute basedir.
 	 */
 	virtual const char *GetBaseDir() =0;
 
@@ -261,6 +261,23 @@ public:		// Added in 1.3 (1:4)
 	 * @return				Interface pointer, or NULL if not found.
 	 */
 	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1) =0;
+
+public:		// Added in 1.4 (1:5)
+	/**
+	 * @brief Tells SourceMM to add VSP hooking capability to plugins.  
+	 *
+	 * Since this  potentially uses more resources than it would otherwise, plugins have to 
+	 * explicitly enable the feature.  Whether requested or not, if it is enabled, all plugins 
+	 * will get a pointer to the VSP listener through IMetamodListener.
+	 */
+	virtual void EnableVSPListener() =0;
+
+	/**
+	 * @brief Returns the interface version of the GameDLL's IServerGameDLL implementation.
+	 *
+	 * @return				Interface version of the loaded IServerGameDLL.
+	 */
+	virtual int GetGameDLLVersion() =0;
 };
 
 
@@ -270,6 +287,7 @@ public:		// Added in 1.3 (1:4)
  * 1.2   added API more helper functions and new SourceHook version.
  * 1.2.2 added API for printing to client console (with string formatting)
  * 1.3   added new interface search API
+ * 1.4	 added VSP listener API
  */
 
 #endif //_INCLUDE_ISMM_API_H

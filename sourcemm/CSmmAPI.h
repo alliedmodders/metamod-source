@@ -1,12 +1,12 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
-* No warranties of any kind
-*
-* License: zlib/libpng
-*
-* Author(s): David "BAILOPAN" Anderson
-* ============================
-*/
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * No warranties of any kind
+ *
+ * License: zlib/libpng
+ *
+ * Author(s): David "BAILOPAN" Anderson
+ * ============================
+ */
 
 #ifndef _INCLUDE_CSMM_API_H
 #define _INCLUDE_CSMM_API_H
@@ -56,12 +56,20 @@ namespace SourceMM
 		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...);
 		void ClientConPrintf(edict_t *client, const char *fmt, ...);
 		void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1);
+		void EnableVSPListener();
+		int GetGameDLLVersion();
 	public:
 		bool CacheCmds();
+		void LoadAsVSP();
+		bool VSPEnabled()
+		{
+			return m_VSP;
+		}
 	private:
 		META_RES m_Res;
 		CONPRINTF_FUNC m_ConPrintf;
 		bool m_Cache;
+		bool m_VSP;
 	};
 };
 

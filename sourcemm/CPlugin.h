@@ -26,18 +26,19 @@
 
 /**
  * History of plugin versions: (M=min, C=current)
- *    1: Initial interface
- *    2: Added GetLogTag()
- *    3: Moved GetApiVersion() to top  (2005-04-16)
- *    4: Added AllPluginsLoaded() callback (2005-04-18)
- *    5: Bumped version for SourceHook V4 (2005-05-01)
- *    6: Added functions for console printing (2005-05-26)
- *  M 7: Changed template libraries (2005-08-11)
- *		 New loading structure mechanism
- *	     New SourceHook version
- *    8: New SourceHook version (2005-12-23)
- *       New ISmmAPI additions
- *  C 9: New ISmmPluginManager additions
+ *     1: Initial interface
+ *     2: Added GetLogTag()
+ *     3: Moved GetApiVersion() to top  (2005-04-16)
+ *     4: Added AllPluginsLoaded() callback (2005-04-18)
+ *     5: Bumped version for SourceHook V4 (2005-05-01)
+ *     6: Added functions for console printing (2005-05-26)
+ * M   7: Changed template libraries (2005-08-11)
+ * 	      New loading structure mechanism
+ *        New SourceHook version
+ *     8: New SourceHook version (2005-12-23)
+ *        New ISmmAPI additions
+ *     9: New ISmmPluginManager additions
+ *  C 10: Added VSP listen functions to ISmmAPI and IMetamodListener (2007-02-09)
  */
 
 #define PLAPI_MIN_VERSION	7

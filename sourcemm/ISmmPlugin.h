@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	9
+#define PLAPI_VERSION	10
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
@@ -150,51 +150,171 @@ class IMetamodListener
 public:
 	virtual ~IMetamodListener() { }
 public:
+	/**
+	 * @brief Called when a plugin is loaded.
+	 *
+	 * @param id		Id of the plugin.
+	 */
 	virtual void OnPluginLoad(PluginId id) { }
 
+	/**
+	 * @brief Called when a plugin is unloaded.
+	 *
+	 * @param id		Id of the plugin.
+	 */
 	virtual void OnPluginUnload(PluginId id) { }
 
+	/**
+	 * @brief Called when a plugin is paused.
+	 *
+	 * @param id		Id of the plugin.
+	 */
 	virtual void OnPluginPause(PluginId id) { }
 
+	/**
+	 * @brief Called when a plugin is unpaused.
+	 *
+	 * @param id		Id of the plugin.
+	 */
 	virtual void OnPluginUnpause(PluginId id) { }
 
+	/**
+	 * @brief Called when the level is loaded (after GameInit, before ServerActivate).
+	 *
+	 * To override this, hook IServerGameDLL::LevelInit().
+	 *
+	 * @param pMapName		Name of the map.
+	 * @param pMapEntities	Lump string of the map entities, in KeyValue format.
+	 * @param pOldLevel		Unknown.
+	 * @param pLandmarkName	Unknown.
+	 * @param loadGame		Unknown.
+	 * @param background	Unknown.
+	 */
 	virtual void OnLevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background) { }
 
+	/**
+	 * @brief Called when the level is shut down.  May be called more than once.
+	 */
 	virtual void OnLevelShutdown() { }
 
+	/**
+	 * @brief Called when engineFactory() is used through Metamod:Source's wrapper.
+	 * This can be used to provide interfaces to other plugins or the GameDLL.
+	 *
+	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 *
+	 * @param iface			Interface string.
+	 * @param ret			Optional pointer to store return code.
+	 * @return				Generic pointer to the interface, or NULL if not found.
+	 */
 	virtual void *OnEngineQuery(const char *iface, int *ret)
 	{
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+
 		return NULL; 
 	}
 
+	/**
+	 * @brief Called when the physics factory is used through Metamod:Source's wrapper.
+	 * This can be used to provide interfaces to other plugins.
+	 *
+	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 *
+	 * @param iface			Interface string.
+	 * @param ret			Optional pointer to store return code.
+	 * @return				Generic pointer to the interface, or NULL if not found.
+	 */
 	virtual void *OnPhysicsQuery(const char *iface, int *ret)
 	{
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+
 		return NULL; 
 	}
 
+	/**
+	 * @brief Called when the filesystem factory is used through Metamod:Source's wrapper.
+	 * This can be used to provide interfaces to other plugins.
+	 *
+	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 *
+	 * @param iface			Interface string.
+	 * @param ret			Optional pointer to store return code.
+	 * @return				Generic pointer to the interface, or NULL if not found.
+	 */
 	virtual void *OnFileSystemQuery(const char *iface, int *ret)
 	{
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+		
 		return NULL; 
 	}
 
+	/**
+	 * @brief Called when the server DLL's factory is used through Metamod:Source's wrapper.
+	 * This can be used to provide interfaces to other plugins.
+	 *
+	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 *
+	 * @param iface			Interface string.
+	 * @param ret			Optional pointer to store return code.
+	 * @return				Generic pointer to the interface, or NULL if not found.
+	 */
 	virtual void *OnGameDLLQuery(const char *iface, int *ret)
 	{
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+
 		return NULL; 
 	}
 
+	/**
+	 * @brief Called when Metamod's own factory is invoked.  
+	 * This can be used to provide interfaces to other plugins.
+	 *
+	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 *
+	 * @param iface			Interface string.
+	 * @param ret			Optional pointer to store return code.
+	 * @return				Generic pointer to the interface, or NULL if not found.
+	 */
 	virtual void *OnMetamodQuery(const char *iface, int *ret)
 	{
 		if (ret)
+		{
 			*ret = IFACE_FAILED;
+		}
+
 		return NULL; 	
+	}
+
+	/**
+	 * @brief Called when Metamod:Source acquires a valid IServerPluginCallbacks 
+	 * pointer to be used for hooking by plugins.
+	 *
+	 * This will only be called after a call to ISmmAPI::EnableVSPListener().
+	 * If called before GameInit, this callback will occur before LevelInit.
+	 * Otherwise, it will be called on the first call after that.
+	 *
+	 * This callback is provided to all plugins regardless of which (or how many)
+	 * called EnableVSPListener(), but only if at least one did in fact enable it.
+	 *
+	 * This callback is only available for plugins using API v1:5 (SourceMM 1.4+).
+	 *
+	 * @param iface			Interface pointer.  If NULL, then the VSP listening construct
+	 *						failed to initialize and is not available.
+	 */
+	virtual void OnVSPListening(IServerPluginCallbacks *iface)
+	{
 	}
 };
 
