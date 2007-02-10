@@ -263,7 +263,7 @@ public:
 		v[len] = 0;
 	}
 
-	String substr(unsigned int index, int num = npos)
+	String substr(unsigned int index, int num = npos) const
 	{
 		if (!v)
 		{
@@ -322,7 +322,7 @@ public:
 
 	}
 
-	char operator [] (unsigned int index)
+	char operator [] (unsigned int index) const
 	{
 		if (index > size() || !v)
 		{
@@ -332,7 +332,7 @@ public:
 		}
 	}
 
-	int at(int a)
+	int at(int a) const
 	{
 		if (a < 0 || a >= (int)size() || !v)
 			return -1;
