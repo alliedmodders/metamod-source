@@ -17,7 +17,7 @@ HL2PUB = $(HL2SDK)/public
 HL2LIB = $(HL2SDK)/linux_sdk
 
 OBJECTS = oslink.cpp util.cpp concommands.cpp CSmmAPI.cpp \
-          sourcemm.cpp CPlugin.cpp sourcehook.cpp
+          sourcemm.cpp CPlugin.cpp sourcehook.cpp vsp_listener.cpp
 
 LINK = $(HL2LIB)/tier1_i486.a  vstdlib_i486.so tier0_i486.so -static-libgcc
 
