@@ -27,8 +27,14 @@ CSmmAPI g_SmmAPI;
 CSmmAPI::CSmmAPI()
 {
 	m_ConPrintf = NULL;
-	m_Cache = false;
+	m_CmdCache = false;
+	m_MsgCount = -1;
 	m_VSP = false;
+}
+
+CSmmAPI::~CSmmAPI()
+{
+	m_UserMessages.RemoveAll();
 }
 
 void CSmmAPI::LogMsg(ISmmPlugin *pl, const char *msg, ...)
@@ -279,7 +285,7 @@ bool CSmmAPI::CacheCmds()
 			//add the base offset, to the ip (which is the address+offset + 4 bytes for next instruction)
 			m_ConPrintf = (CONPRINTF_FUNC)((unsigned long)m_ConPrintf + (unsigned long)(ptr + offs) + 4);
 
-			m_Cache = true;
+			m_CmdCache = true;
 
 			return true;
 		}
@@ -291,9 +297,9 @@ bool CSmmAPI::CacheCmds()
 	return false;
 }
 
-bool CSmmAPI::CacheSuccessful()
+bool CSmmAPI::CmdCacheSuccessful()
 {
-	return m_Cache;
+	return m_CmdCache;
 }
 
 void CSmmAPI::GetApiVersions(int &major, int &minor, int &plvers, int &plmin)
@@ -497,4 +503,105 @@ void CSmmAPI::EnableVSPListener()
 int CSmmAPI::GetGameDLLVersion()
 {
 	return g_GameDllVersion;
+}
+
+//////////////////////////////////////////////////////////////////////
+// EVEN MORE HACKS HERE! YOU HAVE BEEN WARNED!                      //
+// Signatures necessary in finding the pointer to the CUtlDict that //
+//   stores user message information.                               //
+// IServerGameDLL::GetUserMessageInfo() normally crashes with bad   //
+//   message indices. This is our answer to it. Yuck! <:-(          //
+//////////////////////////////////////////////////////////////////////
+#ifdef OS_WIN32
+	#define MSGCLASS_SIGLEN	7
+	#define MSGCLASS_SIG	"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
+	#define MSGCLASS_OFFS	2
+#elif defined OS_LINUX
+	#define MSGCLASS_SIGLEN	14
+	#define MSGCLASS_SIG	"\x53\x83\xEC\x2A\x8B\x5C\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
+	#define MSGCLASS_OFFS	9
+#endif
+
+/* This is the ugliest function in all of SourceMM */
+bool CSmmAPI::CacheUserMessages()
+{
+	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
+	SourceHook::GetFuncInfo(&IServerGameDLL::GetUserMessageInfo, info);
+
+	// Get address of original GetUserMessageInfo()
+	char *vfunc = reinterpret_cast<char *>(g_GameDllPatch->GetOrigFunc(info.vtbloffs, info.vtblindex));
+
+	// If we can't get original function (GetOrigFunc bug?)
+	if (vfunc == NULL)
+	{
+		// This means there's no hook, so we must get it manually - Lovely code <:-(
+		char *adjustedptr = reinterpret_cast<char *>(g_GameDll.pGameDLL) + info.thisptroffs + info.vtbloffs;
+		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
+
+		vfunc = vtable[info.vtblindex];
+	}
+
+	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
+	{
+		// Get address of CUserMessages
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
+
+		// Get address of CUserMessages::m_UserMessages
+		UserMsgDict *dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+
+		m_MsgCount = dict->Count();
+
+		// Cache messages in our CUtlDict
+		UserMessage *msg;
+
+		for (int i = 0; i < m_MsgCount; i++)
+		{
+			msg = dict->Element(i);
+			m_UserMessages.Insert(msg->name, msg);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool CSmmAPI::MsgCacheSuccessful()
+{
+	return m_MsgCount > -1;
+}
+
+int CSmmAPI::GetUserMessageCount()
+{
+	return m_MsgCount;
+}
+
+int CSmmAPI::FindUserMessage(const char *name, int *size)
+{
+	int index = m_UserMessages.Find(name);
+
+	if (size && index > -1)
+	{
+		UserMessage *msg = m_UserMessages.Element(index);
+		*size = msg->size;
+	}
+
+	return index;
+}
+
+const char *CSmmAPI::GetUserMessage(int index, int *size)
+{
+	if (m_MsgCount <= 0 || index < 0 || index >= m_MsgCount)
+	{
+		return NULL;
+	}
+
+	UserMessage *msg = m_UserMessages.Element(index);
+
+	if (size)
+	{
+		*size = msg->size;
+	}
+
+	return msg->name;
 }

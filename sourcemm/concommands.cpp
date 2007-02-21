@@ -156,6 +156,32 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("  DLL Path: %s\n", g_BinPath.c_str());
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
 
+			// Display user messages
+			if (g_SmmAPI.MsgCacheSuccessful())
+			{
+				const char *msgname;
+				int msgsize;
+				int msgcount = g_SmmAPI.GetUserMessageCount();
+
+				if (msgcount > 0)
+				{
+					CONMSG("  User Messages:  %-32.31s  %-5s  %-5s\n", "Name", "Index", "Size");
+
+					for (int i = 0; i < msgcount; i++)
+					{
+						msgname = g_SmmAPI.GetUserMessage(i, &msgsize);
+
+						CONMSG("                  %-32.31s  %-5d  %-5d\n", msgname, i, msgsize); 
+					}
+
+					CONMSG("  %d user message%s in total\n", msgcount, (msgcount > 1) ? "s" : "");
+				} else {
+					CONMSG("  User Messages: None\n");
+				}
+			} else {
+				CONMSG("  User Messages: Failed to get list of user messages\n");
+			}
+
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
 			char full_path[255];

@@ -36,6 +36,14 @@ int GetLastError()
 {
 	return errno;
 }
+
+extern "C" void __cxa_guard_acquire(void)
+{
+}
+
+extern "C" void __cxa_guard_release(void)
+{
+}
 #endif
 
 bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)

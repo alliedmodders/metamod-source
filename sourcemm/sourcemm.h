@@ -112,4 +112,7 @@ extern int g_GameDllVersion;
 
 extern bool bGameInit;
 
+/** @brief Global CallClass for IServerGameDLL */
+extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
+
 #endif //_INCLUDE_SOURCEMM_H

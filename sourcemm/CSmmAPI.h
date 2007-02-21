@@ -17,6 +17,15 @@
  */
 
 #include "ISmmAPI.h"
+#include <tier1/utldict.h>
+
+struct UserMessage
+{
+	int size;
+	const char *name;
+};
+
+typedef CUtlDict<UserMessage *, int> UserMsgDict;
 
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
 
@@ -26,6 +35,7 @@ namespace SourceMM
 	{
 	public:
 		CSmmAPI();
+		~CSmmAPI();
 	public:
 		void LogMsg(ISmmPlugin *pl, const char *msg, ...);
 	public:
@@ -41,10 +51,10 @@ namespace SourceMM
 		void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 		void ConPrint(const char *fmt);
 		void ConPrintf(const char *fmt, ...);
-		bool CacheSuccessful();
+		bool CmdCacheSuccessful();
 		bool RemotePrintingAvailable()
 		{
-			return CacheSuccessful();
+			return CmdCacheSuccessful();
 		}
 		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin);
 		virtual void GetShVersions(int &shvers, int &shimpl);
@@ -58,6 +68,9 @@ namespace SourceMM
 		void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1);
 		void EnableVSPListener();
 		int GetGameDLLVersion();
+		int GetUserMessageCount();
+		int FindUserMessage(const char *name, int *size=NULL);
+		const char *GetUserMessage(int index, int *size=NULL);
 	public:
 		bool CacheCmds();
 		void LoadAsVSP();
@@ -65,11 +78,15 @@ namespace SourceMM
 		{
 			return m_VSP;
 		}
+		bool CacheUserMessages();
+		bool MsgCacheSuccessful();
 	private:
 		META_RES m_Res;
 		CONPRINTF_FUNC m_ConPrintf;
-		bool m_Cache;
+		bool m_CmdCache;
 		bool m_VSP;
+		int m_MsgCount;
+		UserMsgDict m_UserMessages;
 	};
 };
 

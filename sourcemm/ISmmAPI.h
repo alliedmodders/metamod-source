@@ -278,16 +278,41 @@ public:		// Added in 1.4 (1:5)
 	 * @return				Interface version of the loaded IServerGameDLL.
 	 */
 	virtual int GetGameDLLVersion() =0;
+
+	/**
+	 * @brief Returns the number of user messages in the GameDLL.
+	 *
+	 * @return				Number of user messages, or -1 if SourceMM has failed to get user message list.
+	 */
+	virtual int GetUserMessageCount() =0;
+
+	/**
+	 * @brief Returns the index of the specified user message.
+	 *
+	 * @param name			User message name.
+	 * @param size			Optional pointer to store size of user message.
+	 * @return				Message index, or -1 on failure.
+	 */
+	virtual int FindUserMessage(const char *name, int *size=NULL) =0;
+
+	/**
+	 * @brief Returns the name of the specified user message.
+	 *
+	 * @param index			User message index.
+	 * @param size			Optional pointer to store size of user message.
+	 * @return				Message name, or NULL on failure.
+	 */
+	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
 };
 
 
 /** Version history
- * 1.1.0 bumped API to 1:0.  The breaking changes occured in sourcehook and the plugin API.
+ * 1.1.0 bumped API to 1:0.  The breaking changes occurred in sourcehook and the plugin API.
  * 1.1.2 added API call for generating iface names.
  * 1.2   added API more helper functions and new SourceHook version.
  * 1.2.2 added API for printing to client console (with string formatting)
  * 1.3   added new interface search API
- * 1.4	 added VSP listener API
+ * 1.4	 added VSP listener and user message  API
  */
 
 #endif //_INCLUDE_ISMM_API_H

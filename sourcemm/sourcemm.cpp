@@ -32,6 +32,7 @@ SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, false, bool);
+
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 void DLLShutdown_handler();
@@ -50,7 +51,7 @@ bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
-SourceHook::CallClass<IServerGameDLL> *dllExec;
+SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
 
 void ClearGamedllList();
@@ -145,12 +146,21 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	//Initialize our console hooks
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
+	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
+
 	if (!g_SmmAPI.CacheCmds())
 	{
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
 
+	if (!g_SmmAPI.CacheUserMessages())
+	{
+		/* Don't know of a mod that has stripped out user messages completely, 
+			but perhaps should do something different here? */
+		LogMessage("[META] Warning: Failed to get list of user messages.");
+		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
+	}
 
 	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
 	if (!pluginFile) 
@@ -164,8 +174,6 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	LoadPluginsFromFile(full_path);
 
 	bInFirstLevel = true;
-
-	dllExec = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
@@ -184,7 +192,7 @@ bool GameInit_handler()
 
 	bGameInit = true;
 
-	return true;
+	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
 bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
@@ -524,10 +532,10 @@ void DLLShutdown_handler()
 	g_SMConVarAccessor.MarkCommandsAsGameDLL();
 	g_SMConVarAccessor.UnregisterGameDLLCommands();
 
-	SH_CALL(dllExec, &IServerGameDLL::DLLShutdown)();
+	SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
 
-	SH_RELEASE_CALLCLASS(dllExec);
-	dllExec = NULL;
+	SH_RELEASE_CALLCLASS(g_GameDllPatch);
+	g_GameDllPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
 
@@ -724,7 +732,7 @@ void LevelShutdown_handler(void)
 
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
 {
-	if (!g_SmmAPI.CacheSuccessful())
+	if (!g_SmmAPI.CmdCacheSuccessful())
 	{
 		LogMessage("[META] Warning: Failed to initialize Con_Printf.  Defaulting to Msg().");
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
