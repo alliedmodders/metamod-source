@@ -551,9 +551,16 @@ bool CSmmAPI::CacheUserMessages()
 
 		m_MsgCount = dict->Count();
 
-		// Cache messages in our CUtlDict
-		UserMessage *msg;
+		// Make sure count falls within bounds of an unsigned byte (engine sends message types as such)
+		if (m_MsgCount < 0 || m_MsgCount > 255)
+		{
+			m_MsgCount = -1;
+			return false;
+		}
 
+		UserMessage *msg;
+		
+		// Cache messages in our CUtlDict
 		for (int i = 0; i < m_MsgCount; i++)
 		{
 			msg = dict->Element(i);
