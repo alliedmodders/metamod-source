@@ -256,6 +256,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\svn_version.h"
+				>
+			</File>
+			<File
 				RelativePath="..\util.h"
 				>
 			</File>

@@ -25,13 +25,14 @@
 #include "CPlugin.h"
 #include "oslink.h"
 #include "util.h"
+#include "svn_version.h"
 
 /**
  * Versioning
  *   increase api_major when API breaks
  *   increase api_minor when new functions are added (non-breaking)
  */
-#define		SOURCEMM_VERSION	"1.4"
+#define		SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
 #define		SOURCEMM_DATE		__DATE__
 #define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
 #define		SM_VERS_API_MINOR	5		//increase this on a non-breaking API change
