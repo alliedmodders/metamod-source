@@ -513,16 +513,25 @@ int CSmmAPI::GetGameDLLVersion()
 //   message indices. This is our answer to it. Yuck! <:-(          //
 //////////////////////////////////////////////////////////////////////
 #ifdef OS_WIN32
-	#define MSGCLASS_SIGLEN	7
-	#define MSGCLASS_SIG	"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
-	#define MSGCLASS_OFFS	2
+	#define MSGCLASS_SIGLEN		7
+	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
+	#define MSGCLASS_OFFS		2
+
+	#define MSGCLASS2_SIGLEN	16
+	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
+	#define MSGCLASS2_OFFS		11
 #elif defined OS_LINUX
-	#define MSGCLASS_SIGLEN	14
-	#define MSGCLASS_SIG	"\x53\x83\xEC\x2A\x8B\x5C\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
-	#define MSGCLASS_OFFS	9
+	#define MSGCLASS_SIGLEN		14
+	#define MSGCLASS_SIG		"\x53\x83\xEC\x2A\x8B\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
+	#define MSGCLASS_OFFS		9
+
+	#define MSGCLASS2_SIGLEN	16
+	#define MSGCLASS2_SIG		"\x55\x89\xE5\x53\x83\xEC\x2A\x8B\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
+	#define MSGCLASS2_OFFS		11
 #endif
 
 /* This is the ugliest function in all of SourceMM */
+/* :TODO: Make this prettier */
 bool CSmmAPI::CacheUserMessages()
 {
 	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
@@ -541,14 +550,35 @@ bool CSmmAPI::CacheUserMessages()
 		vfunc = vtable[info.vtblindex];
 	}
 
+	UserMsgDict *dict = NULL;
+
 	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
 	{
-		// Get address of CUserMessages
+		// Get address of CUserMessages instance
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
 
 		// Get address of CUserMessages::m_UserMessages
-		UserMsgDict *dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	} else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
+	#ifdef OS_WIN32
+		/* If we get here, the code is possibly inlined like in Dystopia */
 
+		// Get the address of the CUtlRBTree
+		char *rbtree = *reinterpret_cast<char **>(vfunc + MSGCLASS2_OFFS);
+
+		// The CUtlDict should be 8 bytes before the CUtlRBTree (yeah I know this is hacky)
+		dict = reinterpret_cast<UserMsgDict *>(rbtree - 8);
+	#elif defined OS_LINUX
+		// Get address of CUserMessages instance
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
+
+		// Get address of CUserMessages::m_UserMessages
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	#endif
+	}
+
+	if (dict)
+	{
 		m_MsgCount = dict->Count();
 
 		// Make sure count falls within bounds of an unsigned byte (engine sends message types as such)
@@ -559,7 +589,7 @@ bool CSmmAPI::CacheUserMessages()
 		}
 
 		UserMessage *msg;
-		
+
 		// Cache messages in our CUtlDict
 		for (int i = 0; i < m_MsgCount; i++)
 		{

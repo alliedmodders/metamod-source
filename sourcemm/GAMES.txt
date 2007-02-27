@@ -7,6 +7,7 @@ The only Source-based game completely unsupported by Metamod:Source is Dark Mess
 User Message API Functions - GetUserMessageCount(), FindUserMessage(), GetUserMessage()
 	- Counter-Strike: Source
 	- Day of Defeat: Source
+	- Dystopia
 	- Half-Life 2: Deathmatch
 	- The Ship
 	- SourceForts
