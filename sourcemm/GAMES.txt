@@ -5,9 +5,11 @@ games not listed here, but that games listed here are specifically known and tes
 The only Source-based game completely unsupported by Metamod:Source is Dark Messiah.
 
 User Message API Functions - GetUserMessageCount(), FindUserMessage(), GetUserMessage()
+	- Battle Grounds 2
 	- Counter-Strike: Source
 	- Day of Defeat: Source
 	- Dystopia
+	- Garry's Mod 10
 	- Half-Life 2: Deathmatch
 	- The Ship
 	- SourceForts
