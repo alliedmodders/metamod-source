@@ -513,18 +513,22 @@ int CSmmAPI::GetGameDLLVersion()
 //   message indices. This is our answer to it. Yuck! <:-(          //
 //////////////////////////////////////////////////////////////////////
 #ifdef OS_WIN32
+	/* General Windows sig */
 	#define MSGCLASS_SIGLEN		7
 	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
 	#define MSGCLASS_OFFS		2
 
+	/* Dystopia Wimdows hack */
 	#define MSGCLASS2_SIGLEN	16
 	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
 	#define MSGCLASS2_OFFS		11
 #elif defined OS_LINUX
+	/* No frame pointer sig */
 	#define MSGCLASS_SIGLEN		14
 	#define MSGCLASS_SIG		"\x53\x83\xEC\x2A\x8B\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
 	#define MSGCLASS_OFFS		9
 
+	/* Frame pointer sig */
 	#define MSGCLASS2_SIGLEN	16
 	#define MSGCLASS2_SIG		"\x55\x89\xE5\x53\x83\xEC\x2A\x8B\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
 	#define MSGCLASS2_OFFS		11
