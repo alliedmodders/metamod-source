@@ -353,4 +353,3 @@ bool TestManual(std::string &error)
 
 	return true;
 }
-

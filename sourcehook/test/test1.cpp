@@ -698,4 +698,3 @@ bool TestBasic(std::string &error)
 
 	return true;
 }
-

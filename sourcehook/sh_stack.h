@@ -1,12 +1,12 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2006 Metamod:Source Development Team
- * No warranties of any kind
- *
- * License: zlib/libpng
- *
- * Author(s): Pavol "PM OnoTo" Marko
- * ============================
- */
+* Copyright (C) 2004-2007 Metamod:Source Development Team
+* No warranties of any kind
+*
+* License: zlib/libpng
+*
+* Author(s): Pavol "PM OnoTo" Marko
+* ============================
+*/
 
 #ifndef __SH_STACK_H__
 #define __SH_STACK_H__

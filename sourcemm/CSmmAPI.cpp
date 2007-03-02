@@ -541,13 +541,13 @@ bool CSmmAPI::CacheUserMessages()
 	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
 	SourceHook::GetFuncInfo(&IServerGameDLL::GetUserMessageInfo, info);
 
-	// Get address of original GetUserMessageInfo()
+	/* Get address of original GetUserMessageInfo() */
 	char *vfunc = reinterpret_cast<char *>(g_GameDllPatch->GetOrigFunc(info.vtbloffs, info.vtblindex));
 
-	// If we can't get original function (GetOrigFunc bug?)
+	/* If we can't get original function, that means there's no hook */
 	if (vfunc == NULL)
 	{
-		// This means there's no hook, so we must get it manually - Lovely code <:-(
+		/* Get virtual function address 'manually' then */
 		char *adjustedptr = reinterpret_cast<char *>(g_GameDll.pGameDLL) + info.thisptroffs + info.vtbloffs;
 		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
 
@@ -558,25 +558,25 @@ bool CSmmAPI::CacheUserMessages()
 
 	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
 	{
-		// Get address of CUserMessages instance
+		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
 
-		// Get address of CUserMessages::m_UserMessages
+		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
 	} else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
 	#ifdef OS_WIN32
 		/* If we get here, the code is possibly inlined like in Dystopia */
 
-		// Get the address of the CUtlRBTree
+		/* Get the address of the CUtlRBTree */
 		char *rbtree = *reinterpret_cast<char **>(vfunc + MSGCLASS2_OFFS);
 
-		// The CUtlDict should be 8 bytes before the CUtlRBTree (yeah I know this is hacky)
+		/* CUtlDict should be 8 bytes before the CUtlRBTree (hacktacular!) */
 		dict = reinterpret_cast<UserMsgDict *>(rbtree - 8);
 	#elif defined OS_LINUX
-		// Get address of CUserMessages instance
+		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
 
-		// Get address of CUserMessages::m_UserMessages
+		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
 	#endif
 	}
@@ -585,7 +585,7 @@ bool CSmmAPI::CacheUserMessages()
 	{
 		m_MsgCount = dict->Count();
 
-		// Make sure count falls within bounds of an unsigned byte (engine sends message types as such)
+		/* Ensure that count is within bounds of an unsigned byte, because that's what engine supports */
 		if (m_MsgCount < 0 || m_MsgCount > 255)
 		{
 			m_MsgCount = -1;
@@ -594,7 +594,7 @@ bool CSmmAPI::CacheUserMessages()
 
 		UserMessage *msg;
 
-		// Cache messages in our CUtlDict
+		/* Cache messages in our CUtlDict */
 		for (int i = 0; i < m_MsgCount; i++)
 		{
 			msg = dict->Element(i);

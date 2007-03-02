@@ -1,4 +1,4 @@
-#(C)2004-2005 SourceMM Development Team
+#(C)2004-2007 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
 HL2SDK = ../../hl2sdk
@@ -67,4 +67,3 @@ clean:
 	rm -rf Release/$(BINARY)
 	rm -rf Debug/*.o
 	rm -rf Debug/$(BINARY)
-	

@@ -1,5 +1,5 @@
 /* ======== stub_mm ========
- * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -103,4 +103,3 @@ const char *StubPlugin::GetLogTag()
 {
 	return "STUB";
 }
-

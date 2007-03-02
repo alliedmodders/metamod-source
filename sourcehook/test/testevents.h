@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2005 Metamod:Source Development Team
+* Copyright (C) 2004-2007 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -151,4 +151,3 @@ namespace
 #define CHECK_COND(c, err) if (!(c)) { error = err; return false; }
 
 #endif
-

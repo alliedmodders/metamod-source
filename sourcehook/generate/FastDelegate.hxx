@@ -1052,4 +1052,3 @@ FastDelegate@NUM<@SELARGS, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(@FUNCA
 } // namespace fastdelegate
 
 #endif // !defined(FASTDELEGATE_H)
-

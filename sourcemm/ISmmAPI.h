@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2006 Metamod:Source Development Team
+* Copyright (C) 2004-2007 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -106,7 +106,7 @@ public:
 	 */
 	virtual META_RES GetLastMetaReturn() =0;
 
-public:		//Added in 1.00-RC2 (0:0)
+public:		// Added in 1.00-RC2 (0:0)
 	/**
 	 * @brief Allows access to Metamod's ConCommandBaseAccessor.
 	 *
@@ -147,7 +147,7 @@ public:		//Added in 1.00-RC2 (0:0)
 	 */
 	virtual void ConPrintf(const char *fmt, ...) =0;
 
-public:		//Added in 1.1.0 (1:0)
+public:		// Added in 1.1.0 (1:0)
 	/**
 	 * @brief Checks if ConPrint/ConPrintf will mirror to rcon.
 	 *
@@ -193,7 +193,7 @@ public:		//Added in 1.1.0 (1:0)
 	  */
 	virtual void *MetaFactory(const char *iface, int *ret, PluginId *id) =0;
 
-public:		//Added in 1.1.2 (1:1)
+public:		// Added in 1.1.2 (1:1)
 	/**
 	 * @brief Given a base interface name, such as ServerGameDLL or ServerGameDLL003, 
 	 * reformats the string to increase the number, then returns the new number.
@@ -205,7 +205,7 @@ public:		//Added in 1.1.2 (1:1)
 	 */
 	virtual int FormatIface(char iface[], unsigned int maxlength) =0;
 
-public:		//Added in 1.2 (1:2)
+public:		// Added in 1.2 (1:2)
 	/**
 	 * @brief Searches for an interface for you.
 	 * 
@@ -306,13 +306,15 @@ public:		// Added in 1.4 (1:5)
 };
 
 
-/** Version history
- * 1.1.0 bumped API to 1:0.  The breaking changes occurred in sourcehook and the plugin API.
- * 1.1.2 added API call for generating iface names.
- * 1.2   added API more helper functions and new SourceHook version.
- * 1.2.2 added API for printing to client console (with string formatting)
- * 1.3   added new interface search API
- * 1.4	 added VSP listener and user message  API
+/** 
+ * Version History
+ *
+ * 1.1.0 Bumped API to 1:0. The breaking changes occurred in SourceHook and the plugin API.
+ * 1.1.2 Added API call for generating iface names.
+ * 1.2   Added API more helper functions and new SourceHook version.
+ * 1.2.2 Added API for printing to client console (with string formatting).
+ * 1.3   Added new interface search API.
+ * 1.4	 Added VSP listener and user message API.
  */
 
 #endif //_INCLUDE_ISMM_API_H

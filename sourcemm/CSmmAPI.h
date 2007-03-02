@@ -51,7 +51,6 @@ namespace SourceMM
 		void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 		void ConPrint(const char *fmt);
 		void ConPrintf(const char *fmt, ...);
-		bool CmdCacheSuccessful();
 		bool RemotePrintingAvailable()
 		{
 			return CmdCacheSuccessful();
@@ -73,6 +72,7 @@ namespace SourceMM
 		const char *GetUserMessage(int index, int *size=NULL);
 	public:
 		bool CacheCmds();
+		bool CmdCacheSuccessful();
 		void LoadAsVSP();
 		bool VSPEnabled()
 		{

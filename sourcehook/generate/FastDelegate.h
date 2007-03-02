@@ -3809,4 +3809,3 @@ FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 } // namespace fastdelegate
 
 #endif // !defined(FASTDELEGATE_H)
-

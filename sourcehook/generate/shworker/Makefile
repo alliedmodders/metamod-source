@@ -11,5 +11,3 @@ main.o: shworker.cpp bin
 
 shworker: fd_hopter.o main.o bin
 	gcc -ldl -lstdc++ bin/fd_hopter.o bin/main.o -o bin/shworker.bin
-
-

@@ -129,4 +129,3 @@ void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
 }
-

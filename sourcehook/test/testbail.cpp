@@ -113,4 +113,3 @@ bool TestBail(std::string &error)
 
 	return true;
 }
-

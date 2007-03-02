@@ -1,5 +1,5 @@
 /* ======== sample_mm ========
- * Copyright (C) 2004-2006 Metamod:Source Development Team
+ * Copyright (C) 2004-2007 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -237,4 +237,3 @@ void *MyListener::OnMetamodQuery(const char *iface, int *ret)
 
 	return NULL;
 }
-

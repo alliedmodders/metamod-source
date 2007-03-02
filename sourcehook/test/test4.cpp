@@ -418,4 +418,3 @@ bool TestPlugSys(std::string &error)
 
 	return true;
 }
-
