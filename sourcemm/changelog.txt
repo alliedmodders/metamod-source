@@ -3,7 +3,7 @@
  - Added API functions for letting SourceMM plugins use Valve Server Plugin callbacks.
  - Changed version numbering to include the build number (SVN revision).
  - Fixed amb93 (improved mod path detection).
- - Fixed various potential buffer overflows.
+ - Fixed various rare string inconsistencies.
 
 2006/11/29 1.3d:
  - Updated Metamod:Source to recognize the latest Source Engine version (ServerGameDLL006)
