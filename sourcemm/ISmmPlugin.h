@@ -76,9 +76,9 @@ public:
 	 * @brief Called on plugin unload.  You can return false if you know your plugin
 	 *  is not capable of restoring critical states it modifies.
 	 *
-	 * @param	error Error message buffer
-	 * @param	maxlen Size of error message buffer
-	 * @return	True on success, return false to request no unload.
+	 * @param error		Error message buffer
+	 * @param maxlen	Size of error message buffer
+	 * @return			True on success, return false to request no unload.
 	 */
 	virtual bool Unload(char *error, size_t maxlen)
 	{
@@ -353,7 +353,7 @@ public:
 #define	META_CONPRINT			g_SMAPI->ConPrint
 #define META_CONPRINTF			g_SMAPI->ConPrintf
 
-//probably should use this up above someday
+/* Probably should use this up above someday */
 #define CONCMD_VARNAME(name) name##_command
 
 #if !defined SMM_API
@@ -374,7 +374,7 @@ public:
  * @param v_factory		Factory method to use from ISmmAPI (such as engineFactory).
  * @param v_var			Variable name to store into.
  * @param v_type		Interface type (do not include the pointer/asterisk).
- * @param v_name		Inteface name.
+ * @param v_name		Interface name.
  */
 #define GET_V_IFACE_CURRENT(v_factory, v_var, v_type, v_name) \
 	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name); \
@@ -390,10 +390,10 @@ public:
  /**
   * @brief Same as GET_V_IFACE, except searches for any.
   *
-  * @param v_factory		Factory method to use from ISmmAPI (such as engineFactory).
-  * @param v_var			Variable name to store into.
+  * @param v_factory	Factory method to use from ISmmAPI (such as engineFactory).
+  * @param v_var		Variable name to store into.
   * @param v_type		Interface type (do not include the pointer/asterisk).
-  * @param v_name		Inteface name.
+  * @param v_name		Interface name.
   */
 #define GET_V_IFACE_ANY(v_factory, v_var, v_type, v_name) \
 	v_var = (v_type *)ismm->VInterfaceMatch(ismm->v_factory(), v_name, 0); \

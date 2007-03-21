@@ -31,24 +31,28 @@
 	#define		dlsym(x, s)		GetProcAddress(x, s)
 	#define		dlclose(x)		FreeLibrary(x)
 	const char*	dlerror();
-	#define	PATH_SEP_STR	"\\"
-	#define PATH_SEP_CHAR	'\\'
-	#define ALT_SEP_CHAR	'/'
-	#define SERVER_DLL		"server.dll"
+	#define		abspath(x, s)	_fullpath(x, s, sizeof(x))
+	#define	PATH_SEP_STR		"\\"
+	#define PATH_SEP_CHAR		'\\'
+	#define ALT_SEP_CHAR		'/'
+	#define PATH_SIZE			MAX_PATH
+	#define SERVER_DLL			"server.dll"
 #elif defined __linux__
 	#define OS_LINUX
 	#include <dlfcn.h>
 	#include <unistd.h>
 	#include <sys/types.h>
 	#include <dirent.h>
-	#define		dlmount(x)		dlopen(x,RTLD_NOW)
 	typedef		void*			HINSTANCE;
-	#define	PATH_SEP_STR	"/"
-	#define PATH_SEP_CHAR	'/'
-	#define ALT_SEP_CHAR	'\\'
+	#define		dlmount(x)		dlopen(x,RTLD_NOW)
+	#define		abspath(x, s)	realpath(s, x)
+	#define	PATH_SEP_STR		"/"
+	#define PATH_SEP_CHAR		'/'
+	#define ALT_SEP_CHAR		'\\'
+	#define PATH_SIZE			PATH_MAX
 	#define	stricmp				strcasecmp
 	#define strnicmp			strncasecmp
-	#define SERVER_DLL		"server_i486.so"
+	#define SERVER_DLL			"server_i486.so"
 #endif
 
 #if defined __linux__

@@ -188,7 +188,7 @@ bool CPluginManager::Pause(PluginId id, char *error, size_t maxlen)
 	
 	if (!pl)
 	{
-		snprintf(error, maxlen, "Plugin id not found");
+		UTIL_Format(error, maxlen, "Plugin id not found");
 		return false;
 	}
 
@@ -208,7 +208,7 @@ bool CPluginManager::Unpause(PluginId id, char *error, size_t maxlen)
 	
 	if (!pl)
 	{
-		snprintf(error, maxlen, "Plugin id not found");
+		UTIL_Format(error, maxlen, "Plugin id not found");
 		return false;
 	}
 
@@ -228,7 +228,7 @@ bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
 	
 	if (!pl)
 	{
-		snprintf(error, maxlen, "Plugin %d not found", id);
+		UTIL_Format(error, maxlen, "Plugin %d not found", id);
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 		{
 			if ( (*i)->m_Status >= Pl_Paused)
 			{
-				snprintf(error, len, "Plugin %d is already running.", id);
+				UTIL_Format(error, len, "Plugin %d is already running.", id);
 				return false;
 			}
 			CPlugin *pl = _Load((*i)->m_File.c_str(), Pl_Console, error, len);
@@ -281,7 +281,7 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 		}
 	}
 
-	snprintf(error, len, "Plugin %d not found,", id);
+	UTIL_Format(error, len, "Plugin %d not found,", id);
 	return false;
 }
 
@@ -321,7 +321,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	if (!fp)
 	{
 		if (error)
-			snprintf(error, maxlen, "File not found: %s", file);
+			UTIL_Format(error, maxlen, "File not found: %s", file);
 		pl->m_Status = Pl_NotFound;
 	}
 
@@ -335,32 +335,32 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		if (!pl->m_Lib)
 		{
 			if (error)
-				snprintf(error, maxlen, "%s", dlerror());
+				UTIL_Format(error, maxlen, "%s", dlerror());
 			pl->m_Status = Pl_Error;
 		} else {
 			CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
 			if (!pfn)
 			{
 				if (error)
-					snprintf(error, maxlen, "Function %s not found", PL_EXPOSURE_C);
+					UTIL_Format(error, maxlen, "Function %s not found", PL_EXPOSURE_C);
 				pl->m_Status = Pl_Error;
 			} else {
 				pl->m_API = static_cast<ISmmPlugin *>((pfn)(PLAPI_NAME, NULL));
 				if (!pl->m_API)
 				{
 					if (error)
-						snprintf(error, maxlen, "Failed to get API");
+						UTIL_Format(error, maxlen, "Failed to get API");
 					pl->m_Status = Pl_Error;
 				} else {
 					int api = pl->m_API->GetApiVersion();
 					if (api < PLAPI_MIN_VERSION)
 					{
 						if (error)
-							snprintf(error, maxlen, "Plugin API %d is out of date with required minimum (%d)", api, PLAPI_MIN_VERSION);
+							UTIL_Format(error, maxlen, "Plugin API %d is out of date with required minimum (%d)", api, PLAPI_MIN_VERSION);
 						pl->m_Status = Pl_Error;
 					} else if (api > PLAPI_VERSION) {
 						if (error)
-							snprintf(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
+							UTIL_Format(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
 						pl->m_Status = Pl_Error;
 					} else {
 						if (pl->m_API->Load(pl->m_Id, static_cast<ISmmAPI *>(&g_SmmAPI), error, maxlen, m_AllLoaded))
@@ -456,7 +456,7 @@ bool CPluginManager::_Pause(CPluginManager::CPlugin *pl, char *error, size_t max
 	if (pl->m_Status != Pl_Running || !pl->m_API)
 	{
 		if (error)
-			snprintf(error, maxlen, "Plugin cannot be paused");
+			UTIL_Format(error, maxlen, "Plugin cannot be paused");
 	} else {
 		if (pl->m_API->Pause(error, maxlen))
 		{
@@ -478,7 +478,7 @@ bool CPluginManager::_Unpause(CPluginManager::CPlugin *pl, char *error, size_t m
 	if (pl->m_Status != Pl_Paused || !pl->m_API)
 	{
 		if (error)
-			snprintf(error, maxlen, "Plugin cannot be unpaused");
+			UTIL_Format(error, maxlen, "Plugin cannot be unpaused");
 	} else {
 		if (pl->m_API->Unpause(error, maxlen))
 		{
@@ -506,7 +506,7 @@ bool CPluginManager::UnloadAll()
 
 	for (i=remqueue.begin(); i!=remqueue.end(); i++)
 	{
-		if ( !_Unload( (*i), true, error, sizeof(error)-1) )
+		if ( !_Unload( (*i), true, error, sizeof(error)) )
 			status = false;
 	}
 
@@ -537,7 +537,7 @@ bool CPluginManager::QueryRunning(PluginId id, char *error, size_t maxlength)
 	if (!pl || !pl->m_API)
 	{
 		if (error)
-			snprintf(error, maxlength, "Plugin not valid");
+			UTIL_Format(error, maxlength, "Plugin not valid");
 		return false;
 	}
 

@@ -12,6 +12,7 @@
 
 #include <interface.h>
 #include <eiface.h>
+#include <tier0/icommandline.h>
 #include "sourcemm.h"
 #include "concommands.h"
 #include "CSmmAPI.h"
@@ -25,6 +26,9 @@ using namespace SourceMM;
  * @brief Implementation of main SourceMM GameDLL functionality
  * @file sourcemm.cpp
  */
+
+#undef CommandLine
+DLL_IMPORT ICommandLine *CommandLine();
 
 SH_DECL_HOOK4(IServerGameDLL, DLLInit, SH_NOATTRIB, false, bool, CreateInterfaceFn, CreateInterfaceFn, CreateInterfaceFn, CGlobalVars *);
 SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
@@ -46,17 +50,19 @@ SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
 SourceHook::String g_ModPath;
 SourceHook::String g_BinPath;
-PluginId g_PLID = Pl_Console;		//Technically, SourceMM is the "Console" plugin... :p
+PluginId g_PLID = Pl_Console;			/* Technically, SourceMM is the "Console" plugin... :p */
 bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
+const char VSPIFACE[] = "ISERVERPLUGINS";
+const char GAMEINFO_PATH[] = "|gameinfo_path|";
 
 void ClearGamedllList();
 
-//helper macro
+/* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
 	CPluginManager::CPlugin *pl; \
 	SourceHook::List<IMetamodListener *>::iterator event; \
@@ -92,16 +98,17 @@ void ClearGamedllList();
 // Main code for HL2 Interaction //
 ///////////////////////////////////
 
-//Initialize everything here
+/* Initialize everything here */
 void InitMainStates()
 {
-	char full_path[260] = {0};
-	GetFileOfAddress((void *)g_GameDll.factory, full_path, sizeof(full_path)-1);
+	char full_path[PATH_SIZE] = {0};
+	GetFileOfAddress((void *)g_GameDll.factory, full_path, sizeof(full_path));
 	g_BinPath.assign(full_path);
 
-	//Like metamod, reload plugins at the end of the map.
-	//This is so plugins can hook everything on load, BUT, new plugins will be reloaded
-	// if the server is shut down (silly, but rare case).
+	/* Like Metamod, reload plugins at the end of the map.
+	 * This is so plugins can hook everything on load, BUT, new plugins will be reloaded
+	 * if the server is shut down (silly, but rare case).
+	 */
 	bInFirstLevel = true;
 
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLInit, g_GameDll.pGameDLL, DLLInit, false);
@@ -115,7 +122,7 @@ void InitMainStates()
 	{
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
 	} else {
-		// If IServerGameClients isn't found, this really isn't a fatal error so...
+		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
 		LogMessage("[META] Warning: Could not find IServerGameClients!");
 		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
 	}
@@ -143,7 +150,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	g_Engine.loaded = true;
 
-	//Initialize our console hooks
+	/* Initialize our console hooks */
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
 	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
@@ -157,7 +164,8 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	if (!g_SmmAPI.CacheUserMessages())
 	{
 		/* Don't know of a mod that has stripped out user messages completely, 
-			but perhaps should do something different here? */
+		 * but perhaps should do something different here?
+		 */
 		LogMessage("[META] Warning: Failed to get list of user messages.");
 		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
 	}
@@ -169,7 +177,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	}
 
 	char full_path[260];
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s", g_ModPath.c_str(), pluginFile);
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
 
 	LoadPluginsFromFile(full_path);
 
@@ -201,11 +209,10 @@ bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFact
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-//This is where the magic happens
+/* This is where the magic happens */
 SMM_API void *CreateInterface(const char *iface, int *ret)
 {
-	// Prevent loading of self as a SourceMM plugin or Valve server plugin :x
-	const char *vspIface = "ISERVERPLUGINCALLBACKS";
+	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
 	if (strcmp(iface, PLAPI_NAME) == 0)
 	{
 		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
@@ -218,7 +225,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return NULL;
 	}
 
-	if (strncmp(iface, vspIface, 22) == 0)
+	if (strncmp(iface, VSPIFACE, sizeof(VSPIFACE) - 1) == 0)
 	{
 		if (ret)
 		{
@@ -231,127 +238,52 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	if (!gParsedGameInfo)
 	{
 		gParsedGameInfo = true;
-		char curpath[260] = {0};
-		char dllpath[260] = {0};
-		getcwd(curpath, sizeof(curpath)-1);
-		if (!GetFileOfAddress((void *)CreateInterface, dllpath, sizeof(dllpath)-1))
+		const char *gameDir = NULL;
+		char gamePath[PATH_SIZE];
+		char smmPath[PATH_SIZE];
+
+		/* Get path to SourceMM DLL */
+		if (!GetFileOfAddress((void *)CreateInterface, smmPath, sizeof(smmPath)))
 		{
 			Error("GetFileOfAddress() failed! Metamod cannot load.\n");
 			return NULL;
 		}
-		SourceHook::String s_dllpath(dllpath);
-		//begin the heuristics for searching for the mod path (these are quite ugly).
-		//for OS compatibility purposes, we're going to do case insensitivity on windows.
-		size_t path_len = strlen(curpath);
-		size_t dll_len = strlen(dllpath);
 
-		//strip the dll path off
-		//:TODO: with path stuff - in Linux, \ can exist in a file path as a non-seperator!
-		for (size_t i=dll_len-1; i>0; i--)
-		{
-			if (dllpath[i] == '\\' || dllpath[i] == '/')
-			{
-				if (i == dll_len-1)
-					break;
-				//save path by stripping off file name and ending terminator
-				dllpath[i] = '\0';
-				dll_len = i;
-				break;
-			}
-		}
+		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
+		gameDir = CommandLine()->ParmValue("-game", "hl2");
 
-		//strip absolute path terminators if any!
-		if (curpath[path_len-1] == '/' || curpath[path_len-1] == '\\')
-			curpath[--path_len] = '\0';
+		/* Get absolute path */
+		abspath(gamePath, gameDir);
+		g_ModPath.assign(gamePath);
 
-		//if the base path doesn't fit into the module path, something is wrong!
-		// ex: c:\games\srcds
-		//     c:\gaben.dll
-		if (path_len > dll_len)
-		{
-			Error("Could not detect GameDLL path! Metamod cannot load[1].\n");
-			return NULL;
-		}
+		char tempPath[PATH_SIZE];
 
-		//we are now in such a position that the two dir names SHOULD MATCH!
-		typedef int (*STRNCMP)(const char *str1, const char *str2, size_t n);
-		STRNCMP cmp = 
-#ifdef WIN32
-			strnicmp;
-#else
-			strncmp;
-#endif
-		//are they equal?
-		if ( ((cmp)(curpath, dllpath, path_len)) != 0 )
-		{
-			//:TODO: In this case, we should read /proc/self/maps and find srcds!
-			Error("Could not detect GameDLL path! Metamod cannot load[2].\n");
-			return NULL;
-		}
-		//this will skip past the dir and its separator char
-		char *ptr = &(dllpath[path_len+1]);
-		path_len = strlen(ptr);
-		for (size_t i=0; i<path_len; i++)
-		{
-			if (ptr[i] == '/' || ptr[i] == '\\')
-			{
-				if (i == 0)
-				{
-					Error("Could not detect GameDLL path! Metamod cannot load[3].\n");
-					return NULL;
-				} else {
-					ptr[i] = '\0';
-					path_len = i+1;
-					break;
-				}
-			}
-		}
-		//WE NOW HAVE A GUESS AT THE MOD DIR.  OH MY GOD.
-		char temp_path[260];
-		snprintf(temp_path, sizeof(temp_path)-1, 
-			"%s%s%s", 
-			curpath, 
-			PATH_SEP_STR, 
-			ptr);
+		/* Path to gameinfo.txt */
+		g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s", g_ModPath.c_str(), "gameinfo.txt");
 
-		g_ModPath.assign(temp_path);
+		FILE *fp = fopen(tempPath, "rt");
 
-		snprintf(temp_path, sizeof(temp_path)-1, 
-			"%s%s%s", 
-			g_ModPath.c_str(),
-			PATH_SEP_STR,
-			"gameinfo.txt");
-
-		FILE *fp = fopen(temp_path, "rt");
 		if (!fp)
 		{
-			/* Do not error out here! It's possible the mod exists in the root directory, i.e.
-			 * Dark Messiah.  Let's check that just in case!
-			 */
-			g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s", curpath);
-			g_ModPath.assign(temp_path);
-			g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s", g_ModPath.c_str(), "gameinfo.txt");
-
-			fp = fopen(temp_path, "rt");
-			if (!fp)
-			{
-				/* Okay, we have to concede here. */
-				Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
-				return NULL;
-			}
+			Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
+			return NULL;
 		}
+
 		char buffer[255];
 		char key[128], val[128];
 		size_t len = 0;
-		const char *gameinfo = "|gameinfo_path|";
-		size_t gameinfo_len = strlen(gameinfo);
 		bool search = false;
 		bool gamebin = false;
+		char *ptr;
 		const char *lptr;
+		char curPath[PATH_SIZE];
+
+		getcwd(curPath, PATH_SIZE);
+
 		while (!feof(fp))
 		{
 			buffer[0] = '\0';
-			fgets(buffer, sizeof(buffer)-1, fp);
+			fgets(buffer, sizeof(buffer), fp);
 			len = strlen(buffer);
 			if (buffer[len-1] == '\n')
 				buffer[--len] = '\0';
@@ -362,7 +294,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				search = true;
 			if (!search)
 				continue;
-			UTIL_KeySplit(buffer, key, sizeof(key)-1, val, sizeof(val)-1);
+			UTIL_KeySplit(buffer, key, sizeof(key) - 1, val, sizeof(val) - 1);
 			if (stricmp(key, "Game") == 0 || stricmp(key, "GameBin") == 0)
 			{
 				if (stricmp(key, "Game") == 0)
@@ -370,32 +302,35 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				else
 					gamebin = true;
 
-				if (strncmp(val, gameinfo, gameinfo_len) == 0)
+				if (strncmp(val, GAMEINFO_PATH, sizeof(GAMEINFO_PATH) - 1) == 0)
 				{
-					ptr = &(val[gameinfo_len]);
+					ptr = &(val[sizeof(GAMEINFO_PATH) - 1]);
 					if (ptr[0] == '.')
 						ptr++;
 					lptr = g_ModPath.c_str();
 				} else {
-					lptr = curpath;
 					ptr = val;
+					lptr = curPath;
 				}
+
 				size_t ptr_len = strlen(ptr);
 				if (ptr[ptr_len] == '/' || ptr[ptr_len] == '\\')
 					ptr[--ptr_len] = '\0';
 
-				//no need to append "bin"
+				/* No need to append "bin" if key is GameBin */
 				if (gamebin)
 				{
-					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, ptr, SERVER_DLL);
+					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s", lptr, ptr, SERVER_DLL);
 				} else if (!ptr[0]) {
-					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s", lptr, "bin", SERVER_DLL);
+					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s", lptr, "bin", SERVER_DLL);
 				} else {
-					g_SmmAPI.PathFormat(temp_path, sizeof(temp_path)-1, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
+					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
 				}
-				if (!UTIL_PathCmp(s_dllpath.c_str(), temp_path))
+
+				/* If not path to SourceMM... */
+				if (!UTIL_PathCmp(smmPath, tempPath))
 				{
-					FILE *fp = fopen(temp_path, "rb");
+					FILE *fp = fopen(tempPath, "rb");
 					if (!fp)
 						continue;
 					//:TODO: Optimize this a bit!
@@ -405,9 +340,9 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
 					{
 						pCheck = (*iter);
-						if (GetFileOfAddress((void *)pCheck->factory, buffer, sizeof(buffer)-1))
+						if (GetFileOfAddress((void *)pCheck->factory, buffer, sizeof(buffer)))
 						{
-							if (UTIL_PathCmp(temp_path, buffer))
+							if (UTIL_PathCmp(tempPath, buffer))
 							{
 								found = true;
 								break;
@@ -417,7 +352,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					if (found)
 						continue;
 					fclose(fp);
-					HINSTANCE gamedll = dlmount(temp_path);
+					HINSTANCE gamedll = dlmount(tempPath);
 					if (gamedll == NULL)
 						continue;
 					CreateInterfaceFn fn = (CreateInterfaceFn)dlsym(gamedll, "CreateInterface");
@@ -447,12 +382,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 		if (strncmp(iface, str, len) == 0)
 		{
-			//This is the interface we want!  Right now we support versions 3 through 5.
+			/* This is the interface we want!  Right now we support versions 3 through 8 */
 			g_GameDllVersion = atoi(&(iface[len]));
 			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
 			if (g_GameDllVersion < MIN_GAMEDLL_VERSION || g_GameDllVersion > MAX_GAMEDLL_VERSION)
 			{
-				//maybe this will get used in the future
+				/* Maybe this will get used in the future */
 				sizeTooBig = g_GameDllVersion;
 				if (ret)
 				{
@@ -468,7 +403,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				ptr = (pInfo->factory)(iface, ret);
 				if (ptr)
 				{
-					//this is our gamedll.  unload the others.
+					/* This is our GameDLL. Unload the others. */
 					gamedll_list.erase(iter);
 					ClearGamedllList();
 					pInfo->pGameDLL = static_cast<IServerGameDLL *>(ptr);
@@ -497,14 +432,14 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				return NULL;
 			}
 		} else {
-			//wtf do we do...
-			//:TODO: .. something a bit more intelligent?
+			/* wtf do we do... */
+			/* :TODO: .. something a bit more intelligent? */
 			Error("Engine requested unknown interface before GameDLL was known!\n");
 			return NULL;
 		}
 	}
 
-	//if we got here, there's definitely a gamedll.
+	/* If we got here, there's definitely a GameDLL */
 	IFACE_MACRO(g_GameDll.factory, GameDLL);
 }
 
@@ -525,10 +460,10 @@ void ClearGamedllList()
 
 void DLLShutdown_handler()
 {
-	//Unload plugins
+	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
-	// Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly
+	/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
 	g_SMConVarAccessor.MarkCommandsAsGameDLL();
 	g_SMConVarAccessor.UnregisterGameDLLCommands();
 
@@ -566,7 +501,7 @@ int LoadPluginsFromFile(const char *_file)
 	while (!feof(fp))
 	{
 		buffer[0] = '\0';
-		fgets(buffer, sizeof(buffer)-1, fp);
+		fgets(buffer, sizeof(buffer), fp);
 		length = strlen(buffer);
 		if (!length)
 			continue;
@@ -618,11 +553,11 @@ int LoadPluginsFromFile(const char *_file)
 		{
 			continue;
 		}
-		//First find if it's an absolute path or not...
+		/* First find if it's an absolute path or not... */
 		if (file[0] == '/' || strncmp(&(file[1]), ":\\", 2) == 0)
 		{
-			//If we're in an absolute path, ignore our normal heuristics
-			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error)-1);
+			/* If we're in an absolute path, ignore our normal heuristics */
+			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
@@ -633,9 +568,9 @@ int LoadPluginsFromFile(const char *_file)
 					total++;
 			}
 		} else {
-			//Attempt to find a file extension
+			/* Attempt to find a file extension */
 			ptr = UTIL_GetExtension(file);
-			//Add an extension if there's none there
+			/* Add an extension if there's none there */
 			if (!ptr)
 			{
 #if defined WIN32 || defined _WIN32
@@ -646,9 +581,9 @@ int LoadPluginsFromFile(const char *_file)
 			} else {
 				ext = "";
 			}
-			//Format the new path
-			g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
-			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error)-1);
+			/* Format the new path */
+			g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
+			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
@@ -672,22 +607,25 @@ int LoadPluginsFromFile(const char *_file)
 	return total;
 }
 
-//Wrapper function.  This is called when the GameDLL thinks it's using
-// the engine's real engineFactory.
+/* Wrapper function.  This is called when the GameDLL thinks it's using
+ * the engine's real engineFactory.
+ */
 void *EngineFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(g_Engine.engineFactory, Engine);
 }
 
-//Wrapper function.  This is called when the GameDLL thinks it's using
-// the engine's real physicsFactory.
+/* Wrapper function.  This is called when the GameDLL thinks it's using
+ * the engine's real physicsFactory.
+ */
 void *PhysicsFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(g_Engine.physicsFactory, Physics);
 }
 
-//Wrapper function.  This is called when the GameDLL thinks it's using
-// the engine's real fileSystemFactory.
+/* Wrapper function.  This is called when the GameDLL thinks it's using
+ * the engine's real fileSystemFactory.
+ */
 void *FileSystemFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(g_Engine.fileSystemFactory, FileSystem);
@@ -698,12 +636,12 @@ void LogMessage(const char *msg, ...)
 	va_list ap;
 	static char buffer[2048];
 
-	buffer[0] = '\0';
-
 	va_start(ap, msg);
-	vsnprintf(buffer, sizeof(buffer)-5, msg, ap);
-	strcat(buffer, "\n");
+	size_t len = vsnprintf(buffer, sizeof(buffer) - 2, msg, ap);
 	va_end(ap);
+
+	buffer[len++] = '\n';
+	buffer[len] = '\0';
 
 	if (!g_Engine.engine)
 	{
@@ -718,7 +656,7 @@ void LevelShutdown_handler(void)
 	if (!bInFirstLevel)
 	{
 		char full_path[255];
-		g_SmmAPI.PathFormat(full_path, sizeof(full_path) - 1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
 		LoadPluginsFromFile(full_path);
 	} else {

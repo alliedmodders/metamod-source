@@ -42,10 +42,8 @@ void CSmmAPI::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 	va_list ap;
 	static char buffer[2048];
 
-	buffer[0] = '\0';
-
 	va_start(ap, msg);
-	vsnprintf(buffer, sizeof(buffer)-1, msg, ap);
+	UTIL_FormatArgs(buffer, sizeof(buffer), msg, ap);
 	va_end(ap);
 
 	LogMessage("[%s] %s", pl->GetLogTag(), buffer);
@@ -131,11 +129,13 @@ void CSmmAPI::ConPrint(const char *fmt)
 void CSmmAPI::ConPrintf(const char *fmt, ...)
 {
 	va_list ap;
-	static char buf[4096];
+	static char buffer[4096];
+
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf)-1, fmt, ap);
-	ConPrint(buf);
+	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
+
+	(m_ConPrintf)("%s", buffer);
 }
 
 void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
@@ -275,7 +275,7 @@ bool CSmmAPI::CacheCmds()
 			}
 		#endif
 
-			if (!offs || ptr[offs-1] != IA32_CALL)
+			if (!offs || ptr[offs - 1] != IA32_CALL)
 			{
 				m_ConPrintf = (CONPRINTF_FUNC)Msg;
 				return false;
@@ -322,11 +322,11 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 	int i;
 	int num = 0;
 
-	for (i=length-1; i>=0; i--)
+	for (i = length - 1; i >= 0; i--)
 	{
 		if (!isdigit(iface[i]))
 		{
-			if (i != length-1)
+			if (i != length - 1)
 			{
 				num = 1;
 			}
@@ -334,12 +334,12 @@ int CSmmAPI::FormatIface(char iface[], unsigned int maxlength)
 		}
 	}
 
-	if ( (num && ((int)maxlength <= length)) || (!num && ((int)maxlength <= length+3)) )
+	if ( (num && ((int)maxlength <= length)) || (!num && ((int)maxlength <= length + 3)) )
 	{
 		return -1;
 	}
 
-	if (i != length-1)
+	if (i != length - 1)
 		num = atoi(&(iface[++i]));
 
 	num++;
@@ -384,10 +384,10 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min)
 {
 	char buffer[256];	/* assume no interface will go beyond this */
-	int len = static_cast<int>(strlen(iface));
+	size_t len = strlen(iface);
 	int ret;			/* just in case something doesn't handle NULL properly */
 
-	if (len > static_cast<int>(sizeof(buffer) - 4))
+	if (len > sizeof(buffer) - 4)
 	{
 		return NULL;
 	}
@@ -396,7 +396,7 @@ void *CSmmAPI::VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min)
 
 	if (min != -1)
 	{
-		char *ptr = &buffer[len-1];
+		char *ptr = &buffer[len - 1];
 		int digits = 0;
 		while (isdigit(*ptr) && digits <=3)
 		{
@@ -427,30 +427,29 @@ const char *CSmmAPI::GetBaseDir()
 void CSmmAPI::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 {
 	va_list ap;
-	va_start(ap,fmt);
-	size_t mylen = vsnprintf(buffer, len, fmt, ap);
+	va_start(ap, fmt);
+	size_t mylen = UTIL_FormatArgs(buffer, len, fmt, ap);
 	va_end(ap);
 
-	if (mylen == 0xFFFFFFFF || mylen >= len)
-	{
-		mylen = len - 1;
-	}
-
-	for (size_t i=0; i<mylen; i++)
+	for (size_t i = 0; i < mylen; i++)
 	{
 		if (buffer[i] == ALT_SEP_CHAR)
+		{
 			buffer[i] = PATH_SEP_CHAR;
+		}
 	}
 }
 
 void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
 {
 	va_list ap;
-	static char buf[4096];
+	static char buffer[4096];
+
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
-	g_Engine.engine->ClientPrintf(client, buf);
+	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
+
+	g_Engine.engine->ClientPrintf(client, buffer);
 }
 
 void CSmmAPI::LoadAsVSP()

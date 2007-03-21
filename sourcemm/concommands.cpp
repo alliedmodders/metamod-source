@@ -185,7 +185,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
 			char full_path[255];
-			g_SmmAPI.PathFormat(full_path, sizeof(full_path) - 1, "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+			g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
 			LoadPluginsFromFile(full_path);
 
@@ -359,7 +359,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				char error[255];
 
-				if (!g_PluginMngr.Pause(id, error, sizeof(error)-1))
+				if (!g_PluginMngr.Pause(id, error, sizeof(error)))
 				{
 					CONMSG("Pause failed: %s\n", error);
 					return;
@@ -379,7 +379,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				int id = atoi(e->Cmd_Argv(2));
 				char error[255];
 
-				if (!g_PluginMngr.Unpause(id, error, sizeof(error)-1))
+				if (!g_PluginMngr.Unpause(id, error, sizeof(error)))
 				{
 					CONMSG("Unpause failed: %s\n", error);
 					return;
@@ -407,8 +407,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
 				{
-					g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s", file);
-					snprintf(full_path, sizeof(full_path)-1, "%s", file);
+					g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s", file);
 				} else {
 					const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
@@ -416,14 +415,14 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 #else
 					ext = ext ? "" : "_i486.so";
 #endif
-					g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
+					g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
 				}
 
 				char error[255]={0};
 				bool already;
 				SourceMM::CPluginManager::CPlugin *pl;
 
-				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error)-1);
+				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error));
 				pl = g_PluginMngr.FindById(id);
 				if (!pl || id < Pl_MinId || (pl->m_Status < Pl_Paused))
 				{
@@ -511,8 +510,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					/* first check if it's a known filename */
 					if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
 					{
-						g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s", file);
-						snprintf(full_path, sizeof(full_path)-1, "%s", file);
+						g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s", file);
 					} else {
 						const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
@@ -520,7 +518,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 #else
 						ext = ext ? "" : "_i486.so";
 #endif
-						g_SmmAPI.PathFormat(full_path, sizeof(full_path)-1, "%s/%s%s", g_ModPath.c_str(), file, ext);
+						g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
 					}
 
 					SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator iter, end;
@@ -543,7 +541,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					}
 				}
 
-				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
+				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)))
 				{
 					CONMSG("Unload failed: %s\n", error);
 					return;
@@ -560,7 +558,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				int id = atoi(e->Cmd_Argv(2));
 				char error[255]={0};
 
-				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)-1))
+				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)))
 				{
 					CONMSG("Force unload failed: %s\n", error);
 					return;
@@ -590,7 +588,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				int id = atoi(e->Cmd_Argv(2));
 				char error[255];
 
-				if (!g_PluginMngr.Retry(id, error, sizeof(error)-1))
+				if (!g_PluginMngr.Retry(id, error, sizeof(error)))
 				{
 					CONMSG("Error reloading plugin: %s\n", error);
 					return;
