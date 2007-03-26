@@ -563,7 +563,7 @@ bool CSmmAPI::CacheUserMessages()
 		 * Add 5 because it's relative to next instruction:
 		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
 		 */
-		vfunc = vfunc + *reinterpret_cast<unsigned int *>(vfunc + 1) + 5;
+		vfunc = vfunc + *reinterpret_cast<int *>(vfunc + 1) + 5;
 	}
 
 	UserMsgDict *dict = NULL;
