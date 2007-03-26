@@ -10,7 +10,9 @@ User Message API Functions - GetUserMessageCount(), FindUserMessage(), GetUserMe
 	- Day of Defeat: Source
 	- Dystopia
 	- Garry's Mod 10
+	- Half-Life 2: Capture the Flag
 	- Half-Life 2: Deathmatch
+	- The Hidden: Source
+	- Pirates, Vikings, and Knights II
 	- The Ship
 	- SourceForts
-	

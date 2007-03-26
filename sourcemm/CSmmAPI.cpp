@@ -553,6 +553,19 @@ bool CSmmAPI::CacheUserMessages()
 		vfunc = vtable[info.vtblindex];
 	}
 
+	/* Oh dear, we have a relative jump on our hands
+	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
+	 */
+	if (*vfunc == '\xE9')
+	{
+		/* Get address from displacement...
+		 *
+		 * Add 5 because it's relative to next instruction:
+		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
+		 */
+		vfunc = vfunc + *reinterpret_cast<unsigned int *>(vfunc + 1) + 5;
+	}
+
 	UserMsgDict *dict = NULL;
 
 	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
