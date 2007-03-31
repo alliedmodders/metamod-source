@@ -8,12 +8,12 @@ extern "C" void *GetThisPointer();
 
 #if defined _MSC_VER
 #define SEPCHAR			"\\"
-#define MMPATH			"|gameinfo_path|addons\\metamod\\bin"
+#define MMPATH			"addons\\metamod\\bin"
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #elif defined __linux__
 #define SEPCHAR			"/"
-#define MMPATH			"|gameinfo_path|addons/metamod/bin"
+#define MMPATH			"addons/metamod/bin"
 #include <unistd.h>
 #endif
 
@@ -29,8 +29,84 @@ extern "C" void _LoadFunction()
 #endif
 {
 	char gamedir[260];
+	char mmpath[260];
 
 	GetGameDir(gamedir, sizeof(gamedir));
+
+	/* Defaults */
+	UTIL_Format(mmpath, sizeof(mmpath), "|gameinfo_path|%s", MMPATH);
+
+	/* Read config */
+	char config[260];
+	UTIL_Format(config, sizeof(config), "%s" SEPCHAR "sourcemm_updater.conf", gamedir);
+	FILE *fpCfg = fopen(config, "rt");
+	if (fpCfg)
+	{
+		char cfgLine[512];
+		while (!feof(fpCfg) && fgets(cfgLine, sizeof(cfgLine), fpCfg) != NULL)
+		{
+			char key[255];
+
+			size_t keyLen = 0;
+
+			/* Strip whitespace */
+			char *input = cfgLine;
+			while (*input != '\0' && s_isspace(*input))
+			{
+				input++;
+			}
+
+			/* Strip ending whitespace */
+			size_t len = strlen(input);
+			for (size_t i = len - 1;
+				 i >= 0 && i < len;
+				 i--)
+			{
+				if (s_isspace(input[i]))
+				{
+					input[i] = '\0';
+					len--;
+				} else {
+					break;
+				}
+			}
+			
+			/* Eat stuff until we find a key */
+			while (*input != '\0' && !s_isspace(*input))
+			{
+				if (keyLen < sizeof(key))
+				{
+					key[keyLen++] = *input;
+				}
+				input++;
+			}
+			key[keyLen] = '\0';
+
+			/* Eat spaces until we hit an = sign */
+			while (*input != '\0' && *input != '=')
+			{
+				input++;
+			}
+
+			if (*input == '=')
+			{
+				input++;
+			}
+
+			/* Eat spaces again */
+			while (*input != '\0' && s_isspace(*input))
+			{
+				input++;
+			}
+
+			/* The rest is our key */
+			if (strcmp(key, "mmpath") == 0)
+			{
+				UTIL_Format(mmpath, sizeof(mmpath), "%s", input);
+			}
+		}
+		fclose(fpCfg);
+	}
 
 	char old_path[260];
 	char new_path[260];
@@ -117,13 +193,15 @@ extern "C" void _LoadFunction()
 				if (game)
 				{
 					if (strstr(game, "GameBin") != NULL
-						&& strstr(game, MMPATH) != NULL)
+						&& strstr(game, mmpath) != NULL)
 					{
 						fclose(op);
 						op = NULL;
 						break;			/* Nothing more to do! */
 					} else {
-						fputs("\t\t\t\tGameBin\t\t" MMPATH "\n", op);
+						fputs("\t\t\tGameBin\t\t\t|gameinfo_path|", op);
+						fputs(mmpath, op);
+						fputs("\n", op);
 						ps = Parse_None;
 					}
 				}
@@ -135,7 +213,7 @@ extern "C" void _LoadFunction()
 
 	if (!op)
 	{
-		/* Well, we can't really do anything else.  Give up.  */
+		/* Well, we can't really do anything else.  Give up. */
 		fclose(fp);
 		return;
 	}
