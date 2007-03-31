@@ -32,17 +32,17 @@ _GetGameDir:
 	
 	mov		ecx, [engine]		;get this pointer
 	mov		edx, [ecx]			;get the vtable
+	push	dword [ebp+12]		;push maxlenth
+	push	dword [ebp+8]		;push buffer
 	%ifdef LINUX
 	push	ecx					;push this pointer
 	%endif
-	push	dword [ebp+12]		;push maxlenth
-	push	dword [ebp+8]		;push buffer
 	call	dword [edx+216]		;call IVEngineServer::GetGameDir
 	%ifdef LINUX
-	add		esp, 8				;correct stack
+	add		esp, 12				;correct stack
 	%endif
 	
-	pop ebp
+	pop 	ebp
 	ret
 
 thisLoadFunction:
@@ -50,7 +50,11 @@ thisLoadFunction:
 	mov		ebp, esp
 	
 	;get factory
+	%ifdef LINUX
+	mov		eax, [ebp+12]
+	%else
 	mov		eax, [ebp+8]
+	%endif
 	
 	push	dword 0				;NULL
 	push	dword VENGINESERVER	;iface name
