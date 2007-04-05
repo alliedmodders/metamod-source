@@ -3,9 +3,6 @@
 #include <string.h>
 #include <ctype.h>
 
-extern "C" void GetGameDir(char *buffer, int maxlength);
-extern "C" void *GetThisPointer();
-
 #if defined _MSC_VER
 #define SEPCHAR			"\\"
 #define MMPATH			"addons\\metamod\\bin"
@@ -17,9 +14,17 @@ extern "C" void *GetThisPointer();
 #include <unistd.h>
 #endif
 
+#include <icvar.h>
+
+extern "C" void GetGameDir(char *buffer, int maxlength);
+extern "C" void *GetThisPointer();
+extern "C" void ServerCommand(const char *command);
+extern "C" ICvar *GetICvar();
+
 size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...);
 bool s_isspace(char c);
 bool RenameFile(const char *old, const char *newf);
+bool RemoveFile(const char *file);
 
 /* This will be called by the thunk */
 #if defined _MSC_VER
@@ -28,6 +33,13 @@ extern "C" void LoadFunction()
 extern "C" void _LoadFunction()
 #endif
 {
+	ICvar *pCvar = GetICvar();
+	if (pCvar->FindVar("metamod_version") != NULL)
+	{
+		/* Already exists, bail out */
+		return;
+	}
+
 	char gamedir[260];
 	char mmpath[260];
 
@@ -141,6 +153,8 @@ extern "C" void _LoadFunction()
 
 	char input[1024];
 	char backup[1024];
+
+	bool bWroteOutput = false;
 	
 	while (!feof(fp) && fgets(input, sizeof(input), fp) != NULL)
 	{
@@ -199,10 +213,11 @@ extern "C" void _LoadFunction()
 						op = NULL;
 						break;			/* Nothing more to do! */
 					} else {
-						fputs("\t\t\tGameBin\t\t\t|gameinfo_path|", op);
+						fputs("\t\t\tGameBin\t\t\t", op);
 						fputs(mmpath, op);
 						fputs("\n", op);
 						ps = Parse_None;
+						bWroteOutput = true;
 					}
 				}
 			}
@@ -221,6 +236,13 @@ extern "C" void _LoadFunction()
 	/* Close all streams */
 	fclose(op);
 	fclose(fp);
+
+	/* If we didn't change anything, abort here */
+	if (!bWroteOutput)
+	{
+		RemoveFile(new_path);
+		return;
+	}
 
 	/* Move the old file to a backup name */
 	char backup_name[260];
@@ -242,10 +264,17 @@ extern "C" void _LoadFunction()
 		RenameFile(backup_name, old_path);
 		return;
 	}
+	RemoveFile(new_path);
+
+	Error("Server is restarting to load Metamod:Source");
+}
+
+bool RemoveFile(const char *file)
+{
 #if defined _MSC_VER
-	_unlink(new_path);
+	return (_unlink(file) == 0);
 #else
-	unlink(new_path);
+	return (unlink(file) == 0);
 #endif
 }
 

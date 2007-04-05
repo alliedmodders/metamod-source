@@ -24,7 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="nasmw ..\api_link.asm -f win32 -o &quot;$(OutDir)\api_link.obj&quot; -DWIN32"
+				CommandLine="nasmw ..\api_link.asm -f win32 -oDebug\api_link.obj -DWIN32"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(OutDir)\api_link.obj&quot;"
+				AdditionalDependencies="Debug\api_link.obj tier0.lib"
 				OutputFile="$(OutDir)\sourcemm_update_tool.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -103,7 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="nasmw ..\api_link.asm -f win32 -o &quot;$(OutDir)\api_link.obj&quot; -DWIN32"
+				CommandLine="nasmw ..\api_link.asm -f win32 -oRelease\api_link.obj -DWIN32"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(OutDir)\api_link.obj&quot;"
+				AdditionalDependencies="Release\api_link.obj"
 				OutputFile="$(OutDir)\sourcemm_update_tool.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
