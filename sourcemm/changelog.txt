@@ -3,6 +3,7 @@
  - Added API functions for letting SourceMM plugins use Valve Server Plugin callbacks.
  - Added plugin status to client version of "meta list" command. Previously, it did not
    differentiate between running and paused plugins.
+ - An experimental automatic gameinfo.txt fixer is now available.
  - Changed version numbering to include the build number (SVN revision).
  - Fixed amb93 (improved mod path detection).
  - Fixed various rare string inconsistencies.
