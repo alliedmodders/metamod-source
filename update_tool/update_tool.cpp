@@ -43,6 +43,15 @@ extern "C" void _LoadFunction()
 	char gamedir[260];
 	char mmpath[260];
 
+	enum RestartMode
+	{
+		Restart_Never,
+		Restart_Error,
+		Restart_Quit,
+	};
+
+	RestartMode mode = Restart_Error;
+
 	GetGameDir(gamedir, sizeof(gamedir));
 
 	/* Defaults */
@@ -111,10 +120,25 @@ extern "C" void _LoadFunction()
 				input++;
 			}
 
+			/* Ignore comments */
+			if (key[0] == ';')
+			{
+				continue;
+			}
+
 			/* The rest is our key */
 			if (strcmp(key, "mmpath") == 0)
 			{
 				UTIL_Format(mmpath, sizeof(mmpath), "%s", input);
+			} else if (strcmp(key, "restart") == 0) {
+				if (strcmp(input, "never") == 0)
+				{
+					mode = Restart_Never;
+				} else if (strcmp(input, "error") == 0) {
+					mode = Restart_Error;
+				} else if (strcmp(input, "quit") == 0) {
+					mode = Restart_Never;
+				}
 			}
 		}
 		fclose(fpCfg);
@@ -266,7 +290,12 @@ extern "C" void _LoadFunction()
 	}
 	RemoveFile(new_path);
 
-	Error("Server is restarting to load Metamod:Source");
+	if (mode == Restart_Error)
+	{
+		Error("Server is restarting to load Metamod:Source");
+	} else if (mode == Restart_Quit) {
+		ServerCommand("quit\n");
+	}
 }
 
 bool RemoveFile(const char *file)
