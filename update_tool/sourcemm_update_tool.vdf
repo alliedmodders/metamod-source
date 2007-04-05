@@ -2,5 +2,5 @@
 
 "Plugin"
 {
-	"file"		"cstrike/addons/sourcemm_update_tool"
+	"file"		"cstrike/addons/metamod/bin/sourcemm_update_tool"
 }
