@@ -198,7 +198,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			const char *name=NULL;
 			const char *author=NULL;
 
-			CONMSG("-Id- %-20.19s  %-10.9s  %-16.15s %-8.7s\n", "Name", "Version", "Author", "Status");
+			CONMSG("-Id- %-20.19s  %-10.9s  %-20.19s %-8.7s\n", "Name", "Version", "Author", "Status");
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
@@ -239,7 +239,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					name = pl->m_File.c_str();
 
 
-				CONMSG("[%02d] %-20.19s  %-10.9s  %-16.15s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("[%02d] %-20.19s  %-10.9s  %-20.19s %-8.7s\n", pl->m_Id, name, version, author, status);
 			}
 
 			//CONMSG("\n");
@@ -692,54 +692,65 @@ void ClientCommand_handler(edict_t *client)
 				CLIENT_CONMSG(client, "  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 				CLIENT_CONMSG(client, "For more information, see the official website\n");
 				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
-			}
-			else if(strcmp(subcmd, "version") == 0)
-			{
+
+				RETURN_META(MRES_SUPERCEDE);
+			} else if(strcmp(subcmd, "version") == 0) {
 				CLIENT_CONMSG(client, "Metamod:Source version %s\n", SOURCEMM_VERSION);
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
 				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
 				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
-			}
-			else if(strcmp(subcmd, "list") == 0)
-			{
-				SourceMM::CPluginManager::CPlugin *pl;
-				PluginIter i;
-				const char *version=NULL;
-				const char *name=NULL;
-				const char *author=NULL;
 
-				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-16.15s\n", "Name", "Version", "Author");
+				RETURN_META(MRES_SUPERCEDE);
+			} else if(strcmp(subcmd, "list") == 0) {
+				SourceMM::CPluginManager::CPlugin *pl;
+				Pl_Status st;
+				PluginIter i;
+				const char *version = NULL;
+				const char *name = NULL;
+				const char *author = NULL;
+				const char *status = NULL;
+
+				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-20.19s  %6s\n", "Name", "Version", "Author", "Status");
 
 				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 				{
 					pl = (*i);
 					if (!pl)
 						break;
+					
+					st = pl->m_Status;
 
-					// Should paused plugins really show up in the list too?
-					if (pl->m_API && (pl->m_Status == Pl_Running || pl->m_Status == Pl_Paused))
+					/* Only show plugins that are running or paused */
+					if (pl->m_API && (st == Pl_Running || st == Pl_Paused))
 					{
 						version = pl->m_API->GetVersion();
 						author = pl->m_API->GetAuthor();
 						name = pl->m_API->GetName();
 
+						if (st == Pl_Running && pl->m_API->QueryRunning(NULL, 0))
+						{
+							status = "RUN";
+						} else {
+							status = "PAUSE";
+						}
+
 						if (!version || !author || !name)
 							break;
 
-						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-16.15s\n", pl->m_Id, name, version, author);
+						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-20.19s  %6s\n", pl->m_Id, name, version, author, status);
 					}
 				}
+
+				RETURN_META(MRES_SUPERCEDE);
 			}
 		}
-		else
-		{
-			CLIENT_CONMSG(client, "Metamod:Source Menu\n");
-			CLIENT_CONMSG(client, "usage: meta <command>\n");
-			CLIENT_CONMSG(client, "  credits - About Metamod:Source\n");
-			CLIENT_CONMSG(client, "  list    - List plugins\n");
-			CLIENT_CONMSG(client, "  version - Version information\n");
-		}
+
+		CLIENT_CONMSG(client, "Metamod:Source Menu\n");
+		CLIENT_CONMSG(client, "usage: meta <command>\n");
+		CLIENT_CONMSG(client, "  credits - About Metamod:Source\n");
+		CLIENT_CONMSG(client, "  list    - List plugins\n");
+		CLIENT_CONMSG(client, "  version - Version information\n");
 
 		RETURN_META(MRES_SUPERCEDE);
 	}
