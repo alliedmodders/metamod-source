@@ -18,10 +18,11 @@ section .text
 
 global GetThisPointer, GetGameDir, ServerCommand
 global _GetThisPointer, _GetGameDir, _ServerCommand
-global _GetICvar
+global _GetICvar, GetICvar
 extern _LoadFunction
 
-_GetICvar
+GetICvar:
+_GetICvar:
 	mov 	eax, [icvar]
 	ret
 
