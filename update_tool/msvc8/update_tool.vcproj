@@ -98,7 +98,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Release\api_link.obj"
+				AdditionalDependencies="Release\api_link.obj tier0.lib"
 				OutputFile="$(OutDir)\sourcemm_update_tool.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
