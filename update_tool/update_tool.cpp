@@ -137,7 +137,7 @@ extern "C" void _LoadFunction()
 				} else if (strcmp(input, "error") == 0) {
 					mode = Restart_Error;
 				} else if (strcmp(input, "quit") == 0) {
-					mode = Restart_Never;
+					mode = Restart_Quit;
 				}
 			}
 		}
