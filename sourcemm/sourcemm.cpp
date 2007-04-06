@@ -50,6 +50,7 @@ SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
 SourceHook::String g_ModPath;
 SourceHook::String g_BinPath;
+SourceHook::String g_SmmPath;
 PluginId g_PLID = Pl_Console;			/* Technically, SourceMM is the "Console" plugin... :p */
 bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
@@ -248,6 +249,8 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			Error("GetFileOfAddress() failed! Metamod cannot load.\n");
 			return NULL;
 		}
+
+		g_SmmPath.assign(smmPath);
 
 		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
 		gameDir = CommandLine()->ParmValue("-game", "hl2");

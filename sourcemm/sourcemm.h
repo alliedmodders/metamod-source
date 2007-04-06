@@ -102,6 +102,9 @@ extern SourceHook::String g_ModPath;
 /** @brief Path to server binary */
 extern SourceHook::String g_BinPath;
 
+/** @brief Path to SourceMM binary */
+extern SourceHook::String g_SmmPath;
+
 /** @brief Global variable for SourceHook macros */
 extern SourceHook::ISourceHook *g_SHPtr;
 

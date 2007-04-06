@@ -454,14 +454,9 @@ void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
 
 void CSmmAPI::LoadAsVSP()
 {
-	char path[260];
-	if (!GetFileOfAddress(CreateInterface, path, sizeof(path)))
-	{
-		/* Failed! */
-	}
 	char command[350];
 	g_VspListener.SetLoadable(true);
-	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", path);
+	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", g_SmmPath.c_str());
 	g_Engine.engine->ServerCommand(command);
 }
 
