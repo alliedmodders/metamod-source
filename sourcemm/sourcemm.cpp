@@ -57,7 +57,7 @@ bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
-const char VSPIFACE[] = "ISERVERPLUGINS";
+const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 
 void ClearGamedllList();
@@ -225,7 +225,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return NULL;
 	}
 
-	if (strncmp(iface, VSPIFACE, sizeof(VSPIFACE) - 1) == 0)
+	if (strncmp(iface, VSPIFACE, 22) == 0)
 	{
 		if (ret)
 		{

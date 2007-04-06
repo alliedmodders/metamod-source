@@ -9,6 +9,9 @@
  */
 
 #include "vsp_listener.h"
+#include "CPlugin.h"
+
+using namespace SourceMM;
 
 VSPListener g_VspListener;
 
@@ -118,6 +121,32 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 	}
 
 	m_Loaded = true;
+	SetLoadable(false);
+
+	PluginIter iter;
+	CPluginManager::CPlugin *pPlugin;
+	SourceHook::List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 10 (v1:5, SourceMM 1.4) */
+		if (pPlugin->m_API->GetApiVersion() < 10)
+		{
+			continue;
+		}
+		for (event=pPlugin->m_Events.begin();
+			event!=pPlugin->m_Events.end();
+			event++)
+		{
+			pML = (*event);
+			pML->OnVSPListening(this);
+		}
+	}
 
 	return true;
 }
