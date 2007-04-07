@@ -181,8 +181,6 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	SH_CALL(m_Engine_CC, &IVEngineServer::LogPrint)("All hooks started!\n");
 
-	g_SMAPI->AddListener(g_PLAPI, this);
-
 	return true;
 }
 
