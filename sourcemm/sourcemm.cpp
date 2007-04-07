@@ -58,7 +58,8 @@ bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
-const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
+const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
+const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 
 void ClearGamedllList();
@@ -226,13 +227,16 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return NULL;
 	}
 
-	if (strncmp(iface, VSPIFACE, 22) == 0)
+	/* We check these separately because we can't reply
+	 * unless our interface version really matches.
+	 */
+	if ((strcmp(iface, VSPIFACE_002) == 0)
+		|| strcmp(iface, VSPIFACE_001) == 0)
 	{
 		if (ret)
 		{
 			*ret = IFACE_OK;
 		}
-
 		return &g_VspListener;
 	}
 
