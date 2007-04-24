@@ -1,3 +1,6 @@
+2007/??/?? 1.4.1:
+ - Added API for getting highest supported IServerPluginCallbacks interface version.
+
 2007/04/05 1.4.0:
  - Added API functions for retrieving User Message info without potentially crashing.
  - Added API functions for letting SourceMM plugins use Valve Server Plugin callbacks.

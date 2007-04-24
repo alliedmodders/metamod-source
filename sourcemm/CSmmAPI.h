@@ -70,6 +70,7 @@ namespace SourceMM
 		int GetUserMessageCount();
 		int FindUserMessage(const char *name, int *size=NULL);
 		const char *GetUserMessage(int index, int *size=NULL);
+		int GetVSPVersion();
 	public:
 		bool CacheCmds();
 		bool CmdCacheSuccessful();
