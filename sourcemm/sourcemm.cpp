@@ -119,15 +119,6 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
-
-	if (g_GameDll.pGameClients)
-	{
-		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
-	} else {
-		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
-		LogMessage("[META] Warning: Could not find IServerGameClients!");
-		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
-	}
 }
 
 bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
@@ -156,6 +147,15 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
 	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
+
+	if (g_GameDll.pGameClients)
+	{
+		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
+	} else {
+		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
+		LogMessage("[META] Warning: Could not find IServerGameClients!");
+		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
+	}
 
 	if (!g_SmmAPI.CacheCmds())
 	{
@@ -374,7 +374,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					pInfo->lib = gamedll;
 					pInfo->loaded = true;
 					pInfo->pGameDLL = NULL;
-					pInfo->pGameClients = (IServerGameClients *)((fn)(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
 					gamedll_list.push_back(pInfo);
 					break;
 				}
@@ -445,6 +444,15 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			Error("Engine requested unknown interface before GameDLL was known!\n");
 			return NULL;
 		}
+	}
+
+	/* We use this interface for responding to the meta client command */
+	if (strncmp(iface, "ServerGameClients", 17) == 0)
+	{
+		void *ptr = (g_GameDll.factory)(iface, ret);
+		g_GameDll.pGameClients = static_cast<IServerGameClients *>(ptr);
+
+		return ptr;
 	}
 
 	/* If we got here, there's definitely a GameDLL */
