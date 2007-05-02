@@ -239,3 +239,171 @@ size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...)
 
 	return len;
 }
+
+inline bool pathchar_isalpha(char a)
+{
+	return (((a & 1<<7) == 0) && isalpha(a));
+}
+
+inline bool pathchar_sep(char a)
+{
+#if defined WIN32
+	return (a == '/' || a == '\\');
+#elif defined __linux__
+	return (a == '/');
+#endif
+}
+
+inline bool pathstr_isabsolute(const char *str)
+{
+#if defined WIN32
+	return (pathchar_isalpha(str[0]) 
+		&& str[1] == ':' 
+		&& pathchar_sep(str[2]));
+#elif defined __linux__
+	return (str[0] == '/');
+#endif
+}
+
+inline bool pathchar_cmp(char a, char b)
+{
+#if defined WIN32
+	if (pathchar_isalpha(a) && pathchar_isalpha(b))
+	{
+		return (tolower(a) == tolower(b));
+	}
+	/* Either path separator is acceptable */
+	if (pathchar_sep(a))
+	{
+		return pathchar_sep(b);
+	}
+#endif
+	return (a == b);
+}
+
+/**
+ * @brief Forms a relative path given two absolute paths.
+ *
+ * @param buffer		Buffer to store relative path in.
+ * @param maxlength		Maximum length of the output buffer.
+ * @param relTo			Destination folder to use as a working directory.
+ *						Final folder name should not be pathchar-terminated.
+ * @param relFrom		Source file or folder to use as a target.
+ * @return				True on success, false on failure.
+ */
+bool UTIL_Relatize(char buffer[],
+				   size_t maxlength,
+				   const char *relTo,
+				   const char *relFrom)
+{
+	/* We don't allow relative paths in here, force
+	 * the user to resolve these himself!
+	 */
+	if (!pathstr_isabsolute(relTo)
+		|| !pathstr_isabsolute(relFrom))
+	{
+		return false;
+	}
+
+#if defined WIN32
+	/* Relative paths across drives are not possible */
+	if (!pathchar_cmp(relTo[0], relFrom[0]))
+	{
+		return false;
+	}
+	/* Get rid of the drive and semicolon part */
+	relTo = &relTo[2];
+	relFrom = &relFrom[2];
+#endif
+
+	/* Eliminate the common root between the paths */
+	const char *rootTo = NULL;
+	const char *rootFrom = NULL;
+	while (*relTo != '\0' && *relFrom != '\0')
+	{
+		/* If we get to a new path sequence, start over */
+		if (pathchar_sep(*relTo)
+			&& pathchar_sep(*relFrom))
+		{
+			rootTo = relTo;
+			rootFrom = relFrom;
+		/* If the paths don't compare, stop looking for a common root */
+		} else if (!pathchar_cmp(*relTo, *relFrom)) {
+			break;
+		}
+		relTo++;
+		relFrom++;
+	}
+
+	/* NULLs shouldn't happen! */
+	if (rootTo == NULL
+		|| rootFrom == NULL)
+	{
+		return false;
+	}
+
+	size_t numLevels = 0;
+
+	/* The root case is special! 
+	 * Don't count anything from it.
+	 */
+	if (*(rootTo + 1) != '\0')
+	{
+		/* Search for how many levels we need to go up.
+	 	 * Since the root pointer points to a '/', we increment
+		 * the initial pointer by one.
+		 */
+		while (*rootTo != '\0')
+		{
+			if (pathchar_sep(*rootTo))
+			{
+				/* Check for an improper trailing slash,
+				 * just to be nice even though the user 
+				 * should NOT have done this!
+				 */
+				if (*(rootTo + 1) == '\0')
+				{
+					break;
+				}
+				numLevels++;
+			}
+			rootTo++;
+		}
+	}
+
+	/* Now build the new relative path. */
+	char *ptr = buffer;
+	size_t len, total = 0;
+	while (numLevels--)
+	{
+		len = _snprintf(&buffer[total], maxlength - total, "..\\");
+		if (len >= maxlength - total)
+		{
+			/* Not enough space in the buffer */
+			return false;
+		}
+		total += len;
+	}
+
+	/* Add the absolute path. */
+	len = _snprintf(&buffer[total], maxlength - total, "%s", &rootFrom[1]);
+	if (len >= maxlength - total)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
+{
+	size_t len = vsnprintf(buffer, maxlength, fmt, params);
+
+	if (len >= maxlength)
+	{
+		len = maxlength - 1;
+		buffer[len] = '\0';
+	}
+
+	return len;
+}

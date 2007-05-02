@@ -454,9 +454,33 @@ void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
 
 void CSmmAPI::LoadAsVSP()
 {
-	char command[350];
+	size_t len;
+	char engine_file[PATH_SIZE];
+	char rel_path[PATH_SIZE * 2];
+
+	GetFileOfAddress(g_Engine.engine, engine_file, sizeof(engine_file));
+
+	/* Chop off the "engine" file part */
+	len = strlen(engine_file);
+	for (size_t i = len - 1; i >= 0 && i < len; i--)
+	{
+		if (engine_file[i] == '/'
+			|| engine_file[i] == '\\')
+		{
+			engine_file[i] = '\0';
+			break;
+		}
+	}
+
+	const char *usepath = g_SmmPath.c_str();
+	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_file, g_SmmPath.c_str()))
+	{
+		usepath = rel_path;
+	}
+	
+	char command[PATH_SIZE * 2];
 	g_VspListener.SetLoadable(true);
-	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", g_SmmPath.c_str());
+	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", usepath);
 	g_Engine.engine->ServerCommand(command);
 }
 
