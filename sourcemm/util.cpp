@@ -372,11 +372,10 @@ bool UTIL_Relatize(char buffer[],
 	}
 
 	/* Now build the new relative path. */
-	char *ptr = buffer;
 	size_t len, total = 0;
 	while (numLevels--)
 	{
-		len = _snprintf(&buffer[total], maxlength - total, "..\\");
+		len = _snprintf(&buffer[total], maxlength - total, ".." PATH_SEP_STR);
 		if (len >= maxlength - total)
 		{
 			/* Not enough space in the buffer */
