@@ -153,6 +153,30 @@ public:
 		return npos;
 	}
 
+	int find_last_of(const char c, int index = npos) const
+	{
+		int len = static_cast<int>(size());
+		if (len < 1)
+			return npos;
+		if (index >= len || index < npos)
+			return npos;
+		int i;
+		if (index == npos)
+			i = len - 1;
+		else
+			i = index;
+
+		for (; i>=0; i--)
+		{
+			if (v[i] == c)
+			{
+				return i;
+			}
+		}
+
+		return npos;
+	}
+
 	bool is_space(int c) const
 	{
 		if (c == '\f' || c == '\n' ||
