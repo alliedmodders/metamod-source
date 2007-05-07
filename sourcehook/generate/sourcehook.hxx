@@ -22,7 +22,12 @@
 //  3 - Added "hook loop status variable"
 //  4 - Reentrant
 #define SH_IFACE_VERSION 4
-#define SH_IMPL_VERSION 3
+
+// Impl versions:
+// ???
+// 4 - addition of hook ids and vp hooks (with them, AddHookNew and RemoveHookNew)
+//     This is not a SH_IFACE_VERSION change so that old plugins continue working!
+#define SH_IMPL_VERSION 4
 
 // Hookman version:
 //  1 - Support for recalls, performance optimisations
@@ -479,7 +484,40 @@ namespace SourceHook
 		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
 			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr) = 0;
 
-		//!< 
+		/**
+		*	@brief Modes for the new AddHook
+		*/
+		enum AddHookMode
+		{
+			Hook_Normal,
+			Hook_VP
+		}; 
+
+		/**
+		*	@brief Add a (VP) hook.
+		*
+		*	@return non-zero hook id on success, 0 otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param mode	Can be either Hook_Normal or Hook_VP (vtable-wide hook)
+		*	@param iface The interface pointer
+		*	@param ifacesize The size of the class iface points to
+		*	@param myHookMan A hook manager function that should be capable of handling the function
+		*	@param handler A pointer to a FastDelegate containing the hook handler
+		*	@param post Set to true if you want a post handler
+		*/
+		virtual int AddHookNew(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
+			ISHDelegate *handler, bool post) = 0;
+
+		/**
+		*	@brief Remove a VP hook by ID.
+		*
+		*	@return true on success, false otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param hookid The hook id (returned by AddHookNew)
+		*/
+		virtual bool RemoveHookByID(Plugin plug, int hookid) = 0;
 	};
 
 	// For META_RESULT_ORIG_RET and META_RESULT_OVERRIDE_RET:
@@ -651,37 +689,67 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 #define SH_GET_MCALLCLASS(ptr, size) SH_GET_MCALLCLASS_R(SH_GLOB_SHPTR, reinterpret_cast<SourceHook::EmptyClass*>(ptr), size)
 #define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
 
+// New ADD / REMOVE macros.
+#define SH_STATIC(func) fastdelegate::MakeDelegate(func)
+#define SH_MEMBER(inst, func) fastdelegate::MakeDelegate(inst, func)
+
 #define SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	__SourceHook_FHAdd##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
 	post, handler)
-#define SH_ADD_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
-	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler), post)
-#define SH_ADD_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
-	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
 #define SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	__SourceHook_FHRemove##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
-	post, handler)
-#define SH_REMOVE_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
-	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler), post)
-#define SH_REMOVE_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
-	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
-
+	post, handler) 
 
 #define SH_ADD_MANUALHOOK(hookname, ifaceptr, handler, post) \
 	__SourceHook_FHMAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
-#define SH_ADD_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
-	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
-#define SH_ADD_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
-	SH_ADD_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
 
 #define SH_REMOVE_MANUALHOOK(hookname, ifaceptr, handler, post) \
-	__SourceHook_FHMRemove##hookname(reinterpret_cast<void*>(ifaceptr), post, handler)
-#define SH_REMOVE_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
-	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler), post)
-#define SH_REMOVE_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
-	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, fastdelegate::MakeDelegate(handler_inst, handler_func), post)
+	__SourceHook_FHMRemove##hookname(reinterpret_cast<void*>(ifaceptr), post, handler) 
 
+#define SH_ADD_VPHOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
+	__SourceHook_FHVPAdd##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
+	post, handler)
+
+#define SH_ADD_MANUALVPHOOK(hookname, ifaceptr, handler, post) \
+	__SourceHook_FHMVPAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler) 
+
+#define SH_REMOVE_HOOK_ID(hookid) \
+	(SH_GLOB_SHPTR->RemoveHookByID(SH_GLOB_PLUGPTR, hookid))
+
+// Old macros
+// !! These are now deprecated. Instead, use one of these:
+//  SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, SH_STATIC(handler), post)
+//  SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, SH_MEMBER(inst, func), post)
+
+#define SH_ADD_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
+	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, SH_STATIC(handler), post)
+#define SH_ADD_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
+	SH_ADD_HOOK(ifacetype, ifacefunc, ifaceptr, SH_MEMBER(handler_inst, handler_func), post)
+
+//  SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, SH_STATIC(handler), post)
+//  SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, SH_MEMBER(inst, func), post)
+
+#define SH_REMOVE_HOOK_STATICFUNC(ifacetype, ifacefunc, ifaceptr, handler, post) \
+	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, SH_STATIC(handler), post)
+#define SH_REMOVE_HOOK_MEMFUNC(ifacetype, ifacefunc, ifaceptr, handler_inst, handler_func, post) \
+	SH_REMOVE_HOOK(ifacetype, ifacefunc, ifaceptr, SH_MEMBER(handler_inst, handler_func), post)
+
+//  SH_ADD_MANUALHOOK(hookname, ifaceptr, SH_STATIC(handler), post)
+//  SH_ADD_MANUALHOOK(hookname, ifaceptr, SH_MEMBER(inst, func), post)
+
+#define SH_ADD_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, SH_STATIC(handler), post)
+#define SH_ADD_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_ADD_MANUALHOOK(hookname, ifaceptr, SH_MEMBER(handler_inst, handler_func), post)
+
+//  SH_REMOVE_MANUALHOOK(hookname, ifaceptr, SH_STATIC(handler), post)
+//  SH_REMOVE_MANUALHOOK(hookname, ifaceptr, SH_MEMBER(inst, func), post)
+
+#define SH_REMOVE_MANUALHOOK_STATICFUNC(hookname, ifaceptr, handler, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, SH_STATIC(handler), post)
+#define SH_REMOVE_MANUALHOOK_MEMFUNC(hookname, ifaceptr, handler_inst, handler_func, post) \
+	SH_REMOVE_MANUALHOOK(hookname, ifaceptr, SH_MEMBER(handler_inst, handler_func), post)  
 
 #define SH_NOATTRIB
 
@@ -715,6 +783,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		GetFuncInfo(funcptr, ms_MFI); \
 		/* Verify interface version */ \
 		if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
+			return 1; \
+		if (SH_GLOB_SHPTR->GetImplVersion() < SH_IMPL_VERSION) \
 			return 1; \
 		\
 		if (action == HA_GetInfo) \
@@ -760,7 +830,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_FHCls(ifacetype,ifacefunc,overload) SH_FHCls(ifacetype,ifacefunc,overload)::ms_Inst; \
 	::SourceHook::MemFuncInfo SH_FHCls(ifacetype,ifacefunc,overload)::ms_MFI; \
 	::SourceHook::IHookManagerInfo *SH_FHCls(ifacetype,ifacefunc,overload)::ms_HI; \
-	bool __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
+	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, bool post, \
 		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
 	{ \
 		using namespace ::SourceHook; \
@@ -769,7 +839,20 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		if (mfi.thisptroffs < 0 || !mfi.isVirtual) \
 			return false; /* No non-virtual functions / virtual inheritance supported */ \
 		\
-		return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, mfi.thisptroffs, \
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_Normal, iface, mfi.thisptroffs, \
+			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
+			new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
+	} \
+	int __SourceHook_FHVPAdd##ifacetype##ifacefunc(void *iface, bool post, \
+		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
+	{ \
+		using namespace ::SourceHook; \
+		MemFuncInfo mfi = {true, -1, 0, 0}; \
+		GetFuncInfo(funcptr, mfi); \
+		if (mfi.thisptroffs < 0 || !mfi.isVirtual) \
+			return false; /* No non-virtual functions / virtual inheritance supported */ \
+		\
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_VP, iface, mfi.thisptroffs, \
 			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
 			new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
 	} \
@@ -811,6 +894,8 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			/* Verify interface version */ \
 			if (SH_GLOB_SHPTR->GetIfaceVersion() != SH_IFACE_VERSION) \
 				return 1; \
+			if (SH_GLOB_SHPTR->GetImplVersion() < SH_IMPL_VERSION) \
+				return 1; \
 			\
 			if (action == HA_GetInfo) \
 			{ \
@@ -843,10 +928,17 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 	SH_MFHCls(hookname) SH_MFHCls(hookname)::ms_Inst; \
 	::SourceHook::MemFuncInfo SH_MFHCls(hookname)::ms_MFI; \
 	::SourceHook::IHookManagerInfo *SH_MFHCls(hookname)::ms_HI; \
-	bool __SourceHook_FHMAdd##hookname(void *iface, bool post, \
+	int __SourceHook_FHMAdd##hookname(void *iface, bool post, \
 		SH_MFHCls(hookname)::FD handler) \
 	{ \
-		return SH_GLOB_SHPTR->AddHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_Normal, iface, pthisptroffs, \
+			SH_MFHCls(hookname)::HookManPubFunc, \
+			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
+	} \
+	int __SourceHook_FHMVPAdd##hookname(void *iface, bool post, \
+		SH_MFHCls(hookname)::FD handler) \
+	{ \
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_VP, iface, pthisptroffs, \
 			SH_MFHCls(hookname)::HookManPubFunc, \
 			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
 	} \

@@ -40,6 +40,11 @@ namespace
 		}
 	};
 
+	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
+	class Whatever : public Test
+	{
+	};
+
 	SH_DECL_HOOK0_void(Test, Func1, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, Func2, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, Func3, SH_NOATTRIB, 0);
@@ -63,14 +68,14 @@ bool TestPlugSys(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1;
 
-	Test inst;
+	Whatever inst;
 	Test *pInst = &inst;
 
 	// 1)
 	//   Add hooks, then issue a complete shutdown
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	pInst->Func1();
 	pInst->Func2();
@@ -101,23 +106,23 @@ bool TestPlugSys(std::string &error)
 	//   Add hooks from "different plugins", then shutdown the plugins
 
 	g_PLID = 1;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
 	g_PLID = 2;
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
 	g_PLID = 3;
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 1;
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 2;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 3;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
 
 	pInst->Func1();
 	pInst->Func2();
@@ -237,23 +242,23 @@ bool TestPlugSys(std::string &error)
 	//   Add hooks from "different plugins", then pause the plugins
 
 	g_PLID = 1;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
 	g_PLID = 2;
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
 	g_PLID = 3;
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 1;
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 2;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func3, pInst, Handler_Func3, false);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Test, Func3, pInst, SH_STATIC(Handler_Func3), false);
 
 	g_PLID = 3;
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, pInst, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, pInst, Handler_Func2, true);
+	SH_ADD_HOOK(Test, Func1, pInst, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Test, Func2, pInst, SH_STATIC(Handler_Func2), true);
 
 	pInst->Func1();
 	pInst->Func2();

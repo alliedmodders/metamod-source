@@ -48,6 +48,11 @@ namespace
 		}
 	};
 
+	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
+	struct Whatever : Test
+	{
+	};
+
 	void Handler1_Func1(int a)
 	{
 		ADD_STATE(State_H1_Func1(a));
@@ -119,12 +124,12 @@ bool TestRecall(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	Test inst;
+	Whatever inst;
 	Test *ptr = &inst;
 
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, Handler1_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, Handler2_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, HandlerPost_Func1, true);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler1_Func1), false);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(HandlerPost_Func1), true);
 
 	ptr->Func1(77);
 
@@ -135,10 +140,10 @@ bool TestRecall(std::string &error)
 		new State_HP_Func1(0, ptr),
 		NULL), "Part 1");
 
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func1, ptr, Handler1_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, Handler2_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, Handler2_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func1, ptr, Handler2_Func1, false);
+	SH_REMOVE_HOOK(Test, Func1, ptr, SH_STATIC(Handler1_Func1), false);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);
+	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);
 
 	ptr->Func1(77);
 
@@ -151,8 +156,8 @@ bool TestRecall(std::string &error)
 		new State_HP_Func1(57, ptr),
 		NULL), "Part 2");
 
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func1, ptr, Handler2_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func1, ptr, HandlerPost_Func1, true);
+	SH_REMOVE_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);
+	SH_REMOVE_HOOK(Test, Func1, ptr, SH_STATIC(HandlerPost_Func1), true);
 
 	ptr->Func1(77);
 
@@ -162,8 +167,8 @@ bool TestRecall(std::string &error)
 
 	// Func2
 
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, Handler1_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost_Func2, true);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(Handler1_Func2), false);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost_Func2), true);
 
 	int a = ptr->Func2(77);
 	CHECK_STATES((&g_States,
@@ -175,8 +180,8 @@ bool TestRecall(std::string &error)
 	CHECK_COND(a == 500, "Part 4.1");
 
 	// Func2, with other handler
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, Handler1_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, Handler2_Func2, false);
+	SH_REMOVE_HOOK(Test, Func2, ptr, SH_STATIC(Handler1_Func2), false);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(Handler2_Func2), false);
 
 	a = ptr->Func2(77);
 	CHECK_STATES((&g_States,
@@ -191,9 +196,9 @@ bool TestRecall(std::string &error)
 
 	// 1) WITH OVERRIDE
 
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, Handler1_Func22, false);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost1A_Func22, true);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost2_Func22, true);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(Handler1_Func22), false);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost1A_Func22), true);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost2_Func22), true);
 	
 	a = ptr->Func2(10, 11);
 	CHECK_STATES((&g_States,
@@ -206,11 +211,11 @@ bool TestRecall(std::string &error)
 	CHECK_COND(a == 0, "Part 5.1");
 
 	// 2) WITH IGNORE
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost1A_Func22, true);
-	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost2_Func22, true);
+	SH_REMOVE_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost1A_Func22), true);
+	SH_REMOVE_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost2_Func22), true);
 
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost1_Func22, true);
-	SH_ADD_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost2_Func22, true);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost1_Func22), true);
+	SH_ADD_HOOK(Test, Func2, ptr, SH_STATIC(HandlerPost2_Func22), true);
 
 	a = ptr->Func2(10, 11);
 	CHECK_STATES((&g_States,

@@ -47,6 +47,8 @@ namespace
 		}
 	};
 
+	class DerivedDerived : public Derived { };
+
 	SH_DECL_HOOK0_void(Derived, Func1, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Derived, Func2, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Derived, Func3, SH_NOATTRIB, 0);
@@ -72,7 +74,7 @@ bool TestThisPtrOffs(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	Derived inst;
+	DerivedDerived inst;
 	Derived *pD = &inst;
 	Base1 *pB1 = pD;
 	Base2 *pB2 = pD;
@@ -129,9 +131,9 @@ bool TestThisPtrOffs(std::string &error)
 	// 3) Add hooks on them (referring to them through pD1 / Derived)
 	//   Check whether the hooks are called with the correct this pointer
 
-	SH_ADD_HOOK_STATICFUNC(Derived, Func1, pD, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Derived, Func2, pD, Handler_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_ADD_HOOK(Derived, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Derived, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_ADD_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 	pD->Func1();
 	pD->Func2();
@@ -153,17 +155,17 @@ bool TestThisPtrOffs(std::string &error)
 		new State_Func2_Called(pB2),
 		NULL), "Part 3");
 
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func1, pD, Handler_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func2, pD, Handler_Func2, false);
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_REMOVE_HOOK(Derived, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_HOOK(Derived, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 	// 4)
 	//   Now add the hooks on Base1 and Base2 and check again
 
 	// Note that the new implicit_cast should convert the pD to Base1*/Base2* :)
-	SH_ADD_HOOK_STATICFUNC(Base1, Func1, pD, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Base2, Func2, pD, Handler_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_ADD_HOOK(Base1, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Base2, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_ADD_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 	pD->Func1();
 	pD->Func2();
@@ -186,18 +188,18 @@ bool TestThisPtrOffs(std::string &error)
 		new State_Func2_Called(pB2),
 		NULL), "Part 4");
 
-	SH_REMOVE_HOOK_STATICFUNC(Base1, Func1, pD, Handler_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(Base2, Func2, pD, Handler_Func2, false);
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_REMOVE_HOOK(Base1, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_HOOK(Base2, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 
 	// 5)
 	//   Add some hooks, and use callclasses
 
 	// 5.1) First off, add all of them on pD
-	SH_ADD_HOOK_STATICFUNC(Derived, Func1, pD, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(Derived, Func2, pD, Handler_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_ADD_HOOK(Derived, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(Derived, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_ADD_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 	pD->Func1();
 	pD->Func2();
@@ -226,9 +228,9 @@ bool TestThisPtrOffs(std::string &error)
 		new State_Func2_Called(pB2),
 		NULL), "Part 5.2");
 
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func1, pD, Handler_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func2, pD, Handler_Func2, false);
-	SH_REMOVE_HOOK_STATICFUNC(Derived, Func3, pD, Handler_Func3, false);
+	SH_REMOVE_HOOK(Derived, Func1, pD, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_HOOK(Derived, Func2, pD, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
 
 	SH_RELEASE_CALLCLASS(pB1_CC);
 	SH_RELEASE_CALLCLASS(pB2_CC);

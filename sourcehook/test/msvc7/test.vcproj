@@ -289,12 +289,21 @@
 			<File
 				RelativePath="..\testref.cpp">
 			</File>
+			<File
+				RelativePath="..\testrefret.cpp">
+			</File>
+			<File
+				RelativePath="..\testvphooks.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
 				RelativePath="..\..\sh_list.h">
+			</File>
+			<File
+				RelativePath="..\..\sh_listcat.h">
 			</File>
 			<File
 				RelativePath="..\..\sh_stack.h">

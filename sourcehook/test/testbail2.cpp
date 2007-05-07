@@ -24,8 +24,8 @@ namespace N_TestBail
 	{
 		g_PLID = 2;
 
-		SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler2, false);
-		SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler3, false);
+		SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler2), false);
+		SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler3), false);
 
 		int ret = g_Gabgab->EatYams(0xDEAD);
 

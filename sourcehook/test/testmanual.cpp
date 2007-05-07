@@ -52,6 +52,11 @@ namespace
 		{
 			ADD_STATE(State_Func5_Called(reinterpret_cast<void*>(this)));
 		}
+
+	};
+	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
+	class Whatever : public TheWall
+	{
 	};
 
 	SH_DECL_HOOK0_void(TheWall, Func1, SH_NOATTRIB, 0);
@@ -106,7 +111,7 @@ bool TestManual(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	TheWall inst;
+	Whatever inst;
 	TheWall *p = &inst;
 
 	SourceHook::ManualCallClass *cc = SH_GET_MCALLCLASS(p, sizeof(void*));
@@ -155,10 +160,10 @@ bool TestManual(std::string &error)
 
 	// 2)
 	// Hook each function normally, call them
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func4, p, Handler_Func4, false);
+	SH_ADD_HOOK(TheWall, Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(TheWall, Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_ADD_HOOK(TheWall, Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_ADD_HOOK(TheWall, Func4, p, SH_STATIC(Handler_Func4), false);
 
 	p->Func1();
 	p->Func2(200);
@@ -206,18 +211,18 @@ bool TestManual(std::string &error)
 		NULL), "Part 2.1");
 
 	// Unhook them
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func4, p, Handler_Func4, false);
+	SH_REMOVE_HOOK(TheWall, Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_HOOK(TheWall, Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_HOOK(TheWall, Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_REMOVE_HOOK(TheWall, Func4, p, SH_STATIC(Handler_Func4), false);
 
 	// 3)
 	// Hook each function manually, call them
 
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func1, p, Handler_Func1, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func3, p, Handler_Func3, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func4, p, Handler_Func4, false);
+	SH_ADD_MANUALHOOK(TheWall_Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_ADD_MANUALHOOK(TheWall_Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_ADD_MANUALHOOK(TheWall_Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_ADD_MANUALHOOK(TheWall_Func4, p, SH_STATIC(Handler_Func4), false);
 
 	p->Func1();
 	p->Func2(200);
@@ -267,10 +272,10 @@ bool TestManual(std::string &error)
 		NULL), "Part 3.1");
 
 	// Unhook them
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func1, p, Handler_Func1, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func3, p, Handler_Func3, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func4, p, Handler_Func4, false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func4, p, SH_STATIC(Handler_Func4), false);
 
 	// 4)
 	// Hook each function manually, then normally, call, unhook
@@ -278,7 +283,7 @@ bool TestManual(std::string &error)
 	AnotherBrick handler_inst;
 
 	// Why this?
-	// 1) tests sh_add_manualhook_memfunc
+	// 1) tests sh_add_manualhook
 	// 2) in my tests, the proto of the manual hook was not equal to the proto of the auto hook
 	//    (because there are no attribs for manual hooks).
 	//    sourcehook.cpp did a !strcmp(..), so it assigned a new hook manager even though there
@@ -287,15 +292,15 @@ bool TestManual(std::string &error)
 	//    The problem with this is that returning MRES_SUPERCEDE (as AnotherBrick::Handler_Func1
 	//    does) will supercede the second hook func from being called - thus bypassing the call
 	//    of the auto hook here.
-	SH_ADD_MANUALHOOK_MEMFUNC(TheWall_Func1, p, &handler_inst, &AnotherBrick::Handler_Func1, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func3, p, Handler_Func3, false);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func4, p, Handler_Func4, false);
+	SH_ADD_MANUALHOOK(TheWall_Func1, p, SH_MEMBER(&handler_inst, &AnotherBrick::Handler_Func1), false);
+	SH_ADD_MANUALHOOK(TheWall_Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_ADD_MANUALHOOK(TheWall_Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_ADD_MANUALHOOK(TheWall_Func4, p, SH_STATIC(Handler_Func4), false);
 
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
-	SH_ADD_HOOK_STATICFUNC(TheWall, Func4, p, Handler_Func4, false);
+	SH_ADD_HOOK(TheWall, Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_ADD_HOOK(TheWall, Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_ADD_HOOK(TheWall, Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_ADD_HOOK(TheWall, Func4, p, SH_STATIC(Handler_Func4), false);
 
 	p->Func1();
 	p->Func2(200);
@@ -319,19 +324,19 @@ bool TestManual(std::string &error)
 		new State_Return(4),
 		NULL), "Part 4");
 
-	SH_REMOVE_MANUALHOOK_MEMFUNC(TheWall_Func1, p, &handler_inst, &AnotherBrick::Handler_Func1, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func2, p, Handler_Func2, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func3, p, Handler_Func3, false);
-	SH_REMOVE_MANUALHOOK_STATICFUNC(TheWall_Func4, p, Handler_Func4, false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func1, p, SH_MEMBER(&handler_inst, &AnotherBrick::Handler_Func1), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_REMOVE_MANUALHOOK(TheWall_Func4, p, SH_STATIC(Handler_Func4), false);
 
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func1, p, Handler_Func1, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func2, p, Handler_Func2, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func3, p, Handler_Func3, false);
-	SH_REMOVE_HOOK_STATICFUNC(TheWall, Func4, p, Handler_Func4, false);
+	SH_REMOVE_HOOK(TheWall, Func1, p, SH_STATIC(Handler_Func1), false);
+	SH_REMOVE_HOOK(TheWall, Func2, p, SH_STATIC(Handler_Func2), false);
+	SH_REMOVE_HOOK(TheWall, Func3, p, SH_STATIC(Handler_Func3), false);
+	SH_REMOVE_HOOK(TheWall, Func4, p, SH_STATIC(Handler_Func4), false);
 
 	// 5) Reconfigure TheWall_Func1 to actually hook Func5:
 	SH_MANUALHOOK_RECONFIGURE(TheWall_Func1, 4, 0, 0);
-	SH_ADD_MANUALHOOK_STATICFUNC(TheWall_Func1, p, Handler_Func1, false);
+	SH_ADD_MANUALHOOK(TheWall_Func1, p, SH_STATIC(Handler_Func1), false);
 
 	p->Func5();
 

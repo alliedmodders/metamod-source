@@ -76,6 +76,7 @@ namespace
 			return sth.Func();
 		}
 	};
+	class CHelloDerived : public CHello { };
 
 	class CHook
 	{
@@ -99,11 +100,11 @@ bool TestRef(std::string &error)
 	CDerived der;
 	CDerived2 der2(11);
 	CDerived2 der3(12);
-	CHello hello;
+	CHelloDerived hello;
 	CHello *pHello = &hello;
 	CHook hook;
 
-	SourceHook::CallClass<CHello> *cc = SH_GET_CALLCLASS(&hello);
+	SourceHook::CallClass<CHello> *cc = SH_GET_CALLCLASS(pHello);
 
 	ADD_STATE(State_Result(pHello->Func(base)));
 	ADD_STATE(State_Result(pHello->Func(der)));
@@ -129,7 +130,7 @@ bool TestRef(std::string &error)
 		new State_Result(12),
 		NULL), "Part 2");
 
-	SH_ADD_HOOK_MEMFUNC(CHello, Func, &hello, &hook, &CHook::Func, false);
+	SH_ADD_HOOK(CHello, Func, &hello, SH_MEMBER(&hook, &CHook::Func), false);
 
 	ADD_STATE(State_Result(pHello->Func(base)));
 	ADD_STATE(State_Result(pHello->Func(der)));
