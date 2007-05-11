@@ -205,7 +205,7 @@ public:		// Added in 1.1.2 (1:1)
 	 */
 	virtual int FormatIface(char iface[], unsigned int maxlength) =0;
 
-public:		// Added in 1.2 (1:2)
+public:		// Added in 1.2.0 (1:2)
 	/**
 	 * @brief Searches for an interface for you.
 	 * 
@@ -245,7 +245,7 @@ public:		// Added in 1.2.2 (1:3)
 	 */
 	virtual void ClientConPrintf(edict_t *client, const char *fmt, ...) =0;
 
-public:		// Added in 1.3 (1:4)
+public:		// Added in 1.3.0 (1:4)
 	/**
 	 * @brief Wrapper around InterfaceSearch().  Assumes no maximum.
 	 * This is designed to replace the fact that searches only went upwards.
@@ -262,7 +262,7 @@ public:		// Added in 1.3 (1:4)
 	 */
 	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1) =0;
 
-public:		// Added in 1.4 (1:5)
+public:		// Added in 1.4.0 (1:5)
 	/**
 	 * @brief Tells SourceMM to add VSP hooking capability to plugins.  
 	 *
@@ -303,7 +303,7 @@ public:		// Added in 1.4 (1:5)
 	 * @return				Message name, or NULL on failure.
 	 */
 	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
-public:		// Added in 1.4.1 (1:6)
+public:		// Added in 1.5.0 (1:6)
 	/**
 	 * @brief Returns the highest interface version of IServerPluginCallbacks that the engine supports.
 	 * This is useful for games that run on older versions of the Source engine, such as The Ship.
@@ -320,11 +320,11 @@ public:		// Added in 1.4.1 (1:6)
  *
  * 1.1.0 Bumped API to 1:0. The breaking changes occurred in SourceHook and the plugin API.
  * 1.1.2 Added API call for generating iface names.
- * 1.2   Added API more helper functions and new SourceHook version.
+ * 1.2.0 Added API more helper functions and new SourceHook version.
  * 1.2.2 Added API for printing to client console (with string formatting).
- * 1.3   Added new interface search API.
- * 1.4   Added VSP listener and user message API.
- * 1.4.1 Added API for getting highest supported version of IServerPluginCallbacks.
+ * 1.3.0 Added new interface search API.
+ * 1.4.0 Added VSP listener and user message API.
+ * 1.5.0 Added API for getting highest supported version of IServerPluginCallbacks.
  */
 
 #endif //_INCLUDE_ISMM_API_H

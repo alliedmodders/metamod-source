@@ -516,6 +516,11 @@ int CSmmAPI::GetGameDLLVersion()
 	#define MSGCLASS2_SIGLEN	16
 	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
 	#define MSGCLASS2_OFFS		11
+
+	/* Windows frame pointer sig */
+	#define MSGCLASS3_SIGLEN	18
+	#define MSGCLASS3_SIG		"\x55\x8B\xEC\x51\x89\x2A\x2A\x8B\x2A\x2A\x50\x8B\x0D\x2A\x2A\x2A\x2A\xE8"
+	#define MSGCLASS3_OFFS		13
 #elif defined OS_LINUX
 	/* No frame pointer sig */
 	#define MSGCLASS_SIGLEN		14
@@ -582,6 +587,14 @@ bool CSmmAPI::CacheUserMessages()
 	#elif defined OS_LINUX
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
+
+		/* Get address of CUserMessages::m_UserMessages */
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	#endif
+	#ifdef OS_WIN32
+	} else if (vcmp(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) {
+		/* Get address of CUserMessages instance */
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
 
 		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
