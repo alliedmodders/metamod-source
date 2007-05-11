@@ -2,7 +2,7 @@
  - Added API for getting highest supported IServerPluginCallbacks interface version.
  - The client version of the "meta" command should now work on games that use
    ServerGameClients004 and beyond.
- - Fixed amb277 (failed to get user message list in Kreezd Climbing).
+ - Fixed amb277 (failed to get user message list in Kreedz Climbing).
 
 2007/04/05 1.4.0:
  - Added API functions for retrieving User Message info without potentially crashing.
