@@ -170,10 +170,6 @@ New SH_CALL
 	the original function. Everything works fine. This works even for VP hooks.
 */
 
-// See sourcehook.hxx :)
-#undef CallClass
-#undef ManualCallClass
-
 namespace SourceHook
 {
 	/**
@@ -555,7 +551,7 @@ namespace SourceHook
 			void AddHookManager(Plugin plug, const CHookManagerInfo &hookman);
 		};
 
-		class CCallClassImpl : public GenericCallClass
+		class CCallClassImpl : public DeprecatedCallClass<void>
 		{
 		public:
 
@@ -721,14 +717,14 @@ namespace SourceHook
 		*	@param iface The interface pointer
 		*	@param size Size of the class instance
 		*/
-		GenericCallClass *GetCallClass(void *iface, size_t size);
+		DeprecatedCallClass<void> *GetCallClass(void *iface, size_t size);
 
 		/**
 		*	@brief Release a callclass
 		*
 		*	@param ptr Pointer to the callclass
 		*/
-		virtual void ReleaseCallClass(GenericCallClass *ptr);
+		virtual void ReleaseCallClass(DeprecatedCallClass<void> *ptr);
 
 		virtual void SetRes(META_RES res);				//!< Sets the meta result
 		virtual META_RES GetPrevRes();					//!< Gets the meta result of the previously called handler

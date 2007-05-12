@@ -595,7 +595,7 @@ namespace SourceHook
 		return status; 
 	}
 
-	GenericCallClass *CSourceHookImpl::GetCallClass(void *iface, size_t size)
+	DeprecatedCallClass<void> *CSourceHookImpl::GetCallClass(void *iface, size_t size)
 	{
 		for (Impl_CallClassList::iterator cciter = m_CallClasses.begin(); cciter != m_CallClasses.end(); ++cciter)
 		{
@@ -614,7 +614,7 @@ namespace SourceHook
 		return &m_CallClasses.back();
 	}
 
-	void CSourceHookImpl::ReleaseCallClass(GenericCallClass *ptr)
+	void CSourceHookImpl::ReleaseCallClass(DeprecatedCallClass<void> *ptr)
 	{
 		Impl_CallClassList::iterator iter = m_CallClasses.find(ptr);
 		if (iter == m_CallClasses.end())

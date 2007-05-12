@@ -298,14 +298,11 @@ namespace SourceHook
 		}
 	};
 
-	template<class B> struct CallClass
+	template<class B> struct DeprecatedCallClass
 	{
 		virtual B *GetThisPtr() = 0;
 		virtual void *GetOrigFunc(int vtbloffs, int vtblidx) = 0;
 	};
-
-	typedef CallClass<void> GenericCallClass;
-	typedef CallClass<EmptyClass> ManualCallClass;
 
 	// 09.08.2008 (6 AM, I just woke up, the others are still sleeping so i finally can use this notebook !!)
 	// - Today is an important day.
@@ -408,14 +405,14 @@ namespace SourceHook
 		*	@param iface The interface pointer
 		*	@param size Size of the class instance
 		*/
-		virtual GenericCallClass *GetCallClass(void *iface, size_t size) = 0;
+		virtual DeprecatedCallClass<void> *GetCallClass(void *iface, size_t size) = 0;
 
 		/**
 		*	@brief Release a callclass
 		*
 		*	@param ptr Pointer to the callclass
 		*/
-		virtual void ReleaseCallClass(GenericCallClass *ptr) = 0;
+		virtual void ReleaseCallClass(DeprecatedCallClass<void> *ptr) = 0;
 
 		virtual void SetRes(META_RES res) = 0;				//!< Sets the meta result
 		virtual META_RES GetPrevRes() = 0;					//!< Gets the meta result of the
@@ -569,11 +566,11 @@ namespace SourceHook
 	};
 
 	// For source-level compatibility
-	template <class T> struct LegacyCallClass
+	template <class T> struct CallClass
 	{
 		T *ptr;
 
-		LegacyCallClass(T *p) : ptr(p)
+		CallClass(T *p) : ptr(p)
 		{
 		}
 
@@ -583,17 +580,21 @@ namespace SourceHook
 		}
 	};
 
+	typedef CallClass<void> GenericCallClass;
+	typedef CallClass<EmptyClass> ManualCallClass;
+
 	template <class T>
-	LegacyCallClass<T> *GetLegacyCallClass(T *p)
+	CallClass<T> *GetCallClass(T *p)
 	{
-		return new LegacyCallClass<T>(p);
+		return new CallClass<T>(p);
 	}
 
 	template <class T>
-	void ReleaseLegacyCallClass(LegacyCallClass<T> *p)
+	void ReleaseCallClass(CallClass<T> *p)
 	{
 		delete p;
 	}
+
 }
 
 /************************************************************************/
@@ -707,12 +708,10 @@ namespace SourceHook
 	} while (0)
 
 // For source-level compatibility
-#define CallClass LegacyCallClass
-#define ManualCallClass LegacyCallClass<SourceHook::EmptyClass>
 
-#define SH_GET_CALLCLASS(ptr) SourceHook::GetLegacyCallClass(ptr)
-#define SH_GET_MCALLCLASS(ptr, size) SourceHook::GetLegacyCallClass(reinterpret_cast<SourceHook::EmptyClass*>(ptr))
-#define SH_RELEASE_CALLCLASS(ptr) SourceHook::ReleaseLegacyCallClass(ptr)
+#define SH_GET_CALLCLASS(ptr) SourceHook::GetCallClass(ptr)
+#define SH_GET_MCALLCLASS(ptr, size) SourceHook::GetCallClass(reinterpret_cast<SourceHook::EmptyClass*>(ptr))
+#define SH_RELEASE_CALLCLASS(ptr) SourceHook::ReleaseCallClass(ptr)
 
 // New ADD / REMOVE macros.
 #define SH_STATIC(func) fastdelegate::MakeDelegate(func)
@@ -1286,12 +1285,12 @@ namespace SourceHook
 		}
 	};
 
-	template <class T> struct CCW< LegacyCallClass<T> >
+	template <class T> struct CCW< CallClass<T> >
 	{
 		typedef T type;
 
 		// Get Real Pointer!
-		static inline T *GRP(LegacyCallClass<T> *p)
+		static inline T *GRP(CallClass<T> *p)
 		{
 			return p->ptr;
 		}
