@@ -1013,7 +1013,7 @@ namespace SourceHook
 	// If you get a crash here, the ptr passed is invalid
 	// This usually means a SH_DECL_MANUALHOOK* with wrong thisptroffs/vtbloffs/vtblidx
 	CSourceHookImpl::CVfnPtr::CVfnPtr(void *ptr, void **pOneIgnore) : m_Ptr(ptr), 
-		m_pOneIgnore(pOneIgnore), m_OrigEntry(*reinterpret_cast<void**>(ptr))
+		m_OrigEntry(*reinterpret_cast<void**>(ptr)), m_pOneIgnore(pOneIgnore)
 	{
 	}
 	CSourceHookImpl::CVfnPtr::~CVfnPtr()
