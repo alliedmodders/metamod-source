@@ -1308,7 +1308,7 @@ namespace SourceHook
 		Plugin m_Plug;
 	public:
 		ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
-			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
+			m_VfnPtr(vp), m_MFP(mfp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(@[$2,1,$1|, :Param$2 p$2@]) const
 			SH_MAKE_EXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
@@ -1328,7 +1328,7 @@ namespace SourceHook
 	   Plugin m_Plug;
 	public:
 	   ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
-		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
+		   m_VfnPtr(vp), m_MFP(mfp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(@[$2,1,$1|, :Param$2 p$2@]) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
