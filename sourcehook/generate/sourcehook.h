@@ -3137,9 +3137,9 @@ namespace SourceHook
 { \
 	using namespace ::SourceHook; \
 	\
-	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
 	RetType tmpret = (m_ThisPtr->*m_MFP)call; \
-	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
 	return tmpret; \
 }
 
@@ -3147,9 +3147,9 @@ namespace SourceHook
 { \
 	using namespace ::SourceHook; \
 	\
-	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
 	(m_ThisPtr->*m_MFP)call; \
-	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
 }
 
 namespace SourceHook
@@ -3184,8 +3184,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass0(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass0(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()() const
 			SH_MAKE_EXECUTABLECLASS_OB((), ())
@@ -3258,8 +3261,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass0(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass0(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()() const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((), ())
@@ -3333,8 +3339,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1), (Param1))
@@ -3404,8 +3413,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1), (Param1))
@@ -3476,8 +3488,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass2(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass2(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2), (Param1, Param2))
@@ -3544,8 +3559,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass2(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass2(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2), (Param1, Param2))
@@ -3613,8 +3631,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass3(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass3(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3), (Param1, Param2, Param3))
@@ -3678,8 +3699,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass3(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass3(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3), (Param1, Param2, Param3))
@@ -3744,8 +3768,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass4(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass4(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4), (Param1, Param2, Param3, Param4))
@@ -3806,8 +3833,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass4(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass4(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4), (Param1, Param2, Param3, Param4))
@@ -3869,8 +3899,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass5(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass5(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5), (Param1, Param2, Param3, Param4, Param5))
@@ -3928,8 +3961,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass5(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass5(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5), (Param1, Param2, Param3, Param4, Param5))
@@ -3988,8 +4024,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass6(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass6(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6), (Param1, Param2, Param3, Param4, Param5, Param6))
@@ -4044,8 +4083,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass6(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass6(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6), (Param1, Param2, Param3, Param4, Param5, Param6))
@@ -4101,8 +4143,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass7(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass7(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7), (Param1, Param2, Param3, Param4, Param5, Param6, Param7))
@@ -4154,8 +4199,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass7(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass7(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7), (Param1, Param2, Param3, Param4, Param5, Param6, Param7))
@@ -4208,8 +4256,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass8(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass8(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
@@ -4258,8 +4309,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass8(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass8(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
@@ -4309,8 +4363,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass9(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass9(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
@@ -4356,8 +4413,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass9(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass9(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
@@ -4404,8 +4464,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass10(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass10(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
@@ -4448,8 +4511,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass10(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass10(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
@@ -4493,8 +4559,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass11(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass11(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
@@ -4534,8 +4603,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass11(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass11(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
@@ -4576,8 +4648,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass12(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass12(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
@@ -4614,8 +4689,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass12(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass12(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
@@ -4653,8 +4731,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass13(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass13(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
@@ -4688,8 +4769,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass13(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass13(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
@@ -4724,8 +4808,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass14(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass14(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
@@ -4756,8 +4843,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass14(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass14(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
@@ -4789,8 +4879,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass15(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass15(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
@@ -4818,8 +4911,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass15(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass15(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
@@ -4848,8 +4944,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass16(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass16(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
@@ -4874,8 +4973,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass16(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass16(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
@@ -4901,8 +5003,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass17(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass17(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
@@ -4924,8 +5029,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass17(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass17(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
@@ -4948,8 +5056,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass18(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass18(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
@@ -4968,8 +5079,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass18(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass18(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
@@ -4989,8 +5103,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass19(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass19(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
@@ -5006,8 +5123,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass19(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass19(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
@@ -5024,8 +5144,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass20(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass20(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const
 			SH_MAKE_EXECUTABLECLASS_OB((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
@@ -5038,8 +5161,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass20(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass20(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20), (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
@@ -5072,547 +5198,589 @@ namespace SourceHook
 // Support for 0 arguments
 template <class X, class Y, class MFP, class RetType>
 SourceHook::ExecutableClass0<typename SourceHook::CCW<Y>::type, MFP, RetType>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)())
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType>
 SourceHook::ExecutableClass0<typename SourceHook::CCW<Y>::type, MFP, RetType>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)()const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)()const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType>
 SourceHook::ExecutableClass0<SourceHook::EmptyClass, MFP, RetType>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass0<EmptyClass, MFP, RetType>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 1 arguments
 template <class X, class Y, class MFP, class RetType, class Param1>
 SourceHook::ExecutableClass1<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1>
 SourceHook::ExecutableClass1<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1>
 SourceHook::ExecutableClass1<SourceHook::EmptyClass, MFP, RetType, Param1>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass1<EmptyClass, MFP, RetType, Param1>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 2 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2>
 SourceHook::ExecutableClass2<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2>
 SourceHook::ExecutableClass2<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2>
 SourceHook::ExecutableClass2<SourceHook::EmptyClass, MFP, RetType, Param1, Param2>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass2<EmptyClass, MFP, RetType, Param1, Param2>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 3 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass3<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass3<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass3<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass3<EmptyClass, MFP, RetType, Param1, Param2, Param3>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 4 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4>
 SourceHook::ExecutableClass4<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4>
 SourceHook::ExecutableClass4<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4>
 SourceHook::ExecutableClass4<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass4<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 5 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass5<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass5<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass5<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass5<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 6 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 SourceHook::ExecutableClass6<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 SourceHook::ExecutableClass6<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 SourceHook::ExecutableClass6<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass6<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 7 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass7<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass7<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass7<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass7<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 8 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 SourceHook::ExecutableClass8<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 SourceHook::ExecutableClass8<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 SourceHook::ExecutableClass8<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass8<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 9 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass9<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass9<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass9<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass9<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 10 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 SourceHook::ExecutableClass10<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 SourceHook::ExecutableClass10<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 SourceHook::ExecutableClass10<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass10<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 11 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass11<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass11<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass11<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass11<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 12 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 SourceHook::ExecutableClass12<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 SourceHook::ExecutableClass12<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 SourceHook::ExecutableClass12<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass12<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 13 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass13<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass13<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass13<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass13<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 14 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 SourceHook::ExecutableClass14<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 SourceHook::ExecutableClass14<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 SourceHook::ExecutableClass14<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass14<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 15 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass15<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass15<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass15<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass15<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 16 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass16<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass16<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass16<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass16<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 17 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 SourceHook::ExecutableClass17<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 SourceHook::ExecutableClass17<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 SourceHook::ExecutableClass17<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass17<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 18 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 SourceHook::ExecutableClass18<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 SourceHook::ExecutableClass18<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 SourceHook::ExecutableClass18<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass18<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 19 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 SourceHook::ExecutableClass19<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 SourceHook::ExecutableClass19<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 SourceHook::ExecutableClass19<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass19<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 // Support for 20 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 SourceHook::ExecutableClass20<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 SourceHook::ExecutableClass20<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 SourceHook::ExecutableClass20<SourceHook::EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass20<EmptyClass, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 
 
@@ -5623,386 +5791,428 @@ SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Par
 // Support for 0 arguments
 template <class X, class Y, class MFP, class RetType>
 SourceHook::ExecutableClass0<typename SourceHook::CCW<Y>::type, MFP, RetType>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType>
 SourceHook::ExecutableClass0<typename SourceHook::CCW<Y>::type, MFP, RetType>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass0<typename CCW<Y>::type, MFP, RetType>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 1 arguments
 template <class X, class Y, class MFP, class RetType, class Param1>
 SourceHook::ExecutableClass1<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1>
 SourceHook::ExecutableClass1<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass1<typename CCW<Y>::type, MFP, RetType, Param1>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 2 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2>
 SourceHook::ExecutableClass2<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2>
 SourceHook::ExecutableClass2<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass2<typename CCW<Y>::type, MFP, RetType, Param1, Param2>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 3 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass3<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3>
 SourceHook::ExecutableClass3<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass3<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 4 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4>
 SourceHook::ExecutableClass4<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4>
 SourceHook::ExecutableClass4<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass4<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 5 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass5<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5>
 SourceHook::ExecutableClass5<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass5<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 6 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 SourceHook::ExecutableClass6<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6>
 SourceHook::ExecutableClass6<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass6<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 7 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass7<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7>
 SourceHook::ExecutableClass7<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass7<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 8 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 SourceHook::ExecutableClass8<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8>
 SourceHook::ExecutableClass8<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass8<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 9 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass9<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9>
 SourceHook::ExecutableClass9<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass9<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 10 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 SourceHook::ExecutableClass10<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10>
 SourceHook::ExecutableClass10<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass10<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 11 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass11<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11>
 SourceHook::ExecutableClass11<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass11<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 12 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 SourceHook::ExecutableClass12<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12>
 SourceHook::ExecutableClass12<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass12<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 13 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass13<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13>
 SourceHook::ExecutableClass13<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass13<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 14 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 SourceHook::ExecutableClass14<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14>
 SourceHook::ExecutableClass14<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass14<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 15 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass15<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15>
 SourceHook::ExecutableClass15<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass15<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 16 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass16<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16>
 SourceHook::ExecutableClass16<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass16<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 17 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 SourceHook::ExecutableClass17<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17>
 SourceHook::ExecutableClass17<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass17<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 18 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 SourceHook::ExecutableClass18<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
 SourceHook::ExecutableClass18<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass18<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 19 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 SourceHook::ExecutableClass19<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
 SourceHook::ExecutableClass19<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass19<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 // Support for 20 arguments
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 SourceHook::ExecutableClass20<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
 SourceHook::ExecutableClass20<typename SourceHook::CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass20<typename CCW<Y>::type, MFP, RetType, Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 
 
 #endif
 
-#define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
-#define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs))
+#define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
+#define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
 #define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
 	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
 

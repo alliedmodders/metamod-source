@@ -1257,9 +1257,9 @@ namespace SourceHook
 { \
 	using namespace ::SourceHook; \
 	\
-	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
 	RetType tmpret = (m_ThisPtr->*m_MFP)call; \
-	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
 	return tmpret; \
 }
 
@@ -1267,9 +1267,9 @@ namespace SourceHook
 { \
 	using namespace ::SourceHook; \
 	\
-	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
 	(m_ThisPtr->*m_MFP)call; \
-	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
 }
 
 namespace SourceHook
@@ -1304,8 +1304,11 @@ namespace SourceHook
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
 		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-		ExecutableClass$1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+		ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+			m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 		RetType operator()(@[$2,1,$1|, :Param$2 p$2@]) const
 			SH_MAKE_EXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
@@ -1321,8 +1324,11 @@ namespace SourceHook
 	   ObjType *m_ThisPtr;
 	   void *m_VfnPtr;
 	   MFP m_MFP;
+	   ISourceHook *m_pSH;
+	   Plugin m_Plug;
 	public:
-	   ExecutableClass$1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	   ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
+		   m_MFP(mfp), m_VfnPtr(vp), m_pSH(pSH), m_Plug(plug) { }
 	
 	   void operator()(@[$2,1,$1|, :Param$2 p$2@]) const
 	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
@@ -1358,27 +1364,29 @@ namespace SourceHook
 // Support for $1 arguments
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
 SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
 SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@])const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@])const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
 SourceHook::ExecutableClass$1<SourceHook::EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), int vtblidx, int vtbloffs, int thisptroffs)
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
 	return SourceHook::ExecutableClass$1<EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>(
-		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
 @]
 
@@ -1389,26 +1397,28 @@ SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), int vtblid
 // Support for $1 arguments
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
 SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...))
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
 SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...)const)
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
 }
 
 @]
 
 #endif
 
-#define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
-#define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs))
+#define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
+#define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
 #define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
 	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
 
