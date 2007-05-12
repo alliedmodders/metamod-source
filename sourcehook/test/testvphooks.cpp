@@ -322,11 +322,25 @@ bool TestVPHooks(std::string &error)
 
 
 	// Test removing normal hooks even though the instance is deleted
-	p_d1i1 = new CDerived1;
-	SH_ADD_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
-	delete p_d1i1;
+	IBase *pOther = new CDerived1;
+	SH_ADD_HOOK(IBase, Func1, pOther, SH_STATIC(Handler_Func1_Pre), false);
+	delete pOther;
 	// The following line may not crash!
+	SH_REMOVE_HOOK(IBase, Func1, pOther, SH_STATIC(Handler_Func1_Pre), false);
+
+
+	// Now test GetOrigVfnPtrEntry
+	void *origfuncptr = (*reinterpret_cast<void***>(p_d1i1))[0];
+
+	CHECK_COND(SH_GET_ORIG_VFNPTR_ENTRY(p_d1i1, &IBase::Func1) == origfuncptr, "Part 9.1");
+		
+	SH_ADD_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
+	
+	CHECK_COND(SH_GET_ORIG_VFNPTR_ENTRY(p_d1i1, &IBase::Func1) == origfuncptr, "Part 9.2");
+
 	SH_REMOVE_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
+
+	CHECK_COND(SH_GET_ORIG_VFNPTR_ENTRY(p_d1i1, &IBase::Func1) == origfuncptr, "Part 9.3");
 
 	return true;
 }

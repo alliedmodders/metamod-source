@@ -917,6 +917,25 @@ namespace SourceHook
 		m_OneIgnore = NULL;
 	}
 
+	void *CSourceHookImpl::GetOrigVfnPtrEntry(void *vfnptr)
+	{
+		for (HookManContList::iterator hmcl_iter = m_HookMans.begin();
+			hmcl_iter != m_HookMans.end(); ++hmcl_iter)
+		{
+			for (CHookManagerContainer::iterator hookmaniter = hmcl_iter->begin();
+				hookmaniter != hmcl_iter->end(); ++hookmaniter)
+			{
+				for (CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookmaniter->m_VfnPtrs.begin();
+					vfnptr_iter != hookmaniter->m_VfnPtrs.end(); ++vfnptr_iter)
+				{
+					if (vfnptr_iter->m_Ptr == vfnptr)
+						return vfnptr_iter->m_OrigEntry;
+				}
+			}
+		}
+		return NULL;
+	}
+
 	////////////////////////////
 	// CCallClassImpl
 	////////////////////////////

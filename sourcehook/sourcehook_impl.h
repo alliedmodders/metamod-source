@@ -803,6 +803,14 @@ namespace SourceHook
 		*	@param vfnptr The virtual function pointer of the function in question
 		*/
 		virtual void ResetIgnoreHooks(Plugin plug, void *vfnptr);
+
+		/**
+		*	@brief Finds the original entry of a virtual function pointer
+		*
+		*	@param vfnptr The virtual function pointer
+		*	@return The original entry if the virtual function pointer has been patched; NULL otherwise.
+		*/
+		virtual void *GetOrigVfnPtrEntry(void *vfnptr);
 	};
 }
 

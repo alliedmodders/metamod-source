@@ -534,6 +534,14 @@ namespace SourceHook
 		*	@param vfnptr The virtual function pointer of the function in question
 		*/
 		virtual void ResetIgnoreHooks(Plugin plug, void *vfnptr) = 0;
+
+		/**
+		*	@brief Finds the original entry of a virtual function pointer
+		*
+		*	@param vfnptr The virtual function pointer
+		*	@return The original entry if the virtual function pointer has been patched; NULL otherwise.
+		*/
+		virtual void *GetOrigVfnPtrEntry(void *vfnptr) = 0;
 	};
 
 	// For META_RESULT_ORIG_RET and META_RESULT_OVERRIDE_RET:
@@ -595,6 +603,19 @@ namespace SourceHook
 		delete p;
 	}
 
+	template <class X, class MFP>
+	void *GetOrigVfnPtrEntry(X *pInstance, MFP mfp, ISourceHook *pSH)
+	{
+		SourceHook::MemFuncInfo info = {true, -1, 0, 0};
+		SourceHook::GetFuncInfo(pInstance, mfp, info);
+
+		void *vfnptr = reinterpret_cast<void*>(
+			*reinterpret_cast<void***>(reinterpret_cast<char*>(pInstance) + info.thisptroffs + info.vtbloffs) + info.vtblindex);
+
+		void *origentry = pSH->GetOrigVfnPtrEntry(vfnptr);
+		
+		return origentry ? origentry : *reinterpret_cast<void**>(vfnptr);
+	}
 }
 
 /************************************************************************/
@@ -706,6 +727,9 @@ namespace SourceHook
 		SH_MFHCls(hookname)::ms_MFI.vtblindex = pvtblindex; \
 		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
 	} while (0)
+
+
+#define SH_GET_ORIG_VFNPTR_ENTRY(inst, mfp) (SourceHook::GetOrigVfnPtrEntry(inst, mfp, SH_GLOB_SHPTR))
 
 // For source-level compatibility
 
