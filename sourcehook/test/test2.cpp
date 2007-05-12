@@ -100,11 +100,9 @@ bool TestVafmtAndOverload(std::string &error)
 	Whatever gabgab;
 	IGaben *pGab = &gabgab;
 
-	SourceHook::CallClass<IGaben> *cc = SH_GET_CALLCLASS(pGab);
-
 	// Part 1
-	SH_CALL(cc, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();
-	SH_CALL(cc, static_cast<bool (IGaben::*)(const char *) const>(&IGaben::EatYams))("Here!");
+	SH_CALL(pGab, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();
+	SH_CALL(pGab, static_cast<bool (IGaben::*)(const char *) const>(&IGaben::EatYams))("Here!");
 
 	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams0_Handler, false);
 	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams1_Handler, false);
@@ -126,9 +124,9 @@ bool TestVafmtAndOverload(std::string &error)
 
 	// Part 2
 	pGab->Vafmt1(true, 55, "Hello %s%d%s", "BA", 1, "L");
-	SH_CALL(cc, &IGaben::Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
+	SH_CALL(pGab, &IGaben::Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
 	pGab->Vafmt2("Hello %s%d%s", "BA", 1, "LOPAN");
-	SH_CALL(cc, &IGaben::Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
+	SH_CALL(pGab, &IGaben::Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
 
 	CHECK_STATES((&g_States,
 		new State_Vafmt_Called(1, "Hello BA1L"),
@@ -169,8 +167,6 @@ bool TestVafmtAndOverload(std::string &error)
 		new State_Vafmt_Called(1, "Hello BA1L"),
 		new State_Vafmt_Called(2, "Hello BA1LOPAN"),
 		NULL), "Part 4");
-
-	SH_RELEASE_CALLCLASS(cc);
 
 	return true;
 }

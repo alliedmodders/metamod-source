@@ -5,6 +5,7 @@
 
 // TEST VP HOOKS
 // Test vfnptr-wide hooks
+// Also contains a test for removing hooks on deleted instances (by id)
 
 namespace
 {
@@ -121,7 +122,7 @@ bool TestVPHooks(std::string &error)
 	IBase *p_d1i1 = &d1i1;
 	IBase *p_d1i2 = &d1i2;
 	IBase *p_d2i1 = &d2i1;
-	
+
 	int hook1 = SH_ADD_VPHOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
 
 	p_d1i1->Func1();
@@ -137,6 +138,18 @@ bool TestVPHooks(std::string &error)
 
 		new State_D2_Func1(p_d2i1),
 		NULL), "Part 1");
+
+	SH_CALL(p_d1i1, &IBase::Func1)();
+	SH_CALL(p_d1i2, &IBase::Func1)();
+	SH_CALL(p_d2i1, &IBase::Func1)();
+
+	CHECK_STATES((&g_States,
+		new State_D1_Func1(p_d1i1),
+
+		new State_D1_Func1(p_d1i2),
+
+		new State_D2_Func1(p_d2i1),
+		NULL), "Part 1.1");
 
 	SH_REMOVE_HOOK_ID(hook1);
 
@@ -260,6 +273,60 @@ bool TestVPHooks(std::string &error)
 	SH_REMOVE_HOOK_ID(hook1);
 	SH_REMOVE_HOOK_ID(hook2);
 	SH_REMOVE_HOOK_ID(hook3);
+
+	// Test direct VP hook
+
+	p_d1i1->Func1();
+	p_d1i2->Func1();
+
+	// get vtable manually
+	void *pVtable = *reinterpret_cast<void**>(p_d1i1);
+
+	hook1 = SH_ADD_DVPHOOK(IBase, Func1, pVtable, SH_STATIC(Handler_Func1_Pre), false);
+
+	p_d1i1->Func1();
+	p_d1i2->Func1();
+
+	CHECK_STATES((&g_States,
+		new State_D1_Func1(p_d1i1),
+		new State_D1_Func1(p_d1i2),
+
+		new State_Func1_Pre(p_d1i1),
+		new State_D1_Func1(p_d1i1),
+		new State_Func1_Pre(p_d1i2),
+		new State_D1_Func1(p_d1i2),
+		NULL), "Part 8.1");
+
+	SH_REMOVE_HOOK_ID(hook1);
+
+	// Now try manual dvp hooks
+	p_d1i1->Func3(1);
+	p_d1i2->Func3(1);
+	
+	hook1 = SH_ADD_MANUALDVPHOOK(IBase_Func3_Manual, pVtable, SH_STATIC(Handler_Func3_Pre), false);
+
+	p_d1i1->Func3(1);
+	p_d1i2->Func3(1);
+
+	CHECK_STATES((&g_States,
+		new State_D1_Func3(p_d1i1, 1),
+		new State_D1_Func3(p_d1i2, 1),
+
+		new State_Func3_Pre(p_d1i1, 1),		// manual vp hook
+		new State_D1_Func3(p_d1i1, 2),		// function
+
+		new State_Func3_Pre(p_d1i2, 1),		// normal vp hook
+		new State_D1_Func3(p_d1i2, 2),		// function
+
+		NULL), "Part 8.2");
+
+
+	// Test removing normal hooks even though the instance is deleted
+	p_d1i1 = new CDerived1;
+	SH_ADD_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
+	delete p_d1i1;
+	// The following line may not crash!
+	SH_REMOVE_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
 
 	return true;
 }

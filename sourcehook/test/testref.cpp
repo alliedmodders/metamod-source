@@ -104,8 +104,6 @@ bool TestRef(std::string &error)
 	CHello *pHello = &hello;
 	CHook hook;
 
-	SourceHook::CallClass<CHello> *cc = SH_GET_CALLCLASS(pHello);
-
 	ADD_STATE(State_Result(pHello->Func(base)));
 	ADD_STATE(State_Result(pHello->Func(der)));
 	ADD_STATE(State_Result(pHello->Func(der2)));
@@ -118,10 +116,10 @@ bool TestRef(std::string &error)
 		new State_Result(12),
 		NULL), "Part 1");
 
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(base)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der2)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der3)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(base)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der2)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der3)));
 
 	CHECK_STATES((&g_States,
 		new State_Result(0),
@@ -148,10 +146,10 @@ bool TestRef(std::string &error)
 		new State_Result(20),
 		NULL), "Part 3");
 
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(base)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der2)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der3)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(base)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der2)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der3)));
 
 	CHECK_STATES((&g_States,
 		new State_Result(0),

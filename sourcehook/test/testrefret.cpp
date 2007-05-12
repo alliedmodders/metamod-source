@@ -164,8 +164,7 @@ bool TestRefRet(std::string &error)
 	CHECK_COND(hook.m_Var == 1337, "Part 4.1");
 	
 	// Through a callclass
-	SourceHook::CallClass<Test> *cc1 = SH_GET_CALLCLASS(pTest);
-	int &ret5 = SH_CALL(cc1, &Test::Func1)();
+	int &ret5 = SH_CALL(pTest, &Test::Func1)();
 	ADD_STATE(State_Func1_Ret(&ret5));
 
 	CHECK_STATES((&g_States,
@@ -173,7 +172,6 @@ bool TestRefRet(std::string &error)
 		new State_Func1_Ret(&test.m_Var1),
 		NULL), "Part 5");
 
-	SH_RELEASE_CALLCLASS(cc1);
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Func2 tests

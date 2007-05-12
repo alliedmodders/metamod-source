@@ -90,6 +90,9 @@ Hooks
 
 ---------------------------------------
 Call classes
+
+	!! deprecated !!   - see below (new SH_CALL)
+
 	Call classes are identified by a this pointer and an instance size
 
 	We use the instance size because a derived class instance and a base class instance could
@@ -152,7 +155,24 @@ VP Hooks
 
 	I'm afraid that with the addition of Recalls and VP Hooks, SourceHook is now a pretty complex and hacked-together
 	binary compatible beast which is pretty hard to maintain unless you've written it :)
+
+New SH_CALL
+	The addition of VP hooks messed up the Call Classes concept (see above) - call classes are bound to an
+	instance pointer; they only work on one of the hooked instances. But VP hooks are called on all instances.
+	
+	That's why now, SH_CALL takes an instance pointer instead of a callclass pointer. It basically does this:
+	1) call SH_GLOB_PTR->SetIgnoreHooks(vfnptr)
+	2) call this->*mfp
+	3) call SH_GLOB_PTR->ResetIgnoreHooks(vfnptr)
+
+	SourceHook stroes the "ignored vfnptr" and makes CVfnPtr::FindIface return NULL if the CVfnPtr instance
+	corresponds to the ignored vfnptr. This way the hook manager thinks that the instance isn't hooked, and calls
+	the original function. Everything works fine. This works even for VP hooks.
 */
+
+// See sourcehook.hxx :)
+#undef CallClass
+#undef ManualCallClass
 
 namespace SourceHook
 {
@@ -416,8 +436,9 @@ namespace SourceHook
 
 			IfaceList m_Ifaces;
 
+			void **m_pOneIgnore;
 		public:
-			CVfnPtr(void *ptr);
+			CVfnPtr(void *ptr, void **pOneIgnore);
 			virtual ~CVfnPtr();
 
 			void *GetVfnPtr();
@@ -609,6 +630,9 @@ namespace SourceHook
 
 		HookLoopInfoStack m_HLIStack;
 		CHookIDManager m_HookIDMan;
+
+		void *m_OneIgnore; //:TODO:
+		bool m_IgnoreActive;
 	public:
 		CSourceHookImpl();
 		virtual ~CSourceHookImpl();
@@ -748,6 +772,8 @@ namespace SourceHook
 		*	@param plug The unique identifier of the plugin that calls this function
 		*	@param mode	Can be either Hook_Normal or Hook_VP (vtable-wide hook)
 		*	@param iface The interface pointer
+		*				 The representative interface pointer for VP hooks
+		*				 The vtable pointer for direct VP hooks !!!
 		*	@param ifacesize The size of the class iface points to
 		*	@param myHookMan A hook manager function that should be capable of handling the function
 		*	@param handler A pointer to a FastDelegate containing the hook handler
@@ -765,6 +791,22 @@ namespace SourceHook
 		*	@param hookid The hook id (returned by AddHookNew)
 		*/
 		virtual bool RemoveHookByID(Plugin plug, int hookid);
+
+		/**
+		*	@brief Makes sure that hooks are going to be ignored on the next call of vfnptr
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void SetIgnoreHooks(Plugin plug, void *vfnptr);
+
+		/**
+		*	@brief Reverses SetIgnoreHooks' effect
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void ResetIgnoreHooks(Plugin plug, void *vfnptr);
 	};
 }
 

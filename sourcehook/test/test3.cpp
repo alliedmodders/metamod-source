@@ -87,11 +87,10 @@ bool TestThisPtrOffs(std::string &error)
 	//  Get a callclass for pD
 	//  Verify whether the this pointers are correct
 	//  Also call them normally to make sure that we aren't messing it up ;)
-	SourceHook::CallClass<Derived> *pD_CC = SH_GET_CALLCLASS(pD);
 
-	SH_CALL(pD_CC, &Derived::Func1)();
-	SH_CALL(pD_CC, &Derived::Func2)();
-	SH_CALL(pD_CC, &Derived::Func3)();
+	SH_CALL(pD, &Derived::Func1)();
+	SH_CALL(pD, &Derived::Func2)();
+	SH_CALL(pD, &Derived::Func3)();
 	pD->Func1();
 	pD->Func2();
 	pD->Func3();
@@ -105,8 +104,8 @@ bool TestThisPtrOffs(std::string &error)
 		new State_Func3_Called(pD),
 		NULL), "Part 1");
 
-	SH_CALL(pD_CC, &Base1::Func1)();
-	SH_CALL(pD_CC, &Base2::Func2)();
+	SH_CALL(pD, &Base1::Func1)();
+	SH_CALL(pD, &Base2::Func2)();
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(pB1),
@@ -116,11 +115,8 @@ bool TestThisPtrOffs(std::string &error)
 	// 2)
 	//   Get callclasses for the other ones and verify it as well
 
-	SourceHook::CallClass<Base1> *pB1_CC = SH_GET_CALLCLASS(pB1);
-	SourceHook::CallClass<Base2> *pB2_CC = SH_GET_CALLCLASS(pB2);
-
-	SH_CALL(pB1_CC, &Base1::Func1)();
-	SH_CALL(pB2_CC, &Base2::Func2)();
+	SH_CALL(pB1, &Base1::Func1)();
+	SH_CALL(pB2, &Base2::Func2)();
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(pB1),
@@ -214,11 +210,11 @@ bool TestThisPtrOffs(std::string &error)
 		new State_Func3_Called(pD),
 		NULL), "Part 5.1");
 
-	SH_CALL(pD_CC, &Derived::Func1)();
-	SH_CALL(pD_CC, &Derived::Func2)();
-	SH_CALL(pD_CC, &Derived::Func3)();
-	SH_CALL(pB1_CC, &Base1::Func1)();
-	SH_CALL(pB2_CC, &Base2::Func2)();
+	SH_CALL(pD, &Derived::Func1)();
+	SH_CALL(pD, &Derived::Func2)();
+	SH_CALL(pD, &Derived::Func3)();
+	SH_CALL(pB1, &Base1::Func1)();
+	SH_CALL(pB2, &Base2::Func2)();
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(pB1),
@@ -231,10 +227,6 @@ bool TestThisPtrOffs(std::string &error)
 	SH_REMOVE_HOOK(Derived, Func1, pD, SH_STATIC(Handler_Func1), false);
 	SH_REMOVE_HOOK(Derived, Func2, pD, SH_STATIC(Handler_Func2), false);
 	SH_REMOVE_HOOK(Derived, Func3, pD, SH_STATIC(Handler_Func3), false);
-
-	SH_RELEASE_CALLCLASS(pB1_CC);
-	SH_RELEASE_CALLCLASS(pB2_CC);
-	SH_RELEASE_CALLCLASS(pD_CC);
 
 	return true;
 }

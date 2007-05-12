@@ -27,7 +27,9 @@
 // ???
 // 4 - addition of hook ids and vp hooks (with them, AddHookNew and RemoveHookNew)
 //     This is not a SH_IFACE_VERSION change so that old plugins continue working!
-#define SH_IMPL_VERSION 4
+// 5 - addition of direct vp hooks (new hook mode; from now on AddHookNew checks for
+//	   invalid hookmode -> impl version won't have to change because of things like this)
+#define SH_IMPL_VERSION 5
 
 // Hookman version:
 //  1 - Support for recalls, performance optimisations
@@ -490,7 +492,8 @@ namespace SourceHook
 		enum AddHookMode
 		{
 			Hook_Normal,
-			Hook_VP
+			Hook_VP,
+			Hook_DVP
 		}; 
 
 		/**
@@ -518,6 +521,22 @@ namespace SourceHook
 		*	@param hookid The hook id (returned by AddHookNew)
 		*/
 		virtual bool RemoveHookByID(Plugin plug, int hookid) = 0;
+
+		/**
+		*	@brief Makes sure that hooks are going to be ignored on the next call of vfnptr
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void SetIgnoreHooks(Plugin plug, void *vfnptr) = 0;
+
+		/**
+		*	@brief Reverses SetIgnoreHooks' effect
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void ResetIgnoreHooks(Plugin plug, void *vfnptr) = 0;
 	};
 
 	// For META_RESULT_ORIG_RET and META_RESULT_OVERRIDE_RET:
@@ -548,6 +567,33 @@ namespace SourceHook
 			return &ref;
 		}
 	};
+
+	// For source-level compatibility
+	template <class T> struct LegacyCallClass
+	{
+		T *ptr;
+
+		LegacyCallClass(T *p) : ptr(p)
+		{
+		}
+
+		operator T*()
+		{
+			return ptr;
+		}
+	};
+
+	template <class T>
+	LegacyCallClass<T> *GetLegacyCallClass(T *p)
+	{
+		return new LegacyCallClass<T>(p);
+	}
+
+	template <class T>
+	void ReleaseLegacyCallClass(LegacyCallClass<T> *p)
+	{
+		delete p;
+	}
 }
 
 /************************************************************************/
@@ -652,31 +698,6 @@ namespace SourceHook
 		RETURN_META_VALUE(MRES_SUPERCEDE, (thisptr->*(u.mfp)) newparams); \
 	} while (0)
 
-/**
-*	@brief Get/generate callclass for an interface pointer
-*
-*	@param ifaceptr The interface pointer
-*/
-template<class ifacetype>
-inline SourceHook::CallClass<ifacetype> *SH_GET_CALLCLASS_R(SourceHook::ISourceHook *shptr, ifacetype *ptr)
-{
-	return reinterpret_cast<SourceHook::CallClass<ifacetype>*>(
-		shptr->GetCallClass(reinterpret_cast<void*>(ptr), sizeof(ifacetype)));
-}
-
-template<class ifacetype>
-inline SourceHook::CallClass<ifacetype> *SH_GET_MCALLCLASS_R(SourceHook::ISourceHook *shptr, ifacetype *ptr, int ifacesize)
-{
-	return reinterpret_cast<SourceHook::CallClass<ifacetype>*>(
-		shptr->GetCallClass(reinterpret_cast<void*>(ptr), ifacesize));
-}
-
-template<class ifacetype>
-inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::CallClass<ifacetype> *ptr)
-{
-	shptr->ReleaseCallClass(reinterpret_cast<SourceHook::GenericCallClass*>(ptr));
-}
-
 #define SH_MANUALHOOK_RECONFIGURE(hookname, pvtblindex, pvtbloffs, pthisptroffs) \
 	do { \
 		SH_GLOB_SHPTR->RemoveHookManager(SH_GLOB_PLUGPTR, SH_MFHCls(hookname)::HookManPubFunc); \
@@ -685,9 +706,13 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
 	} while (0)
 
-#define SH_GET_CALLCLASS(ptr) SH_GET_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
-#define SH_GET_MCALLCLASS(ptr, size) SH_GET_MCALLCLASS_R(SH_GLOB_SHPTR, reinterpret_cast<SourceHook::EmptyClass*>(ptr), size)
-#define SH_RELEASE_CALLCLASS(ptr) SH_RELEASE_CALLCLASS_R(SH_GLOB_SHPTR, ptr)
+// For source-level compatibility
+#define CallClass LegacyCallClass
+#define ManualCallClass LegacyCallClass<SourceHook::EmptyClass>
+
+#define SH_GET_CALLCLASS(ptr) SourceHook::GetLegacyCallClass(ptr)
+#define SH_GET_MCALLCLASS(ptr, size) SourceHook::GetLegacyCallClass(reinterpret_cast<SourceHook::EmptyClass*>(ptr))
+#define SH_RELEASE_CALLCLASS(ptr) SourceHook::ReleaseLegacyCallClass(ptr)
 
 // New ADD / REMOVE macros.
 #define SH_STATIC(func) fastdelegate::MakeDelegate(func)
@@ -709,10 +734,17 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 
 #define SH_ADD_VPHOOK(ifacetype, ifacefunc, ifaceptr, handler, post) \
 	__SourceHook_FHVPAdd##ifacetype##ifacefunc((void*)SourceHook::implicit_cast<ifacetype*>(ifaceptr), \
-	post, handler)
+	post, handler, false)
+
+#define SH_ADD_DVPHOOK(ifacetype, ifacefunc, vtableptr, handler, post) \
+	__SourceHook_FHVPAdd##ifacetype##ifacefunc(reinterpret_cast<void*>(vtableptr), \
+	post, handler, true)
 
 #define SH_ADD_MANUALVPHOOK(hookname, ifaceptr, handler, post) \
-	__SourceHook_FHMVPAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler) 
+	__SourceHook_FHMVPAdd##hookname(reinterpret_cast<void*>(ifaceptr), post, handler, false)
+
+#define SH_ADD_MANUALDVPHOOK(hookname, vtableptr, handler, post) \
+	__SourceHook_FHMVPAdd##hookname(reinterpret_cast<void*>(vtableptr), post, handler, true)
 
 #define SH_REMOVE_HOOK_ID(hookid) \
 	(SH_GLOB_SHPTR->RemoveHookByID(SH_GLOB_PLUGPTR, hookid))
@@ -844,7 +876,7 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
 	} \
 	int __SourceHook_FHVPAdd##ifacetype##ifacefunc(void *iface, bool post, \
-		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler) \
+		SH_FHCls(ifacetype,ifacefunc,overload)::FD handler, bool direct) \
 	{ \
 		using namespace ::SourceHook; \
 		MemFuncInfo mfi = {true, -1, 0, 0}; \
@@ -852,8 +884,9 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 		if (mfi.thisptroffs < 0 || !mfi.isVirtual) \
 			return false; /* No non-virtual functions / virtual inheritance supported */ \
 		\
-		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_VP, iface, mfi.thisptroffs, \
-			SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, \
+			direct ? ::SourceHook::ISourceHook::Hook_DVP : ::SourceHook::ISourceHook::Hook_VP, \
+			iface, mfi.thisptroffs, SH_FHCls(ifacetype,ifacefunc,overload)::HookManPubFunc, \
 			new CSHDelegate<SH_FHCls(ifacetype,ifacefunc,overload)::FD>(handler), post); \
 	} \
 	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
@@ -936,10 +969,11 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
 	} \
 	int __SourceHook_FHMVPAdd##hookname(void *iface, bool post, \
-		SH_MFHCls(hookname)::FD handler) \
+		SH_MFHCls(hookname)::FD handler, bool direct) \
 	{ \
-		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, ::SourceHook::ISourceHook::Hook_VP, iface, pthisptroffs, \
-			SH_MFHCls(hookname)::HookManPubFunc, \
+		return SH_GLOB_SHPTR->AddHookNew(SH_GLOB_PLUGPTR, \
+			direct ? ::SourceHook::ISourceHook::Hook_DVP : ::SourceHook::ISourceHook::Hook_VP, \
+			iface, pthisptroffs, SH_MFHCls(hookname)::HookManPubFunc, \
 			new ::SourceHook::CSHDelegate<SH_MFHCls(hookname)::FD>(handler), post); \
 	} \
 	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
@@ -1219,135 +1253,102 @@ inline void SH_RELEASE_CALLCLASS_R(SourceHook::ISourceHook *shptr, SourceHook::C
 //////////////////////////////////////////////////////////////////////////
 // SH_CALL
 
-#if SH_COMP == SH_COMP_MSVC
-
-# define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
+#define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
 { \
 	using namespace ::SourceHook; \
-	MemFuncInfo mfi = {true, -1, 0, 0}; \
-	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
-	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
-	if (!origfunc) \
-		return (m_CC->GetThisPtr()->*m_MFP)call; \
 	\
-	/* It's hooked. Call the original function. */ \
-	union \
-	{ \
-		RetType(EmptyClass::*mfpnew)prms; \
-		void *addr; \
-	} u; \
-	u.addr = origfunc; \
-	\
-	void *adjustedthisptr = reinterpret_cast<void*>(reinterpret_cast<char*>(m_CC->GetThisPtr()) + mfi.thisptroffs); \
-	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
+	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	RetType tmpret = (m_ThisPtr->*m_MFP)call; \
+	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	return tmpret; \
 }
 
-# define SH_MAKE_MEXECUTABLECLASS_OB(call, prms) \
+#define SH_MAKE_EXECUTABLECLASS_OB_void(call, prms) \
 { \
 	using namespace ::SourceHook; \
-	char *adjustedthisptr = reinterpret_cast<char*>(m_CC->GetThisPtr()) + m_ThisPtrOffs; \
-	union \
-	{ \
-		RetType(EmptyClass::*mfpnew)prms; \
-		void *addr; \
-	} u; \
-	u.addr = m_CC->GetOrigFunc(m_ThisPtrOffs + m_VtblOffs, m_VtblIdx); \
-	if (!u.addr) \
-		u.addr = (*reinterpret_cast<void***>(adjustedthisptr + m_VtblOffs))[m_VtblIdx]; \
 	\
-	return (reinterpret_cast<EmptyClass*>(adjustedthisptr)->*u.mfpnew)call; \
+	SH_GLOB_SHPTR->SetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
+	(m_ThisPtr->*m_MFP)call; \
+	SH_GLOB_SHPTR->ResetIgnoreHooks(SH_GLOB_PLUGPTR, m_VfnPtr); \
 }
-
-#elif SH_COMP == SH_COMP_GCC
-
-# define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
-{ \
-	using namespace ::SourceHook; \
-	MemFuncInfo mfi = {true, -1, 0, 0}; \
-	GetFuncInfo(m_CC->GetThisPtr(), m_MFP, mfi); \
-	void *origfunc = m_CC->GetOrigFunc(mfi.thisptroffs + mfi.vtbloffs, mfi.vtblindex); \
-	if (!origfunc) \
-		return (m_CC->GetThisPtr()->*m_MFP)call; \
-	\
-	/* It's hooked. Call the original function. */ \
-	union \
-	{ \
-		RetType(EmptyClass::*mfpnew)prms; \
-		struct \
-		{ \
-			void *addr; \
-			intptr_t adjustor; \
-		} s; \
-	} u; \
-	u.s.addr = origfunc; \
-	u.s.adjustor = mfi.thisptroffs; \
-	\
-	return (reinterpret_cast<EmptyClass*>(m_CC->GetThisPtr())->*u.mfpnew)call; \
-}
-
-# define SH_MAKE_MEXECUTABLECLASS_OB(call, prms) \
-{ \
-	using namespace ::SourceHook; \
-	char *thisptr = reinterpret_cast<char*>(m_CC->GetThisPtr()); \
-	union \
-	{ \
-		RetType(EmptyClass::*mfpnew)prms; \
-		struct { \
-			void *addr; \
-			intptr_t adjustor; \
-		} s; \
-	} u; \
-	u.s.addr = m_CC->GetOrigFunc(m_ThisPtrOffs + m_VtblOffs, m_VtblIdx); \
-	if (!u.s.addr) \
-		u.s.addr = (*reinterpret_cast<void***>(thisptr + m_ThisPtrOffs + m_VtblOffs))[m_VtblIdx]; \
-	\
-	u.s.adjustor = m_ThisPtrOffs; \
-	return (reinterpret_cast<EmptyClass*>(thisptr)->*u.mfpnew)call; \
-}
-
-#endif
 
 namespace SourceHook
 {
-@[$1,0,$a:
-	// Support for $1 arguments
-	template<class CCType, class MFPType, class RetType@[$2,1,$1:, class Param$2@]> class ExecutableClass$1
+	// Call Class Wrapper!
+	template <class T> struct CCW
 	{
-	   CCType *m_CC;
-	   MFPType m_MFP;
-	public:
-	   ExecutableClass$1(CCType *cc, MFPType mfp) : m_CC(cc), m_MFP(mfp) { }
-	
-	   RetType operator()(@[$2,1,$1|, :Param$2 p$2@]) const
-	      SH_MAKE_EXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
-	         
-	   @[$2,$1+1,$a:
-	   template <@[$3,$1+1,$2|, :class Param$3@]> RetType operator()(@[$3,1,$2|, :Param$3 p$3@]) const
-	      SH_MAKE_EXECUTABLECLASS_OB((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
-	   @]
+		typedef T type;
+
+		// Get Real Pointer!
+		static inline T *GRP(T *p)
+		{
+			return p;
+		}
 	};
 
-	template <class RetType@[$2,1,$1:, class Param$2@]> class MExecutableClass$1
+	template <class T> struct CCW< LegacyCallClass<T> >
 	{
-		ManualCallClass *m_CC;
-		int m_ThisPtrOffs;
-		int m_VtblIdx;
-		int m_VtblOffs;
+		typedef T type;
+
+		// Get Real Pointer!
+		static inline T *GRP(LegacyCallClass<T> *p)
+		{
+			return p->ptr;
+		}
+	};
+
+@[$1,0,$a:
+	// Support for $1 arguments
+	template<class ObjType, class MFP, class RetType@[$2,1,$1:, class Param$2@]> class ExecutableClass$1
+	{
+		ObjType *m_ThisPtr;
+		void *m_VfnPtr;
+		MFP m_MFP;
 	public:
-		MExecutableClass$1(ManualCallClass *cc, int vtbloffs, int vtblidx, int thisptroffs) : m_CC(cc),
-			m_ThisPtrOffs(thisptroffs), m_VtblIdx(vtblidx), m_VtblOffs(vtbloffs) { }
-
+		ExecutableClass$1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	
 		RetType operator()(@[$2,1,$1|, :Param$2 p$2@]) const
-			SH_MAKE_MEXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
-
+			SH_MAKE_EXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
+	         
 		@[$2,$1+1,$a:
 		template <@[$3,$1+1,$2|, :class Param$3@]> RetType operator()(@[$3,1,$2|, :Param$3 p$3@]) const
-			SH_MAKE_MEXECUTABLECLASS_OB((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
+			SH_MAKE_EXECUTABLECLASS_OB((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
 		@]
+	};
+
+	template<class ObjType, class MFP@[$2,1,$1:, class Param$2@]> class ExecutableClass$1<ObjType, MFP, void@[$2,1,$1:, Param$2@]>
+	{
+	   ObjType *m_ThisPtr;
+	   void *m_VfnPtr;
+	   MFP m_MFP;
+	public:
+	   ExecutableClass$1(ObjType *tp, MFP mfp, void *vp) : m_ThisPtr(tp), m_MFP(mfp), m_VfnPtr(vp) { }
+	
+	   void operator()(@[$2,1,$1|, :Param$2 p$2@]) const
+	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
+	         
+	   @[$2,$1+1,$a:
+	   template <@[$3,$1+1,$2|, :class Param$3@]> void operator()(@[$3,1,$2|, :Param$3 p$3@]) const
+	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
+	   @]
 	};
 @]
 
 }
+
+#define SH__CALL_GET_VFNPTR_NORMAL \
+	using namespace ::SourceHook; \
+	MemFuncInfo mfi = {true, -1, 0, 0}; \
+	GetFuncInfo(CCW<Y>::GRP(ptr), mfp, mfi); \
+	void *vfnptr = reinterpret_cast<void*>( \
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(ptr) + mfi.thisptroffs + mfi.vtbloffs) + mfi.vtblindex);
+
+#define SH__CALL_GET_VFNPTR_MANUAL \
+	using namespace ::SourceHook; \
+	void *vfnptr = reinterpret_cast<void*>( \
+		*reinterpret_cast<void***>( (reinterpret_cast<char*>(CCW<Y>::GRP(ptr)) + thisptroffs + vtbloffs) ) + vtblidx); \
+	/* patch mfp */ \
+	*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr);
 
 // SH_CALL needs to deduce the return type -> it uses templates and function overloading
 // That's why SH_CALL takes two parameters: "mfp2" of type RetType(X::*mfp)(params), and "mfp" of type MFP
@@ -1356,24 +1357,28 @@ namespace SourceHook
 @[$1,0,$a:
 // Support for $1 arguments
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]))
+SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]))
 {
-	return SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>(ptr, mfp);
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
 }
 
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@])const)
+SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@])const)
 {
-	return SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>(ptr, mfp);
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
 }
 
-template <class X, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::MExecutableClass$1<RetType@[$2,1,$1:, Param$2@]>
-SH_MCALL2(SourceHook::ManualCallClass *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$2@]), int vtblidx, int vtbloffs, int thisptroffs)
+template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
+SourceHook::ExecutableClass$1<SourceHook::EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), int vtblidx, int vtbloffs, int thisptroffs)
 {
-	return SourceHook::MExecutableClass$1<RetType@[$2,1,$1:, Param$2@]>(ptr, vtbloffs, vtblidx, thisptroffs);
+	SH__CALL_GET_VFNPTR_MANUAL
+	return SourceHook::ExecutableClass$1<EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>(
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr);
 }
 @]
 
@@ -1383,17 +1388,19 @@ SH_MCALL2(SourceHook::ManualCallClass *ptr, RetType(X::*mfp)(@[$2,1,$1|, :Param$
 @[$1,0,$a:
 // Support for $1 arguments
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...))
+SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...))
 {
-	return SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>(ptr, mfp);
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
 }
 
 template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...)const)
+SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...)const)
 {
-	return SourceHook::ExecutableClass$1<SourceHook::CallClass<Y>, MFP, RetType@[$2,1,$1:, Param$2@]>(ptr, mfp);
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr), mfp, vfnptr);
 }
 
 @]
@@ -1401,6 +1408,7 @@ SH_CALL2(SourceHook::CallClass<Y> *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :
 #endif
 
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp))
+#define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs))
 #define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
 	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
 

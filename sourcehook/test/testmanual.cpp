@@ -114,8 +114,6 @@ bool TestManual(std::string &error)
 	Whatever inst;
 	TheWall *p = &inst;
 
-	SourceHook::ManualCallClass *cc = SH_GET_MCALLCLASS(p, sizeof(void*));
-
 	// 1)
 	// Call each function
 	p->Func1();
@@ -134,14 +132,14 @@ bool TestManual(std::string &error)
 
 	// 1.1)
 	// Now call each function through the manual call class, using the hook decl and manually
-	SH_MCALL(cc, TheWall_Func1)();
-	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
-	SH_MCALL(cc, TheWall_Func2)(200);
-	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+	SH_MCALL(p, TheWall_Func1)();
+	SH_MCALL2(p, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(p, TheWall_Func2)(200);
+	SH_MCALL2(p, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func4(), 3, 0, 0)(400)));
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(p),
@@ -157,6 +155,17 @@ bool TestManual(std::string &error)
 		new State_Func4_Called(p, 400),
 		new State_Return(4),
 		NULL), "Part 1.1");
+
+	// Compat: really get a manual call class!
+	SourceHook::ManualCallClass *pCC = SH_GET_MCALLCLASS(p, sizeof(void*));
+	SH_MCALL(pCC, TheWall_Func1)();
+	SH_MCALL2(pCC, MFP_Func1(), 0, 0, 0)();
+	CHECK_STATES((&g_States,
+		new State_Func1_Called(p),
+		new State_Func1_Called(p),
+		NULL), "Part 1.2");
+
+	SH_RELEASE_CALLCLASS(pCC);
 
 	// 2)
 	// Hook each function normally, call them
@@ -186,14 +195,14 @@ bool TestManual(std::string &error)
 	// Call them through the mcallclass
 	// 2.1)
 	// Now call each function through the manual call class, using the hook decl and manually
-	SH_MCALL(cc, TheWall_Func1)();
-	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
-	SH_MCALL(cc, TheWall_Func2)(200);
-	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+	SH_MCALL(p, TheWall_Func1)();
+	SH_MCALL2(p, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(p, TheWall_Func2)(200);
+	SH_MCALL2(p, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func4(), 3, 0, 0)(400)));
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(p),
@@ -247,14 +256,14 @@ bool TestManual(std::string &error)
 	// Call them through the mcallclass
 	// 3.1)
 	// Now call each function through the manual call class, using the hook decl and manually
-	SH_MCALL(cc, TheWall_Func1)();
-	SH_MCALL2(cc, MFP_Func1(), 0, 0, 0)();
-	SH_MCALL(cc, TheWall_Func2)(200);
-	SH_MCALL2(cc, MFP_Func2(), 1, 0, 0)(200);
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func3)()));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func3(), 2, 0, 0)()));
-	ADD_STATE(State_Return(SH_MCALL(cc, TheWall_Func4)(400)));
-	ADD_STATE(State_Return(SH_MCALL2(cc, MFP_Func4(), 3, 0, 0)(400)));
+	SH_MCALL(p, TheWall_Func1)();
+	SH_MCALL2(p, MFP_Func1(), 0, 0, 0)();
+	SH_MCALL(p, TheWall_Func2)(200);
+	SH_MCALL2(p, MFP_Func2(), 1, 0, 0)(200);
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func3)()));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func3(), 2, 0, 0)()));
+	ADD_STATE(State_Return(SH_MCALL(p, TheWall_Func4)(400)));
+	ADD_STATE(State_Return(SH_MCALL2(p, MFP_Func4(), 3, 0, 0)(400)));
 
 	CHECK_STATES((&g_States,
 		new State_Func1_Called(p),

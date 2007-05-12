@@ -39,7 +39,7 @@ namespace SourceHook
 			return -1;
 		return 0;
 	}
-	CSourceHookImpl::CSourceHookImpl()
+	CSourceHookImpl::CSourceHookImpl() : m_OneIgnore(NULL), m_IgnoreActive(false)
 	{
 	}
 	CSourceHookImpl::~CSourceHookImpl()
@@ -286,7 +286,12 @@ namespace SourceHook
 	int CSourceHookImpl::AddHookNew(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 		ISHDelegate *handler, bool post)
 	{
-		void *adjustediface = reinterpret_cast<void*>(reinterpret_cast<char*>(iface) + thisptr_offs);
+		void *adjustediface = NULL;
+		void **cur_vtptr = NULL;
+		void *cur_vfnptr = NULL;
+
+		if (mode != Hook_Normal && mode != Hook_VP && mode != Hook_DVP)
+			return 0;
 
 		// 1) Get info about the hook manager
 		CHookManagerInfo tmp;
@@ -297,10 +302,6 @@ namespace SourceHook
 		tmp.m_Plug = plug;
 
 		CHookManagerContainer::HMCI hmci(tmp.m_Proto, tmp.m_VtblOffs, tmp.m_VtblIdx);
-
-		void **cur_vtptr = *reinterpret_cast<void***>(
-			reinterpret_cast<char*>(adjustediface) + tmp.m_VtblOffs);
-		void *cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.m_VtblIdx);
 
 		// Add the container if not already added
 		HookManContList::iterator hmcl_iter = m_HookMans.find(hmci);
@@ -336,12 +337,33 @@ namespace SourceHook
 		if (hookman->m_VfnPtrs.empty())
 			hookman->m_Func(HA_Register, &(*hookman));
 
+
+		// find vfnptr
+		if (mode == Hook_Normal || mode == Hook_VP)
+		{
+			adjustediface = reinterpret_cast<void*>(reinterpret_cast<char*>(iface) + thisptr_offs);
+
+			cur_vtptr = *reinterpret_cast<void***>(
+				reinterpret_cast<char*>(adjustediface) + tmp.m_VtblOffs);
+			cur_vfnptr = reinterpret_cast<void*>(cur_vtptr + tmp.m_VtblIdx);
+
+			// For Hook_VP, adjustediface will be set to NULL later
+			// because we first have to patch callclasses (callclasses are deprecated but left in for backwards compat)
+		}
+		else if (mode == Hook_DVP)
+		{
+			adjustediface = NULL;
+
+			cur_vtptr = reinterpret_cast<void**>(iface);
+			cur_vfnptr = cur_vtptr + tmp.m_VtblIdx;
+		}
+
 		CHookManagerInfo::VfnPtrListIter vfnptr_iter = hookman->m_VfnPtrs.find(cur_vfnptr);
 
 		if (vfnptr_iter == hookman->m_VfnPtrs.end())
 		{
 			// Add a new one
-			CVfnPtr vfp(cur_vfnptr);
+			CVfnPtr vfp(cur_vfnptr, &m_OneIgnore);
 
 			// Alter vtable entry
 			if (!SetMemAccess(cur_vtptr, sizeof(void*) * (tmp.m_VtblIdx + 1), SH_MEM_READ | SH_MEM_WRITE))
@@ -885,6 +907,16 @@ namespace SourceHook
 		}
 	}
 
+	void CSourceHookImpl::SetIgnoreHooks(Plugin plug, void *vfnptr)
+	{
+		m_OneIgnore = vfnptr;
+	}
+
+	void CSourceHookImpl::ResetIgnoreHooks(Plugin plug, void *vfnptr)
+	{
+		m_OneIgnore = NULL;
+	}
+
 	////////////////////////////
 	// CCallClassImpl
 	////////////////////////////
@@ -980,7 +1012,8 @@ namespace SourceHook
 
 	// If you get a crash here, the ptr passed is invalid
 	// This usually means a SH_DECL_MANUALHOOK* with wrong thisptroffs/vtbloffs/vtblidx
-	CSourceHookImpl::CVfnPtr::CVfnPtr(void *ptr) : m_Ptr(ptr), m_OrigEntry(*reinterpret_cast<void**>(ptr))
+	CSourceHookImpl::CVfnPtr::CVfnPtr(void *ptr, void **pOneIgnore) : m_Ptr(ptr), 
+		m_pOneIgnore(pOneIgnore), m_OrigEntry(*reinterpret_cast<void**>(ptr))
 	{
 	}
 	CSourceHookImpl::CVfnPtr::~CVfnPtr()
@@ -999,6 +1032,12 @@ namespace SourceHook
 
 	IIface *CSourceHookImpl::CVfnPtr::FindIface(void *ptr)
 	{
+		if (m_Ptr == *m_pOneIgnore)
+		{
+			*m_pOneIgnore = NULL;		// Only once!
+			return NULL;
+		}
+
 		IfaceListIter iter = m_Ifaces.find(ptr);
 		
 		// If nothing is found, check for a NULL-interface (VP hooks only)
