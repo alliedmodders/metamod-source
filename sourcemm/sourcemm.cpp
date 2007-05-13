@@ -56,7 +56,6 @@ bool bInFirstLevel = true;
 bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
-SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
 int g_VspVersion = 0;
 const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
@@ -145,8 +144,6 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	/* Initialize our console hooks */
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
-
-	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
 
 	if (g_GameDll.pGameClients)
 	{
@@ -483,10 +480,7 @@ void DLLShutdown_handler()
 	g_SMConVarAccessor.MarkCommandsAsGameDLL();
 	g_SMConVarAccessor.UnregisterGameDLLCommands();
 
-	SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
-
-	SH_RELEASE_CALLCLASS(g_GameDllPatch);
-	g_GameDllPatch = NULL;
+	SH_CALL(g_GameDll.pGameDLL, &IServerGameDLL::DLLShutdown)();
 
 	g_SourceHook.CompleteShutdown();
 
