@@ -537,21 +537,8 @@ int CSmmAPI::GetGameDLLVersion()
 /* :TODO: Make this prettier */
 bool CSmmAPI::CacheUserMessages()
 {
-	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
-	SourceHook::GetFuncInfo(&IServerGameDLL::GetUserMessageInfo, info);
-
 	/* Get address of original GetUserMessageInfo() */
-	char *vfunc = reinterpret_cast<char *>(g_GameDllPatch->GetOrigFunc(info.vtbloffs, info.vtblindex));
-
-	/* If we can't get original function, that means there's no hook */
-	if (vfunc == NULL)
-	{
-		/* Get virtual function address 'manually' then */
-		char *adjustedptr = reinterpret_cast<char *>(g_GameDll.pGameDLL) + info.thisptroffs + info.vtbloffs;
-		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
-
-		vfunc = vtable[info.vtblindex];
-	}
+	char *vfunc = (char *)SH_GET_ORIG_VFNPTR_ENTRY(g_GameDll.pGameDLL, &IServerGameDLL::GetUserMessageInfo);
 
 	/* Oh dear, we have a relative jump on our hands
 	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
@@ -563,7 +550,7 @@ bool CSmmAPI::CacheUserMessages()
 		 * Add 5 because it's relative to next instruction:
 		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
 		 */
-		vfunc = vfunc + *reinterpret_cast<int *>(vfunc + 1) + 5;
+		vfunc += *reinterpret_cast<int *>(vfunc + 1) + 5;
 	}
 
 	UserMsgDict *dict = NULL;
