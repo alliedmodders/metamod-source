@@ -56,17 +56,21 @@ size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...);
 /**
  * @brief Same as vsnprintf except that it ensures the string buffer is null terminated.
  */
-inline size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
-{
-	size_t len = vsnprintf(buffer, maxlength, fmt, params);
+size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params);
 
-	if (len >= maxlength)
-	{
-		len = maxlength - 1;
-		buffer[len] = '\0';
-	}
-
-	return len;
-}
+/**
+ * @brief Forms a relative path given two absolute paths.
+ *
+ * @param buffer		Buffer to store relative path in.
+ * @param maxlength		Maximum length of the output buffer.
+ * @param relTo			Destination folder to use as a working directory.
+ *						Final folder name should not be pathchar-terminated.
+ * @param relFrom		Source file or folder to use as a target.
+ * @return				True on success, false on failure.
+ */
+bool UTIL_Relatize(char buffer[],
+				   size_t maxlength,
+				   const char *relTo,
+				   const char *relFrom);
 
 #endif //_INCLUDE_UTIL_H
