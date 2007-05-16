@@ -4,6 +4,12 @@
    ServerGameClients004 and beyond.
  - Fixed amb277 (failed to get user message list in Kreedz Climbing).
 
+2007/05/16 1.4.1:
+ - The client version of the "meta" command should now work with games using the latest
+   Source beta (srcds0407).
+ - Fixed amb233 (VSP listener didn't work with Steam dedicated version).
+ - Fixed amb277 (failed to get user message list in Kreedz Climbing).   
+
 2007/04/05 1.4.0:
  - Added API functions for retrieving User Message info without potentially crashing.
  - Added API functions for letting SourceMM plugins use Valve Server Plugin callbacks.
