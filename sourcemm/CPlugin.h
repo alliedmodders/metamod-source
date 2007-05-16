@@ -38,7 +38,8 @@
  *     8: New SourceHook version (2005-12-23)
  *        New ISmmAPI additions
  *     9: New ISmmPluginManager additions
- *  C 10: Added VSP listen functions to ISmmAPI and IMetamodListener (2007-02-09)
+ *    10: Added VSP listen functions to ISmmAPI and IMetamodListener (2007-02-09)
+ *  C 11: New SourceHook version V5 (May, 2007)
  */
 
 #define PLAPI_MIN_VERSION	7

@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	10
+#define PLAPI_VERSION	11
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
