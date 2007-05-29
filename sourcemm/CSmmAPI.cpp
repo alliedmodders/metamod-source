@@ -456,6 +456,7 @@ void CSmmAPI::LoadAsVSP()
 {
 	size_t len;
 	char engine_file[PATH_SIZE];
+	char engine_path[PATH_SIZE];
 	char rel_path[PATH_SIZE * 2];
 
 	GetFileOfAddress(g_Engine.engine, engine_file, sizeof(engine_file));
@@ -471,9 +472,10 @@ void CSmmAPI::LoadAsVSP()
 			break;
 		}
 	}
+	abspath(engine_path, engine_file);
 
 	const char *usepath = g_SmmPath.c_str();
-	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_file, g_SmmPath.c_str()))
+	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_path, g_SmmPath.c_str()))
 	{
 		usepath = rel_path;
 	}
