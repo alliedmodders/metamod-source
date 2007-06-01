@@ -57,6 +57,7 @@ bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 int g_GameDllVersion = 0;
+int g_GameClientsVersion = 0;
 int g_VspVersion = 0;
 const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
@@ -448,6 +449,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	{
 		void *ptr = (g_GameDll.factory)(iface, ret);
 		g_GameDll.pGameClients = static_cast<IServerGameClients *>(ptr);
+		g_GameClientsVersion = atoi(&iface[17]);
 
 		return ptr;
 	}

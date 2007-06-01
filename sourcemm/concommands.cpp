@@ -154,7 +154,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("  Description: %s\n", g_GameDll.pGameDLL->GetGameDescription());
 			CONMSG("  Mod Path: %s\n", g_ModPath.c_str());
 			CONMSG("  DLL Path: %s\n", g_BinPath.c_str());
-			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
+			CONMSG("  Interface: ServerGameDLL%03d, ServerGameClients%03d\n", g_GameDllVersion, g_GameClientsVersion);
 
 			// Display user messages
 			if (g_SmmAPI.MsgCacheSuccessful())
