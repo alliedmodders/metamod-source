@@ -496,22 +496,14 @@ bool CPluginManager::UnloadAll()
 {
 	PluginIter i;
 
-	SourceHook::List<SourceMM::CPluginManager::CPlugin *> remqueue;
-
-	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
-		remqueue.push_back( (*i) );
-
 	char error[128];
 	bool status = true;
 
-	for (i=remqueue.begin(); i!=remqueue.end(); i++)
+	while ((i = m_Plugins.begin()) != m_Plugins.end())
 	{
 		if ( !_Unload( (*i), true, error, sizeof(error)) )
 			status = false;
 	}
-
-	m_Plugins.clear();
-	remqueue.clear();
 
 	return status;
 }
