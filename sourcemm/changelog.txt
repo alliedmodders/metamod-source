@@ -8,7 +8,10 @@
      instance pointer rather than a callclass pointer.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
- - Fixed a bug where unloading all plugins could crash if one plugin had child plugins.
+ 
+2007/06/26 1.4.2:
+ - Fixed a bug where unloading all plugins could crash if one plugin had child
+   plugins.
 
 2007/05/16 1.4.1:
  - The client version of the "meta" command should now work with games using the
