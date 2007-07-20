@@ -277,7 +277,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 		char buffer[255];
 		char key[128], val[128];
-		size_t len = 0;
 		bool search = false;
 		bool gamebin = false;
 		char *ptr;
@@ -290,9 +289,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		{
 			buffer[0] = '\0';
 			fgets(buffer, sizeof(buffer), fp);
-			len = strlen(buffer);
-			if (buffer[len-1] == '\n')
-				buffer[--len] = '\0';
 			UTIL_TrimComments(buffer);
 			UTIL_TrimLeft(buffer);
 			UTIL_TrimRight(buffer);
