@@ -605,12 +605,12 @@ void CPluginManager::UnregAllConCmds(CPlugin *pl)
 	SourceHook::List<ConCommandBase *>::iterator i;
 
 	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
-		g_SMConVarAccessor.Unregister( (*i) );
+		g_SMConVarAccessor.Unregister(pl->m_Id, (*i) );
 
 	pl->m_Cvars.clear();
 
 	for (i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
-		g_SMConVarAccessor.Unregister( (*i) );
+		g_SMConVarAccessor.Unregister(pl->m_Id, (*i) );
 
 	pl->m_Cmds.clear();
 }

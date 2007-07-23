@@ -29,7 +29,7 @@ public:
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
 	bool Register(ConCommandBase *pCommand);
 	void MarkCommandsAsGameDLL();
-	void Unregister(ConCommandBase *pCommand);
+	void Unregister(PluginId id, ConCommandBase *pCommand);
 	void UnregisterGameDLLCommands();
 };
 

@@ -20,7 +20,7 @@
 #include <sourcehook/sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	11
+#define PLAPI_VERSION	12
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
@@ -313,9 +313,15 @@ public:
 	 * @param iface			Interface pointer.  If NULL, then the VSP listening construct
 	 *						failed to initialize and is not available.
 	 */
-	virtual void OnVSPListening(IServerPluginCallbacks *iface)
-	{
-	}
+	virtual void OnVSPListening(IServerPluginCallbacks *iface) { }
+
+	/* @brief Called when Metamod:Source is about to remove a concommand or convar.
+	 * This can also be called if ISmmAPI::UnregisterConCmdBase is used by a plugin.
+	 *
+	 * @param id			Id of the plugin that created the concommand or convar.
+	 * @param pCommand		Pointer to concommand or convar that is being removed.
+	 */
+	virtual void OnUnlinkConCommandBase(PluginId id, ConCommandBase *pCommand) { }
 };
 
 #define PL_EXPOSURE		CreateInterface

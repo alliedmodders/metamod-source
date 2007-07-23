@@ -57,18 +57,44 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 	}
 }
 
-void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
+void SMConVarAccessor::Unregister(PluginId id, ConCommandBase *pCommand)
 {
+	/* Notify via IMetamodListener */
+	PluginIter iter;
+	SourceMM::CPluginManager::CPlugin *pPlugin;
+	SourceHook::List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 12 (v1:6, SourceMM 1.5) */
+		if (pPlugin->m_API->GetApiVersion() < 12)
+		{
+			continue;
+		}
+		for (event=pPlugin->m_Events.begin();
+			event!=pPlugin->m_Events.end();
+			event++)
+		{
+			pML = (*event);
+			pML->OnUnlinkConCommandBase(id, pCommand);
+		}
+	}
+
 	ICvar *cv = g_Engine.icvar;
 	ConCommandBase *ptr = cv->GetCommands();
 
 	if (ptr == pCommand)
 	{
-		//first in list
+		/* First in list */
 		g_EternalCommand.BringToFront();
 		g_EternalCommand.SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
 	} else {
-		//find us and unregister us
+		/* Find us and unregister us */
 		ConCommandBase *pPrev = NULL;
 		while (ptr)
 		{
@@ -91,10 +117,10 @@ void SMConVarAccessor::UnregisterGameDLLCommands()
 	ConCommandBase *prev = NULL;
 	while (iter)
 	{
-		// watch out for the ETERNAL COMMAND!
+		/* Watch out for the ETERNAL COMMAND! */
 		if (iter != &g_EternalCommand && iter->IsBitSet(FCVAR_GAMEDLL))
 		{
-			// Remove it!
+			/* Remove it! */
 			if (iter == begin)
 			{
 				g_EternalCommand.BringToFront();

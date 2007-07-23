@@ -118,7 +118,7 @@ void CSmmAPI::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
 	}
 
-	g_SMConVarAccessor.Unregister(pCommand);
+	g_SMConVarAccessor.Unregister(g_PluginMngr.FindByAPI(plugin)->m_Id, pCommand);
 }
 
 void CSmmAPI::ConPrint(const char *fmt)

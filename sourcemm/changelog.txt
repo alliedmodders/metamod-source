@@ -8,7 +8,9 @@
      instance pointer rather than a callclass pointer.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
- 
+ - Added OnUnlinkConCommandBase to IMetamodListner to notify when Metamod:Source
+   is about to remove a concommand or convar.
+
 2007/06/26 1.4.2:
  - Fixed a bug where unloading all plugins could crash if one plugin had child
    plugins.
