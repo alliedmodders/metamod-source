@@ -302,6 +302,37 @@ CPluginManager::CPlugin *CPluginManager::FindByAPI(ISmmPlugin *api)
 	return NULL;
 }
 
+int CPluginManager::GetPluginCount()
+{
+	return (int)m_Plugins.size();
+}
+
+const char *CPluginManager::GetStatusText(CPlugin *pl)
+{
+	switch (pl->m_Status)
+	{
+	case Pl_NotFound:
+		return "NOFILE";
+	case Pl_Error:
+		return "ERROR";
+	case Pl_Refused:
+		return "FAILED";
+	case Pl_Paused:
+		return "PAUSED";
+	case Pl_Running:
+		{
+			if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
+			{
+				return "STOPPED";
+			} else {
+				return "RUNNING";
+			}
+		}
+	default:
+		return "-";
+	}
+}
+
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
 	FILE *fp;

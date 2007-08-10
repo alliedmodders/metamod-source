@@ -116,6 +116,9 @@ namespace SourceMM
 		 */
 		bool Retry(PluginId id, char *error, size_t len);
 
+		int GetPluginCount();
+		const char *GetStatusText(CPlugin *pl);
+
 		//get alias info
 		const char *LookupAlias(const char *alias);
 		SourceHook::List<SourceMM::CNameAlias *>::iterator _alias_begin();

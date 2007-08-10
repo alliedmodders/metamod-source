@@ -10,6 +10,8 @@
    version.
  - Added OnUnlinkConCommandBase to IMetamodListner to notify when Metamod:Source
    is about to remove a concommand or convar.
+ - The output of the "meta list" command has been reformatted in order to allow
+   more space for plugins' name, version, and author fields.
 
 2007/06/26 1.4.2:
  - Fixed a bug where unloading all plugins could crash if one plugin had child
