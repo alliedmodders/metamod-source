@@ -1,0 +1,6 @@
+//This is a sample VDF file.  You need to edit "cstrike" to point to the mod you use.
+
+"Plugin"
+{
+	"file"		"cstrike/addons/metamod/bin/sourcemm_update_tool"
+}
