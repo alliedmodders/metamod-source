@@ -15,6 +15,9 @@
 #include "sh_string.h"
 #include "sh_list.h"
 
+using namespace SourceMM;
+using namespace SourceHook;
+
 /**
  * @brief Console Command Implementations
  * @file concommands.cpp
@@ -50,15 +53,41 @@ bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 
 void SMConVarAccessor::MarkCommandsAsGameDLL()
 {
-	for (SourceHook::List<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
+	for (List<ConCommandBase*>::iterator iter = m_RegisteredCommands.begin();
 		iter != m_RegisteredCommands.end(); ++iter)
 	{
 		(*iter)->AddFlags(FCVAR_GAMEDLL);
 	}
 }
 
-void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
+void SMConVarAccessor::Unregister(PluginId id, ConCommandBase *pCommand)
 {
+	/* Notify via IMetamodListener */
+	PluginIter iter;
+	CPluginManager::CPlugin *pPlugin;
+	List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 12 (v1:6, SourceMM 1.5) */
+		if (pPlugin->m_API->GetApiVersion() < 12)
+		{
+			continue;
+		}
+		for (event=pPlugin->m_Events.begin();
+			event!=pPlugin->m_Events.end();
+			event++)
+		{
+			pML = (*event);
+			pML->OnUnlinkConCommandBase(id, pCommand);
+		}
+	}
+
 	ICvar *cv = g_Engine.icvar;
 	ConCommandBase *ptr = cv->GetCommands();
 
@@ -154,7 +183,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("  Description: %s\n", g_GameDll.pGameDLL->GetGameDescription());
 			CONMSG("  Mod Path: %s\n", g_ModPath.c_str());
 			CONMSG("  DLL Path: %s\n", g_BinPath.c_str());
-			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
+			CONMSG("  Interface: ServerGameDLL%03d, ServerGameClients%03d\n", g_GameDllVersion, g_GameClientsVersion);
 
 			// Display user messages
 			if (g_SmmAPI.MsgCacheSuccessful())
@@ -191,65 +220,63 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 			return;
 		} else if (strcmp(command, "list") == 0) {
-			SourceMM::CPluginManager::CPlugin *pl;
+			CPluginManager::CPlugin *pl;
+			ISmmPlugin *plapi;
+			const char *plname;
 			PluginIter i;
-			const char *status="";
-			const char *version=NULL;
-			const char *name=NULL;
-			const char *author=NULL;
+			char buffer[256];
+			int len;
+			int plnum = g_PluginMngr.GetPluginCount();
 
-			CONMSG("-Id- %-20.19s  %-10.9s  %-20.19s %-8.7s\n", "Name", "Version", "Author", "Status");
-			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
+			if (!plnum)
+			{
+				CONMSG("No plugins loaded.\n");
+				return;
+			} else {
+				CONMSG("Listing %d plugin%s:\n", plnum, (plnum > 1) ? "s" : "");
+			}
+
+			for (i = g_PluginMngr._begin(); i != g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
 				if (!pl)
+				{
 					break;
-				if (pl->m_Status == Pl_Paused)
-				{
-					status = "PAUSE";
-				} else if (pl->m_Status == Pl_Running) {
-					if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
-						status = "RUN";
-					else
-						status = "STOPPED";
-				} else if (pl->m_Status == Pl_Refused) {
-					status = "FAIL";
-				} else if (pl->m_Status == Pl_Error) {
-					status = "ERROR";
-				} else if (pl->m_Status == Pl_NotFound) {
-					status = "NOFILE";
 				}
 
-				if (pl->m_API)
+				len = 0;
+
+				if (pl->m_Status != Pl_Running)
 				{
-					version = pl->m_API->GetVersion();
-					author = pl->m_API->GetAuthor();
-					name = pl->m_API->GetName();
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d] <%s>", pl->m_Id, g_PluginMngr.GetStatusText(pl));
 				} else {
-					version = "-";
-					author = "-";
-					name = "-";
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", pl->m_Id);
 				}
 
-				if (!version)
-					version = "-";
-				if (!author)
-					author = "-";
-				if (!name)
-					name = pl->m_File.c_str();
+				if ((plapi = pl->m_API))
+				{
+					plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+					len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
 
+					if (IS_STR_FILLED(plapi->GetVersion()))
+					{
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+					}
+					if (IS_STR_FILLED(plapi->GetAuthor()))
+					{
+						UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
+					}
+				}
 
-				CONMSG("[%02d] %-20.19s  %-10.9s  %-20.19s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("%s\n", buffer);
 			}
-
-			//CONMSG("\n");
 
 			return;
 		} else if (strcmp(command, "cmds") == 0) {
 			if (args >= 3)
 			{
 				int id = atoi(e->Cmd_Argv(2));
-				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+				CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
 
 				if (!pl)
 				{
@@ -262,7 +289,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
-					SourceHook::List<ConCommandBase *>::iterator ci;
+					List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
@@ -280,7 +307,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			if (args >= 3)
 			{
 				int id = atoi(e->Cmd_Argv(2));
-				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+				CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
 
 				if (!pl)
 				{
@@ -293,7 +320,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Plugin %d is not loaded.\n", id);
 				} else {
 					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
-					SourceHook::List<ConCommandBase *>::iterator ci;
+					List<ConCommandBase *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)
@@ -311,7 +338,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			if (args >= 3)
 			{
 				int id = atoi(e->Cmd_Argv(2));
-				SourceMM::CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
+				CPluginManager::CPlugin *pl = g_PluginMngr.FindById(id);
 				if (!pl)
 				{
 					CONMSG("Plugin %d not found.\n", id);
@@ -420,7 +447,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 				char error[255]={0};
 				bool already;
-				SourceMM::CPluginManager::CPlugin *pl;
+				CPluginManager::CPlugin *pl;
 
 				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error));
 				pl = g_PluginMngr.FindById(id);
@@ -467,8 +494,8 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					CONMSG("Alias \"%s\" was not found.\n", alias);
 				}
 			} else {
-				SourceHook::List<SourceMM::CNameAlias *>::iterator iter, end;
-				SourceMM::CNameAlias *p;
+				List<CNameAlias *>::iterator iter, end;
+				CNameAlias *p;
 
 				iter = g_PluginMngr._alias_begin();
 				end = g_PluginMngr._alias_end();
@@ -521,8 +548,8 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 						g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
 					}
 
-					SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator iter, end;
-					SourceMM::CPluginManager::CPlugin *pl;
+					List<CPluginManager::CPlugin *>::iterator iter, end;
+					CPluginManager::CPlugin *pl;
 					iter = g_PluginMngr._begin();
 					end = g_PluginMngr._end();
 					for (; iter!=end; iter++)
@@ -703,43 +730,47 @@ void ClientCommand_handler(edict_t *client)
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "list") == 0) {
-				SourceMM::CPluginManager::CPlugin *pl;
-				Pl_Status st;
+				CPluginManager::CPlugin *pl;
+				ISmmPlugin *plapi;
+				const char *plname;
 				PluginIter i;
-				const char *version = NULL;
-				const char *name = NULL;
-				const char *author = NULL;
-				const char *status = NULL;
+				char buffer[256];
+				int len = 0;
+				int plnum = 0;
 
-				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-20.19s  %6s\n", "Name", "Version", "Author", "Status");
-
-				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
+				for (i = g_PluginMngr._begin(); i != g_PluginMngr._end(); i++, len=0)
 				{
 					pl = (*i);
-					if (!pl)
-						break;
-					
-					st = pl->m_Status;
-
-					/* Only show plugins that are running or paused */
-					if (pl->m_API && (st == Pl_Running || st == Pl_Paused))
+					if (pl && pl->m_Status == Pl_Running)
 					{
-						version = pl->m_API->GetVersion();
-						author = pl->m_API->GetAuthor();
-						name = pl->m_API->GetName();
-
-						if (st == Pl_Running && pl->m_API->QueryRunning(NULL, 0))
+						plapi = pl->m_API;
+						if (!plapi || !plapi->QueryRunning(NULL, 0))
 						{
-							status = "RUN";
-						} else {
-							status = "PAUSE";
+							continue;
+						}
+						plnum++;
+
+						len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", plnum);
+
+						plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
+
+						if (IS_STR_FILLED(plapi->GetVersion()))
+						{
+							len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+						}
+						if (IS_STR_FILLED(plapi->GetAuthor()))
+						{
+							UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
 						}
 
-						if (!version || !author || !name)
-							break;
-
-						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-20.19s  %6s\n", pl->m_Id, name, version, author, status);
+						CLIENT_CONMSG(client, "%s\n", buffer);
 					}
+				}
+
+				if (!plnum)
+				{
+					CLIENT_CONMSG(client, "No active plugins loaded.\n");
 				}
 
 				RETURN_META(MRES_SUPERCEDE);

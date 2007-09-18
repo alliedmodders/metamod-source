@@ -39,6 +39,7 @@
  *        New ISmmAPI additions
  *     9: New ISmmPluginManager additions
  *  C 10: Added VSP listen functions to ISmmAPI and IMetamodListener (2007-02-09)
+ *  C 11: New SourceHook version V5 (May, 2007)
  */
 
 #define PLAPI_MIN_VERSION	7
@@ -114,6 +115,9 @@ namespace SourceMM
 		 * @return True on success, false otherwise
 		 */
 		bool Retry(PluginId id, char *error, size_t len);
+
+		int GetPluginCount();
+		const char *GetStatusText(CPlugin *pl);
 
 		//get alias info
 		const char *LookupAlias(const char *alias);

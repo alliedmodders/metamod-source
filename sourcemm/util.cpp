@@ -240,6 +240,19 @@ size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...)
 	return len;
 }
 
+size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
+{
+	size_t len = vsnprintf(buffer, maxlength, fmt, params);
+
+	if (len >= maxlength)
+	{
+		len = maxlength - 1;
+		buffer[len] = '\0';
+	}
+
+	return len;
+}
+
 inline bool pathchar_isalpha(char a)
 {
 	return (((a & 1<<7) == 0) && isalpha(a));
@@ -392,17 +405,4 @@ bool UTIL_Relatize(char buffer[],
 	}
 
 	return true;
-}
-
-size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
-{
-	size_t len = vsnprintf(buffer, maxlength, fmt, params);
-
-	if (len >= maxlength)
-	{
-		len = maxlength - 1;
-		buffer[len] = '\0';
-	}
-
-	return len;
 }

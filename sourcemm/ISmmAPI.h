@@ -303,6 +303,15 @@ public:		// Added in 1.4 (1:5)
 	 * @return				Message name, or NULL on failure.
 	 */
 	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
+public:		// Added in 1.5.0 (1:6)
+	/**
+	 * @brief Returns the highest interface version of IServerPluginCallbacks that the engine supports.
+	 * This is useful for games that run on older versions of the Source engine, such as The Ship.
+	 *
+	 * @return				Highest interface version of IServerPluginCallbacks.
+	 *						Returns 0 if SourceMM's VSP listener isn't currently enabled.
+	 */
+	virtual int GetVSPVersion() =0;
 };
 
 
@@ -315,6 +324,7 @@ public:		// Added in 1.4 (1:5)
  * 1.2.2 Added API for printing to client console (with string formatting).
  * 1.3   Added new interface search API.
  * 1.4	 Added VSP listener and user message API.
+ * 1.5.0 Added API for getting highest supported version of IServerPluginCallbacks.
  */
 
 #endif //_INCLUDE_ISMM_API_H

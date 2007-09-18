@@ -19,6 +19,11 @@
  */
 
 /**
+ * @brief Returns true is string is not blank, false otherwise.
+ */
+#define IS_STR_FILLED(var) (var != NULL && var[0] != '\0')
+
+/**
  * @brief Returns a pointer to the extension in a file name.
  */
 const char *UTIL_GetExtension(const char *file);

@@ -58,8 +58,9 @@ bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
-const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
-const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
+int g_GameClientsVersion = 0;
+int g_VspVersion = 0;
+const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 
 void ClearGamedllList();
@@ -227,17 +228,18 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return NULL;
 	}
 
-	/* We check these separately because we can't reply
-	 * unless our interface version really matches.
-	 */
-	if ((strcmp(iface, VSPIFACE_002) == 0)
-		|| strcmp(iface, VSPIFACE_001) == 0)
+	if (strncmp(iface, VSPIFACE, 22) == 0)
 	{
-		if (ret)
+		g_VspVersion = atoi(&(iface[22]));
+
+		if (g_VspVersion <= MAX_VSP_VERSION)
 		{
-			*ret = IFACE_OK;
+			if (ret)
+			{
+				*ret = IFACE_OK;
+			}
+			return &g_VspListener;
 		}
-		return &g_VspListener;
 	}
 
 	if (!gParsedGameInfo)
@@ -278,7 +280,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 		char buffer[255];
 		char key[128], val[128];
-		size_t len = 0;
 		bool search = false;
 		bool gamebin = false;
 		char *ptr;
@@ -291,9 +292,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		{
 			buffer[0] = '\0';
 			fgets(buffer, sizeof(buffer), fp);
-			len = strlen(buffer);
-			if (buffer[len-1] == '\n')
-				buffer[--len] = '\0';
 			UTIL_TrimComments(buffer);
 			UTIL_TrimLeft(buffer);
 			UTIL_TrimRight(buffer);
@@ -450,6 +448,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	{
 		void *ptr = (g_GameDll.factory)(iface, ret);
 		g_GameDll.pGameClients = static_cast<IServerGameClients *>(ptr);
+		g_GameClientsVersion = atoi(&iface[17]);
 
 		return ptr;
 	}
