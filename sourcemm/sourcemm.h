@@ -117,6 +117,12 @@ extern PluginId g_PLID;
 /** @brief ServerGameDLL version that is currently loaded */
 extern int g_GameDllVersion;
 
+/** @brief Highest IServerPluginCallbacks version that is supported by engine */
+extern int g_VspVersion;
+
+/** @brief IServerGameClients version the mod uses */
+extern int g_GameClientsVersion;
+
 extern bool bGameInit;
 
 /** @brief Global CallClass for IServerGameDLL */

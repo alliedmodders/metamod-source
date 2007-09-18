@@ -668,6 +668,7 @@ const char *CSmmAPI::GetUserMessage(int index, int *size)
 
 	return msg->name;
 }
+
 int CSmmAPI::GetVSPVersion()
 {
 	return g_VspVersion;
