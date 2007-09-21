@@ -33,7 +33,11 @@ class ISmmPlugin;
 
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
-#define IFACE_MAXNUM			999
+#define IFACE_MAXNUM			999						/**< Maximum interface version */
+
+#define SOURCE_ENGINE_ORIGINAL			0				/**< Original Source Engine (used by The Ship) */
+#define SOURCE_ENGINE_EPISODEONE		1				/**< Episode 1 Source Engine (second major SDK) */
+#define SOURCE_ENGINE_ORANGEBOX			2				/**< Orange Box Source Engine (third major SDK) */
 
 class ISmmAPI
 {
@@ -119,7 +123,7 @@ public:		// Added in 1.00-RC2 (0:0)
 	 *
 	 * @param plugin		Parent plugin API pointer.
 	 * @param pCommand		ConCommandBase to register.
-	 * @return				True if successful, false otherwise.  Does not return false yet.
+	 * @return				True if successful, false otherwise.
 	 */
 	virtual bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
 
@@ -133,6 +137,7 @@ public:		// Added in 1.00-RC2 (0:0)
 	
 	/**
 	 * @brief Prints an unformatted string to the remote server console.
+	 * 
 	 * Note: Newlines are not added automatically.
 	 *
 	 * @param str			Message string.
@@ -141,6 +146,7 @@ public:		// Added in 1.00-RC2 (0:0)
 
 	/**
 	 * @brief Prints a formatted message to the remote server console.  
+	 * 
 	 * Note: Newlines are not added automatically.
 	 *
 	 * @param fmt			Formatted message.
@@ -207,7 +213,7 @@ public:		// Added in 1.1.2 (1:1)
 
 public:		// Added in 1.2 (1:2)
 	/**
-	 * @brief Searches for an interface for you.
+	 * @brief Searches for an interface, eliminating the need to loop through FormatIface().
 	 * 
 	 * @param fn			InterfaceFactory function.
 	 * @param iface			Interface string name.
@@ -219,15 +225,17 @@ public:		// Added in 1.2 (1:2)
 
 	/**
 	 * @brief Returns the base directory of the game/server, equivalent to 
-	 *  IVEngineServer::GetGameDir(), except the path is absolute.
+	 * IVEngineServer::GetGameDir(), except the path is absolute.
 	 *
 	 * @return				Static pointer to game's absolute basedir.
 	 */
 	virtual const char *GetBaseDir() =0;
 
 	/**
-	 * @brief Formats a file path to the local OS.  Does not include any base directories.
-	 * Note that all slashes and black slashes are reverted to the local OS's expectancy.
+	 * @brief Formats a file path to the local OS.  
+	 *
+	 * Does not include any base directories.  Note that all slashes and black 
+	 * slashes are reverted to the local OS's expectancy.
 	 *
 	 * @param buffer		Destination buffer to store path.
 	 * @param len			Maximum length of buffer, including null terminator.
@@ -237,8 +245,8 @@ public:		// Added in 1.2 (1:2)
 
 public:		// Added in 1.2.2 (1:3)
 	/**
-	 * @brief Prints text in the specified client's console. Same as IVEngineServer::ClientPrintf 
-	 *  except that it allows for string formatting.
+	 * @brief Prints text in the specified client's console. Same as 
+	 * IVEngineServer::ClientPrintf except that it allows for string formatting.
 	 *
 	 * @param client		Client edict pointer.
 	 * @param fmt			Formatted string to print to the client.
@@ -253,11 +261,13 @@ public:		// Added in 1.3 (1:4)
 	 *
 	 * @param fn			Interface factory function.
 	 * @param iface			Interface string.
-	 * @param min			Minimum value to search from.  If zero, searching begins from the
-	 *                       first available version regardless of the interface.  
-	 *                      Note that this can return interfaces EARLIER than the version specified.
-	 *                      A value of -1 (default) specifies the string version as the minimum.
-	 *                      Any other value specifices the minimum value to search from.
+	 * @param min			Minimum value to search from.  If zero, searching 
+	 *						begins from the first available version regardless 
+	 *						of the interface.  Note that this can return 
+	 *						interfaces EARLIER than the version specified.  A 
+	 *						value of -1 (default) specifies the string version 
+	 *						as the minimum.  Any other value specifices the 
+	 *						minimum value to search from.
 	 * @return				Interface pointer, or NULL if not found.
 	 */
 	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1) =0;
@@ -266,14 +276,19 @@ public:		// Added in 1.4 (1:5)
 	/**
 	 * @brief Tells SourceMM to add VSP hooking capability to plugins.  
 	 *
-	 * Since this  potentially uses more resources than it would otherwise, plugins have to 
-	 * explicitly enable the feature.  Whether requested or not, if it is enabled, all plugins 
-	 * will get a pointer to the VSP listener through IMetamodListener.
+	 * Since this  potentially uses more resources than it would otherwise, 
+	 * plugins have to explicitly enable the feature.  Whether requested or 
+	 * not, if it is enabled, all plugins will get a pointer to the VSP 
+	 * listener through IMetamodListener.  This will not be called more than 
+	 * once for a given plugin; if it is requested more than once, each 
+	 * successive call will only give the pointer to plugins which have not 
+	 * yet received it.
 	 */
 	virtual void EnableVSPListener() =0;
 
 	/**
-	 * @brief Returns the interface version of the GameDLL's IServerGameDLL implementation.
+	 * @brief Returns the interface version of the GameDLL's IServerGameDLL 
+	 * implementation.
 	 *
 	 * @return				Interface version of the loaded IServerGameDLL.
 	 */
@@ -282,7 +297,8 @@ public:		// Added in 1.4 (1:5)
 	/**
 	 * @brief Returns the number of user messages in the GameDLL.
 	 *
-	 * @return				Number of user messages, or -1 if SourceMM has failed to get user message list.
+	 * @return				Number of user messages, or -1 if SourceMM has 
+	 *						failed to get user message list.
 	 */
 	virtual int GetUserMessageCount() =0;
 
@@ -303,15 +319,29 @@ public:		// Added in 1.4 (1:5)
 	 * @return				Message name, or NULL on failure.
 	 */
 	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
+
 public:		// Added in 1.5.0 (1:6)
 	/**
-	 * @brief Returns the highest interface version of IServerPluginCallbacks that the engine supports.
-	 * This is useful for games that run on older versions of the Source engine, such as The Ship.
+	 * @brief Returns the highest interface version of IServerPluginCallbacks 
+	 * that the engine supports.  This is useful for games that run on older 
+	 * versions of the Source engine, such as The Ship.
 	 *
 	 * @return				Highest interface version of IServerPluginCallbacks.
-	 *						Returns 0 if SourceMM's VSP listener isn't currently enabled.
+	 *						Returns 0 if SourceMM's VSP listener isn't currently 
+	 *						enabled.
 	 */
 	virtual int GetVSPVersion() =0;
+
+public:		// Added in 1.6.0 (1:7)
+	/**
+	 * @brief Returns the engine interface that MM:S is using as a backend.
+	 *
+	 * The values will be one of the SOURCE_ENGINE_* constants from the top
+	 * of this file.
+	 *
+	 * @return				A SOURCE_ENGINE_* constant value.
+	 */
+	virtual int GetSourceEngineBuild() =0;
 };
 
 
@@ -325,6 +355,7 @@ public:		// Added in 1.5.0 (1:6)
  * 1.3   Added new interface search API.
  * 1.4	 Added VSP listener and user message API.
  * 1.5.0 Added API for getting highest supported version of IServerPluginCallbacks.
+ * 1.6.0 Added API for Orange Box.
  */
 
 #endif //_INCLUDE_ISMM_API_H

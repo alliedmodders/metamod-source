@@ -673,3 +673,8 @@ int CSmmAPI::GetVSPVersion()
 {
 	return g_VspVersion;
 }
+
+int CSmmAPI::GetSourceEngineBuild()
+{
+	return g_SourceEngineVersion;
+}

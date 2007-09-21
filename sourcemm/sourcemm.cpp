@@ -60,6 +60,7 @@ SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 int g_GameDllVersion = 0;
 int g_GameClientsVersion = 0;
 int g_VspVersion = 0;
+int g_SourceEngineVersion = SOURCE_ENGINE_ORIGINAL;
 const char VSPIFACE[] = "ISERVERPLUGINCALLBACKS";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 
@@ -218,7 +219,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
 	if (strcmp(iface, PLAPI_NAME) == 0)
 	{
-		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
+		Warning("Do not try loading Metamod:Source as a plugin.\n");
 
 		if (ret)
 		{
@@ -388,15 +389,17 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		{
 			/* This is the interface we want!  Right now we support versions 3 through 8 */
 			g_GameDllVersion = atoi(&(iface[len]));
-			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
-			if (g_GameDllVersion < MIN_GAMEDLL_VERSION || g_GameDllVersion > MAX_GAMEDLL_VERSION)
+			if (g_GameDllVersion < MIN_GAMEDLL_VERSION)
 			{
-				/* Maybe this will get used in the future */
-				sizeTooBig = g_GameDllVersion;
 				if (ret)
 				{
 					*ret = IFACE_FAILED;
 				}
+			}
+			else if (g_GameDllVersion > 3)
+			{
+				/* The engine is at least episode 1 */
+				g_SourceEngineVersion = SOURCE_ENGINE_EPISODEONE;
 			}
 			SourceHook::List<GameDllInfo *>::iterator iter;
 			GameDllInfo *pInfo = NULL;
@@ -418,21 +421,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			}
 			if (g_GameDll.loaded)
 			{
-				if (sizeTooBig)
-				{
-					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!\n", sizeTooBig);
-					if (ret)
-					{
-						*ret = IFACE_FAILED;
-					}
-					return NULL;
-				} else {
-					InitMainStates();
-				}
+				InitMainStates();
 			} else {
-				sizeTooBig = 0;
 				if (ret)
+				{
 					*ret = IFACE_FAILED;
+				}
 				return NULL;
 			}
 		} else {

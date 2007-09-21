@@ -33,6 +33,7 @@ public:
 public:
 	/**
 	 * @brief Called on plugin load.
+	 *
 	 * NOTE - As of API 7, this is called as DLLInit() executes - after the parameters are known, but before 
 	 *  the original GameDLL function is called.  Therefore, you cannot hook it, but you don't need to - 
 	 *  Load() is basically your hook.
@@ -40,22 +41,24 @@ public:
 	 *  However, take care to note that if your plugin is unloaded, and the gamedll/engine have cached
 	 *  an interface you've passed, something will definitely crash.  Be careful.
 	 *
-	 * @param id	Internal id of plugin.  Saved globally by PLUGIN_SAVEVARS()
-	 * @param ismm	External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
-	 * @param list	Contains a list of factories.  Hook a factory call by setting one equal to your own function.
-	 * @param late	Set to true if your plugin was loaded late (not at server load).
-	 * @param error Error message buffer
-	 * @param maxlen Size of error message buffer
-	 * @return		True if successful, return false to reject the load.
+	 * @param id		Internal id of plugin.  Saved globally by PLUGIN_SAVEVARS()
+	 * @param ismm		External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
+	 * @param list		Contains a list of factories.  Hook a factory call by setting one equal to your own function.
+	 * @param late		Set to true if your plugin was loaded late (not at server load).
+	 * @param error		Error message buffer
+	 * @param maxlen	Size of error message buffer
+	 * @return			True if successful, return false to reject the load.
 	 */
 	virtual bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlength, bool late) =0;
 
 	/**
-	 * @brief Called when your plugin is "queried".  This is useful for rejecting a loaded
-	 *  state.  For example, if your plugin wants to stop operating, it can simply return
-	 *  false and copy an error message.  This will notify other plugins or MM:S of something
-	 *  bad that happened.  NOTE - MM:S will not cache the return state, so if you return false,
-	 *  your plugin will not actually be paused or unloaded.  This callback will be called when:
+	 * @brief Called when your plugin is "queried".  
+	 * 
+	 * This is useful for rejecting a loaded state.  For example, if your plugin wants 
+	 * to stop operating, it can simply return false and copy an error message.  This 
+	 * will notify other plugins or MM:S of something bad that happened.  NOTE - MM:S 
+	 * will not cache the return state, so if you return false,  your plugin will not 
+	 * actually be paused or unloaded.  This callback will be called when:
 	 *  - Another plugin requests it
 	 *  - Someone types "meta list", it will show up as "REFUSED"
 	 *  - When Metamod need to re-check the plugin's status
@@ -132,10 +135,11 @@ public:
 	virtual const char *GetLogTag() =0;
 public:
 	/**
-	 * @brief Called when all plugins have been loaded - API version 4
+	 * @brief Called when all plugins have been loaded.  
 	 *
-	 * This is useful for knowing when it's safe to request things another plugin might have.
-	 * NOTE for API 7 - This is called after DLLInit(). 
+	 * This is called after DLLInit(), and thus the mod has been mostly initialized. 
+	 * It is also safe to assume that all other (automatically loaded) plugins are now 
+	 * ready to start interacting, because they are all loaded.
 	 */
 	virtual void AllPluginsLoaded()
 	{
@@ -148,35 +152,45 @@ public:
 class IMetamodListener
 {
 public:
-	virtual ~IMetamodListener() { }
+	virtual ~IMetamodListener()
+	{
+	}
 public:
 	/**
 	 * @brief Called when a plugin is loaded.
 	 *
 	 * @param id		Id of the plugin.
 	 */
-	virtual void OnPluginLoad(PluginId id) { }
+	virtual void OnPluginLoad(PluginId id)
+	{
+	}
 
 	/**
 	 * @brief Called when a plugin is unloaded.
 	 *
 	 * @param id		Id of the plugin.
 	 */
-	virtual void OnPluginUnload(PluginId id) { }
+	virtual void OnPluginUnload(PluginId id)
+	{
+	}
 
 	/**
 	 * @brief Called when a plugin is paused.
 	 *
 	 * @param id		Id of the plugin.
 	 */
-	virtual void OnPluginPause(PluginId id) { }
+	virtual void OnPluginPause(PluginId id)
+	{
+	}
 
 	/**
 	 * @brief Called when a plugin is unpaused.
 	 *
 	 * @param id		Id of the plugin.
 	 */
-	virtual void OnPluginUnpause(PluginId id) { }
+	virtual void OnPluginUnpause(PluginId id)
+	{
+	}
 
 	/**
 	 * @brief Called when the level is loaded (after GameInit, before ServerActivate).
@@ -195,7 +209,9 @@ public:
 	/**
 	 * @brief Called when the level is shut down.  May be called more than once.
 	 */
-	virtual void OnLevelShutdown() { }
+	virtual void OnLevelShutdown()
+	{
+	}
 
 	/**
 	 * @brief Called when engineFactory() is used through Metamod:Source's wrapper.
@@ -308,7 +324,8 @@ public:
 	 * This callback is provided to all plugins regardless of which (or how many)
 	 * called EnableVSPListener(), but only if at least one did in fact enable it.
 	 *
-	 * This callback is only available for plugins using API v1:5 (SourceMM 1.4+).
+	 * This callback is only available for plugins using API v1:5 (Metamod:Source 1.4+).
+	 * If a plugin loads lately, it may still call EnableVSPListener().
 	 *
 	 * @param iface			Interface pointer.  If NULL, then the VSP listening construct
 	 *						failed to initialize and is not available.
@@ -317,7 +334,8 @@ public:
 	{
 	}
 
-	/* @brief Called when Metamod:Source is about to remove a concommand or convar.
+	/**
+	 * @brief Called when Metamod:Source is about to remove a concommand or convar.
 	 * This can also be called if ISmmAPI::UnregisterConCmdBase is used by a plugin.
 	 *
 	 * @param id			Id of the plugin that created the concommand or convar.

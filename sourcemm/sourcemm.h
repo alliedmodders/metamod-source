@@ -32,21 +32,18 @@
  *   increase api_major when API breaks
  *   increase api_minor when new functions are added (non-breaking)
  */
-#define		SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
-#define		SOURCEMM_DATE		__DATE__
-#define		SM_VERS_API_MAJOR	1		//increase this on a breaking change
-#define		SM_VERS_API_MINOR	6		//increase this on a non-breaking API change
+#define SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
+#define SOURCEMM_DATE		__DATE__
+#define SM_VERS_API_MAJOR	1		//increase this on a breaking change
+#define SM_VERS_API_MINOR	7		//increase this on a non-breaking API change
 
-//We need a good CServerGameDLL version to work properly.  We support these inclusively.
+/* We need a good CServerGameDLL version to work properly.  We support these inclusively. */
 #define	MIN_GAMEDLL_VERSION	3
-#define	MAX_GAMEDLL_VERSION	8
 
 /* Maximum version of IServerPluginCallbacks that SourceMM supports */
 #define MAX_VSP_VERSION 2
 
-/**
- * @brief Entry point for HL2 Engine
- */
+/** @brief Entry point for HL2 Engine */
 SMM_API void *CreateInterface(const char *name, int *code);
 
 /** @brief Wrapper to catch GameDLL calls */
@@ -122,6 +119,9 @@ extern int g_VspVersion;
 
 /** @brief IServerGameClients version the mod uses */
 extern int g_GameClientsVersion;
+
+/** @brief Source Engine version */
+extern int g_SourceEngineVersion;
 
 extern bool bGameInit;
 
