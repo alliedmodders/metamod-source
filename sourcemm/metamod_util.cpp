@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
-#include "util.h"
+#include "metamod_util.h"
 #include "oslink.h"
 
 /**

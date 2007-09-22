@@ -18,11 +18,10 @@
 
 #include <interface.h>
 #include <eiface.h>
-#include "convar_smm.h"
+#include <sh_list.h>
+#include <sh_string.h>
 #include "IPluginManager.h"
 #include "oslink.h"
-#include "sh_list.h"
-#include "sh_string.h"
 
 /**
  * History of plugin versions: (M=min, C=current)

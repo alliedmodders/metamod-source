@@ -35,9 +35,10 @@ class ISmmPlugin;
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
 
-#define SOURCE_ENGINE_ORIGINAL			0				/**< Original Source Engine (used by The Ship) */
-#define SOURCE_ENGINE_EPISODEONE		1				/**< Episode 1 Source Engine (second major SDK) */
-#define SOURCE_ENGINE_ORANGEBOX			2				/**< Orange Box Source Engine (third major SDK) */
+#define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
+#define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
+#define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
+#define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
 
 class ISmmAPI
 {
