@@ -589,7 +589,7 @@ void InitializeVSP()
 	char engine_path[PATH_SIZE];
 	char rel_path[PATH_SIZE * 2];
 
-	GetFileOfAddress(engine_factory, engine_file, sizeof(engine_file));
+	GetFileOfAddress((void *)engine_factory, engine_file, sizeof(engine_file));
 
 	/* Chop off the "engine" file part */
 	len = strlen(engine_file);

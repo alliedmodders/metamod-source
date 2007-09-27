@@ -1,7 +1,7 @@
 #(C)2004-2007 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-HL2SDK = ../../hl2sdk
+HL2SDK = ../../../hl2sdk
 SMM_ROOT = ..
 SRCDS = ~/srcds
 
@@ -16,10 +16,9 @@ BINARY = server_i486.so
 HL2PUB = $(HL2SDK)/public
 HL2LIB = $(HL2SDK)/linux_sdk
 
-OBJECTS = oslink.cpp util.cpp concommands.cpp CSmmAPI.cpp \
-          sourcemm.cpp CPlugin.cpp sourcehook.cpp vsp_listener.cpp
+OBJECTS = oslink.cpp metamod_util.cpp metamod.cpp
 
-LINK = $(HL2LIB)/tier1_i486.a  vstdlib_i486.so tier0_i486.so -static-libgcc
+LINK = -static-libgcc
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
           -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook
@@ -47,8 +46,6 @@ $(BIN_DIR)/%.o: %.cpp
 
 all:
 	mkdir -p $(BIN_DIR)
-	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
-	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)

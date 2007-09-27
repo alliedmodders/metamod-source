@@ -14,6 +14,7 @@
  */
 
 #include "oslink.h"
+#include <malloc.h>
 #ifdef __linux
 #include <errno.h>
 #include <stdio.h>
@@ -70,21 +71,19 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 
 #if defined __GNUC__ && (__GNUC__ == 3 || __GNUC__ == 4)
 void * operator new(size_t size) {
-	return(calloc(1, size)); 
+	return malloc(size);
 }
 
 void * operator new[](size_t size) {
-	return(calloc(1, size)); 
+	return malloc(size);
 }
 
 void operator delete(void * ptr) {
-	if(ptr)
-		free(ptr);
+	free(ptr);
 }
 
 void operator delete[](void * ptr) {
-	if(ptr)
-		free(ptr);
+	free(ptr);
 }
 #endif
 

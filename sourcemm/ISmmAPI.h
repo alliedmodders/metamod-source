@@ -360,3 +360,4 @@ public:		// Added in 1.6.0 (1:7)
  */
 
 #endif //_INCLUDE_ISMM_API_H
+

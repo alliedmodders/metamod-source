@@ -435,3 +435,4 @@ public:
 	}
 
 #endif //_INCLUDE_ISMM_PLUGIN_H
+
