@@ -136,6 +136,8 @@ namespace SourceMM
 		/**
 		 * @brief Halts the server with a fatal error message.
 		 *
+		 * No newline is appended.
+		 *
 		 * @param fmt				Formatted message string.
 		 * @param ...				Format parameters.
 		 */
@@ -143,6 +145,8 @@ namespace SourceMM
 
 		/**
 		 * @brief Sends the server a warning message.
+		 *
+		 * No newline is appended.
 		 *
 		 * @param fmt				Formatted message string.
 		 * @param ...				Format parameters.
@@ -157,15 +161,6 @@ namespace SourceMM
 		 * @return					Version number on success, 0 otherwise.
 		 */
 		virtual int TryServerGameDLL(const char *iface) =0;
-
-		/**
-		 * @brief Attempts to notify the provider of the gameclients version 
-		 * being used.
-		 *
-		 * @param iface				Interface string.
-		 * @return					Version number on success, 0 otherwise.
-		 */
-		virtual int TryServerGameClients(const char *iface) =0;
 
 		/**
 		 * @brief Notifies the provider that the DLLInit pre-hook is almost done.
