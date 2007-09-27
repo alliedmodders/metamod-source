@@ -1,23 +1,41 @@
 #include "convar_smm.h"
 #include <eiface.h>
 #include <tier0/icommandline.h>
+#include <tier1/utldict.h>
 #include <sourcehook/sourcehook.h>
+#include <sh_vector.h>
+#include <sh_string.h>
 #include "provider_util.h"
 #include "provider_ep1.h"
 #include "console.h"
 
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
+struct UsrMsgInfo
+{
+	int size;
+	String name;
+};
 /* Imports */
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
 /* Functions */
 CONPRINTF_FUNC ExtractRemotePrinter();
+bool CacheUserMessages();
+void ClientCommand(edict_t *pEdict);
 /* Variables */
+bool usermsgs_extracted = false;
+CVector<UsrMsgInfo> usermsgs_list;
 CONPRINTF_FUNC echo_msg_func = NULL;
+METAMOD_COMMAND client_cmd_handler = NULL;
+ICvar *icvar = NULL;
+ISourceHook *g_SHPtr = NULL;
 IVEngineServer *engine = NULL;
 IServerGameDLL *server = NULL;
-ICvar *icvar = NULL;
+IServerGameClients *gameclients = NULL;
+unsigned int g_PLID;
+
+SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 
 void BaseProvider::ConsolePrint(const char *str)
 {
@@ -34,6 +52,9 @@ void BaseProvider::ConsolePrint(const char *str)
 void BaseProvider::Notify_DLLInit_Pre()
 {
 	echo_msg_func = ExtractRemotePrinter();	
+	usermsgs_extracted = CacheUserMessages();
+
+	SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, gameclients, ClientCommand, false);
 }
 
 bool BaseProvider::IsRemotePrintingAvailable()
@@ -177,6 +198,91 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 	return g_SMConVarAccessor.Unregister(pCommand);
 }
 
+int BaseProvider::GetUserMessageCount()
+{
+	if (!usermsgs_extracted)
+	{
+		return -1;
+	}
+
+	return (int)usermsgs_list.size();
+}
+
+int BaseProvider::FindUserMessage(const char *name, int *size)
+{
+	for (size_t i = 0; i < usermsgs_list.size(); i++)
+	{
+		if (usermsgs_list[i].name.compare(name) == 0)
+		{
+			if (size)
+			{
+				*size = usermsgs_list[i].size;
+			}
+			return (int)i;
+		}
+	}
+	
+	return -1;
+}
+
+const char *BaseProvider::GetUserMessage(int index, int *size)
+{
+	if (!usermsgs_extracted || index < 0 || index >= (int)usermsgs_list.size())
+	{
+		return NULL;
+	}
+
+	if (size)
+	{
+		*size = usermsgs_list[index].size;
+	}
+
+	return usermsgs_list[index].name.c_str();
+}
+
+const char *BaseProvider::GetGameDescription()
+{
+	return server->GetGameDescription();
+}
+
+void BaseProvider::SetClientCommandHandler(METAMOD_COMMAND callback)
+{
+	client_cmd_handler = callback;
+}
+
+class GlobCommand : public IMetamodSourceCommandInfo
+{
+public:
+	unsigned int GetArgCount()
+	{
+		return engine->Cmd_Argc() - 1;
+	}
+
+	const char *GetArg(unsigned int num)
+	{
+		return engine->Cmd_Argv(num);
+	}
+
+	const char *GetArgString()
+	{
+		return engine->Cmd_Args();
+	}
+};
+
+void ClientCommand(edict_t *pEdict)
+{
+	if (client_cmd_handler)
+	{
+		GlobCommand cmd;
+		bool result;
+		
+		if ((result = client_cmd_handler(pEdict, &cmd)) == true)
+		{
+			RETURN_META(MRES_SUPERCEDE);
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 //THERE BE HAX HERE!!!! DON'T TELL ALFRED, BUT GABE WANTED IT THAT WAY. //
 // (note: you can find the offset by looking for the text               //
@@ -203,9 +309,13 @@ bool vcmp(const void *_addr1, const void *_addr2, size_t len)
 	for (size_t i=0; i<len; i++)
 	{
 		if (addr2[i] == '*')
+		{
 			continue;
+		}
 		if (addr1[i] != addr2[i])
+		{
 			return false;
+		}
 	}
 
 	return true;
@@ -222,7 +332,7 @@ CONPRINTF_FUNC ExtractRemotePrinter()
 
 	while (pBase)
 	{
-		if ( strcmp(pBase->GetName(), "echo") == 0 )
+		if (strcmp(pBase->GetName(), "echo") == 0)
 		{
 			callback = ((ConCommand *)pBase)->GetCallback();
 			ptr = (unsigned char *)callback;
@@ -261,4 +371,132 @@ CONPRINTF_FUNC ExtractRemotePrinter()
 	return NULL;
 }
 
+//////////////////////////////////////////////////////////////////////
+// EVEN MORE HACKS HERE! YOU HAVE BEEN WARNED!                      //
+// Signatures necessary in finding the pointer to the CUtlDict that //
+//   stores user message information.                               //
+// IServerGameDLL::GetUserMessageInfo() normally crashes with bad   //
+//   message indices. This is our answer to it. Yuck! <:-(          //
+//////////////////////////////////////////////////////////////////////
+#ifdef OS_WIN32
+	/* General Windows sig */
+	#define MSGCLASS_SIGLEN		7
+	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
+	#define MSGCLASS_OFFS		2
+
+	/* Dystopia Wimdows hack */
+	#define MSGCLASS2_SIGLEN	16
+	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
+	#define MSGCLASS2_OFFS		11
+
+	/* Windows frame pointer sig */
+	#define MSGCLASS3_SIGLEN	18
+	#define MSGCLASS3_SIG		"\x55\x8B\xEC\x51\x89\x2A\x2A\x8B\x2A\x2A\x50\x8B\x0D\x2A\x2A\x2A\x2A\xE8"
+	#define MSGCLASS3_OFFS		13
+#elif defined OS_LINUX
+	/* No frame pointer sig */
+	#define MSGCLASS_SIGLEN		14
+	#define MSGCLASS_SIG		"\x53\x83\xEC\x2A\x8B\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
+	#define MSGCLASS_OFFS		9
+
+	/* Frame pointer sig */
+	#define MSGCLASS2_SIGLEN	16
+	#define MSGCLASS2_SIG		"\x55\x89\xE5\x53\x83\xEC\x2A\x8B\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
+	#define MSGCLASS2_OFFS		11
+#endif
+
+struct UserMessage
+{
+	int size;
+	const char *name;
+};
+
+typedef CUtlDict<UserMessage *, int> UserMsgDict;
+
+/* This is the ugliest function in all of SourceMM */
+bool CacheUserMessages()
+{
+	/* Get address of original GetUserMessageInfo() */
+	char *vfunc = NULL;
+	/*  :TODO: fix this for v5 (char *)SH_GET_ORIG_VFNPTR_ENTRY(server, &IServerGameDLL::GetUserMessageInfo); */
+
+	/* Oh dear, we have a relative jump on our hands
+	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
+	 */
+	if (*vfunc == '\xE9')
+	{
+		/* Get address from displacement...
+		 *
+		 * Add 5 because it's relative to next instruction:
+		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
+		 */
+		vfunc += *reinterpret_cast<int *>(vfunc + 1) + 5;
+	}
+
+	CUtlDict<UserMessage *, int> *dict = NULL;
+
+	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
+	{
+		/* Get address of CUserMessages instance */
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
+
+		/* Get address of CUserMessages::m_UserMessages */
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	} 
+	else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) 
+	{
+	#ifdef OS_WIN32
+		/* If we get here, the code is possibly inlined like in Dystopia */
+
+		/* Get the address of the CUtlRBTree */
+		char *rbtree = *reinterpret_cast<char **>(vfunc + MSGCLASS2_OFFS);
+
+		/* CUtlDict should be 8 bytes before the CUtlRBTree (hacktacular!) */
+		dict = reinterpret_cast<UserMsgDict *>(rbtree - 8);
+	#elif defined OS_LINUX
+		/* Get address of CUserMessages instance */
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
+
+		/* Get address of CUserMessages::m_UserMessages */
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	#endif
+	#ifdef OS_WIN32
+	} 
+	else if (vcmp(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) 
+	{
+		/* Get address of CUserMessages instance */
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
+
+		/* Get address of CUserMessages::m_UserMessages */
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	#endif
+	}
+
+	if (dict)
+	{
+		int msg_count = dict->Count();
+
+		/* Ensure that count is within bounds of an unsigned byte, because that's what engine supports */
+		if (msg_count < 0 || msg_count > 255)
+		{
+			return false;
+		}
+
+		UserMessage *msg;
+		UsrMsgInfo u_msg;
+
+		/* Cache messages in our CUtlDict */
+		for (int i = 0; i < msg_count; i++)
+		{
+			msg = dict->Element(i);
+			u_msg.name = msg->name;
+			u_msg.size = msg->size;
+			usermsgs_list.push_back(u_msg);
+		}
+
+		return true;
+	}
+
+	return false;
+}
 

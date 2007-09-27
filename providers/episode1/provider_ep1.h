@@ -3,8 +3,10 @@
 
 #include <metamod_provider.h>
 #include <ISmmAPI.h>
+#include "oslink.h"
 
 using namespace SourceMM;
+using namespace SourceHook;
 
 class BaseProvider : public IMetamodSourceProvider
 {
@@ -43,6 +45,7 @@ public:
 
 extern IVEngineServer *engine;
 extern IServerGameDLL *server;
+extern IServerGameClients *gameclients;
 extern ICvar *icvar;
 
 #endif //_INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
