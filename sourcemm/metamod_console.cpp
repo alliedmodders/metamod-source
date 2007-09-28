@@ -33,7 +33,7 @@ using namespace SourceHook;
 #define CONMSG			g_Metamod.ConPrintf
 #define CLIENT_CONMSG	g_Metamod.ClientConPrintf
 
-bool Command_Meta(edict_t *pEdict, IMetamodSourceCommandInfo *info)
+bool Command_Meta(IMetamodSourceCommandInfo *info)
 {
 	unsigned int args = info->GetArgCount();
 

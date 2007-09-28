@@ -1,10 +1,6 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 #define _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 
-#include <sourcehook/sourcehook.h>
-#include <sourcehook/sh_memfuncinfo.h>
-#include <iserverplugin.h>
-
 namespace SourceMM
 {
 	enum
@@ -54,8 +50,6 @@ namespace SourceMM
 		 */
 		virtual const char *GetArgString() =0;
 	};
-
-	typedef bool (*METAMOD_COMMAND)(edict_t *pEdict, IMetamodSourceCommandInfo *info);
 
 	class IMetamodSourceProvider
 	{
@@ -165,7 +159,9 @@ namespace SourceMM
 		/**
 		 * @brief Notifies the provider that the DLLInit pre-hook is almost done.
 		 */
-		virtual void Notify_DLLInit_Pre() =0;
+		virtual void Notify_DLLInit_Pre(void *gamedll,
+			CreateInterfaceFn engineFactory, 
+			CreateInterfaceFn serverFactory) =0;
 
 		/**
 		 * @brief Wrapper around IVEngineServer::ServerCommand()
@@ -195,24 +191,6 @@ namespace SourceMM
 		 * @return					String value.
 		 */
 		virtual const char *GetConVarString(ConVar *convar) =0;
-
-		/**
-		 * @brief Creates a console command.
-		 *
-		 * @param name				Command name.
-		 * @param callback			Callback pointer.
-		 * @param help				Help text.
-		 */
-		virtual void CreateCommand(const char *name,
-			METAMOD_COMMAND callback,
-			const char *help) =0;
-
-		/**
-		 * @brief Sets the ClientCommand handler.
-		 *
-		 * @param callback			Callback pointer.
-		 */
-		virtual void SetClientCommandHandler(METAMOD_COMMAND callback) =0;
 
 		/**
 		 * @brief Retrieves the game description.
@@ -278,6 +256,10 @@ namespace SourceMM
 		virtual const char *GetUserMessage(int index, int *size=NULL) =0;
 	};
 };
+
+extern PluginId g_PLID;
+extern SourceHook::ISourceHook *g_SHPtr;
+extern SourceMM::IMetamodSourceProvider *provider;
 
 #endif //_INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 

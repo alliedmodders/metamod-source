@@ -13,7 +13,7 @@
 
 #include "metamod_provider.h"
 
-bool Command_Meta(edict_t *pEdict, IMetamodSourceCommandInfo *info);
+bool Command_Meta(IMetamodSourceCommandInfo *info);
 bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);
 
 #endif //_INCLUDE_CONCOMMANDS_H

@@ -13,7 +13,7 @@
  * @file oslink.cpp
  */
 
-#include "oslink.h"
+#include "metamod_oslink.h"
 #include <malloc.h>
 #ifdef __linux
 #include <errno.h>

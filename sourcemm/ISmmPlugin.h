@@ -17,7 +17,7 @@
  */
 
 #include <interface.h>
-#include <sourcehook/sourcehook.h>
+#include <sourcehook.h>
 #include "ISmmAPI.h"
 
 #define PLAPI_VERSION	12

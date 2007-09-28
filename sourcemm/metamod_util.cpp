@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "metamod_util.h"
-#include "oslink.h"
+#include "metamod_oslink.h"
 
 /**
  * @brief Utility functions

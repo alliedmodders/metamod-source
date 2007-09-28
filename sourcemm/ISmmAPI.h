@@ -18,7 +18,7 @@
 
 #include <interface.h>
 #include <eiface.h>
-#include <sourcehook/sourcehook.h>
+#include <sourcehook.h>
 #include "IPluginManager.h"
 
 #if defined __GNUC__

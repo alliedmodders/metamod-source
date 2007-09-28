@@ -79,10 +79,7 @@ public:
 void LogMessage(const char *msg, ...);
 int LoadPluginsFromFile(const char *_file);
 
-extern PluginId g_PLID;
-extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceHook::CSourceHookImpl g_SourceHook;
 extern MetamodSource g_Metamod;
-extern IMetamodSourceProvider *provider;
 
 #endif //_INCLUDE_SOURCEMM_H

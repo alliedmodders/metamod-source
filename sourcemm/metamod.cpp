@@ -33,7 +33,6 @@ using namespace SourceHook;
  * @brief Implementation of main SourceMM GameDLL functionality
  * @file sourcemm.cpp
  */
-IMetamodSourceProvider *provider = NULL;
 
 SH_DECL_MANUALHOOK4(SGD_DLLInit, 0, 0, 0, bool, CreateInterfaceFn, CreateInterfaceFn, CreateInterfaceFn, CGlobalVars *);
 SH_DECL_MANUALHOOK0(SGD_GameInit, 0, 0, 0, bool);
@@ -665,7 +664,7 @@ bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsF
 
 	g_GameDllPatch = SH_GET_CALLCLASS(server);
 
-	provider->Notify_DLLInit_Pre();
+	provider->Notify_DLLInit_Pre(server, engineFactory, gamedll_info.factory);
 
 	metamod_version = provider->CreateConVar("metamod_version", 
 		SOURCEMM_VERSION, 
@@ -680,9 +679,6 @@ bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsF
 #endif
 		"Metamod:Source Plugins File",
 		ConVarFlag_SpOnly);
-
-	provider->CreateCommand("meta", Command_Meta, "Metamod:Source Menu");
-	provider->SetClientCommandHandler(Command_ClientMeta);
 
 	const char *pluginFile = provider->GetCommandLineValue("mm_pluginsfile", NULL);
 	if (!pluginFile) 
@@ -1151,11 +1147,37 @@ void MetamodSource::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCo
 {
 	if (provider->IsConCommandBaseACommand(pCommand))
 	{
-		g_PluginMngr.AddPluginCmd(plugin, pCommand);
+		g_PluginMngr.RemovePluginCmd(plugin, pCommand);
 	}
 	else
 	{
-		g_PluginMngr.AddPluginCvar(plugin, pCommand);
+		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
+	}
+
+	PluginIter iter;
+	CPluginManager::CPlugin *pPlugin;
+	List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
+	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 12 (v1:6, SourceMM 1.5) */
+		if (pPlugin->m_API->GetApiVersion() < 12)
+		{
+			continue;
+		}
+		for (event=pPlugin->m_Events.begin();
+			event!=pPlugin->m_Events.end();
+			event++)
+		{
+			pML = (*event);
+			pML->OnUnlinkConCommandBase(pOrig ? pOrig->m_Id : 0, pCommand);
+		}
 	}
 
 	return provider->UnregisterConCommandBase(pCommand);
