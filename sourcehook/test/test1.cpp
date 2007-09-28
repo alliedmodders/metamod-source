@@ -338,6 +338,11 @@ namespace
 		}
 	};
 
+	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
+	class Whatever : public Test
+	{
+	};
+
 	SH_DECL_HOOK1(Test, F299, SH_NOATTRIB, 0, bool, const char *);
 	SH_DECL_HOOK0_void(Test, F1, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, F2, SH_NOATTRIB, 0);
@@ -416,52 +421,46 @@ bool TestBasic(std::string &error)
 	g_PLID = 1337;
 
 	HandlersF1 f1_handlers;
-	Test test;
+	Whatever test;
 	Test *pTest = &test;
 
-	// 1) Get a call class and call the member through it and normally
-	SourceHook::CallClass<Test> *cc = SH_GET_CALLCLASS(pTest);
+	// 1) SH_CALL it and call it normally
 
-	ADD_STATE(State_F1_CallClassGenerated);
+	return true;
+	SH_CALL(pTest, &Test::F1)();
+	
 
-	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
-		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
 		NULL), "Part 1");
 
 	// 2) Request a call class again
-	SourceHook::CallClass<Test> *cc2 = SH_GET_CALLCLASS(pTest);
-	ADD_STATE(State_F1_CallClassGenerated);
 
-	SH_CALL(cc, &Test::F1)();
-	SH_CALL(cc2, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
-	SH_RELEASE_CALLCLASS(cc2);
-	ADD_STATE(State_F1_CallClassReleased);
-
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
-		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
 		new State_F1_Called,
-		new State_F1_CallClassReleased,
+
 		new State_F1_Called,
 		new State_F1_Called,
 		NULL), "Part 2");
 
 	// 3) Add a pre hook
+	//   (one add memfunc in old format)
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
-	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false)));
+	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false) ? true : false));
 
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -470,30 +469,26 @@ bool TestBasic(std::string &error)
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 3");
 
-	// 4) Rerequest the callclass
-	SH_RELEASE_CALLCLASS(cc);
+	// 4) Test source-level compat with callclasses
+	SourceHook::CallClass<Test> *pCC = SH_GET_CALLCLASS(pTest);
 
-	ADD_STATE(State_F1_CallClassReleased);
-	cc2 = SH_GET_CALLCLASS(pTest);
-	ADD_STATE(State_F1_CallClassGenerated);
-
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pCC, &Test::F1)();
 	pTest->F1();
 
+	SH_RELEASE_CALLCLASS(pCC);
+
 	CHECK_STATES((&g_States,
-		new State_F1_CallClassReleased,
-		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 4");
 
 	// 5) Check ignore / supercede
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	g_F1Pre_WhatToDo = MRES_IGNORED;
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -505,10 +500,11 @@ bool TestBasic(std::string &error)
 		NULL), "Part 5");
 
 	// 6) remove the hook again
+	//   (one remove memfunc in old format)
 	SH_REMOVE_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	ADD_STATE(State_F1_HookRemoved);
 
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -519,9 +515,9 @@ bool TestBasic(std::string &error)
 
 	// 7) add a post hook now
 	g_F1Post_WhatToDo = MRES_IGNORED;
-	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Post, true)));
+	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Post), true) ? true : false));
 
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -533,13 +529,13 @@ bool TestBasic(std::string &error)
 
 	// 8) And a pre hook again
 	g_F1Pre_WhatToDo = MRES_IGNORED;
-	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false)));
+	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false) ? true : false));
 
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -554,12 +550,12 @@ bool TestBasic(std::string &error)
 		NULL), "Part 8");
 
 	// 9) Remove all hooks
-	SH_REMOVE_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false);
+	SH_REMOVE_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 	ADD_STATE(State_F1_HookRemoved);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Post, true);
+	SH_REMOVE_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Post), true);
 	ADD_STATE(State_F1_HookRemoved);
 
-	SH_CALL(cc, &Test::F1)();
+	SH_CALL(pTest, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -574,7 +570,7 @@ bool TestBasic(std::string &error)
 	g_F299Pre_WhatToRet = false;
 
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -583,9 +579,10 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.1");
 
+	// (one add staticfunc in old format)
 	SH_ADD_HOOK_STATICFUNC(Test, F299, pTest, F299_Pre, false);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -595,9 +592,9 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.2");
 
-	SH_ADD_HOOK_STATICFUNC(Test, F299, pTest, F299_Post, true);
+	SH_ADD_HOOK(Test, F299, pTest, SH_STATIC(F299_Post), true);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -610,7 +607,7 @@ bool TestBasic(std::string &error)
 
 	g_F299Pre_WhatToDo = MRES_OVERRIDE;
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -623,7 +620,7 @@ bool TestBasic(std::string &error)
 
 	g_F299Pre_WhatToDo = MRES_SUPERCEDE;
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -633,9 +630,10 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.5");
 
+	// (one remove staticfunc in old format)
 	SH_REMOVE_HOOK_STATICFUNC(Test, F299, pTest, F299_Pre, false);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -645,9 +643,9 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.6");
 
-	SH_REMOVE_HOOK_STATICFUNC(Test, F299, pTest, F299_Post, true);
+	SH_REMOVE_HOOK(Test, F299, pTest, SH_STATIC(F299_Post), true);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -656,39 +654,59 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.7");
 
-	// 11) Release callclass
-	SH_RELEASE_CALLCLASS(cc);
-	ADD_STATE(State_F1_CallClassReleased);
 
+	// 11 1/2) Test removing hook by id
+
+	g_F1Pre_WhatToDo = MRES_IGNORED;
+
+	pTest->F1();
+	int hookPre = SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	int hookPost = SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Post), true);
+
+	pTest->F1();
+	SH_REMOVE_HOOK_ID(hookPost);
+	pTest->F1();
+	SH_REMOVE_HOOK_ID(hookPre);
+	pTest->F1();
 
 	CHECK_STATES((&g_States,
-		new State_F1_CallClassReleased,
-		NULL), "Part 11");
+		new State_F1_Called,
+
+		new State_F1_PreHandler_Called(&f1_handlers),
+		new State_F1_Called,
+		new State_F1_PostHandler_Called(&f1_handlers),
+
+		new State_F1_PreHandler_Called(&f1_handlers),
+		new State_F1_Called,
+
+		new State_F1_Called,
+
+		NULL), "Part 11 1/2");
 
 	// 12) Test? Test.
-	SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_ADD_HOOK_MEMFUNC(Test, F2, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_ADD_HOOK_MEMFUNC(Test, F3, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_ADD_HOOK_MEMFUNC(Test, F4, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_ADD_HOOK_MEMFUNC(Test, F5, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_ADD_HOOK_MEMFUNC(Test, F6, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_ADD_HOOK_MEMFUNC(Test, F7, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_ADD_HOOK_MEMFUNC(Test, F8, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_ADD_HOOK_MEMFUNC(Test, F9, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_ADD_HOOK_MEMFUNC(Test, F10, pTest, &f1_handlers, &HandlersF1::Pre, false);
+	SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_ADD_HOOK(Test, F2, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_ADD_HOOK(Test, F3, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_ADD_HOOK(Test, F4, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_ADD_HOOK(Test, F5, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_ADD_HOOK(Test, F6, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_ADD_HOOK(Test, F7, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_ADD_HOOK(Test, F8, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_ADD_HOOK(Test, F9, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_ADD_HOOK(Test, F10, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 
-	SH_REMOVE_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F2, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F3, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F4, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F5, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F6, pTest, &f1_handlers, &HandlersF1::Pre, true);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F7, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F8, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F9, pTest, &f1_handlers, &HandlersF1::Pre, false);
-	SH_REMOVE_HOOK_MEMFUNC(Test, F10, pTest, &f1_handlers, &HandlersF1::Pre, false);
+	SH_REMOVE_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_REMOVE_HOOK(Test, F2, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_REMOVE_HOOK(Test, F3, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_REMOVE_HOOK(Test, F4, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_REMOVE_HOOK(Test, F5, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_REMOVE_HOOK(Test, F6, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
+	SH_REMOVE_HOOK(Test, F7, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_REMOVE_HOOK(Test, F8, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_REMOVE_HOOK(Test, F9, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	SH_REMOVE_HOOK(Test, F10, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 
-	SH_ADD_HOOK_STATICFUNC(Test, F60, pTest, F60_Pre, false);
+	SH_ADD_HOOK(Test, F60, pTest, SH_STATIC(F60_Pre), false);
 
 	int a = 0;
 	pTest->F60(a);

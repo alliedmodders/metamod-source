@@ -76,6 +76,7 @@ namespace
 			return sth.Func();
 		}
 	};
+	class CHelloDerived : public CHello { };
 
 	class CHook
 	{
@@ -99,11 +100,9 @@ bool TestRef(std::string &error)
 	CDerived der;
 	CDerived2 der2(11);
 	CDerived2 der3(12);
-	CHello hello;
+	CHelloDerived hello;
 	CHello *pHello = &hello;
 	CHook hook;
-
-	SourceHook::CallClass<CHello> *cc = SH_GET_CALLCLASS(&hello);
 
 	ADD_STATE(State_Result(pHello->Func(base)));
 	ADD_STATE(State_Result(pHello->Func(der)));
@@ -117,10 +116,10 @@ bool TestRef(std::string &error)
 		new State_Result(12),
 		NULL), "Part 1");
 
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(base)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der2)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der3)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(base)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der2)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der3)));
 
 	CHECK_STATES((&g_States,
 		new State_Result(0),
@@ -129,7 +128,7 @@ bool TestRef(std::string &error)
 		new State_Result(12),
 		NULL), "Part 2");
 
-	SH_ADD_HOOK_MEMFUNC(CHello, Func, &hello, &hook, &CHook::Func, false);
+	SH_ADD_HOOK(CHello, Func, &hello, SH_MEMBER(&hook, &CHook::Func), false);
 
 	ADD_STATE(State_Result(pHello->Func(base)));
 	ADD_STATE(State_Result(pHello->Func(der)));
@@ -147,10 +146,10 @@ bool TestRef(std::string &error)
 		new State_Result(20),
 		NULL), "Part 3");
 
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(base)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der2)));
-	ADD_STATE(State_Result(SH_CALL(cc, &CHello::Func)(der3)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(base)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der2)));
+	ADD_STATE(State_Result(SH_CALL(pHello, &CHello::Func)(der3)));
 
 	CHECK_STATES((&g_States,
 		new State_Result(0),
