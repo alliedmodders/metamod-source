@@ -74,6 +74,7 @@ public:
 public:
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
+	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 };
 
 void LogMessage(const char *msg, ...);

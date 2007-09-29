@@ -1154,11 +1154,16 @@ void MetamodSource::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCo
 		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
 	}
 
+	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
+	UnregisterConCommandBase(pOrig ? pOrig->m_Id : 0, pCommand);
+}
+
+void MetamodSource::UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand)
+{
 	PluginIter iter;
 	CPluginManager::CPlugin *pPlugin;
 	List<IMetamodListener *>::iterator event;
 	IMetamodListener *pML;
-	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
 	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
 	{
 		pPlugin = (*iter);
@@ -1176,7 +1181,7 @@ void MetamodSource::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCo
 			event++)
 		{
 			pML = (*event);
-			pML->OnUnlinkConCommandBase(pOrig ? pOrig->m_Id : 0, pCommand);
+			pML->OnUnlinkConCommandBase(id, pCommand);
 		}
 	}
 

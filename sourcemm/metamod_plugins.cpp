@@ -489,6 +489,8 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 			//Make sure to detach it from sourcehook!
 			g_SourceHook.UnloadPlugin(pl->m_Id);
 
+			pl->m_Events.clear();
+
 			UnregAllConCmds(pl);
 
 			//Clean up the DLL
@@ -710,22 +712,19 @@ void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
 
 void CPluginManager::UnregAllConCmds(CPlugin *pl)
 {
-#if 0
 	SourceHook::List<ConCommandBase *>::iterator i;
 
 	/* :TODO: */
 	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
 	{
-		g_SMConVarAccessor.Unregister(pl->m_Id, (*i) );
+		g_Metamod.UnregisterConCommandBase(pl->m_Id, (*i) );
 	}
-
 	pl->m_Cvars.clear();
 
 	for (i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
 	{
-		g_SMConVarAccessor.Unregister(pl->m_Id, (*i) );
+		g_Metamod.UnregisterConCommandBase(pl->m_Id, (*i) );
 	}
-
 	pl->m_Cmds.clear();
-#endif
 }
+

@@ -16,9 +16,10 @@ BINARY = server_i486.so
 HL2PUB = $(HL2SDK)/public
 HL2LIB = $(HL2SDK)/linux_sdk
 
-OBJECTS = oslink.cpp metamod_util.cpp metamod.cpp
+OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp metamod_plugins.cpp \
+	sourcehook.cpp episode1/console.cpp episode1/provider_ep1.cpp
 
-LINK = -static-libgcc
+LINK = $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
           -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook
@@ -33,7 +34,9 @@ endif
 
 GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
 
-CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse
+CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
+	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
+	-Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse
 
 ifeq "$(GCC_VERSION)" "4"
 	CFLAGS += $(GCC4_FLAGS)
@@ -46,6 +49,9 @@ $(BIN_DIR)/%.o: %.cpp
 
 all:
 	mkdir -p $(BIN_DIR)
+	mkdir -p $(BIN_DIR)/episode1
+	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
+	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)
@@ -60,7 +66,10 @@ debug:
 default: all
 
 clean:
+	rm -rf Release/episode1/*.o
 	rm -rf Release/*.o
 	rm -rf Release/$(BINARY)
+	rm -rf Debug/episode1/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/$(BINARY)
+
