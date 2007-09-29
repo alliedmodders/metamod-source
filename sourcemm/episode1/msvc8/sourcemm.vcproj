@@ -266,6 +266,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\metamod_oslink.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\metamod_plugins.h"
 					>
 				</File>
@@ -275,10 +279,6 @@
 				</File>
 				<File
 					RelativePath="..\..\metamod_util.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\oslink.h"
 					>
 				</File>
 			</Filter>
@@ -301,6 +301,10 @@
 					RelativePath="..\provider_ep1.h"
 					>
 				</File>
+				<File
+					RelativePath="..\vsp_listener.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
@@ -311,6 +315,10 @@
 				</File>
 				<File
 					RelativePath="..\provider_ep1.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\vsp_listener.cpp"
 					>
 				</File>
 			</Filter>
