@@ -147,3 +147,4 @@ typedef SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIt
 extern SourceMM::CPluginManager g_PluginMngr;
 
 #endif //_INCLUDE_CPLUGIN_H
+

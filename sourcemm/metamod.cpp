@@ -80,6 +80,7 @@ SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
 PluginId g_PLID = Pl_Console;
 META_RES last_meta_res;
+IServerPluginCallbacks *vsp_callbacks = NULL;
 
 MetamodSource g_Metamod;
 
@@ -187,19 +188,19 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 	if (strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
 	{
-		IServerPluginCallbacks *pCallbacks = provider->GetVSPCallbacks(iface);
+		vsp_callbacks = provider->GetVSPCallbacks(iface);
 
-		if (pCallbacks && vsp_version == 0)
+		if (vsp_callbacks != NULL && vsp_version == 0)
 		{
 			vsp_version = atoi(&iface[22]);
 		}
 
-		if (pCallbacks && ret)
+		if (ret)
 		{
-			*ret = pCallbacks ? IFACE_OK : IFACE_FAILED;
+			*ret = (vsp_callbacks != NULL) ? IFACE_OK : IFACE_FAILED;
 		}
 
-		return pCallbacks;
+		return vsp_callbacks;
 	}
 
 	if (!parsed_game_info)
@@ -220,6 +221,15 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
 		game_dir = provider->GetCommandLineValue("-game", "hl2");
+
+		if (strcasecmp(game_dir, "ship") == 0)
+		{
+			engine_build = SOURCE_ENGINE_ORIGINAL;
+		}
+		else
+		{
+			engine_build = SOURCE_ENGINE_EPISODEONE;
+		}
 
 		/* Get absolute path */
 		abspath(game_path, game_dir);
@@ -1203,3 +1213,19 @@ int MetamodSource::GetSourceEngineBuild()
 {
 	return engine_build;
 }
+
+void MetamodSource::NotifyVSPListening(IServerPluginCallbacks *callbacks)
+{
+	ITER_EVENT(OnVSPListening, (callbacks));
+}
+
+IServerPluginCallbacks *MetamodSource::GetVSPInfo(int *pVersion)
+{
+	if (pVersion)
+	{
+		*pVersion = vsp_version;
+	}
+
+	return vsp_callbacks;
+}
+

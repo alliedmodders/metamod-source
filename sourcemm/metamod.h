@@ -71,10 +71,12 @@ public:
 	const char *GetUserMessage(int index, int *size=NULL);
 	int GetVSPVersion();
 	int GetSourceEngineBuild();
+	IServerPluginCallbacks *GetVSPInfo(int *pVersion);
 public:
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
+	void NotifyVSPListening(IServerPluginCallbacks *callbacks);
 };
 
 void LogMessage(const char *msg, ...);

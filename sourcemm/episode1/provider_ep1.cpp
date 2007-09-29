@@ -9,6 +9,7 @@
 #include "provider_ep1.h"
 #include "console.h"
 #include "metamod_console.h"
+#include "vsp_listener.h"
 
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
@@ -33,6 +34,7 @@ ICvar *icvar = NULL;
 ISmmAPI *metamod_api = NULL;
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
+VSPListener g_VspListener;
 BaseProvider g_Ep1Provider;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 
@@ -303,7 +305,8 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 
 IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(const char *iface)
 {
-	return NULL;
+	g_VspListener.SetLoadable(true);
+	return &g_VspListener;
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

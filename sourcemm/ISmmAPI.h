@@ -343,6 +343,19 @@ public:		// Added in 1.6.0 (1:7)
 	 * @return				A SOURCE_ENGINE_* constant value.
 	 */
 	virtual int GetSourceEngineBuild() =0;
+
+	/**
+	 * @brief Returns the VSP listener loaded.  
+	 *
+	 * This is useful for late-loading plugins which need to decide whether 
+	 * to add a listener or not (or need to get the pointer at all).
+	 *
+	 * @param				Optional pointer to store the VSP version.
+	 * @return				IServerPluginCallbacks pointer, or NULL if an
+	 * 						IMetamodListener event has yet to occur for 
+	 * 						EnableVSPListener().
+	 */
+	virtual IServerPluginCallbacks *GetVSPInfo(int *pVersion) =0;
 };
 
 
