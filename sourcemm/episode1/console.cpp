@@ -80,6 +80,37 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 	}
 }
 
+void SMConVarAccessor::UnregisterGameDLLCommands()
+{
+	ConCommandBase *begin = icvar->GetCommands();
+	ConCommandBase *iter = begin;
+	ConCommandBase *prev = NULL;
+	while (iter)
+	{
+		/* Watch out for the ETERNAL COMMAND! */
+		if (iter != &s_EternalCommand && iter->IsBitSet(FCVAR_GAMEDLL))
+		{
+			/* Remove it! */
+			if (iter == begin)
+			{
+				s_EternalCommand.BringToFront();
+				iter = const_cast<ConCommandBase*>(iter->GetNext());
+				s_EternalCommand.SetNext(iter);
+				prev = &s_EternalCommand;
+				continue;
+			}
+			else
+			{
+				iter = const_cast<ConCommandBase*>(iter->GetNext());
+				prev->SetNext(iter);
+				continue;
+			}
+		}
+		prev = iter;
+		iter = const_cast<ConCommandBase*>(iter->GetNext());
+	}
+}
+
 void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 {
 	ConCommandBase *ptr = icvar->GetCommands();

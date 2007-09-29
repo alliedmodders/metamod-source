@@ -85,6 +85,12 @@ void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
 	ConCommandBaseMgr::OneTimeInit(&g_SMConVarAccessor);
 }
 
+void BaseProvider::Notify_DLLShutdown_Pre()
+{
+	g_SMConVarAccessor.MarkCommandsAsGameDLL();
+	g_SMConVarAccessor.UnregisterGameDLLCommands();
+}
+
 bool BaseProvider::IsRemotePrintingAvailable()
 {
 	return (echo_msg_func != NULL);

@@ -28,6 +28,7 @@ public:
 	virtual void Notify_DLLInit_Pre(void *gamedll,
 		CreateInterfaceFn engineFactory, 
 		CreateInterfaceFn serverFactory);
+	void Notify_DLLShutdown_Pre();
 	virtual void ServerCommand(const char *cmd);
 	virtual ConVar *CreateConVar(const char *name, 
 		const char *defval, 

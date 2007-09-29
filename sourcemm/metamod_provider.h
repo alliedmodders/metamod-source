@@ -163,6 +163,8 @@ namespace SourceMM
 			CreateInterfaceFn engineFactory, 
 			CreateInterfaceFn serverFactory) =0;
 
+		virtual void Notify_DLLShutdown_Pre() =0;
+
 		/**
 		 * @brief Wrapper around IVEngineServer::ServerCommand()
 		 *

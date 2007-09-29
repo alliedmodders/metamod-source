@@ -54,7 +54,6 @@ struct game_dll_t
 	CreateInterfaceFn factory;
 };
 
-SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 String mod_path;
 String metamod_path;
 String full_bin_path;
@@ -662,8 +661,6 @@ bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsF
 	physics_factory = physicsFactory;
 	gpGlobals = pGlobals;
 
-	g_GameDllPatch = SH_GET_CALLCLASS(server);
-
 	provider->Notify_DLLInit_Pre(server, engineFactory, gamedll_info.factory);
 
 	metamod_version = provider->CreateConVar("metamod_version", 
@@ -724,10 +721,9 @@ void Handler_DLLShutdown()
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
-	SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
+	provider->Notify_DLLShutdown_Pre();
 
-	SH_RELEASE_CALLCLASS(g_GameDllPatch);
-	g_GameDllPatch = NULL;
+	SH_CALL(server, &IServerGameDLL::DLLShutdown)();
 
 	g_SourceHook.CompleteShutdown();
 

@@ -53,7 +53,7 @@ all:
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
-	$(MAKE) sourcemm
+	$(MAKE) -f Makefile.ep1 sourcemm
 	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
@@ -61,7 +61,7 @@ sourcemm: $(OBJ_LINUX)
 	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
 
 debug:	
-	$(MAKE) all DEBUG=true
+	$(MAKE) -f Makefile.ep1 all DEBUG=true
 
 default: all
 
