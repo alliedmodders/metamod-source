@@ -1,4 +1,6 @@
 2007/??/?? 1.6.0:
+ - Metamod:Source has no received a large internal rewrite to improve coding 
+   standards and to separate internal logic from engine specifics.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
  - Added OnUnlinkConCommandBase to IMetamodListner to notify when Metamod:Source
