@@ -32,8 +32,6 @@ using namespace SourceHook;
 
 SMConVarAccessor g_SMConVarAccessor;
 
-static int s_nDLLIdentifier = 0x3058132;	// A unique identifier indicating which DLL this convar came from
-
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
 	pCommand->SetNext(NULL);
