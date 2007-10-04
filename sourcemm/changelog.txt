@@ -1,11 +1,6 @@
-2007/??/?? 1.5.0:
- - Added new version of SourceHook with the following changes:
-   - Added API for hooking functions on a virtual table to all instances.
-   - SH_ADD_HOOK macros now return non-zero hook IDs.  Additionally,
-     the old hook adding/removing syntax is deprecated (but still supported).
-   - Added SH_REMOVE_HOOK_ID to remove hooks by ID.
-   - CallClasses have been deprecated.  The SH_CALL macro can now take a class
-     instance pointer rather than a callclass pointer.
+2007/??/?? 1.6.0:
+ - Metamod:Source has no received a large internal rewrite to improve coding 
+   standards and to separate internal logic from engine specifics.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
  - Added OnUnlinkConCommandBase to IMetamodListner to notify when Metamod:Source
