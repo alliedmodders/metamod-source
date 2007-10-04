@@ -58,7 +58,6 @@ struct UsrMsgInfo
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
 /* Functions */
-CONPRINTF_FUNC ExtractRemotePrinter(void *addr);
 bool CacheUserMessages();
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
@@ -66,7 +65,6 @@ void _ServerCommand();
 /* Variables */
 bool usermsgs_extracted = false;
 CVector<UsrMsgInfo> usermsgs_list;
-CONPRINTF_FUNC echo_msg_func = NULL;
 ICvar *icvar = NULL;
 ISmmAPI *metamod_api = NULL;
 IVEngineServer *engine = NULL;
@@ -81,14 +79,7 @@ SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *,
 
 void BaseProvider::ConsolePrint(const char *str)
 {
-	if (echo_msg_func != NULL)
-	{
-		ConMsg("%s", str);
-	}
-	else
-	{
-		Msg("%s", str);
-	}
+	ConMsg("%s", str);
 }
 
 void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
@@ -118,7 +109,6 @@ void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
 	RegisterConCommandBase(&meta_local_cmd);
 	conbases_unreg.push_back(&meta_local_cmd);
 
-	echo_msg_func = ExtractRemotePrinter(engineFactory);
 	usermsgs_extracted = CacheUserMessages();
 
 	if (gameclients)
@@ -141,7 +131,7 @@ void BaseProvider::Notify_DLLShutdown_Pre()
 
 bool BaseProvider::IsRemotePrintingAvailable()
 {
-	return (echo_msg_func != NULL);
+	return true;
 }
 
 void BaseProvider::ClientConsolePrint(edict_t *client, const char *message)
@@ -426,46 +416,6 @@ bool vcmp(const void *_addr1, const void *_addr2, size_t len)
 	}
 
 	return true;
-}
-
-/* :TODO: I hope we can get rid of this in the future */
-CONPRINTF_FUNC ExtractRemotePrinter(void *addr)
-{
-	char path[256+10];
-	if (!GetFileOfAddress(addr, path, sizeof(path)))
-	{
-		return NULL;
-	}
-
-	char *ptr = NULL;
-#if defined __linux__
-	ptr = strstr(path, "engine_i486.so");
-#else
-	ptr = strstr(path, "engine.dll");
-#endif
-
-	if (ptr == NULL)
-	{
-		return NULL;
-	}
-
-#if defined __linux__
-	strcpy(ptr, "tier0_i486.so");
-#else
-	strcpy(ptr, "tier0.dll");
-#endif
-
-	HINSTANCE handle = dlmount(path);
-	if (handle == NULL)
-	{
-		return NULL;
-	}
-
-	void *func = dlsym(handle, "ConMsg");
-	
-	dlclose(handle);
-
-	return (CONPRINTF_FUNC)func;
 }
 
 //////////////////////////////////////////////////////////////////////

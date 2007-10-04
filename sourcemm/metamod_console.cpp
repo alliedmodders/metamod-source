@@ -88,7 +88,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 
 			// Display user messages
 			int messages = g_Metamod.GetUserMessageCount();
-			if (messages == -1)
+			if (messages != -1)
 			{
 				const char *msgname;
 				int msgsize;
