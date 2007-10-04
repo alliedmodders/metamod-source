@@ -25,27 +25,33 @@
  * Version: $Id$
  */
 
-#ifndef _INCLUDE_CONSOLE_MMS_H_
-#define _INCLUDE_CONSOLE_MMS_H_
+#include "console.h"
+#include "provider_ep2.h"
 
-#include <interface.h>
-#include <eiface.h>
-#include "convar_smm.h"
-#include <sh_list.h>
+using namespace SourceHook;
 
-class SMConVarAccessor : public IConCommandBaseAccessor
+SMConVarAccessor g_SMConVarAccessor;
+
+static int s_nDLLIdentifier = 0x3058132;	// A unique identifier indicating which DLL this convar came from
+
+bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
-public:
-	bool RegisterConCommandBase(ConCommandBase *pCommand);
-	bool Register(ConCommandBase *pCommand);
-	void MarkCommandsAsGameDLL();
-	void Unregister(ConCommandBase *pCommand);
-	void UnregisterGameDLLCommands();
-private:
-	SourceHook::List<ConCommandBase*> m_RegisteredCommands;
-};
+	pCommand->SetNext(NULL);
+	icvar->RegisterConCommand(pCommand);
 
-extern SMConVarAccessor g_SMConVarAccessor;
+	return true;
+}
 
-#endif //_INCLUDE_CONSOLE_MMS_H_
+bool SMConVarAccessor::Register(ConCommandBase *pCommand)
+{
+	pCommand->SetNext(NULL);
+	icvar->RegisterConCommand(pCommand);
+
+	return true;
+}
+
+void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
+{
+	icvar->UnregisterConCommand(pCommand);
+}
 

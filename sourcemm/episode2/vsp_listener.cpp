@@ -41,7 +41,7 @@ void VSPListener::ClientActive(edict_t *pEntity)
 {
 }
 
-PLUGIN_RESULT VSPListener::ClientCommand(edict_t *pEntity)
+PLUGIN_RESULT VSPListener::ClientCommand(edict_t *pEntity, const CCommand &cmd)
 {
 	return PLUGIN_CONTINUE;
 }
@@ -119,7 +119,7 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 {
 	if (!m_bLoadable)
 	{
-		Warning("Do not manually load Metamod:Source as a Valve Server Plugin\n");
+		provider->DisplayWarning("Do not manually load Metamod:Source as a Valve Server Plugin\n");
 		return false;
 	}
 
@@ -136,3 +136,6 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 	return true;
 }
 
+void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue )
+{
+}

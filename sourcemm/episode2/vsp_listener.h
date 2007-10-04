@@ -28,7 +28,15 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_VSP_LISTENER_H_
 #define _INCLUDE_METAMOD_SOURCE_VSP_LISTENER_H_
 
+#if defined _DEBUG
+#define DEBUG2
+#undef _DEBUG
+#endif
 #include "iserverplugin.h"
+#if defined DEBUG2
+#undef DEBUG2
+#define _DEBUG
+#endif
 
 class VSPListener : public IServerPluginCallbacks
 {
@@ -50,8 +58,9 @@ public:
 	virtual void SetCommandClient(int index);
 	virtual void ClientSettingsChanged(edict_t *pEdict);
 	virtual PLUGIN_RESULT ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen);
-	virtual PLUGIN_RESULT ClientCommand(edict_t *pEntity);
+	virtual PLUGIN_RESULT ClientCommand(edict_t *pEntity, const CCommand &cmd);
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID);
+	virtual void OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue );
 public:
 	bool IsLoaded();
 	void SetLoadable(bool loadable);

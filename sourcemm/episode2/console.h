@@ -28,21 +28,25 @@
 #ifndef _INCLUDE_CONSOLE_MMS_H_
 #define _INCLUDE_CONSOLE_MMS_H_
 
+#if defined _DEBUG
+#define DEBUG2
+#undef _DEBUG
+#endif
 #include <interface.h>
 #include <eiface.h>
-#include "convar_smm.h"
+#include "convar.h"
 #include <sh_list.h>
+#if defined DEBUG2
+#undef DEBUG2
+#define _DEBUG
+#endif
 
 class SMConVarAccessor : public IConCommandBaseAccessor
 {
 public:
 	bool RegisterConCommandBase(ConCommandBase *pCommand);
 	bool Register(ConCommandBase *pCommand);
-	void MarkCommandsAsGameDLL();
 	void Unregister(ConCommandBase *pCommand);
-	void UnregisterGameDLLCommands();
-private:
-	SourceHook::List<ConCommandBase*> m_RegisteredCommands;
 };
 
 extern SMConVarAccessor g_SMConVarAccessor;

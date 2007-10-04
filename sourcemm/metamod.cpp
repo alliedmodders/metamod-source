@@ -238,14 +238,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
 		game_dir = provider->GetCommandLineValue("-game", "hl2");
 
-		if (strcasecmp(game_dir, "ship") == 0)
-		{
-			engine_build = SOURCE_ENGINE_ORIGINAL;
-		}
-		else
-		{
-			engine_build = SOURCE_ENGINE_EPISODEONE;
-		}
+		engine_build = SOURCE_ENGINE_ORANGEBOX;
 
 		/* Get absolute path */
 		abspath(game_path, game_dir);
@@ -707,6 +700,10 @@ bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsF
 	if (!pluginFile) 
 	{
 		pluginFile = provider->GetConVarString(mm_pluginsfile);
+		if (pluginFile == NULL)
+		{
+			pluginFile = "addons/metamod/metaplugins.ini";
+		}
 	}
 
 	char full_path[260];
