@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="metamodsource_ep1"
+	Name="metamodsource_ep2"
 	ProjectGUID="{F7D47743-73B3-49B5-9D76-2333C5DFD565}"
 	RootNamespace="sourcemm"
 	Keyword="Win32Proj"
@@ -127,6 +127,7 @@
 				Optimization="3"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="1"

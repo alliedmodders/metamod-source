@@ -127,6 +127,7 @@
 				Optimization="3"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="1"
