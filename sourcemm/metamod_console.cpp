@@ -86,6 +86,20 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
 
+			int engine = g_Metamod.GetSourceEngineBuild();
+			if (engine == SOURCE_ENGINE_ORIGINAL)
+			{
+				CONMSG("  Engine: Original (pre-Episode 1)\n");
+			}
+			else if (engine == SOURCE_ENGINE_EPISODEONE)
+			{
+				CONMSG("  Engine: Episode 1 (2004)\n");
+			}
+			else if (engine == SOURCE_ENGINE_ORANGEBOX)
+			{
+				CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
+			}
+
 			// Display user messages
 			int messages = g_Metamod.GetUserMessageCount();
 			if (messages != -1)
