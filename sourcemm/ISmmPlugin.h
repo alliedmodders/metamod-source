@@ -425,7 +425,7 @@ public:
 	{ \
 		if (error && maxlen) \
 		{ \
-			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+			ismm->Format(error, maxlen, "Could not find interface: %s", v_name); \
 		} \
 		return false; \
 	}
@@ -444,7 +444,7 @@ public:
 	{ \
 		if (error && maxlen) \
 		{ \
-			snprintf(error, maxlen, "Could not find interface: %s", v_name); \
+			ismm->Format(error, maxlen, "Could not find interface: %s", v_name); \
 		} \
 		return false; \
 	}

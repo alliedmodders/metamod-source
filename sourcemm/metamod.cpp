@@ -1242,3 +1242,19 @@ IServerPluginCallbacks *MetamodSource::GetVSPInfo(int *pVersion)
 	return vsp_callbacks;
 }
 
+size_t MetamodSource::Format(char *buffer, size_t maxlength, const char *format, ...)
+{
+	va_list ap;
+	size_t result;
+
+	va_start(ap, format);
+	result = FormatArgs(buffer, maxlength, format, ap);
+	va_end(ap);
+
+	return result;
+}
+
+size_t MetamodSource::FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap)
+{
+	return UTIL_FormatArgs(buffer, maxlength, format, ap);
+}

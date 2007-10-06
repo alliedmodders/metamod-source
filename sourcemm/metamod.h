@@ -89,6 +89,8 @@ public:
 	int GetVSPVersion();
 	int GetSourceEngineBuild();
 	IServerPluginCallbacks *GetVSPInfo(int *pVersion);
+	size_t Format(char *buffer, size_t maxlength, const char *format, ...);
+	size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap);
 public:
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();

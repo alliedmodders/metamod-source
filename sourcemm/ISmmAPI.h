@@ -33,6 +33,7 @@
  * @file ISmmAPI.h
  */
 
+#include <stdarg.h>
 #include <interface.h>
 #include <eiface.h>
 #include <sourcehook.h>
@@ -334,6 +335,38 @@ public:
 	 * 						EnableVSPListener().
 	 */
 	virtual IServerPluginCallbacks *GetVSPInfo(int *pVersion) =0;
+
+	/**
+	 * @brief Formats a string.  This is a platform safe wrapper around 
+	 * snprintf/_snprintf.
+	 *
+	 * @param buffer		Buffer to write to.
+	 * @param maxlength		Maximum length of the buffer.
+	 * @param format		Format specifiers.
+	 * @param ...			Format arguments.
+	 * @return				Number of bytes actually written, not including the 
+	 *						null terminator.
+	 */
+	virtual size_t Format(char *buffer, 
+		size_t maxlength,
+		const char *format,
+		...) =0;
+
+	/**
+	 * @brief Formats a string.  This is a platform safe wrapper around 
+	 * vsnprintf/_vsnprintf.
+	 *
+	 * @param buffer		Buffer to write to.
+	 * @param maxlength		Maximum length of the buffer.
+	 * @param format		Format specifiers.
+	 * @param ap			Format argument list.
+	 * @return				Number of bytes actually written, not including the 
+	 *						null terminator.
+	 */
+	virtual size_t FormatArgs(char *buffer,
+		size_t maxlength,
+		const char *format,
+		va_list ap) =0;
 };
 
 
