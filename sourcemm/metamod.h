@@ -51,23 +51,23 @@ using namespace SourceMM;
  */
 #define SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
 #define SOURCEMM_DATE		__DATE__
-#define SM_VERS_API_MAJOR	1		//increase this on a breaking change
-#define SM_VERS_API_MINOR	7		//increase this on a non-breaking API change
+#define SM_VERS_API_MAJOR	2		//increase this on a breaking change
+#define SM_VERS_API_MINOR	0		//increase this on a non-breaking API change
 
 class MetamodSource : public ISmmAPI
 {
 public:
 	void LogMsg(ISmmPlugin *pl, const char *msg, ...);
-	CreateInterfaceFn engineFactory(bool syn=true);
-	CreateInterfaceFn physicsFactory(bool syn=true);
-	CreateInterfaceFn fileSystemFactory(bool syn=true);
-	CreateInterfaceFn serverFactory(bool syn=true);
-	CGlobalVars *pGlobals();
+	CreateInterfaceFn GetEngineFactory(bool syn=true);
+	CreateInterfaceFn GetPhysicsFactory(bool syn=true);
+	CreateInterfaceFn GetFileSystemFactory(bool syn=true);
+	CreateInterfaceFn GetServerFactory(bool syn=true);
+	CGlobalVars *GetCGlobals();
 	void SetLastMetaReturn(META_RES res);
 	META_RES GetLastMetaReturn();
 	IConCommandBaseAccessor *GetCvarBaseAccessor();
-	bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
-	void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
+	bool RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
+	void UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 	void ConPrint(const char *str);
 	void ConPrintf(const char *fmt, ...);
 	bool RemotePrintingAvailable();

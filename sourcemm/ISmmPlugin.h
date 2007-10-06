@@ -37,7 +37,7 @@
 #include <sourcehook.h>
 #include "ISmmAPI.h"
 
-#define PLAPI_VERSION	12
+#define PLAPI_VERSION	13
 #define PLAPI_NAME		"ISmmPlugin"
 
 class ISmmAPI;
@@ -389,10 +389,10 @@ public:
 	g_PLID = id;
 
 #define META_LOG				g_SMAPI->LogMsg
-#define META_REGCMD(name)		g_SMAPI->RegisterConCmdBase(g_PLAPI, name##_command)
-#define META_REGCVAR(var)		g_SMAPI->RegisterConCmdBase(g_PLAPI, var)
-#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, name##_command)
-#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCmdBase(g_PLAPI, var)
+#define META_REGCMD(name)		g_SMAPI->RegisterConCommandBase(g_PLAPI, name##_command)
+#define META_REGCVAR(var)		g_SMAPI->RegisterConCommandBase(g_PLAPI, var)
+#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, name##_command)
+#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, var)
 #define	META_CONPRINT			g_SMAPI->ConPrint
 #define META_CONPRINTF			g_SMAPI->ConPrintf
 

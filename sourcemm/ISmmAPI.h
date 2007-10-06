@@ -68,7 +68,7 @@ public:
 	 * @param msg			Formatted string.
 	 */
 	virtual void LogMsg(ISmmPlugin *pl, const char *msg, ...) =0;
-public:
+
 	/**
 	 * @brief Returns an interface factory for the HL2 engine.
 	 *
@@ -76,7 +76,7 @@ public:
 	 *						If syn is false, the true function is returned.
 	 * @return				CreateInterfaceFn function pointer.
 	 */
-	virtual CreateInterfaceFn engineFactory(bool syn=true) =0;
+	virtual CreateInterfaceFn GetEngineFactory(bool syn=true) =0;
 
 	/**
 	 * @brief Returns an interface factory for the HL2 physics engine.
@@ -85,7 +85,7 @@ public:
 	 *						If syn is false, the true function is returned.
 	 * @return				CreateInterfaceFn function pointer.
 	 */
-	virtual CreateInterfaceFn physicsFactory(bool syn=true) =0;
+	virtual CreateInterfaceFn GetPhysicsFactory(bool syn=true) =0;
 
 	/**
 	 * @brief Returns an interface factory for the HL2 file system.
@@ -94,7 +94,7 @@ public:
 	 *						If syn is false, the true function is returned.
 	 * @return				CreateInterfaceFn function pointer.
 	 */
-	virtual CreateInterfaceFn fileSystemFactory(bool syn=true) =0;
+	virtual CreateInterfaceFn GetFileSystemFactory(bool syn=true) =0;
 
 	/**
 	 * @brief Returns an interface factory for the GameDLL.
@@ -103,38 +103,14 @@ public:
 	 *						If syn is false, the true function is returned.
 	 * @return				CreateInterfaceFn function pointer.
 	 */
-	virtual CreateInterfaceFn serverFactory(bool syn=true) =0;
+	virtual CreateInterfaceFn GetServerFactory(bool syn=true) =0;
 
 	/**
 	 * @brief Returns a CGlobalVars pointer from the HL2 Engine.
 	 *
 	 * @return				CGlobalVars pointer.
 	 */
-	virtual CGlobalVars *pGlobals() =0;
-
-	/**
-	 * @brief Used with SourceHook, sets teh last meta return value.
-	 * Note: Do not call this directly, use the Metamod macros.
-	 *
-	 * @param res			META_RETURN value to set.
-	 */
-	virtual void SetLastMetaReturn(META_RES res) =0;
-
-	/**
-	 * @brief Used with SourceHook, returns the last meta return value.
-	 * Note: This is only valid inside a hook function.
-	 *
-	 * @return				Last META_RETURN value set by a plugin.
-	 */
-	virtual META_RES GetLastMetaReturn() =0;
-
-public:		// Added in 1.00-RC2 (0:0)
-	/**
-	 * @brief Allows access to Metamod's ConCommandBaseAccessor.
-	 *
-	 * @return				Returns IConCommandBaseAccessor pointer.
-	 */
-	virtual IConCommandBaseAccessor *GetCvarBaseAccessor() =0;
+	virtual CGlobalVars *GetCGlobals() =0;
 
 	/**
 	 * @brief Registers a ConCommandBase.
@@ -143,7 +119,7 @@ public:		// Added in 1.00-RC2 (0:0)
 	 * @param pCommand		ConCommandBase to register.
 	 * @return				True if successful, false otherwise.
 	 */
-	virtual bool RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
+	virtual bool RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
 
 	/**
 	 * @brief Unregisters a ConCommandBase.
@@ -151,7 +127,7 @@ public:		// Added in 1.00-RC2 (0:0)
 	 * @param plugin		Parent plugin API pointer.
 	 * @param pCommand		ConCommandBase to unlink.
 	 */
-	virtual void UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
+	virtual void UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand) =0;
 	
 	/**
 	 * @brief Prints an unformatted string to the remote server console.
@@ -170,14 +146,6 @@ public:		// Added in 1.00-RC2 (0:0)
 	 * @param fmt			Formatted message.
 	 */
 	virtual void ConPrintf(const char *fmt, ...) =0;
-
-public:		// Added in 1.1.0 (1:0)
-	/**
-	 * @brief Checks if ConPrint/ConPrintf will mirror to rcon.
-	 *
-	 * @return				True if remote printing available, false otherwise.
-	 */
-	virtual bool RemotePrintingAvailable() =0;
 
 	/**
 	 * @brief Returns the Metamod Version numbers as major version and minor (API) version.
@@ -217,7 +185,6 @@ public:		// Added in 1.1.0 (1:0)
 	  */
 	virtual void *MetaFactory(const char *iface, int *ret, PluginId *id) =0;
 
-public:		// Added in 1.1.2 (1:1)
 	/**
 	 * @brief Given a base interface name, such as ServerGameDLL or ServerGameDLL003, 
 	 * reformats the string to increase the number, then returns the new number.
@@ -229,7 +196,6 @@ public:		// Added in 1.1.2 (1:1)
 	 */
 	virtual int FormatIface(char iface[], unsigned int maxlength) =0;
 
-public:		// Added in 1.2 (1:2)
 	/**
 	 * @brief Searches for an interface, eliminating the need to loop through FormatIface().
 	 * 
@@ -261,7 +227,6 @@ public:		// Added in 1.2 (1:2)
 	 */
 	virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...) =0;
 
-public:		// Added in 1.2.2 (1:3)
 	/**
 	 * @brief Prints text in the specified client's console. Same as 
 	 * IVEngineServer::ClientPrintf except that it allows for string formatting.
@@ -271,7 +236,6 @@ public:		// Added in 1.2.2 (1:3)
 	 */
 	virtual void ClientConPrintf(edict_t *client, const char *fmt, ...) =0;
 
-public:		// Added in 1.3 (1:4)
 	/**
 	 * @brief Wrapper around InterfaceSearch().  Assumes no maximum.
 	 * This is designed to replace the fact that searches only went upwards.
@@ -290,7 +254,6 @@ public:		// Added in 1.3 (1:4)
 	 */
 	virtual void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1) =0;
 
-public:		// Added in 1.4 (1:5)
 	/**
 	 * @brief Tells SourceMM to add VSP hooking capability to plugins.  
 	 *
@@ -338,7 +301,6 @@ public:		// Added in 1.4 (1:5)
 	 */
 	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
 
-public:		// Added in 1.5.0 (1:6)
 	/**
 	 * @brief Returns the highest interface version of IServerPluginCallbacks 
 	 * that the engine supports.  This is useful for games that run on older 
@@ -350,7 +312,6 @@ public:		// Added in 1.5.0 (1:6)
 	 */
 	virtual int GetVSPVersion() =0;
 
-public:		// Added in 1.6.0 (1:7)
 	/**
 	 * @brief Returns the engine interface that MM:S is using as a backend.
 	 *
@@ -386,7 +347,7 @@ public:		// Added in 1.6.0 (1:7)
  * 1.3   Added new interface search API.
  * 1.4	 Added VSP listener and user message API.
  * 1.5.0 Added API for getting highest supported version of IServerPluginCallbacks.
- * 1.6.0 Added API for Orange Box.
+ * 1.6.0 Added API for Orange Box.  Broke backwards compatibility.
  */
 
 #endif //_INCLUDE_ISMM_API_H

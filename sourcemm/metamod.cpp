@@ -801,7 +801,7 @@ void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 	LogMessage("[%s] %s", pl->GetLogTag(), buffer);
 }
 
-CreateInterfaceFn MetamodSource::engineFactory(bool syn/* =true */)
+CreateInterfaceFn MetamodSource::GetEngineFactory(bool syn/* =true */)
 {
 	if (syn)
 	{
@@ -811,7 +811,7 @@ CreateInterfaceFn MetamodSource::engineFactory(bool syn/* =true */)
 	return engine_factory;
 }
 
-CreateInterfaceFn MetamodSource::physicsFactory(bool syn/* =true */)
+CreateInterfaceFn MetamodSource::GetPhysicsFactory(bool syn/* =true */)
 {
 	if (syn)
 	{
@@ -821,7 +821,7 @@ CreateInterfaceFn MetamodSource::physicsFactory(bool syn/* =true */)
 	return physics_factory;
 }
 
-CreateInterfaceFn MetamodSource::fileSystemFactory(bool syn/* =true */)
+CreateInterfaceFn MetamodSource::GetFileSystemFactory(bool syn/* =true */)
 {
 	if (syn)
 	{
@@ -831,7 +831,7 @@ CreateInterfaceFn MetamodSource::fileSystemFactory(bool syn/* =true */)
 	return filesystem_factory;
 }
 
-CreateInterfaceFn MetamodSource::serverFactory(bool syn/* =true */)
+CreateInterfaceFn MetamodSource::GetServerFactory(bool syn/* =true */)
 {
 	if (syn)
 	{
@@ -841,7 +841,7 @@ CreateInterfaceFn MetamodSource::serverFactory(bool syn/* =true */)
 	return gamedll_info.factory;
 }
 
-CGlobalVars *MetamodSource::pGlobals()
+CGlobalVars *MetamodSource::GetCGlobals()
 {
 	return gpGlobals;
 }
@@ -1148,7 +1148,7 @@ IConCommandBaseAccessor *MetamodSource::GetCvarBaseAccessor()
 	return provider->GetConCommandBaseAccessor();
 }
 
-bool MetamodSource::RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
+bool MetamodSource::RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
 	if (provider->IsConCommandBaseACommand(pCommand))
 	{
@@ -1162,7 +1162,7 @@ bool MetamodSource::RegisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pComm
 	return provider->RegisterConCommandBase(pCommand);
 }
 
-void MetamodSource::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
+void MetamodSource::UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
 	if (provider->IsConCommandBaseACommand(pCommand))
 	{
