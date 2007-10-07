@@ -6,7 +6,7 @@
 *
 * Author(s): Pavol "PM OnoTo" Marko
 * ============================
-*/
+*/ 
 
 /**
 *	@file sourcehook.h
