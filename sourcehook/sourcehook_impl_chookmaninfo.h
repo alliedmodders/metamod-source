@@ -158,3 +158,4 @@ namespace SourceHook
 }
 
 #endif
+

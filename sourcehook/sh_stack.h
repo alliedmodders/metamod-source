@@ -20,15 +20,16 @@ namespace SourceHook
 
 	template <class T> class CStack
 	{
-		static const int SECTOR_SIZE = 16;
+		static const size_t SECTOR_SIZE = 16;
 
-		CVector<T *> m_Sectors;				// Stores sectors
+		CVector<T*> m_Sectors;				// Stores sectors
 
 		size_t m_UsedSize;
 
 		void clear()
 		{
-			for (CVector<T*>::iterator sect_iter = m_Sectors.begin(); sect_iter != m_Sectors.end(); ++sect_iter)
+			typename CVector<T*>::iterator sect_iter;
+			for (sect_iter = m_Sectors.begin(); sect_iter != m_Sectors.end(); ++sect_iter)
 			{
 				delete [] *sect_iter;
 			}
@@ -114,7 +115,7 @@ namespace SourceHook
 
 		CStack(const CStack &other)
 		{
-			for (CVector<T*>::iterator sect_iter = other.m_Sectors.begin();
+			for (typename CVector<T*>::iterator sect_iter = other.m_Sectors.begin();
 				sect_iter != other.m_Sectors.end(); ++sect_iter)
 			{
 				m_Sectors.push_back(new T[SECTOR_SIZE]);
@@ -127,7 +128,7 @@ namespace SourceHook
 		CStack & operator =(const CStack &other)
 		{
 			clear();
-			for (CVector<T*>::iterator sect_iter = other.m_Sectors.begin();
+			for (typename CVector<T*>::iterator sect_iter = other.m_Sectors.begin();
 				sect_iter != other.m_Sectors.end(); ++sect_iter)
 			{
 				m_Sectors.push_back(new T[SECTOR_SIZE]);
