@@ -733,6 +733,25 @@ namespace SourceHook
 				m_ContextStack.pop();
 		}
 
+		void *CSourceHookImpl::GetOrigVfnPtrEntry(void *vfnptr)
+		{
+			for (CHookManContainerList::iterator hmcl_iter = m_HookManContainers.begin();
+				hmcl_iter != m_HookManContainers.end(); ++hmcl_iter)
+			{
+				for (CHookManagerContainer::iterator hookmaniter = hmcl_iter->begin();
+					hookmaniter != hmcl_iter->end(); ++hookmaniter)
+				{
+					for (List<CVfnPtr>::iterator vfnptr_iter = hookmaniter->GetVfnPtrList().begin();
+						vfnptr_iter != hookmaniter->GetVfnPtrList().end(); ++vfnptr_iter)
+					{
+						if (vfnptr_iter->GetPtr() == vfnptr)
+							return vfnptr_iter->GetOrigEntry();
+					}
+				}
+			}
+			return NULL;
+		}
+
 		void CSourceHookImpl::DoRecall()
 		{
 			CHookContext newCtx;

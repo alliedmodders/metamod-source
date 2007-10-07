@@ -391,6 +391,14 @@ namespace SourceHook
 		*/
 		virtual void ResetIgnoreHooks(void *vfnptr) = 0;
 
+		/**
+		*	@brief Finds the original entry of a virtual function pointer
+		*
+		*	@param vfnptr The virtual function pointer
+		*	@return The original entry if the virtual function pointer has been patched; NULL otherwise.
+		*/
+		virtual void *GetOrigVfnPtrEntry(void *vfnptr) = 0;
+
 		//////////////////////////////////////////////////////////////////////////
 
 		// For hook managers	
@@ -466,6 +474,20 @@ namespace SourceHook
 			return &ref;
 		}
 	};
+
+	template <class X, class MFP>
+		void *GetOrigVfnPtrEntry(X *pInstance, MFP mfp, ISourceHook *pSH)
+	{
+		SourceHook::MemFuncInfo info = {true, -1, 0, 0};
+		SourceHook::GetFuncInfo(pInstance, mfp, info);
+
+		void *vfnptr = reinterpret_cast<void*>(
+			*reinterpret_cast<void***>(reinterpret_cast<char*>(pInstance) + info.thisptroffs + info.vtbloffs) + info.vtblindex);
+
+		void *origentry = pSH->GetOrigVfnPtrEntry(vfnptr);
+
+		return origentry ? origentry : *reinterpret_cast<void**>(vfnptr);
+	}
 }
 
 /************************************************************************/
@@ -587,6 +609,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		SH_MFHCls(hookname)::ms_MFI.vtblindex = pvtblindex; \
 		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
 	} while (0)
+
+#define SH_GET_ORIG_VFNPTR_ENTRY(inst, mfp) (SourceHook::GetOrigVfnPtrEntry(inst, mfp, SH_GLOB_SHPTR))
 
 // New ADD / REMOVE macros.
 #define SH_STATIC(func) fastdelegate::MakeDelegate(func)

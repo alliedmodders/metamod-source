@@ -314,6 +314,8 @@ namespace SourceHook
 
 			void EndContext(IHookContext *pCtx);
 
+			void *GetOrigVfnPtrEntry(void *vfnptr);
+
 			/**
 			*	@brief Shut down the whole system, unregister all hook managers
 			*/
