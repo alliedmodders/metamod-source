@@ -25,7 +25,7 @@ class Test
 	TestProto m_Func;
 	std::string m_Name;
 
-	static SourceHook::List<Test *> ms_Tests;
+	static SourceHook::CVector<Test *> ms_Tests;
 public:
 	Test(TestProto func, const char *name) : m_Func(func), m_Name(name)
 	{
@@ -50,7 +50,7 @@ public:
 	static void DoTests()
 	{
 		int passed=0, failed=0;
-		for (SourceHook::List<Test*>::iterator iter = ms_Tests.begin(); iter != ms_Tests.end(); ++iter)
+		for (SourceHook::CVector<Test*>::iterator iter = ms_Tests.begin(); iter != ms_Tests.end(); ++iter)
 		{
 			if ((**iter)())
 				++passed;
@@ -62,7 +62,7 @@ public:
 	}
 };
 
-SourceHook::List<Test *> Test::ms_Tests;
+SourceHook::CVector<Test *> Test::ms_Tests;
 
 #define DO_TEST(x) \
 	bool Test##x(std::string &error); \
@@ -73,7 +73,7 @@ DO_TEST(Basic);
 DO_TEST(VafmtAndOverload);
 DO_TEST(ThisPtrOffs);
 DO_TEST(PlugSys);
-DO_TEST(Bail);
+//DO_TEST(Bail);
 DO_TEST(Reentr);
 DO_TEST(Manual);
 DO_TEST(Recall);
@@ -98,35 +98,30 @@ int main(int argc, char *argv[])
 
 SourceHook::ISourceHook *Test_Factory()
 {
-	return new SourceHook::CSourceHookImpl();
+	return new SourceHook::Impl::CSourceHookImpl();
 }
 
 void Test_Delete(SourceHook::ISourceHook *shptr)
 {
-	delete static_cast<SourceHook::CSourceHookImpl *>(shptr);
+	delete static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr);
 }
 
 void Test_CompleteShutdown(SourceHook::ISourceHook *shptr)
 {
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->CompleteShutdown();
-}
-
-bool Test_IsPluginInUse(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	return static_cast<SourceHook::CSourceHookImpl *>(shptr)->IsPluginInUse(plug);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->CompleteShutdown();
 }
 
 void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnloadPlugin(plug);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnloadPlugin(plug);
 }
 
 void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->PausePlugin(plug);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->PausePlugin(plug);
 }
 
 void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
 }

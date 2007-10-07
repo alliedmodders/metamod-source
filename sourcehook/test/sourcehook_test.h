@@ -21,7 +21,6 @@ struct CSHPtrAutoDestruction
 
 // Access to CSourceHookImpl functions
 void Test_CompleteShutdown(SourceHook::ISourceHook *shptr);
-bool Test_IsPluginInUse(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
 void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
 void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
 void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);

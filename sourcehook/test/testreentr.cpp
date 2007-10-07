@@ -82,7 +82,6 @@ namespace
 			return 1;
 		}
 	};
-
 	struct C2
 	{
 		virtual void F()
@@ -167,15 +166,6 @@ namespace
 			return 8;
 		}
 	};
-
-	struct C1_Derived : public C1 {};
-	struct C2_Derived : public C2 {};
-	struct C3_Derived : public C3 {};
-	struct C4_Derived : public C4 {};
-	struct C5_Derived : public C5 {};
-	struct C6_Derived : public C6 {};
-	struct C7_Derived : public C7 {};
-	struct C8_Derived : public C8 {};
 
 	SH_DECL_HOOK0_void(C1, F, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0(C1, G, SH_NOATTRIB, 0, int);
@@ -292,14 +282,14 @@ namespace
 		return 8;
 	}
 
-	C1_Derived g_C1;
-	C2_Derived g_C2;
-	C3_Derived g_C3;
-	C4_Derived g_C4;
-	C5_Derived g_C5;
-	C6_Derived g_C6;
-	C7_Derived g_C7;
-	C8_Derived g_C8;
+	C1 g_C1;
+	C2 g_C2;
+	C3 g_C3;
+	C4 g_C4;
+	C5 g_C5;
+	C6 g_C6;
+	C7 g_C7;
+	C8 g_C8;
 }
 
 bool TestReentr(std::string &error)
@@ -332,7 +322,7 @@ bool TestReentr(std::string &error)
 	SH_ADD_HOOK(C7, G, g_pC7, SH_STATIC(Handler_C7_G), false);
 	SH_ADD_HOOK(C8, F, g_pC8, SH_STATIC(Handler_C8_F), false);
 	SH_ADD_HOOK(C8, G, g_pC8, SH_STATIC(Handler_C8_G), false);
-
+		
 	g_pC1->F();
 
 	CHECK_STATES((&g_States,

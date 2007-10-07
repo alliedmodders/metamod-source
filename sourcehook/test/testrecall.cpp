@@ -48,11 +48,6 @@ namespace
 		}
 	};
 
-	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
-	struct Whatever : Test
-	{
-	};
-
 	void Handler1_Func1(int a)
 	{
 		ADD_STATE(State_H1_Func1(a));
@@ -124,7 +119,7 @@ bool TestRecall(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	Whatever inst;
+	Test inst;
 	Test *ptr = &inst;
 
 	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler1_Func1), false);

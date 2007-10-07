@@ -338,11 +338,6 @@ namespace
 		}
 	};
 
-	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
-	class Whatever : public Test
-	{
-	};
-
 	SH_DECL_HOOK1(Test, F299, SH_NOATTRIB, 0, bool, const char *);
 	SH_DECL_HOOK0_void(Test, F1, SH_NOATTRIB, 0);
 	SH_DECL_HOOK0_void(Test, F2, SH_NOATTRIB, 0);
@@ -421,36 +416,43 @@ bool TestBasic(std::string &error)
 	g_PLID = 1337;
 
 	HandlersF1 f1_handlers;
-	Whatever test;
+	Test test;
 	Test *pTest = &test;
 
-	// 1) SH_CALL it and call it normally
+	// 1) Get a call class and call the member through it and normally
+	SourceHook::CallClass<Test> *cc = SH_GET_CALLCLASS(pTest);
 
-	return true;
-	SH_CALL(pTest, &Test::F1)();
-	
+	ADD_STATE(State_F1_CallClassGenerated);
 
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
+		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
 		NULL), "Part 1");
 
 	// 2) Request a call class again
+	SourceHook::CallClass<Test> *cc2 = SH_GET_CALLCLASS(pTest);
+	ADD_STATE(State_F1_CallClassGenerated);
 
-	SH_CALL(pTest, &Test::F1)();
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
+	SH_CALL(cc2, &Test::F1)();
 	pTest->F1();
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_RELEASE_CALLCLASS(cc2);
+	ADD_STATE(State_F1_CallClassReleased);
+
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
+		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_Called,
 		new State_F1_Called,
-
+		new State_F1_CallClassReleased,
 		new State_F1_Called,
 		new State_F1_Called,
 		NULL), "Part 2");
@@ -460,7 +462,7 @@ bool TestBasic(std::string &error)
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
 	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false) ? true : false));
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -469,26 +471,30 @@ bool TestBasic(std::string &error)
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 3");
 
-	// 4) Test source-level compat with callclasses
-	SourceHook::CallClass<Test> *pCC = SH_GET_CALLCLASS(pTest);
+	// 4) Rerequest the callclass
+	SH_RELEASE_CALLCLASS(cc);
 
-	SH_CALL(pCC, &Test::F1)();
+	ADD_STATE(State_F1_CallClassReleased);
+	cc2 = SH_GET_CALLCLASS(pTest);
+	ADD_STATE(State_F1_CallClassGenerated);
+
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
-	SH_RELEASE_CALLCLASS(pCC);
-
 	CHECK_STATES((&g_States,
+		new State_F1_CallClassReleased,
+		new State_F1_CallClassGenerated,
 		new State_F1_Called,
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 4");
 
 	// 5) Check ignore / supercede
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	g_F1Pre_WhatToDo = MRES_IGNORED;
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -504,7 +510,7 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK_MEMFUNC(Test, F1, pTest, &f1_handlers, &HandlersF1::Pre, false);
 	ADD_STATE(State_F1_HookRemoved);
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -517,7 +523,7 @@ bool TestBasic(std::string &error)
 	g_F1Post_WhatToDo = MRES_IGNORED;
 	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Post), true) ? true : false));
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -531,11 +537,11 @@ bool TestBasic(std::string &error)
 	g_F1Pre_WhatToDo = MRES_IGNORED;
 	ADD_STATE(State_F1_HookAdded(SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false) ? true : false));
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -555,7 +561,7 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Post), true);
 	ADD_STATE(State_F1_HookRemoved);
 
-	SH_CALL(pTest, &Test::F1)();
+	SH_CALL(cc, &Test::F1)();
 	pTest->F1();
 
 	CHECK_STATES((&g_States,
@@ -570,7 +576,7 @@ bool TestBasic(std::string &error)
 	g_F299Pre_WhatToRet = false;
 
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -582,7 +588,7 @@ bool TestBasic(std::string &error)
 	// (one add staticfunc in old format)
 	SH_ADD_HOOK_STATICFUNC(Test, F299, pTest, F299_Pre, false);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -594,7 +600,7 @@ bool TestBasic(std::string &error)
 
 	SH_ADD_HOOK(Test, F299, pTest, SH_STATIC(F299_Post), true);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -607,7 +613,7 @@ bool TestBasic(std::string &error)
 
 	g_F299Pre_WhatToDo = MRES_OVERRIDE;
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -620,7 +626,7 @@ bool TestBasic(std::string &error)
 
 	g_F299Pre_WhatToDo = MRES_SUPERCEDE;
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_PreHandlerCalled("hi"),
@@ -633,7 +639,7 @@ bool TestBasic(std::string &error)
 	// (one remove staticfunc in old format)
 	SH_REMOVE_HOOK_STATICFUNC(Test, F299, pTest, F299_Pre, false);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -645,7 +651,7 @@ bool TestBasic(std::string &error)
 
 	SH_REMOVE_HOOK(Test, F299, pTest, SH_STATIC(F299_Post), true);
 	ADD_STATE(State_F299Ret(pTest->F299("hi")));
-	ADD_STATE(State_F299Ret(SH_CALL(pTest, &Test::F299)("hi")));
+	ADD_STATE(State_F299Ret(SH_CALL(cc, &Test::F299)("hi")));
 
 	CHECK_STATES((&g_States,
 		new State_F299_Called("hi"),
@@ -654,6 +660,14 @@ bool TestBasic(std::string &error)
 		new State_F299Ret(true),
 		NULL), "Part 10.7");
 
+	// 11) Release callclass
+	SH_RELEASE_CALLCLASS(cc);
+	ADD_STATE(State_F1_CallClassReleased);
+
+
+	CHECK_STATES((&g_States,
+		new State_F1_CallClassReleased,
+		NULL), "Part 11");
 
 	// 11 1/2) Test removing hook by id
 

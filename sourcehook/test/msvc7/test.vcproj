@@ -23,6 +23,7 @@
 				FavorSizeOrSpeed="0"
 				AdditionalIncludeDirectories=".."
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;SH_DEBUG"
+				GeneratePreprocessedFile="0"
 				StringPooling="TRUE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -300,16 +301,13 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
+				RelativePath="..\..\FastDelegate.h">
+			</File>
+			<File
 				RelativePath="..\..\sh_list.h">
 			</File>
 			<File
 				RelativePath="..\..\sh_listcat.h">
-			</File>
-			<File
-				RelativePath="..\..\sh_memfuncinfo.h">
-			</File>
-			<File
-				RelativePath="..\..\sh_memory.h">
 			</File>
 			<File
 				RelativePath="..\..\sh_stack.h">
@@ -328,6 +326,27 @@
 			</File>
 			<File
 				RelativePath="..\..\sourcehook_impl.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chook.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookidman.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookmancont.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookmaninfo.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_ciface.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cproto.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cvfnptr.h">
 			</File>
 			<File
 				RelativePath="..\sourcehook_test.h">

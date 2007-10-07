@@ -50,11 +50,6 @@ namespace
 		}
 	};
 
-	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
-	class Whatever : public IGaben
-	{
-	};
-
 	SH_DECL_HOOK0_void(IGaben, EatYams, SH_NOATTRIB, 0);
 	SH_DECL_HOOK1(IGaben, EatYams, const, 1, bool, const char *);
 	SH_DECL_HOOK2_void_vafmt(IGaben, Vafmt1, SH_NOATTRIB, 0, bool, int);
@@ -94,24 +89,25 @@ namespace
 
 bool TestVafmtAndOverload(std::string &error)
 {
+	int h1, h2, h3, h4;
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;	
 
-	Whatever gabgab;
+	IGaben gabgab;
 	IGaben *pGab = &gabgab;
 
 	// Part 1
 	SH_CALL(pGab, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();
 	SH_CALL(pGab, static_cast<bool (IGaben::*)(const char *) const>(&IGaben::EatYams))("Here!");
 
-	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams0_Handler, false);
-	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams1_Handler, false);
+	h1 = SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams0_Handler, false);
+	h2 = SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams1_Handler, false);
 
 	pGab->EatYams();
 	pGab->EatYams("Here!");
 
-	SH_REMOVE_HOOK(IGaben, EatYams, pGab, EatYams0_Handler, false);
-	SH_REMOVE_HOOK(IGaben, EatYams, pGab, EatYams1_Handler, false);
+	SH_REMOVE_HOOK_ID(h1);
+	SH_REMOVE_HOOK_ID(h2);
 
 	CHECK_STATES((&g_States, 
 		new State_EatYams_Called(0),
@@ -136,10 +132,10 @@ bool TestVafmtAndOverload(std::string &error)
 		NULL), "Part 2");
 
 	// Part 3
-	SH_ADD_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PreHandler, false);
-	SH_ADD_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PostHandler, true);
-	SH_ADD_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PreHandler, false);
-	SH_ADD_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PostHandler, true);
+	h1 = SH_ADD_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PreHandler, false);
+	h2 = SH_ADD_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PostHandler, true);
+	h3 = SH_ADD_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PreHandler, false);
+	h4 = SH_ADD_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PostHandler, true);
 
 	pGab->Vafmt1(true, 55, "Hello %s%d%s", "BA", 1, "L");
 	pGab->Vafmt2("Hello %s%d%s", "BA", 1, "LOPAN");
@@ -155,10 +151,10 @@ bool TestVafmtAndOverload(std::string &error)
 		NULL), "Part 3");
 
 	// Part 4
-	SH_REMOVE_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PreHandler, false);
-	SH_REMOVE_HOOK(IGaben, Vafmt1, pGab, Vafmt1_PostHandler, true);
-	SH_REMOVE_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PreHandler, false);
-	SH_REMOVE_HOOK(IGaben, Vafmt2, pGab, Vafmt2_PostHandler, true);
+	SH_REMOVE_HOOK_ID(h1);
+	SH_REMOVE_HOOK_ID(h2);
+	SH_REMOVE_HOOK_ID(h3);
+	SH_REMOVE_HOOK_ID(h4);
 
 	pGab->Vafmt1(true, 55, "Hello %s%d%s", "BA", 1, "L");
 	pGab->Vafmt2("Hello %s%d%s", "BA", 1, "LOPAN");

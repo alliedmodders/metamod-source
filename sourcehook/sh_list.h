@@ -97,6 +97,12 @@ namespace SourceHook
 
 			m_Size++;
 		}
+
+		void push_front(const T &obj)
+		{
+			insert(begin(), obj);
+		}
+
 		size_t size() const
 		{
 			return m_Size;
@@ -121,6 +127,10 @@ namespace SourceHook
 		bool empty() const
 		{
 			return (m_Size == 0);
+		}
+		T & front()
+		{
+			return m_Head->next->obj;
 		}
 		T & back()
 		{
@@ -206,6 +216,11 @@ namespace SourceHook
 			bool operator ==(const iterator &where) const
 			{
 				return (m_This == where.m_This);
+			}
+
+			operator bool()
+			{
+				return m_This != NULL;
 			}
 		private:
 			ListNode *m_This;

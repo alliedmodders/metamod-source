@@ -19,8 +19,6 @@ namespace
 	MAKE_STATE(State_Func2H_Called);
 	MAKE_STATE(State_Func3H_Called);
 
-	MAKE_STATE_2(State_PluginInUse, int, bool);
-
 	class Test
 	{
 	public:
@@ -40,14 +38,9 @@ namespace
 		}
 	};
 
-	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
-	class Whatever : public Test
-	{
-	};
-
-	SH_DECL_HOOK0_void(Test, Func1, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0_void(Test, Func2, SH_NOATTRIB, 0);
-	SH_DECL_HOOK0_void(Test, Func3, SH_NOATTRIB, 0);
+	SH_DECL_HOOK0_void(Test, Func1, SH_NOATTRIB, 1);
+	SH_DECL_HOOK0_void(Test, Func2, SH_NOATTRIB, 1);
+	SH_DECL_HOOK0_void(Test, Func3, SH_NOATTRIB, 1);
 
 	void Handler_Func1()
 	{
@@ -68,7 +61,7 @@ bool TestPlugSys(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1;
 
-	Whatever inst;
+	Test inst;
 	Test *pInst = &inst;
 
 	// 1)
@@ -143,18 +136,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 2.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 2.2");
-
 	// Unload plugins one by one
 	Test_UnloadPlugin(g_SHPtr, 3);
 
@@ -174,18 +155,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 2.3.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, false),
-		new State_PluginInUse(4, false),
-		NULL), "Part 2.3.2");
-
 	Test_UnloadPlugin(g_SHPtr, 2);
 
 	pInst->Func1();
@@ -201,18 +170,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 2.4.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, false),
-		new State_PluginInUse(3, false),
-		new State_PluginInUse(4, false),
-		NULL), "Part 2.4.2");
-
 	Test_UnloadPlugin(g_SHPtr, 1);
 
 	pInst->Func1();
@@ -224,18 +181,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func2_Called,
 		new State_Func3_Called,
 		NULL), "Part 2.5.1");
-
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, false),
-		new State_PluginInUse(2, false),
-		new State_PluginInUse(3, false),
-		new State_PluginInUse(4, false),
-		NULL), "Part 2.5.2");
 
 
 	// 3)
@@ -279,18 +224,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 3.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 3.2");
-
 	// Unload plugins one by one
 	Test_PausePlugin(g_SHPtr, 3);
 
@@ -310,18 +243,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 3.3.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 3.3.2");
-
 	Test_PausePlugin(g_SHPtr, 2);
 
 	pInst->Func1();
@@ -337,18 +258,6 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 3.4.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 3.4.2");
-
 	Test_PausePlugin(g_SHPtr, 1);
 
 	pInst->Func1();
@@ -361,33 +270,9 @@ bool TestPlugSys(std::string &error)
 		new State_Func3_Called,
 		NULL), "Part 3.5.1");
 
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 3.5.2");
-
 	Test_UnpausePlugin(g_SHPtr, 1);
 	Test_UnpausePlugin(g_SHPtr, 2);
 	Test_UnpausePlugin(g_SHPtr, 3);
-
-	ADD_STATE(State_PluginInUse(1, Test_IsPluginInUse(g_SHPtr, 1)));
-	ADD_STATE(State_PluginInUse(2, Test_IsPluginInUse(g_SHPtr, 2)));
-	ADD_STATE(State_PluginInUse(3, Test_IsPluginInUse(g_SHPtr, 3)));
-	ADD_STATE(State_PluginInUse(4, Test_IsPluginInUse(g_SHPtr, 4)));
-
-	CHECK_STATES((&g_States,
-		new State_PluginInUse(1, true),
-		new State_PluginInUse(2, true),
-		new State_PluginInUse(3, true),
-		new State_PluginInUse(4, false),
-		NULL), "Part 3.6");
 
 	pInst->Func1();
 	pInst->Func2();
