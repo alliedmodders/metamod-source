@@ -283,7 +283,9 @@ namespace SourceHook
 		bool CVfnPtr::Patch(void *newValue)
 		{
 			if (!SetMemAccess(m_Ptr, sizeof(void*), SH_MEM_READ | SH_MEM_WRITE))
+			{
 				return false;
+			}
 
 			*reinterpret_cast<void**>(m_Ptr) = newValue;
 
@@ -793,6 +795,7 @@ namespace SourceHook
 				if (oldctx->m_State == CHookContext::State_Ignore)
 				{
 					*statusPtr = MRES_IGNORED;
+					oldctx->m_CallOrig = true;
 					oldctx->m_State = CHookContext::State_Dead;
 
 					List<CVfnPtr> &vfnptrList = static_cast<CHookManager*>(hi)->GetVfnPtrList();
@@ -957,7 +960,6 @@ namespace SourceHook
 		ISHDelegate *CHookContext::GetNext()
 		{
 			CIface *pVPIface;
-
 			switch (m_State)
 			{
 			case State_Dead:

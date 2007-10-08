@@ -84,6 +84,11 @@ namespace
 		ADD_STATE(State_Vafmt_PostHandler_Called(2, std::string(in)));
 		return 0.0f;
 	}
+
+	IGaben *MyInstanceFactory()
+	{
+		return new IGaben;
+	}
 }
 
 
@@ -93,8 +98,8 @@ bool TestVafmtAndOverload(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;	
 
-	IGaben gabgab;
-	IGaben *pGab = &gabgab;
+	IGaben *pGab = MyInstanceFactory();
+	CAutoPtrDestruction<IGaben> apd(pGab);
 
 	// Part 1
 	SH_CALL(pGab, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();

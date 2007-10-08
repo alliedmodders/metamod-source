@@ -99,6 +99,11 @@ namespace
 			RETURN_META(MRES_SUPERCEDE);
 		}
 	};
+
+	TheWall *MyInstanceFactory()
+	{
+		return new TheWall;
+	}
 }
 
 bool TestManual(std::string &error)
@@ -106,8 +111,8 @@ bool TestManual(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	TheWall inst;
-	TheWall *p = &inst;
+	TheWall *p = MyInstanceFactory();
+	CAutoPtrDestruction<TheWall> apd(p);
 
 	SourceHook::ManualCallClass *cc = SH_GET_MCALLCLASS(p, sizeof(void*));
 

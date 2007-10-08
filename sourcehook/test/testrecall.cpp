@@ -112,6 +112,11 @@ namespace
 	SH_DECL_HOOK1_void(Test, Func1, SH_NOATTRIB, 0, int);
 	SH_DECL_HOOK1(Test, Func2, SH_NOATTRIB, 0, int, int);
 	SH_DECL_HOOK2(Test, Func2, SH_NOATTRIB, 1, int, int, int);
+
+	Test *MyTestFactory()
+	{
+		return new Test;
+	}
 }
 
 bool TestRecall(std::string &error)
@@ -119,8 +124,8 @@ bool TestRecall(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	Test inst;
-	Test *ptr = &inst;
+	Test *ptr = MyTestFactory();
+	CAutoPtrDestruction<Test> apd(ptr);
 
 	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler1_Func1), false);
 	SH_ADD_HOOK(Test, Func1, ptr, SH_STATIC(Handler2_Func1), false);

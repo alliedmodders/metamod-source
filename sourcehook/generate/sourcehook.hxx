@@ -841,7 +841,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 
 #define SH_CALL_HOOKS(post, params) \
 	prev_res = MRES_IGNORED; \
-	while ( iter = static_cast<IMyDelegate*>(pContext->GetNext()) ) \
+	while ( (iter = static_cast<IMyDelegate*>(pContext->GetNext())) ) \
 	{ \
 		cur_res = MRES_IGNORED; \
 		plugin_ret = iter->Call params; \
@@ -893,7 +893,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 
 #define SH_CALL_HOOKS_void(post, params) \
 	prev_res = MRES_IGNORED; \
-	while ( iter = static_cast<IMyDelegate*>(pContext->GetNext()) ) \
+	while ( (iter = static_cast<IMyDelegate*>(pContext->GetNext())) ) \
 	{ \
 		cur_res = MRES_IGNORED; \
 		iter->Call params; \

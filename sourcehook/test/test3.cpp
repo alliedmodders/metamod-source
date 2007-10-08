@@ -65,6 +65,11 @@ namespace
 	{
 		ADD_STATE(State_Func3H_Called(META_IFACEPTR(void)));
 	}
+
+	Derived *MyInstanceFactory()
+	{
+		return new Derived;
+	}
 }
 
 bool TestThisPtrOffs(std::string &error)
@@ -72,10 +77,12 @@ bool TestThisPtrOffs(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
 
-	Derived inst;
-	Derived *pD = &inst;
+	Derived *pD = MyInstanceFactory();
 	Base1 *pB1 = pD;
 	Base2 *pB2 = pD;
+
+	CAutoPtrDestruction<Derived> apd(pD);
+
 
 	// It should be:
 	// pB1 = pD

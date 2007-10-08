@@ -54,6 +54,11 @@ namespace
 	{
 		ADD_STATE(State_Func3H_Called);
 	}
+
+	Test *MyTestFactory()
+	{
+		return new Test;
+	}
 }
 
 bool TestPlugSys(std::string &error)
@@ -61,8 +66,8 @@ bool TestPlugSys(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1;
 
-	Test inst;
-	Test *pInst = &inst;
+	Test *pInst = MyTestFactory();
+	CAutoPtrDestruction<Test> apd(pInst);
 
 	// 1)
 	//   Add hooks, then issue a complete shutdown

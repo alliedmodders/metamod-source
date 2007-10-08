@@ -10,6 +10,14 @@
 SourceHook::ISourceHook *Test_Factory();
 void Test_Delete(SourceHook::ISourceHook *shptr);
 
+template <class T>
+struct CAutoPtrDestruction
+{
+	T *m_Ptr;
+	CAutoPtrDestruction(T *p) : m_Ptr(p) { }
+	~CAutoPtrDestruction() { delete m_Ptr; }
+};
+
 struct CSHPtrAutoDestruction
 {
 	SourceHook::ISourceHook *m_SHPtr;

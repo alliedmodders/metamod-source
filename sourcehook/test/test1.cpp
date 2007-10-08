@@ -391,13 +391,17 @@ namespace
 	{
 		hello = 10;
 	}
+
+	Test *MyTestFactory()
+	{
+		return new Test;
+	}
 }
 
 template <class T> T func(T a)
 {
 	return a;
 }
-
 
 bool TestBasic(std::string &error)
 {
@@ -416,8 +420,8 @@ bool TestBasic(std::string &error)
 	g_PLID = 1337;
 
 	HandlersF1 f1_handlers;
-	Test test;
-	Test *pTest = &test;
+	Test *pTest = MyTestFactory();
+	CAutoPtrDestruction<Test> apd(pTest);
 
 	void *pOrigVfnPtrF1 = (*reinterpret_cast<void***>(pTest))[0];
 

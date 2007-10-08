@@ -91,6 +91,11 @@ namespace
 
 	SH_DECL_HOOK0(Test, Func1, SH_NOATTRIB, 0, int&);
 	SH_DECL_HOOK1(Test, Func2, SH_NOATTRIB, 0, const int&, int);
+
+	Test *MyTestFactory()
+	{
+		return new Test;
+	}
 }
 
 bool TestRefRet(std::string &error)
@@ -98,40 +103,40 @@ bool TestRefRet(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1;
 
-	Test test;
-	Test *pTest = &test;
+	Test *pTest = MyTestFactory();
+	CAutoPtrDestruction<Test> apd(pTest);
 	CHook hook;
 
 	int &ret1 = pTest->Func1();
 	ADD_STATE(State_Func1_Ret(&ret1));
 
 	CHECK_STATES((&g_States,
-		new State_Func1(&test.m_Var1),
-		new State_Func1_Ret(&test.m_Var1),
+		new State_Func1(&pTest->m_Var1),
+		new State_Func1_Ret(&pTest->m_Var1),
 		NULL), "Part 1");
 
 	// Now add Func1_Pre1, which supercedes and returns hook.m_Var
-	SH_ADD_HOOK(Test, Func1, &test, SH_MEMBER(&hook, &CHook::Func1_Pre1), false);
+	SH_ADD_HOOK(Test, Func1, pTest, SH_MEMBER(&hook, &CHook::Func1_Pre1), false);
 
 	int &ret2 = pTest->Func1();
 	ADD_STATE(State_Func1_Ret(&ret2));
 	
 	CHECK_STATES((&g_States,
 		new State_Func1_Pre1(&hook.m_Var),		// Pre1 says that it's going to override with hook.m_Var
-		new State_Func1(&test.m_Var1),			// Function says that it's going to return test.m_Var1
+		new State_Func1(&pTest->m_Var1),			// Function says that it's going to return pTest->m_Var1
 		new State_Func1_Ret(&hook.m_Var),		// hook.m_Var is returned
 		NULL), "Part 2");
 
 	// Now add Func1_Post1, which only reports orig ret and override ret
-	SH_ADD_HOOK(Test, Func1, &test, SH_MEMBER(&hook, &CHook::Func1_Post1), true);
+	SH_ADD_HOOK(Test, Func1, pTest, SH_MEMBER(&hook, &CHook::Func1_Post1), true);
 
 	int &ret3 = pTest->Func1();
 	ADD_STATE(State_Func1_Ret(&ret3));
 	
 	CHECK_STATES((&g_States,
 		new State_Func1_Pre1(&hook.m_Var),		// Pre1 says that it's going to override with hook.m_Var
-		new State_Func1(&test.m_Var1),			// Function says that it's going to return test.m_Var1
-		new State_Func1_Post1(&test.m_Var1, &hook.m_Var),	// origret(=p1) is what it wanted to
+		new State_Func1(&pTest->m_Var1),			// Function says that it's going to return pTest->m_Var1
+		new State_Func1_Post1(&pTest->m_Var1, &hook.m_Var),	// origret(=p1) is what it wanted to
 															// return, overrideret(=p2) is pre1's var
 		new State_Func1_Ret(&hook.m_Var),		// hook.m_Var is returned
 		NULL), "Part 3");
@@ -139,8 +144,8 @@ bool TestRefRet(std::string &error)
 	// Now add Func1_Pre2, which supercedes and returns g_Var (it also sets the override ret from pre1 to 1337)
 	// and add Func1_Post2, which overrides and returns hook.m_Var again.
 
-	SH_ADD_HOOK(Test, Func1, &test, SH_MEMBER(&hook, &CHook::Func1_Pre2), false);
-	SH_ADD_HOOK(Test, Func1, &test, SH_MEMBER(&hook, &CHook::Func1_Post2), true);
+	SH_ADD_HOOK(Test, Func1, pTest, SH_MEMBER(&hook, &CHook::Func1_Pre2), false);
+	SH_ADD_HOOK(Test, Func1, pTest, SH_MEMBER(&hook, &CHook::Func1_Post2), true);
 
 	int &ret4 = pTest->Func1();
 	ADD_STATE(State_Func1_Ret(&ret4));
@@ -160,13 +165,13 @@ bool TestRefRet(std::string &error)
 	CHECK_COND(hook.m_Var == 1337, "Part 4.1");
 	
 	// Through a callclass
-	SourceHook::CallClass<Test> *cc1 = SH_GET_CALLCLASS(&test);
+	SourceHook::CallClass<Test> *cc1 = SH_GET_CALLCLASS(pTest);
 	int &ret5 = SH_CALL(cc1, &Test::Func1)();
 	ADD_STATE(State_Func1_Ret(&ret5));
 
 	CHECK_STATES((&g_States,
-		new State_Func1(&test.m_Var1),
-		new State_Func1_Ret(&test.m_Var1),
+		new State_Func1(&pTest->m_Var1),
+		new State_Func1_Ret(&pTest->m_Var1),
 		NULL), "Part 5");
 
 	SH_RELEASE_CALLCLASS(cc1);
@@ -177,21 +182,21 @@ bool TestRefRet(std::string &error)
 	ADD_STATE(State_Func2_Ret(&ret21));
 
 	CHECK_STATES((&g_States,
-		new State_Func2(500, &test.m_Var2),
-		new State_Func2_Ret(&test.m_Var2),
+		new State_Func2(500, &pTest->m_Var2),
+		new State_Func2_Ret(&pTest->m_Var2),
 		NULL), "Part 6");
 
-	SH_ADD_HOOK(Test, Func2, &test, SH_MEMBER(&hook, &CHook::Func2_Pre1), false);
-	SH_ADD_HOOK(Test, Func2, &test, SH_MEMBER(&hook, &CHook::Func2_Post1), true);
+	SH_ADD_HOOK(Test, Func2, pTest, SH_MEMBER(&hook, &CHook::Func2_Pre1), false);
+	SH_ADD_HOOK(Test, Func2, pTest, SH_MEMBER(&hook, &CHook::Func2_Post1), true);
 
 	const int &ret22 = pTest->Func2(500);
 	ADD_STATE(State_Func2_Ret(&ret22));
 
 	CHECK_STATES((&g_States,
 		new State_Func2_Pre1(500, &hook.m_Var),		// p1 was 500; it's going to override with hook.m_Var; and also change p1 to 1337
-		new State_Func2(1337, &test.m_Var2),		// p1 was 1337; it's going to ret test.m_Var2
+		new State_Func2(1337, &pTest->m_Var2),		// p1 was 1337; it's going to ret pTest->m_Var2
 		new State_Func2_Post1(1337,					// p1 was 1337
-			&test.m_Var2,							// orig ret was test.m_Var2
+			&pTest->m_Var2,							// orig ret was pTest->m_Var2
 			&hook.m_Var),							// override ret was hook.m_Var
 		new State_Func2_Ret(&hook.m_Var),			// really returned hook.m_Var
 		NULL), "Part 7");
