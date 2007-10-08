@@ -698,20 +698,23 @@ namespace SourceHook
 
 			CHookManagerContainer::iterator cont_iter = container.find(CHookManager::Descriptor(plug, pubFunc));
 
-			for (List<CVfnPtr>::iterator vfnptr_iter = cont_iter->GetVfnPtrList().begin();
-				vfnptr_iter != cont_iter->GetVfnPtrList().end(); ++vfnptr_iter)
+			if (cont_iter != container.end())
 			{
-				for (List<CIface>::iterator iface_iter = vfnptr_iter->GetIfaceList().begin();
-					iface_iter != vfnptr_iter->GetIfaceList().end(); ++iface_iter)
+				for (List<CVfnPtr>::iterator vfnptr_iter = cont_iter->GetVfnPtrList().begin();
+					vfnptr_iter != cont_iter->GetVfnPtrList().end(); ++vfnptr_iter)
 				{
-					List<CHook>::iterator hook_iter;
-					for (hook_iter = iface_iter->GetPreHookList().begin();
-						hook_iter != iface_iter->GetPreHookList().end(); ++hook_iter)
-						removehooks.push_back(hook_iter->GetID());
-
-					for (hook_iter = iface_iter->GetPostHookList().begin();
-						hook_iter != iface_iter->GetPostHookList().end(); ++hook_iter)
-						removehooks.push_back(hook_iter->GetID());
+					for (List<CIface>::iterator iface_iter = vfnptr_iter->GetIfaceList().begin();
+						iface_iter != vfnptr_iter->GetIfaceList().end(); ++iface_iter)
+					{
+						List<CHook>::iterator hook_iter;
+						for (hook_iter = iface_iter->GetPreHookList().begin();
+							hook_iter != iface_iter->GetPreHookList().end(); ++hook_iter)
+							removehooks.push_back(hook_iter->GetID());
+	
+						for (hook_iter = iface_iter->GetPostHookList().begin();
+							hook_iter != iface_iter->GetPostHookList().end(); ++hook_iter)
+							removehooks.push_back(hook_iter->GetID());
+					}
 				}
 			}
 
