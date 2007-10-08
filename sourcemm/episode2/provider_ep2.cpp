@@ -518,7 +518,24 @@ bool CacheUserMessages()
 	#endif
 	}
 
-	if (dict)
+	#if !defined OS_WIN32
+	if (dict == NULL)
+	{
+		char path[255];
+		if (GetFileOfAddress(vfunc, path, sizeof(path)))
+		{
+			void *handle = dlopen(path, RTLD_NOW);
+			if (handle != NULL)
+			{
+				void *addr = dlsym(handle, "usermessages");
+				dict = (UserMsgDict *)*(void **)addr;
+				dlclose(handle);
+			}
+		}
+	}
+	#endif
+
+	if (dict != NULL)
 	{
 		int msg_count = dict->Count();
 
