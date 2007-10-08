@@ -104,9 +104,9 @@ public:
 	bool UnloadAll();
 	void SetAlias(const char *alias, const char *value);
 public:
-	bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
+	bool Query(PluginId id, const char **file, Pl_Status *status, PluginId *source);
 	bool QueryRunning(PluginId id, char *error, size_t maxlength);
-	bool QueryHandle(PluginId id, void *&handle);
+	bool QueryHandle(PluginId id, void **handle);
 
 	void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
 	void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);

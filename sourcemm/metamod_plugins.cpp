@@ -623,7 +623,7 @@ bool CPluginManager::UnloadAll()
 	return status;
 }
 
-bool CPluginManager::Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source)
+bool CPluginManager::Query(PluginId id, const char **file, Pl_Status *status, PluginId *source)
 {
 	CPlugin *pl = FindById(id);
 
@@ -632,9 +632,20 @@ bool CPluginManager::Query(PluginId id, const char *&file, Pl_Status &status, Pl
 		return false;
 	}
 
-	file = pl->m_File.c_str();
-	status = pl->m_Status;
-	source = pl->m_Source;
+	if (file != NULL)
+	{
+		*file = pl->m_File.c_str();
+	}
+
+	if (status != NULL)
+	{
+		*status = pl->m_Status;
+	}
+
+	if (source != NULL)
+	{
+		*source = pl->m_Source;
+	}
 
 	return true;
 }
@@ -655,7 +666,7 @@ bool CPluginManager::QueryRunning(PluginId id, char *error, size_t maxlength)
 	return pl->m_API->QueryRunning(error, maxlength);
 }
 
-bool CPluginManager::QueryHandle(PluginId id, void *&handle)
+bool CPluginManager::QueryHandle(PluginId id, void **handle)
 {
 	CPlugin *pl = FindById(id);
 
@@ -664,7 +675,10 @@ bool CPluginManager::QueryHandle(PluginId id, void *&handle)
 		return false;
 	}
 
-	handle = static_cast<void *>(pl->m_Lib);
+	if (handle)
+	{
+		*handle = static_cast<void *>(pl->m_Lib);
+	}
 
 	return true;
 }

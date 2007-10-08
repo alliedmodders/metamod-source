@@ -122,13 +122,13 @@ namespace SourceMM
 		/**
 		 * @brief Returns information about a plugin
 		 *
-		 * @param id Id of plugin
-		 * @param file Pointer to file string by reference
-		 * @param status By reference status of plugin
-		 * @param source By reference source of plugin
-		 * @return True on success, false if not found
+		 * @param id 		Id of plugin
+		 * @param file 		Pointer to store filename pointer, or NULL to ignore.
+		 * @param status 	Pointer to store status, or NULL to ignore.
+		 * @param source 	Pointer to store source, or NULL to ignore.
+		 * @return 			True on success, false if not found
 		 */
-		virtual bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source) =0;
+		virtual bool Query(PluginId id, const char **file, Pl_Status *status, PluginId *source) =0;
 	
 		/** 
 		 * @brief Checks another plugin's QueryRunning() status.
@@ -144,10 +144,10 @@ namespace SourceMM
 		 * @brief Returns the handle of a plugin (OS dependent meaning)
 		 * 
 		 * @param id		Id of plugin
-		 * @param handle	By reference handle of plugin, if any
+		 * @param handle	Pointer to store handle pointer, or NULL to ignore.
 		 * @return			True if plugin id is valid, false otherwise
 		 */
-		virtual bool QueryHandle(PluginId id, void *&handle) =0;
+		virtual bool QueryHandle(PluginId id, void **handle) =0;
 	};
 }
 
