@@ -696,12 +696,12 @@ namespace SourceHook
 			CHookManagerContainer &container = m_HookManContainers.GetContainer(hookManager.GetVtblOffs(),
 				hookManager.GetVtblIdx(), hookManager.GetProto());
 
-			CHookManagerContainer::iterator cont_iter = container.find(CHookManager::Descriptor(plug, pubFunc));
+			CHookManagerContainer::iterator hookman_iter = container.find(CHookManager::Descriptor(plug, pubFunc));
 
-			if (cont_iter != container.end())
+			if (hookman_iter != container.end())
 			{
-				for (List<CVfnPtr>::iterator vfnptr_iter = cont_iter->GetVfnPtrList().begin();
-					vfnptr_iter != cont_iter->GetVfnPtrList().end(); ++vfnptr_iter)
+				for (List<CVfnPtr>::iterator vfnptr_iter = hookman_iter->GetVfnPtrList().begin();
+					vfnptr_iter != hookman_iter->GetVfnPtrList().end(); ++vfnptr_iter)
 				{
 					for (List<CIface>::iterator iface_iter = vfnptr_iter->GetIfaceList().begin();
 						iface_iter != vfnptr_iter->GetIfaceList().end(); ++iface_iter)
