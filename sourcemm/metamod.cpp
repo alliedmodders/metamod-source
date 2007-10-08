@@ -44,6 +44,7 @@
 
 using namespace SourceMM;
 using namespace SourceHook;
+using namespace SourceHook::Impl;
 
 /**
  * @brief Implementation of main SourceMM GameDLL functionality
@@ -92,8 +93,8 @@ CreateInterfaceFn engine_factory = NULL;
 CreateInterfaceFn physics_factory = NULL;
 CreateInterfaceFn filesystem_factory = NULL;
 CGlobalVars *gpGlobals = NULL;
-SourceHook::CSourceHookImpl g_SourceHook;
-SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
+CSourceHookImpl g_SourceHook;
+ISourceHook *g_SHPtr = &g_SourceHook;
 PluginId g_PLID = Pl_Console;
 META_RES last_meta_res;
 IServerPluginCallbacks *vsp_callbacks = NULL;

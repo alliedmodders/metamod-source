@@ -101,7 +101,8 @@ public:
 void LogMessage(const char *msg, ...);
 int LoadPluginsFromFile(const char *_file);
 
-extern SourceHook::CSourceHookImpl g_SourceHook;
 extern MetamodSource g_Metamod;
+extern SourceHook::Impl::CSourceHookImpl g_SourceHook;
 
 #endif //_INCLUDE_SOURCEMM_H
+
