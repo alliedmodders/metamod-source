@@ -21,7 +21,6 @@ SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, in
 
 StubPlugin g_StubPlugin;
 IServerGameDLL *server = NULL;
-int hidServerActivate = 0;
 
 PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
 bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
@@ -30,17 +29,14 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 
 	GET_V_IFACE_ANY(GetServerFactory, server, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 
-	hidServerActivate = SH_ADD_HOOK(IServerGameDLL, ServerActivate, server, SH_STATIC(Hook_ServerActivate), true);
+	SH_ADD_HOOK(IServerGameDLL, ServerActivate, server, SH_STATIC(Hook_ServerActivate), true);
 
 	return true;
 }
 
 bool StubPlugin::Unload(char *error, size_t maxlen)
 {
-	if (hidServerActivate != 0)
-	{
-		SH_REMOVE_HOOK_ID(hidServerActivate);
-	}
+	SH_REMOVE_HOOK(IServerGameDLL, ServerActivate, server, SH_STATIC(Hook_ServerActivate), true);
 
 	return true;
 }
