@@ -336,6 +336,7 @@ bool TestManual(std::string &error)
 
 	// 5) Reconfigure TheWall_Func1 to actually hook Func5:
 	SH_MANUALHOOK_RECONFIGURE(TheWall_Func1, 4, 0, 0);
+	SH_MANUALHOOK_RECONFIGURE(TheWall_Func1, 4, 0, 0);
 	SH_ADD_MANUALHOOK(TheWall_Func1, p, SH_STATIC(Handler_Func1), false);
 
 	p->Func5();
