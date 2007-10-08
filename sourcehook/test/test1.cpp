@@ -439,7 +439,6 @@ bool TestBasic(std::string &error)
 		new State_F1_Called,
 		NULL), "Part 1");
 
-	CHECK_COND(SH_GET_ORIG_VFNPTR_ENTRY(pTest, &Test::F1) == pOrigVfnPtrF1, "Part S1");
 
 	// 2) Request a call class again
 	SourceHook::CallClass<Test> *cc2 = SH_GET_CALLCLASS(pTest);
@@ -479,7 +478,6 @@ bool TestBasic(std::string &error)
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 3");
 
-	CHECK_COND(SH_GET_ORIG_VFNPTR_ENTRY(pTest, &Test::F1) == pOrigVfnPtrF1, "Part S3");
 
 	// 4) Rerequest the callclass
 	SH_RELEASE_CALLCLASS(cc);
