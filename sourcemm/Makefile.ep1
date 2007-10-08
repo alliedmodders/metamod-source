@@ -51,6 +51,8 @@ $(BIN_DIR)/%.o: %.cpp
 all:
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(BIN_DIR)/episode1
+	rm -f vstdlib_i486.so
+	rm -f tier0_i486.so
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp

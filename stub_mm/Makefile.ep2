@@ -3,7 +3,7 @@
 
 HL2SDK = ../../hl2sdk-ob
 SMM_ROOT = ..
-SRCDS = ~/srcds
+SRCDS = ~/srcds/orangebox
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
@@ -45,6 +45,8 @@ $(BIN_DIR)/%.o: %.cpp
 
 all:
 	mkdir -p $(BIN_DIR)
+	rm -f vstdlib_i486.so
+	rm -f tier0_i486.so
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	$(MAKE) -f Makefile.ep2 stub_mm
