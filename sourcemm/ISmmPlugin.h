@@ -415,7 +415,6 @@ namespace SourceMM
 using namespace SourceMM;
 #endif
 
-
 #define PL_EXPOSURE		CreateInterface
 #define PL_EXPOSURE_C	"CreateInterface"
 
