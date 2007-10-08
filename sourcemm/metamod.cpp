@@ -876,8 +876,8 @@ void MetamodSource::ConPrintf(const char *fmt, ...)
 
 void MetamodSource::GetApiVersions(int &major, int &minor, int &plvers, int &plmin)
 {
-	major = SM_VERS_API_MAJOR;
-	minor = SM_VERS_API_MINOR;
+	major = METAMOD_API_MAJOR;
+	minor = METAMOD_API_MINOR;
 	plvers = METAMOD_PLAPI_VERSION;
 	plmin = PLAPI_MIN_VERSION;
 }

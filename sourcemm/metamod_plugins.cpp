@@ -60,6 +60,17 @@ using namespace SourceMM;
 
 CPluginManager g_PluginMngr;
 
+MetamodVersionInfo GlobVersionInfo = 
+{
+	METAMOD_API_MAJOR,
+	METAMOD_API_MINOR,
+	SH_IFACE_VERSION,
+	SH_IMPL_VERSION,
+	PLAPI_MIN_VERSION,
+	METAMOD_PLAPI_VERSION,
+	SOURCE_ENGINE_UNKNOWN
+};
+
 CPluginManager::CPluginManager()
 {
 	m_LastId = Pl_MinId;
@@ -139,7 +150,7 @@ void CPluginManager::SetAlias(const char *alias, const char *value)
 	}
 }
 
-CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NULL)
+CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NULL), m_UnloadFn(NULL)
 {
 
 }
@@ -415,62 +426,95 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		}
 		else
 		{
-			CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
-			if (!pfn)
+			pl->m_API = NULL;
+			
+			/**
+			 * First, try the new "advanced" interface
+			 */
+			METAMOD_FN_LOAD fnLoad = (METAMOD_FN_LOAD)dlsym(pl->m_Lib, "CreateInterface_MMS");
+			if (fnLoad != NULL)
 			{
-				if (error)
+				if (GlobVersionInfo.source_engine == SOURCE_ENGINE_UNKNOWN)
 				{
-					UTIL_Format(error, maxlen, "Function %s not found", PL_EXPOSURE_C);
+					GlobVersionInfo.source_engine = g_Metamod.GetSourceEngineBuild();
 				}
-				pl->m_Status = Pl_Error;
+
+				pl->m_API = fnLoad(&GlobVersionInfo, NULL);
+				pl->m_UnloadFn = (METAMOD_FN_UNLOAD)dlsym(pl->m_Lib, "UnloadInterface_MMS");
 			}
-			else
+
+			/**
+			 * If we didn't get anything, try the normal/simple interface.
+			 */
+			if (pl->m_API == NULL)
 			{
-				pl->m_API = static_cast<ISmmPlugin *>((pfn)(METAMOD_PLAPI_NAME, NULL));
-				if (!pl->m_API)
+				CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
+				if (!pfn)
 				{
 					if (error)
 					{
-						UTIL_Format(error, maxlen, "Failed to get API");
+						UTIL_Format(error, maxlen, "Function %s not found", PL_EXPOSURE_C);
 					}
 					pl->m_Status = Pl_Error;
 				}
 				else
 				{
-					int api = pl->m_API->GetApiVersion();
-					if (api < PLAPI_MIN_VERSION)
+					pl->m_API = static_cast<ISmmPlugin *>((pfn)(METAMOD_PLAPI_NAME, NULL));
+
+					if (!pl->m_API)
 					{
 						if (error)
 						{
-							UTIL_Format(error, maxlen, "Plugin API %d is out of date with required minimum (%d)", api, PLAPI_MIN_VERSION);
+							UTIL_Format(error, maxlen, "Failed to get API");
 						}
 						pl->m_Status = Pl_Error;
 					}
-					else if (api > METAMOD_PLAPI_VERSION)
+				}
+			}
+
+			if (pl->m_API != NULL)
+			{
+				int api = pl->m_API->GetApiVersion();
+				if (api < PLAPI_MIN_VERSION)
+				{
+					if (error)
 					{
-						if (error)
+						if (api == 13)
 						{
-							UTIL_Format(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, METAMOD_PLAPI_VERSION);
+							UTIL_Format(error, maxlen, "Plugin uses experimental Metamod build, probably 1.6.x (%d < %d)", api, PLAPI_MIN_VERSION);
 						}
-						pl->m_Status = Pl_Error;
-					}
-					else
-					{
-						if (pl->m_API->Load(pl->m_Id, &g_Metamod, error, maxlen, m_AllLoaded))
+						else if (api <= 12 && api >= 7)
 						{
-							pl->m_Status = Pl_Running;
-							if (m_AllLoaded)
-							{
-								//API 4 is when we added this callback
-								//Removing this code as the min version is now 5
-								//if (pl->m_API->GetApiVersion() >= 4)
-								pl->m_API->AllPluginsLoaded();
-							}
+							UTIL_Format(error, maxlen, "Older Metamod version required, probably 1.4.x (%d < %d)", api, PLAPI_MIN_VERSION);
 						}
 						else
 						{
-							pl->m_Status = Pl_Refused;
+							UTIL_Format(error, maxlen, "Older Metamod version required, probably 1.0 (%d < %d)", api, PLAPI_MIN_VERSION);
 						}
+					}
+					pl->m_Status = Pl_Error;
+				}
+				else if (api > METAMOD_PLAPI_VERSION)
+				{
+					if (error)
+					{
+						UTIL_Format(error, maxlen, "Plugin requires newer Metamod version (%d > %d)", api, METAMOD_PLAPI_VERSION);
+					}
+					pl->m_Status = Pl_Error;
+				}
+				else
+				{
+					if (pl->m_API->Load(pl->m_Id, &g_Metamod, error, maxlen, m_AllLoaded))
+					{
+						pl->m_Status = Pl_Running;
+						if (m_AllLoaded)
+						{
+							pl->m_API->AllPluginsLoaded();
+						}
+					}
+					else
+					{
+						pl->m_Status = Pl_Refused;
 					}
 				}
 			}
@@ -482,6 +526,11 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		pl->m_Events.clear();
 		g_SourceHook.UnloadPlugin(pl->m_Id);
 		UnregAllConCmds(pl);
+
+		if (pl->m_UnloadFn != NULL)
+		{
+			pl->m_UnloadFn();
+		}
 
 		dlclose(pl->m_Lib);
 		pl->m_Lib = NULL;
@@ -509,6 +558,11 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 			pl->m_Events.clear();
 
 			UnregAllConCmds(pl);
+
+			if (pl->m_UnloadFn != NULL)
+			{
+				pl->m_UnloadFn();
+			}
 
 			//Clean up the DLL
 			dlclose(pl->m_Lib);

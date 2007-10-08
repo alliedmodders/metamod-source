@@ -51,8 +51,8 @@ using namespace SourceMM;
  */
 #define SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
 #define SOURCEMM_DATE		__DATE__
-#define SM_VERS_API_MAJOR	2		//increase this on a breaking change
-#define SM_VERS_API_MINOR	0		//increase this on a non-breaking API change
+#define METAMOD_API_MAJOR	2		/* increase this on a breaking change */
+#define METAMOD_API_MINOR	0		/* increase this on a non-breaking API change */
 
 class MetamodSource : public ISmmAPI
 {

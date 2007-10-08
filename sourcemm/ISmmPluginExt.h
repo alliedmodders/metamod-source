@@ -30,8 +30,10 @@
 
 namespace SourceMM
 {
-	class ISmmAPI;
+	class ISmmPlugin;
 }
+
+typedef SourceMM::ISmmPlugin METAMOD_PLUGIN;
 
 /**
  * @file ISmmPluginExt.h 	Definitions for extended plugin exposure syntax.
@@ -74,14 +76,17 @@ struct MetamodLoaderInfo
  * @param mli				MetamodLoaderInfo structure.
  * @return					ISmmAPI pointer, or NULL if none.
  */
-typedef SourceMM::ISmmAPI *(*METAMOD_FN_LOAD)(const MetamodVersionInfo *mvi, 
-											  const MetamodLoaderInfo *mli);
+typedef METAMOD_PLUGIN *(*METAMOD_FN_LOAD)(const MetamodVersionInfo *mvi, 
+										   const MetamodLoaderInfo *mli);
 
 /**
  * @brief If a function of this type is exposed as "UnloadInterface_MMS", then
  * Metamod:Source will attempt to call this function after calling 
  * ISmmAPI::Unload(), and before closing the library.  This lets loader plugins 
  * clean up before exiting.
+ *
+ * Note: This function will be ignored unless CreateInterfce_MMS was exposed.
+ * It may be called even if ISmmAPI::Unload() could not be called.
  */
 typedef void (*METAMOD_FN_UNLOAD)();
 

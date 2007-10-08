@@ -38,7 +38,8 @@
 #include <convar.h>
 #include <sh_list.h>
 #include <sh_string.h>
-#include "IPluginManager.h"
+#include <IPluginManager.h>
+#include <ISmmPluginExt.h>
 #include "metamod_oslink.h"
 
 /**
@@ -58,10 +59,11 @@
  *    10: Added VSP listen functions to ISmmAPI and IMetamodListener (2007-02-09)
  *    11: New SourceHook version v4.5 (May, 2007)
  *    12: Orange Box API
- * MC 13: Breaking of API for next SH version and other API changes
+ *    13: Breaking of API for next SH version and other API changes
+ * MC 14: ABI stability reached for 1.6.0 changes
  */
 
-#define PLAPI_MIN_VERSION	13
+#define PLAPI_MIN_VERSION	14
 
 struct CNameAlias
 {
@@ -91,6 +93,7 @@ public:
 		SourceHook::List<ConCommandBase *> m_Cvars;
 		SourceHook::List<ConCommandBase *> m_Cmds;
 		SourceHook::List<IMetamodListener *> m_Events;
+		METAMOD_FN_UNLOAD m_UnloadFn;
 	};
 public:
 	CPluginManager();
