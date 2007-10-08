@@ -95,12 +95,12 @@ const char *CPluginManager::LookupAlias(const char *alias)
 	return NULL;
 }
 
-SourceHook::List<SourceMM::CNameAlias *>::iterator CPluginManager::_alias_begin()
+SourceHook::List<CNameAlias *>::iterator CPluginManager::_alias_begin()
 {
 	return m_Aliases.begin();
 }
 
-SourceHook::List<SourceMM::CNameAlias *>::iterator CPluginManager::_alias_end()
+SourceHook::List<CNameAlias *>::iterator CPluginManager::_alias_end()
 {
 	return m_Aliases.end();
 }
@@ -426,7 +426,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 			}
 			else
 			{
-				pl->m_API = static_cast<ISmmPlugin *>((pfn)(PLAPI_NAME, NULL));
+				pl->m_API = static_cast<ISmmPlugin *>((pfn)(METAMOD_PLAPI_NAME, NULL));
 				if (!pl->m_API)
 				{
 					if (error)
@@ -446,11 +446,11 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 						}
 						pl->m_Status = Pl_Error;
 					}
-					else if (api > PLAPI_VERSION)
+					else if (api > METAMOD_PLAPI_VERSION)
 					{
 						if (error)
 						{
-							UTIL_Format(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, PLAPI_VERSION);
+							UTIL_Format(error, maxlen, "Plugin API %d is newer than internal version (%d)", api, METAMOD_PLAPI_VERSION);
 						}
 						pl->m_Status = Pl_Error;
 					}

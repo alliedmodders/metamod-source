@@ -72,7 +72,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 		{
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
-			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+			CONMSG("Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 			CONMSG("SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
 			CONMSG("http://www.sourcemm.net/\n");
 
@@ -679,7 +679,7 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 			{
 				CLIENT_CONMSG(client, "Metamod:Source version %s\n", SOURCEMM_VERSION);
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
-				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
 				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
 

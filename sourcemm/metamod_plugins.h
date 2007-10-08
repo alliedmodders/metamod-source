@@ -35,6 +35,7 @@
 
 #include <interface.h>
 #include <eiface.h>
+#include <convar.h>
 #include <sh_list.h>
 #include <sh_string.h>
 #include "IPluginManager.h"
@@ -62,108 +63,105 @@
 
 #define PLAPI_MIN_VERSION	13
 
-namespace SourceMM
+struct CNameAlias
 {
-	struct CNameAlias
-	{
-		SourceHook::String alias;
-		SourceHook::String value;
-	};
+	SourceHook::String alias;
+	SourceHook::String value;
+};
+/**
+ * @brief Implements Plugin Manager API
+ */
+class CPluginManager : public ISmmPluginManager
+{	
+public:
 	/**
-	 * @brief Implements Plugin Manager API
+	 * @brief Internal structure for holding plugin data
 	 */
-	class CPluginManager : public ISmmPluginManager
-	{	
+	class CPlugin
+	{
 	public:
-		/**
-		 * @brief Internal structure for holding plugin data
-		 */
-		class CPlugin
-		{
-		public:
-			CPlugin();
-		public:
-			PluginId m_Id;
-			SourceHook::String m_File;
-			Pl_Status m_Status;
-			PluginId m_Source;
-			ISmmPlugin *m_API;
-			HINSTANCE m_Lib;
-			SourceHook::List<ConCommandBase *> m_Cvars;
-			SourceHook::List<ConCommandBase *> m_Cmds;
-			SourceHook::List<IMetamodListener *> m_Events;
-		};
+		CPlugin();
 	public:
-		CPluginManager();
-		~CPluginManager();
-		void SetAllLoaded();
-	public:
-		PluginId Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen);
-		bool Unload(PluginId id, bool force, char *error, size_t maxlen);
-		bool Pause(PluginId id, char *error, size_t maxlen);
-		bool Unpause(PluginId id, char *error, size_t maxlen);
-		bool UnloadAll();
-		void SetAlias(const char *alias, const char *value);
-	public:
-		bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
-		bool QueryRunning(PluginId id, char *error, size_t maxlength);
-		bool QueryHandle(PluginId id, void *&handle);
-
-		void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
-		void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
-		void RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
-		void RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
-
-		/**
-		 * @brief Finds a plugin by Id
-		 *
-		 * @param id Id of plugin
-		 * @return CPlugin on success, NULL otherwise
-		 */
-		CPlugin *FindById(PluginId id);
-
-		CPlugin *FindByAPI(ISmmPlugin *api);
-
-		/**
-		 * @brief Attempts to reload a failed plugin
-		 *
-		 * @param id Id of plugin
-		 * @param error Error message buffer
-		 * @param len Maximum length of buffer
-		 * @return True on success, false otherwise
-		 */
-		bool Retry(PluginId id, char *error, size_t len);
-
-		int GetPluginCount();
-		const char *GetStatusText(CPlugin *pl);
-
-		//get alias info
-		const char *LookupAlias(const char *alias);
-		SourceHook::List<SourceMM::CNameAlias *>::iterator _alias_begin();
-		SourceHook::List<SourceMM::CNameAlias *>::iterator _alias_end();
-
-		//Internal iterators
-		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
-		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
-	private:
-		//These are identical internal functions for the wrappers above.
-		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
-		bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen);
-		bool _Pause(CPlugin *pl, char *error, size_t maxlen);
-		bool _Unpause(CPlugin *pl, char *error, size_t maxlen);
-		void UnregAllConCmds(CPlugin *pl);
-	private:
-		PluginId m_LastId;
-		SourceHook::List<CPlugin *> m_Plugins;
-		SourceHook::List<CNameAlias *> m_Aliases;
-		bool m_AllLoaded;
+		PluginId m_Id;
+		SourceHook::String m_File;
+		Pl_Status m_Status;
+		PluginId m_Source;
+		ISmmPlugin *m_API;
+		HINSTANCE m_Lib;
+		SourceHook::List<ConCommandBase *> m_Cvars;
+		SourceHook::List<ConCommandBase *> m_Cmds;
+		SourceHook::List<IMetamodListener *> m_Events;
 	};
+public:
+	CPluginManager();
+	~CPluginManager();
+	void SetAllLoaded();
+public:
+	PluginId Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen);
+	bool Unload(PluginId id, bool force, char *error, size_t maxlen);
+	bool Pause(PluginId id, char *error, size_t maxlen);
+	bool Unpause(PluginId id, char *error, size_t maxlen);
+	bool UnloadAll();
+	void SetAlias(const char *alias, const char *value);
+public:
+	bool Query(PluginId id, const char *&file, Pl_Status &status, PluginId &source);
+	bool QueryRunning(PluginId id, char *error, size_t maxlength);
+	bool QueryHandle(PluginId id, void *&handle);
+
+	void AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
+	void AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
+	void RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar);
+	void RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd);
+
+	/**
+	 * @brief Finds a plugin by Id
+	 *
+	 * @param id Id of plugin
+	 * @return CPlugin on success, NULL otherwise
+	 */
+	CPlugin *FindById(PluginId id);
+
+	CPlugin *FindByAPI(ISmmPlugin *api);
+
+	/**
+	 * @brief Attempts to reload a failed plugin
+	 *
+	 * @param id Id of plugin
+	 * @param error Error message buffer
+	 * @param len Maximum length of buffer
+	 * @return True on success, false otherwise
+	 */
+	bool Retry(PluginId id, char *error, size_t len);
+
+	int GetPluginCount();
+	const char *GetStatusText(CPlugin *pl);
+
+	//get alias info
+	const char *LookupAlias(const char *alias);
+	SourceHook::List<CNameAlias *>::iterator _alias_begin();
+	SourceHook::List<CNameAlias *>::iterator _alias_end();
+
+	//Internal iterators
+	SourceHook::List<CPluginManager::CPlugin *>::iterator _begin();
+	SourceHook::List<CPluginManager::CPlugin *>::iterator _end();
+private:
+	//These are identical internal functions for the wrappers above.
+	CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
+	bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen);
+	bool _Pause(CPlugin *pl, char *error, size_t maxlen);
+	bool _Unpause(CPlugin *pl, char *error, size_t maxlen);
+	void UnregAllConCmds(CPlugin *pl);
+private:
+	PluginId m_LastId;
+	SourceHook::List<CPlugin *> m_Plugins;
+	SourceHook::List<CNameAlias *> m_Aliases;
+	bool m_AllLoaded;
 };
 
-typedef SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
+typedef SourceHook::List<CPluginManager::CPlugin *>::iterator PluginIter;
 
 /** @brief Singleton for plugin manager */
-extern SourceMM::CPluginManager g_PluginMngr;
+extern CPluginManager g_PluginMngr;
 
 #endif //_INCLUDE_CPLUGIN_H
 

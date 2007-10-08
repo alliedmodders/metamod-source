@@ -38,7 +38,7 @@
 #include <eiface.h>
 #include <sourcehook/sourcehook_impl.h>
 #include <sourcehook/sourcehook.h>
-#include "ISmmAPI.h"
+#include <ISmmPlugin.h>
 #include "metamod_provider.h"
 #include "svn_version.h"
 

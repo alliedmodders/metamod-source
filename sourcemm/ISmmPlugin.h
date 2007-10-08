@@ -35,331 +35,386 @@
 
 #include <interface.h>
 #include <sourcehook.h>
-#include "ISmmAPI.h"
+#include <IPluginManager.h>
+#include <ISmmAPI.h>
 
-#define PLAPI_VERSION	13
-#define PLAPI_NAME		"ISmmPlugin"
+#define METAMOD_PLAPI_VERSION		13				/**< Version of this header file */
+#define METAMOD_PLAPI_NAME			"ISmmPlugin"	/**< Name of the plugin interface */
 
-class ISmmAPI;
-
-class ISmmPlugin
+namespace SourceMM
 {
-public:
-	virtual int GetApiVersion() { return PLAPI_VERSION; }
-	virtual ~ISmmPlugin() { }
-public:
-	/**
-	 * @brief Called on plugin load.
-	 *
-	 * NOTE - As of API 7, this is called as DLLInit() executes - after the parameters are known, but before 
-	 *  the original GameDLL function is called.  Therefore, you cannot hook it, but you don't need to - 
-	 *  Load() is basically your hook.
-	 * NOTE - As of API 7, you can override factories before the engine and gamedll exchange them.
-	 *  However, take care to note that if your plugin is unloaded, and the gamedll/engine have cached
-	 *  an interface you've passed, something will definitely crash.  Be careful.
-	 *
-	 * @param id		Internal id of plugin.  Saved globally by PLUGIN_SAVEVARS()
-	 * @param ismm		External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
-	 * @param list		Contains a list of factories.  Hook a factory call by setting one equal to your own function.
-	 * @param late		Set to true if your plugin was loaded late (not at server load).
-	 * @param error		Error message buffer
-	 * @param maxlen	Size of error message buffer
-	 * @return			True if successful, return false to reject the load.
-	 */
-	virtual bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlength, bool late) =0;
+	class ISmmAPI;
 
 	/**
-	 * @brief Called when your plugin is "queried".  
-	 * 
-	 * This is useful for rejecting a loaded state.  For example, if your plugin wants 
-	 * to stop operating, it can simply return false and copy an error message.  This 
-	 * will notify other plugins or MM:S of something bad that happened.  NOTE - MM:S 
-	 * will not cache the return state, so if you return false,  your plugin will not 
-	 * actually be paused or unloaded.  This callback will be called when:
-	 *  - Another plugin requests it
-	 *  - Someone types "meta list", it will show up as "REFUSED"
-	 *  - When Metamod need to re-check the plugin's status
-	 *  - If the plugin does something like overload a factory, Metamod will make sure the Query() returns true
-	 *    before calling it.
-	 *  Also note that this query will only override Metamod when the plugin is running and not paused.
-	 *
-	 * @param error		Buffer for error message.  This can be NULL!
-	 * @param maxlen	Maximum length of error buffer.
-	 * @return			Status code - true for okay, false for badness.
+	 * @brief Callbacks that a plugin must expose.
 	 */
-	virtual bool QueryRunning(char *error, size_t maxlen)
+	class ISmmPlugin
 	{
-		return true;
-	}
-
-	/** 
-	 * @brief Called on plugin unload.  You can return false if you know your plugin
-	 *  is not capable of restoring critical states it modifies.
-	 *
-	 * @param error		Error message buffer
-	 * @param maxlen	Size of error message buffer
-	 * @return			True on success, return false to request no unload.
-	 */
-	virtual bool Unload(char *error, size_t maxlen)
-	{
-		return true;
-	}
-
-	/** @brief Called on plugin pause.
-	 *
-	 * @param	error Error message buffer
-	 * @param	maxlen Size of error message buffer
-	 * @return	True on success, return false to request no pause.
-	 */
-	virtual bool Pause(char *error, size_t maxlen)
-	{
-		return true;
-	}
-
-	/** @brief Called on plugin unpause.
-	 *
-	 * @param	error Error message buffer
-	 * @param	maxlen Size of error message buffer
-	 * @return	True on success, return false to request no unpause.
-	 */
-	virtual bool Unpause(char *error, size_t maxlen)
-	{
-		return true;
-	}
-public:
-	/** @brief Return author as string */
-	virtual const char *GetAuthor() =0;
-
-	/** @brief Return plugin name as string */
-	virtual const char *GetName() =0;
-
-	/** @brief Return a description as string */
-	virtual const char *GetDescription() =0;
-
-	/** @brief Return a URL as string */
-	virtual const char *GetURL() =0;
-
-	/** @brief Return quick license code as string */
-	virtual const char *GetLicense() =0;
-
-	/** @brief Return version as string */
-	virtual const char *GetVersion() =0;
-
-	/** @brief Return author as string */
-	virtual const char *GetDate() =0;
-
-	/** @brief Return author as string */
-	virtual const char *GetLogTag() =0;
-public:
-	/**
-	 * @brief Called when all plugins have been loaded.  
-	 *
-	 * This is called after DLLInit(), and thus the mod has been mostly initialized. 
-	 * It is also safe to assume that all other (automatically loaded) plugins are now 
-	 * ready to start interacting, because they are all loaded.
-	 */
-	virtual void AllPluginsLoaded()
-	{
-	}
-};
-
-/**
- * @brief Added in 1.1 so plugins could listen to specific events
- */
-class IMetamodListener
-{
-public:
-	virtual ~IMetamodListener()
-	{
-	}
-public:
-	/**
-	 * @brief Called when a plugin is loaded.
-	 *
-	 * @param id		Id of the plugin.
-	 */
-	virtual void OnPluginLoad(PluginId id)
-	{
-	}
-
-	/**
-	 * @brief Called when a plugin is unloaded.
-	 *
-	 * @param id		Id of the plugin.
-	 */
-	virtual void OnPluginUnload(PluginId id)
-	{
-	}
-
-	/**
-	 * @brief Called when a plugin is paused.
-	 *
-	 * @param id		Id of the plugin.
-	 */
-	virtual void OnPluginPause(PluginId id)
-	{
-	}
-
-	/**
-	 * @brief Called when a plugin is unpaused.
-	 *
-	 * @param id		Id of the plugin.
-	 */
-	virtual void OnPluginUnpause(PluginId id)
-	{
-	}
-
-	/**
-	 * @brief Called when the level is loaded (after GameInit, before ServerActivate).
-	 *
-	 * To override this, hook IServerGameDLL::LevelInit().
-	 *
-	 * @param pMapName		Name of the map.
-	 * @param pMapEntities	Lump string of the map entities, in KeyValue format.
-	 * @param pOldLevel		Unknown.
-	 * @param pLandmarkName	Unknown.
-	 * @param loadGame		Unknown.
-	 * @param background	Unknown.
-	 */
-	virtual void OnLevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background) { }
-
-	/**
-	 * @brief Called when the level is shut down.  May be called more than once.
-	 */
-	virtual void OnLevelShutdown()
-	{
-	}
-
-	/**
-	 * @brief Called when engineFactory() is used through Metamod:Source's wrapper.
-	 * This can be used to provide interfaces to other plugins or the GameDLL.
-	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
-	 *
-	 * @param iface			Interface string.
-	 * @param ret			Optional pointer to store return code.
-	 * @return				Generic pointer to the interface, or NULL if not found.
-	 */
-	virtual void *OnEngineQuery(const char *iface, int *ret)
-	{
-		if (ret)
-		{
-			*ret = IFACE_FAILED;
+	public:
+		/**
+		 * @brief Called to request the plugin's API version.
+		 *
+		 * This is the first callback invoked, and always remains at the top 
+		 * of the virtual table.  
+		 *
+		 * @return			Plugin API version.
+		 */
+		virtual int GetApiVersion() 
+		{ 
+			return METAMOD_PLAPI_VERSION; 
 		}
 
-		return NULL; 
-	}
-
-	/**
-	 * @brief Called when the physics factory is used through Metamod:Source's wrapper.
-	 * This can be used to provide interfaces to other plugins.
-	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
-	 *
-	 * @param iface			Interface string.
-	 * @param ret			Optional pointer to store return code.
-	 * @return				Generic pointer to the interface, or NULL if not found.
-	 */
-	virtual void *OnPhysicsQuery(const char *iface, int *ret)
-	{
-		if (ret)
+		/**
+		 * @brief Virtual destructor so GCC doesn't complain.
+		 */
+		virtual ~ISmmPlugin()
 		{
-			*ret = IFACE_FAILED;
 		}
 
-		return NULL; 
-	}
+	public:
+		/**
+		 * @brief Called on plugin load.
+		 *
+		 * This is called as DLLInit() executes - after the parameters are 
+		 * known, but before the original GameDLL function is called.  
+		 * Therefore, you cannot hook it, but you don't need to - Load() is 
+		 * basically your hook.  You can override factories before the engine 
+		 * and gamedll exchange them.  However, take care to note that if your 
+		 * plugin is unloaded, and the gamedll/engine have cached an interface 
+		 * you've passed, something will definitely crash.  Be careful.
+		 *
+		 * @param id		Internal id of plugin.  Saved globally by PLUGIN_SAVEVARS()
+		 * @param ismm		External API for SourceMM.  Saved globally by PLUGIN_SAVEVARS()
+		 * @param error		Error message buffer
+		 * @param maxlength	Size of error message buffer
+		 * @param late		Set to true if your plugin was loaded late (not at server load).
+		 * @return			True if successful, return false to reject the load.
+		 */
+		virtual bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlength, bool late) =0;
 
-	/**
-	 * @brief Called when the filesystem factory is used through Metamod:Source's wrapper.
-	 * This can be used to provide interfaces to other plugins.
-	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
-	 *
-	 * @param iface			Interface string.
-	 * @param ret			Optional pointer to store return code.
-	 * @return				Generic pointer to the interface, or NULL if not found.
-	 */
-	virtual void *OnFileSystemQuery(const char *iface, int *ret)
-	{
-		if (ret)
+		/**
+		 * @brief Called when all plugins have been loaded.  
+		 *
+		 * This is called after DLLInit(), and thus the mod has been mostly initialized. 
+		 * It is also safe to assume that all other (automatically loaded) plugins are now 
+		 * ready to start interacting, because they are all loaded.
+		 */
+		virtual void AllPluginsLoaded()
 		{
-			*ret = IFACE_FAILED;
-		}
-		
-		return NULL; 
-	}
-
-	/**
-	 * @brief Called when the server DLL's factory is used through Metamod:Source's wrapper.
-	 * This can be used to provide interfaces to other plugins.
-	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
-	 *
-	 * @param iface			Interface string.
-	 * @param ret			Optional pointer to store return code.
-	 * @return				Generic pointer to the interface, or NULL if not found.
-	 */
-	virtual void *OnGameDLLQuery(const char *iface, int *ret)
-	{
-		if (ret)
-		{
-			*ret = IFACE_FAILED;
 		}
 
-		return NULL; 
-	}
-
-	/**
-	 * @brief Called when Metamod's own factory is invoked.  
-	 * This can be used to provide interfaces to other plugins.
-	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
-	 *
-	 * @param iface			Interface string.
-	 * @param ret			Optional pointer to store return code.
-	 * @return				Generic pointer to the interface, or NULL if not found.
-	 */
-	virtual void *OnMetamodQuery(const char *iface, int *ret)
-	{
-		if (ret)
+		/**
+		 * @brief Called when your plugin is "queried".  
+		 * 
+		 * This is useful for rejecting a loaded state.  For example, if your 
+		 * plugin wants to stop operating, it can simply return false and copy 
+		 * an error message.  This will notify other plugins or MM:S of 
+		 * something bad that happened.  MM:S will not cache the return state, 
+		 * so if you return false,  your plugin will not actually be paused or 
+		 * unloaded.  This callback will be called when:
+		 *  - Another plugin requests it
+		 *  - Someone types "meta list", it will show up as "REFUSED"
+		 *  - When Metamod need to re-check the plugin's status
+		 *  - If the plugin does something like overload a factory, Metamod 
+		 *    will make sure the Query() returns true before calling it.
+		 *  Also note that this query will only override Metamod when the 
+		 *  plugin is running and not paused.
+		 *
+		 * @param error		Buffer for error message, or NULL if none.
+		 * @param maxlen	Maximum length of error buffer.
+		 * @return			Status code - true for okay, false for badness.
+		 */
+		virtual bool QueryRunning(char *error, size_t maxlen)
 		{
-			*ret = IFACE_FAILED;
+			return true;
 		}
 
-		return NULL; 	
-	}
+		/** 
+		 * @brief Called on plugin unload.  You can return false if you know 
+		 * your plugin is not capable of restoring critical states it modifies.
+		 *
+		 * @param error		Error message buffer
+		 * @param maxlen	Size of error message buffer
+		 * @return			True on success, return false to request no unload.
+		 */
+		virtual bool Unload(char *error, size_t maxlen)
+		{
+			return true;
+		}
+
+		/** 
+		 * @brief Called on plugin pause.
+		 *
+		 * @param	error Error message buffer
+		 * @param	maxlen Size of error message buffer
+		 * @return	True on success, return false to request no pause.
+		 */
+		virtual bool Pause(char *error, size_t maxlen)
+		{
+			return true;
+		}
+
+		/** 
+		 * @brief Called on plugin unpause.
+		 *
+		 * @param	error Error message buffer
+		 * @param	maxlen Size of error message buffer
+		 * @return	True on success, return false to request no unpause.
+		 */
+		virtual bool Unpause(char *error, size_t maxlen)
+		{
+			return true;
+		}
+	public:
+		/** @brief Return author as string */
+		virtual const char *GetAuthor() =0;
+	
+		/** @brief Return plugin name as string */
+		virtual const char *GetName() =0;
+	
+		/** @brief Return a description as string */
+		virtual const char *GetDescription() =0;
+	
+		/** @brief Return a URL as string */
+		virtual const char *GetURL() =0;
+	
+		/** @brief Return quick license code as string */
+		virtual const char *GetLicense() =0;
+	
+		/** @brief Return version as string */
+		virtual const char *GetVersion() =0;
+	
+		/** @brief Return author as string */
+		virtual const char *GetDate() =0;
+	
+		/** @brief Return author as string */
+		virtual const char *GetLogTag() =0;
+	};
 
 	/**
-	 * @brief Called when Metamod:Source acquires a valid IServerPluginCallbacks 
-	 * pointer to be used for hooking by plugins.
-	 *
-	 * This will only be called after a call to ISmmAPI::EnableVSPListener().
-	 * If called before GameInit, this callback will occur before LevelInit.
-	 * Otherwise, it will be called on the first call after that.
-	 *
-	 * This callback is provided to all plugins regardless of which (or how many)
-	 * called EnableVSPListener(), but only if at least one did in fact enable it.
-	 *
-	 * This callback is only available for plugins using API v1:5 (Metamod:Source 1.4+).
-	 * If a plugin loads lately, it may still call EnableVSPListener().
-	 *
-	 * @param iface			Interface pointer.  If NULL, then the VSP listening construct
-	 *						failed to initialize and is not available.
+	 * @brief Various events that Metamod can fire.
 	 */
-	virtual void OnVSPListening(IServerPluginCallbacks *iface) { }
-
-	/**
-	 * @brief Called when Metamod:Source is about to remove a concommand or convar.
-	 * This can also be called if ISmmAPI::UnregisterConCmdBase is used by a plugin.
-	 *
-	 * @param id			Id of the plugin that created the concommand or convar.
-	 * @param pCommand		Pointer to concommand or convar that is being removed.
-	 */
-	virtual void OnUnlinkConCommandBase(PluginId id, ConCommandBase *pCommand)
+	class IMetamodListener
 	{
-	}
-};
+	public:
+		/**
+		 * @brief Called when a plugin is loaded.
+		 *
+		 * @param id		Id of the plugin.
+		 */
+		virtual void OnPluginLoad(PluginId id)
+		{
+		}
+
+		/**
+		 * @brief Called when a plugin is unloaded.
+		 *
+		 * @param id		Id of the plugin.
+		 */
+		virtual void OnPluginUnload(PluginId id)
+		{
+		}
+	
+		/**
+		 * @brief Called when a plugin is paused.
+		 *
+		 * @param id		Id of the plugin.
+		 */
+		virtual void OnPluginPause(PluginId id)
+		{
+		}
+	
+		/**
+		 * @brief Called when a plugin is unpaused.
+		 *
+		 * @param id		Id of the plugin.
+		 */
+		virtual void OnPluginUnpause(PluginId id)
+		{
+		}
+	
+		/**
+		 * @brief Called when the level is loaded (after GameInit, before 
+		 * ServerActivate).
+		 *
+		 * To override this, hook IServerGameDLL::LevelInit().
+		 *
+		 * @param pMapName		Name of the map.
+		 * @param pMapEntities	Lump string of the map entities, in KeyValues
+		 * 						format.
+		 * @param pOldLevel		Unknown.
+		 * @param pLandmarkName	Unknown.
+		 * @param loadGame		Unknown.
+		 * @param background	Unknown.
+		 */
+		virtual void OnLevelInit(char const *pMapName, 
+								 char const *pMapEntities, 
+								 char const *pOldLevel, 
+								 char const *pLandmarkName, 
+								 bool loadGame, 
+								 bool background) 
+		{ 
+		}
+
+		/**
+		 * @brief Called when the level is shut down.  May be called more than 
+		 * once.
+		 */
+		virtual void OnLevelShutdown()
+		{
+		}
+
+		/**
+		 * @brief Called when engineFactory() is used through Metamod:Source's 
+		 * wrapper.  This can be used to provide interfaces to other plugins or
+		 * the GameDLL.
+		 *
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+		 *
+		 * @param iface			Interface string.
+		 * @param ret			Optional pointer to store return code.
+		 * @return				Generic pointer to the interface, or NULL if 
+		 * 						not found.
+		 */
+		virtual void *OnEngineQuery(const char *iface, int *ret)
+		{
+			if (ret)
+			{
+				*ret = IFACE_FAILED;
+			}
+
+			return NULL; 
+		}
+
+		/**
+		 * @brief Called when the physics factory is used through 
+		 * Metamod:Source's wrapper. This can be used to provide interfaces to 
+		 * other plugins.
+		 *
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+		 *
+		 * @param iface			Interface string.
+		 * @param ret			Optional pointer to store return code.
+		 * @return				Generic pointer to the interface, or NULL if 
+		 * 						not found.
+		 */
+		virtual void *OnPhysicsQuery(const char *iface, int *ret)
+		{
+			if (ret)
+			{
+				*ret = IFACE_FAILED;
+			}
+	
+			return NULL; 
+		}
+
+		/**
+		 * @brief Called when the filesystem factory is used through 
+		 * Metamod:Source's wrapper.  This can be used to provide interfaces to 
+		 * other plugins.
+		 *
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+		 *
+		 * @param iface			Interface string.
+		 * @param ret			Optional pointer to store return code.
+		 * @return				Generic pointer to the interface, or NULL if not 
+		 * 						found.
+		 */
+		virtual void *OnFileSystemQuery(const char *iface, int *ret)
+		{
+			if (ret)
+			{
+				*ret = IFACE_FAILED;
+			}
+			
+			return NULL; 
+		}
+
+		/**
+		 * @brief Called when the server DLL's factory is used through 
+		 * Metamod:Source's wrapper.  This can be used to provide interfaces to 
+		 * other plugins.
+		 *
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+		 *
+		 * @param iface			Interface string.
+		 * @param ret			Optional pointer to store return code.
+		 * @return				Generic pointer to the interface, or NULL if not 
+		 * 						found.
+		 */
+		virtual void *OnGameDLLQuery(const char *iface, int *ret)
+		{
+			if (ret)
+			{
+				*ret = IFACE_FAILED;
+			}
+	
+			return NULL; 
+		}
+
+		/**
+		 * @brief Called when Metamod's own factory is invoked.  
+		 * This can be used to provide interfaces to other plugins.
+		 *
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+		 *
+		 * @param iface			Interface string.
+		 * @param ret			Optional pointer to store return code.
+		 * @return				Generic pointer to the interface, or NULL if not 
+		 * 						found.
+		 */
+		virtual void *OnMetamodQuery(const char *iface, int *ret)
+		{
+			if (ret)
+			{
+				*ret = IFACE_FAILED;
+			}
+	
+			return NULL; 	
+		}
+
+		/**
+		 * @brief Called when Metamod:Source acquires a valid 
+		 * IServerPluginCallbacks pointer to be used for hooking by plugins.
+		 *
+		 * This will only be called after a call to ISmmAPI::EnableVSPListener().
+		 * If called before GameInit, this callback will occur before LevelInit.
+		 * Otherwise, it will be called on the first call after that.
+		 *
+		 * This callback is provided to all plugins regardless of which (or how 
+		 * many) called EnableVSPListener(), but only if at least one did in 
+		 * fact enable it, and only once for all plugins.  That is, a late 
+		 * loading plugin should use ISmmAPI::GetVSPInfo() before relying on 
+		 * this callback.
+		 *
+		 * @param iface			Interface pointer.  If NULL, then the VSP 
+		 * 						listening construct failed to initialize and 
+		 * 						is not available.
+		 */
+		virtual void OnVSPListening(IServerPluginCallbacks *iface) 
+		{ 
+		}
+
+		/**
+		 * @brief Called when Metamod:Source is about to remove a concommand or 
+		 * convar.  This can also be called if ISmmAPI::UnregisterConCmdBase is 
+		 * used by a plugin.
+		 *
+		 * @param id			Id of the plugin that created the concommand or 
+		 * 						convar.
+		 * @param pCommand		Pointer to concommand or convar that is being 
+		 * 						removed.
+		 */
+		virtual void OnUnlinkConCommandBase(PluginId id, ConCommandBase *pCommand)
+		{
+		}
+	};
+}
+
+#if !defined METAMOD_NO_AUTO_NAMESPACE
+using namespace SourceMM;
+#endif
+
 
 #define PL_EXPOSURE		CreateInterface
 #define PL_EXPOSURE_C	"CreateInterface"
@@ -370,7 +425,7 @@ public:
 	PluginId g_PLID = (PluginId)0; \
 	SourceHook::ISourceHook *g_SHPtr = NULL; \
 	SMM_API void *PL_EXPOSURE(const char *name, int *code) { \
-		if (name && !strcmp(name, PLAPI_NAME)) { \
+		if (name && !strcmp(name, METAMOD_PLAPI_NAME)) { \
 			return static_cast<void *>(&var); \
 		} \
 		return NULL; \

@@ -191,7 +191,7 @@ void InitMainStates()
 SMM_API void *CreateInterface(const char *iface, int *ret)
 {
 	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
-	if (strcmp(iface, PLAPI_NAME) == 0)
+	if (strcmp(iface, METAMOD_PLAPI_NAME) == 0)
 	{
 		provider->DisplayWarning("Do not try loading Metamod:Source as a plugin.\n");
 
@@ -878,7 +878,7 @@ void MetamodSource::GetApiVersions(int &major, int &minor, int &plvers, int &plm
 {
 	major = SM_VERS_API_MAJOR;
 	minor = SM_VERS_API_MINOR;
-	plvers = PLAPI_VERSION;
+	plvers = METAMOD_PLAPI_VERSION;
 	plmin = PLAPI_MIN_VERSION;
 }
 
