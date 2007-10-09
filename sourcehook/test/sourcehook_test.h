@@ -15,7 +15,8 @@ struct CAutoPtrDestruction
 {
 	T *m_Ptr;
 	CAutoPtrDestruction(T *p) : m_Ptr(p) { }
-	~CAutoPtrDestruction() { delete m_Ptr; }
+	~CAutoPtrDestruction() { if (m_Ptr) delete m_Ptr; }
+	void clear() { m_Ptr = NULL; }
 };
 
 struct CSHPtrAutoDestruction

@@ -707,7 +707,14 @@ bool TestBasic(std::string &error)
 
 		NULL), "Part 11 1/2");
 
-	// 12) Test? Test.
+	// 12) Try out one ref param
+	SH_ADD_HOOK(Test, F60, pTest, SH_STATIC(F60_Pre), false);
+	int a = 0;
+	pTest->F60(a);
+	CHECK_COND(a == 10, "Part12");
+	SH_REMOVE_HOOK(Test, F60, pTest, SH_STATIC(F60_Pre), false);
+
+	// 13) Remove hooks after the instance has been removed
 	SH_ADD_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
 	SH_ADD_HOOK(Test, F2, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
 	SH_ADD_HOOK(Test, F3, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
@@ -719,6 +726,9 @@ bool TestBasic(std::string &error)
 	SH_ADD_HOOK(Test, F9, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 	SH_ADD_HOOK(Test, F10, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 
+	delete pTest;
+	apd.clear();
+
 	SH_REMOVE_HOOK(Test, F1, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
 	SH_REMOVE_HOOK(Test, F2, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), true);
 	SH_REMOVE_HOOK(Test, F3, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
@@ -729,14 +739,9 @@ bool TestBasic(std::string &error)
 	SH_REMOVE_HOOK(Test, F8, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 	SH_REMOVE_HOOK(Test, F9, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
 	SH_REMOVE_HOOK(Test, F10, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false);
+	CHECK_COND(SH_REMOVE_HOOK(Test, F10, pTest, SH_MEMBER(&f1_handlers, &HandlersF1::Pre), false) == false, "Part 12.1");
 
-	SH_ADD_HOOK(Test, F60, pTest, SH_STATIC(F60_Pre), false);
-
-	int a = 0;
-	pTest->F60(a);
 	Test_CompleteShutdown(g_SHPtr);
-
-	CHECK_COND(a == 10, "Part12.a");
 
 	return true;
 }
