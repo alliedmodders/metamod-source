@@ -98,5 +98,12 @@ typedef METAMOD_PLUGIN *(*METAMOD_FN_LOAD)(const MetamodVersionInfo *mvi,
  */
 typedef void (*METAMOD_FN_UNLOAD)();
 
+/**
+ * @brief Original type of load function.  CreateInterfaceFn from Valve.
+ * 
+ * Plugins will expose this as "CreateInterface".
+ */
+typedef void *(*METAMOD_FN_ORIG_LOAD)(const char *, int *);
+
 #endif //INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 
