@@ -13,11 +13,11 @@ procedure AddSkipped;
 procedure AddNotFound;
 procedure DownloadFile(eFile: String; eDestination: String);
 
-procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS);
-procedure InstallDedicated(eModPath: String; UseSteam: Boolean);
-procedure InstallListen(ePath: String);
-procedure InstallCustom(ePath: String; eOS: TOS);
-procedure InstallFTP(OS: TOS);
+procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS; const Source: Boolean);
+procedure InstallDedicated(eModPath: String; const UseSteam, Source: Boolean);
+procedure InstallListen(ePath: String; const Source: Boolean);
+procedure InstallCustom(ePath: String; eOS: TOS; const Source: Boolean);
+procedure InstallFTP(OS: TOS; const Source: Boolean);
 
 var StartTime: TDateTime;
     SteamPath: String;
@@ -218,7 +218,7 @@ end;
 
 { Basic Installation }   
 
-procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS);
+procedure BasicInstallation(ePath: String; SteamInstall, ListenInstall: Boolean; OS: TOS; const Source: Boolean);
 var eStr: TStringList;
     i: integer;
     CopyConfig: Boolean;
@@ -253,7 +253,7 @@ begin
   { Unpack }
   frmMain.ggeItem.Progress := 0;
   AddStatus('Unpacking files...', clBlack);
-  if not Unpack() then begin
+  if not Unpack(Source) then begin
     AddStatus('No files attached!', clRed);
     Screen.Cursor := crDefault;
     exit;
@@ -370,37 +370,37 @@ end;
 
 { Dedicated Server }
 
-procedure InstallDedicated(eModPath: String; UseSteam: Boolean);
+procedure InstallDedicated(eModPath: String; const UseSteam, Source: Boolean);
 begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation on dedicated server...', clBlack, False);
-  BasicInstallation(eModPath, UseSteam, False, osWindows);
+  BasicInstallation(eModPath, UseSteam, False, osWindows, Source);
 end;
 
 { Listen Server }
 
-procedure InstallListen(ePath: String);
+procedure InstallListen(ePath: String; const Source: Boolean);
 begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation on the listen server...', clBlack);
-  BasicInstallation(ePath, True, True, osWindows);
+  BasicInstallation(ePath, True, True, osWindows, Source);
 end;
 
 { Custom mod }
 
-procedure InstallCustom(ePath: String; eOS: TOS);
+procedure InstallCustom(ePath: String; eOS: TOS; const Source: Boolean);
 begin
   StartTime := Now;
   Screen.Cursor := crHourGlass;
   AddStatus('Starting Metamod:Source installation...', clBlack);
-  BasicInstallation(ePath, False, False, eOS);
+  BasicInstallation(ePath, False, False, eOS, Source);
 end;
 
 { FTP }
 
-procedure InstallFTP(OS: TOS);
+procedure InstallFTP(OS: TOS; const Source: Boolean);
 function DoReconnect: Boolean;
 begin
   Result := False;
@@ -432,7 +432,7 @@ begin
   { Unpack }
   frmMain.ggeItem.Progress := 0;
   AddStatus('Unpacking files...', clBlack);
-  if not Unpack() then begin
+  if not Unpack(Source) then begin
     AddStatus('No files attached!', clRed);
     Screen.Cursor := crDefault;
     exit;

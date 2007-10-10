@@ -159,6 +159,7 @@ var ePath: String;
     CurNode: TTreeNode;
     eOS: TOS;
     i: integer;
+    Source: Boolean;
 begin
   { FTP }
   if jplWizard.ActivePage = jspFTP then begin
@@ -175,14 +176,27 @@ begin
     end;
     IdFTP.ChangeDir(ePath);
     IdFTP.List(eStr, '', False);
-    if eStr.IndexOf('gameinfo.txt') = -1 then begin
+    eStr.CaseSensitive := False;
+    // check if gameinfo.txt is in the directory -> valid installation
+    if (eStr.IndexOf('gameinfo.txt') = -1) then begin
       MessageBox(Handle, 'Invalid directory. Please select your mod directory and try again.', PChar(Application.Title), MB_ICONWARNING);
       eStr.Free;
       exit;
     end
     else
       eStr.Free;
-
+    // check for orangebox directory
+    Source := True;
+    if (eStr.IndexOf('orangebox') <> -1) then begin
+      case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
+        mrYes: Source := False;
+        mrNo: Source := True;
+        mrCancel: begin
+          eStr.Free;
+          exit;
+        end;
+      end;
+    end;
     // design stuff
     trvDirectories.Enabled := False;
     cmdConnect.Enabled := False;
@@ -198,26 +212,38 @@ begin
     jspInstallProgress.Show;
     // installation
     Screen.Cursor := crAppStart;
-    InstallFTP(eOS);
+    InstallFTP(eOS, Source);
   end
   else if jplWizard.ActivePage = jspInstallProgress then
     Close
   else if jplWizard.ActivePage = jspSelectMod then begin
     { Dedicated Server }
     if (frbDedicatedServer.Checked) or (frbStandaloneServer.Checked) then begin
+      Source := True;
       ePath := trvMods.Selected.Text;
       if ePath = 'Counter-Strike:Source' then
         ePath := 'cstrike'
       else if ePath = 'Day of Defeat:Source' then
         ePath := 'dod'
-      else
-        ePath := 'hl2mp';
-      ePath := 'SteamApps\' + trvMods.Selected.Parent.Text + '\source dedicated server\' + ePath;
+      else if ePath = 'Half-Life 2 Deathmatch' then
+        ePath := 'hl2mp'
+      else begin
+        { get games }
+        if ePath = 'Team Fortress 2' then
+          ePath := 'orangebox/tf'; // TODO: !HP! check this path
+        { ask user, just in case }
+        case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
+          mrYes: Source := False;
+          mrNo: Source := True;
+          mrCancel: exit;
+        end;
+      end;
+
       // install it
       if frbDedicatedServer.Checked then begin
         if DirectoryExists(SteamPath + ePath) then begin
           jspInstallProgress.Show;
-          InstallDedicated(IncludeTrailingPathDelimiter(SteamPath + ePath), True);
+          InstallDedicated(IncludeTrailingPathDelimiter(SteamPath + ePath), True, Source);
         end
         else begin
           MessageBox(Handle, 'Error: The directory of the mod you selected doesn''t exist any more. Run Dedicated Server with the chosen mod and try again.', PChar(Application.Title), MB_ICONERROR);
@@ -228,7 +254,7 @@ begin
       else begin
         if DirectoryExists(StandaloneServer + ePath) then begin
           jspInstallProgress.Show;
-          InstallDedicated(IncludeTrailingPathDelimiter(StandaloneServer + ePath), False)
+          InstallDedicated(IncludeTrailingPathDelimiter(StandaloneServer + ePath), False, Source)
         end
         else begin
           MessageBox(Handle, 'Error: The directory of the mod you selected doesn''t exist (any more). Run Half-Life Dedicated Server with the chosen mod again and restart.', PChar(Application.Title), MB_ICONERROR);
@@ -239,13 +265,25 @@ begin
     end;
     { Listen Server }
     if frbListenServer.Checked then begin
+      Source := True;
       ePath := trvMods.Selected.Text;
       if ePath = 'Counter-Strike:Source' then
         ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\counter-strike source\cstrike'
       else if ePath = 'Half-Life 2 Deathmatch' then
         ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\half-life 2 deathmatch\hl2mp'
-      else
-        ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\day of defeat source\dod';
+      else if ePath = 'Day of Defeat:Source' then
+        ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\day of defeat source\dod'
+      else begin
+        { get games }
+        if ePath = 'Team Fortress 2' then
+          ePath := SteamPath + 'SteamApps\' + trvMods.Selected.Parent.Text + '\team fortress 2\tf';
+        { ask user, just in case }
+        case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
+          mrYes: Source := False;
+          mrNo: Source := True;
+          mrCancel: exit;
+        end;
+      end;
 
       if Pos(SteamPath, ePath) = 0 then
         MessageBox(Handle, 'An error occured. Please report this bug to the Metamod:Source team and post a new thread on the forums of www.amxmodx.org.', PChar(Application.Title), MB_ICONSTOP)
@@ -256,7 +294,7 @@ begin
         end;
 
         jspInstallProgress.Show;
-        InstallListen(IncludeTrailingPathDelimiter(ePath));
+        InstallListen(IncludeTrailingPathDelimiter(ePath), Source);
       end;
     end;
     { Custom mod below }
@@ -287,6 +325,7 @@ begin
                 trvMods.Items.AddChild(CurNode, 'Day of Defeat:Source');
               if DirectoryExists(ePath + eStr[i] + '\source dedicated server\hl2mp') then
                 trvMods.Items.AddChild(CurNode, 'Half-Life 2 Deatmatch');
+              // TODO: !HP! add "Team Fortress 2" item here
 
               if CurNode.Count = 0 then
                 CurNode.Free
@@ -330,6 +369,8 @@ begin
                 trvMods.Items.AddChild(CurNode, 'Day of Defeat:Source');
               if DirectoryExists(ePath + eStr[i] + '\half-life 2 deathmatch') then
                 trvMods.Items.AddChild(CurNode, 'Half-Life 2 Deatmatch');
+              if DirectoryExists(ePath + eStr[i] + '\team fortress 2') then
+                trvMods.Items.AddChild(CurNode, 'Team Fortress 2');
 
               if CurNode.Count = 0 then
                 CurNode.Free
@@ -362,6 +403,8 @@ begin
             trvMods.Items.Add(nil, 'Day of Defeat:Source');
           if DirectoryExists(StandaloneServer + 'hl2mp') then
             trvMods.Items.Add(nil, 'Half-Life 2 Deatmatch');
+          if DirectoryExists(StandaloneServer + 'orangebox\tf') then
+            trvMods.Items.Add(nil, 'Team Fortress 2');
           jspSelectMod.Show;
           cmdNext.Enabled := False;
         end
@@ -374,8 +417,19 @@ begin
     else if frbSelectMod.Checked then begin 
       { Custom mod }
       if frmSelectModPath.ShowModal = mrOk then begin
+        ePath := IncludeTrailingPathDelimiter(frmSelectModPath.trvDirectory.SelectedFolder.PathName);
+        { check if this is an orangebox game }
+        Source := True;
+        if (Pos('orangebox', LowerCase(ePath)) <> 0) then begin
+          case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
+            mrYes: Source := False;
+            mrNo: Source := True;
+            mrCancel: exit;
+          end;
+        end;
+        { install now }
         jspInstallProgress.Show;
-        InstallCustom(IncludeTrailingPathDelimiter(frmSelectModPath.trvDirectory.SelectedFolder.PathName), osWindows);
+        InstallCustom(ePath, osWindows, Source);
       end;
     end
     else if frbFTP.Checked then // FTP

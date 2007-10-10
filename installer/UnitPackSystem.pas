@@ -4,11 +4,11 @@ interface
 
 uses SysUtils, Classes, Zlib;
 
-procedure CompressFiles(Files : TStrings; const Filename : String);
-function DecompressStream(Stream : TMemoryStream; DestDirectory : String): Boolean;
+procedure CompressFiles(Files: TStrings; const Filename: String);
+function DecompressStream(Stream: TMemoryStream; DestDirectory: String; const Source: Boolean): Boolean;
 function AttachToFile(const AFileName: string; MemoryStream: TMemoryStream; Version: String): Boolean;
 function LoadFromFile(const AFileName: string; MemoryStream: TMemoryStream): Boolean;
-function Unpack: Boolean;
+function Unpack(const Source: Boolean): Boolean;
 function GetVersion: String;
 
 implementation
@@ -68,7 +68,8 @@ begin
     DeleteFile('tmp');
   end;
 end;
-function DecompressStream(Stream : TMemoryStream; DestDirectory : String): Boolean;
+
+function DecompressStream(Stream : TMemoryStream; DestDirectory : String; const Source: Boolean): Boolean;
 var
   dest,s : String;
   decompr : TDecompressionStream;
@@ -82,23 +83,26 @@ begin
   try
     { number of files }
     Stream.Read(c,SizeOf(c));
-    for i := 1 to c do
-    begin
+    for i := 1 to c do begin
       { read filename }
       Stream.Read(l,SizeOf(l));
       SetLength(s,l);
       Stream.Read(s[1],l);
-      { read filesize }
-      Stream.Read(l,SizeOf(l));
-      { decompress the files and store it }
-      s := dest+s; //include the path
-      outfile := TFileStream.Create(s,fmCreate);
-      decompr := TDecompressionStream.Create(Stream);
-      try
-        outfile.CopyFrom(decompr,l);
-      finally
-        outfile.Free;
-        decompr.Free;
+      { check if this is the right file }
+      if ((Pos('.source', s) <> 0) and (Source)) or ((Pos('.orangebox', s) <> 0) and (not Source)) then begin
+        { remove extension and read filesize }
+        s := ChangeFileExt(s, '');
+        Stream.Read(l,SizeOf(l));
+        { decompress the files and store it }
+        s := dest+s; //include the path
+        outfile := TFileStream.Create(s,fmCreate);
+        decompr := TDecompressionStream.Create(Stream);
+        try
+          outfile.CopyFrom(decompr,l);
+        finally
+          outfile.Free;
+          decompr.Free;
+        end;
       end;
     end;
   finally
@@ -177,14 +181,14 @@ end;
 
 { Unpack function }
 
-function Unpack: Boolean;
+function Unpack(const Source: Boolean): Boolean;
 var eStream: TMemoryStream;
 begin
   eStream := TMemoryStream.Create;
   try
     // Get ZIP
     LoadFromFile(ParamStr(0), eStream);
-    DecompressStream(eStream, ExtractFilePath(ParamStr(0))); // Unpack files
+    DecompressStream(eStream, ExtractFilePath(ParamStr(0)), Source); // Unpack files
 
     Result := True;
   except
