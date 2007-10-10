@@ -439,7 +439,24 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 					GlobVersionInfo.source_engine = g_Metamod.GetSourceEngineBuild();
 				}
 
-				pl->m_API = fnLoad(&GlobVersionInfo, NULL);
+				/* Build path information */
+				char file_path[256];
+				size_t len = g_Metamod.PathFormat(file_path, sizeof(file_path), "%s", file);
+
+				for (size_t i = len - 1; i >= 0 && i < len; i--)
+				{
+					if (_IsPathSepChar(file_path[i]))
+					{
+						file_path[i] = '\0';
+						break;
+					}
+				}
+
+				MetamodLoaderInfo info;
+				info.pl_file = file;
+				info.pl_path = file_path;
+
+				pl->m_API = fnLoad(&GlobVersionInfo, &info);
 				pl->m_UnloadFn = (METAMOD_FN_UNLOAD)dlsym(pl->m_Lib, "UnloadInterface_MMS");
 			}
 

@@ -55,6 +55,7 @@
 	#define PATH_SIZE			MAX_PATH
 	#define SERVER_DLL			"server.dll"
 	#define strcasecmp			stricmp
+	inline bool _IsPathSepChar(char c) { return (c == '/' || c == '\\'); }
 #elif defined __linux__
 	#define OS_LINUX
 	#include <dlfcn.h>
@@ -71,6 +72,7 @@
 	#define	stricmp				strcasecmp
 	#define strnicmp			strncasecmp
 	#define SERVER_DLL			"server_i486.so"
+	inline bool _IsPathSepChar(char c) { return (c == '/'); }
 #endif
 
 #if defined __linux__

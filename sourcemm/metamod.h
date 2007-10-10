@@ -78,7 +78,7 @@ public:
 	int FormatIface(char iface[], unsigned int maxlength);
 	void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 	const char *GetBaseDir();
-	void PathFormat(char *buffer, size_t len, const char *fmt, ...);
+	size_t PathFormat(char *buffer, size_t len, const char *fmt, ...);
 	void ClientConPrintf(edict_t *client, const char *fmt, ...);
 	void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1);
 	void EnableVSPListener();

@@ -231,8 +231,11 @@ namespace SourceMM
 		 * @param len			Maximum length of buffer, including null 
 		 * 						terminator.
 		 * @param fmt			Formatted string.
+		 * @param ...			Arguments in the string.
+		 * @return				Number of bytes written, not including the null 
+		 *						terminator.
 		 */
-		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...) =0;
+		virtual size_t PathFormat(char *buffer, size_t len, const char *fmt, ...) =0;
 
 		/**
 		 * @brief Prints text in the specified client's console. Same as 

@@ -1006,7 +1006,7 @@ const char *MetamodSource::GetBaseDir()
 	return mod_path.c_str();
 }
 
-void MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
+size_t MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -1020,6 +1020,8 @@ void MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 			buffer[i] = PATH_SEP_CHAR;
 		}
 	}
+
+	return mylen;
 }
 
 void MetamodSource::ClientConPrintf(edict_t *client, const char *fmt, ...)
