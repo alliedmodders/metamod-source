@@ -21,17 +21,31 @@ begin
     ReadLn;
     exit;
   end;
-  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server.dll') then
-    WriteLn('// Found files\server.dll')
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server.dll.source') then
+    WriteLn('// Found files\server.dll.source')
   else begin
-    WriteLn('// Error: Couldn''t find files\server.dll!');
+    WriteLn('// Error: Couldn''t find files\server.dll.source!');
     ReadLn;
     exit;
   end;
-  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so') then
-    WriteLn('// Found files\server_i486.so')
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so.source') then
+    WriteLn('// Found files\server_i486.so.source')
   else begin
-    WriteLn('// Error: Couldn''t find files\server_i486.so!');
+    WriteLn('// Error: Couldn''t find files\server_i486.so.source!');
+    ReadLn;
+    exit;
+  end;
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server.dll.orangebox') then
+    WriteLn('// Found files\server.dll.orangebox')
+  else begin
+    WriteLn('// Error: Couldn''t find files\server.dll.orangebox!');
+    ReadLn;
+    exit;
+  end;
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so.orangebox') then
+    WriteLn('// Found files\server_i486.so.orangebox')
+  else begin
+    WriteLn('// Error: Couldn''t find files\server_i486.so.orangebox!');
     ReadLn;
     exit;
   end;
@@ -54,8 +68,10 @@ begin
   WriteLn('// Compressing files...');
   eFiles := TStringList.Create;
   eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\hl2launch.exe');
-  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server.dll');
-  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so');
+  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server.dll.source');
+  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so.source');
+  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server.dll.orangebox');
+  eFiles.Add(ExtractFilePath(ParamStr(0)) + 'files\server_i486.so.orangebox');
   eStream := TMemoryStream.Create;
   CompressFiles(eFiles, ExtractFilePath(ParamStr(0)) + 'temp.zip');
   eStream.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'temp.zip');
@@ -63,6 +79,7 @@ begin
   AttachToFile(ExtractFilePath(ParamStr(0)) + 'MMS_Installer.exe', eStream, Version);
   DeleteFile(ExtractFilePath(ParamStr(0)) + 'temp.zip');
   eStream.Free;
+  eFiles.Free;
   WriteLn('// Done.');
   ReadLn;
 end.
