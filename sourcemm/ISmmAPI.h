@@ -39,6 +39,7 @@
 #include <sourcehook.h>
 #include <IPluginManager.h>
 #include <ISmmPlugin.h>
+#include <ISmmPluginExt.h>
 
 #if defined __GNUC__
 #if ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)) || (__GNUC__ < 3)
@@ -49,11 +50,6 @@
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
-
-#define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
-#define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
-#define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
-#define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
 
 namespace SourceMM
 {

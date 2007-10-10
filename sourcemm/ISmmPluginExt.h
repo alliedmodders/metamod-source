@@ -26,7 +26,15 @@
  */
 
 #ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
-#define _INCLUDE_METAMOD_SOUrCE_PLUGIN_EXT_H_
+#define _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
+
+#define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
+#define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
+#define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
+#define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
+
+#define METAMOD_PLAPI_VERSION			14				/**< Version of this header file */
+#define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
 
 namespace SourceMM
 {

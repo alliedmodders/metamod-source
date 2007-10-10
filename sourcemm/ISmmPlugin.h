@@ -37,9 +37,7 @@
 #include <sourcehook.h>
 #include <IPluginManager.h>
 #include <ISmmAPI.h>
-
-#define METAMOD_PLAPI_VERSION		14				/**< Version of this header file */
-#define METAMOD_PLAPI_NAME			"ISmmPlugin"	/**< Name of the plugin interface */
+#include <ISmmPluginExt.h>
 
 namespace SourceMM
 {
