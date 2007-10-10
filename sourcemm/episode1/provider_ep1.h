@@ -70,6 +70,7 @@ public:
 	virtual int GetUserMessageCount();
 	virtual int FindUserMessage(const char *name, int *size=NULL);
 	virtual const char *GetUserMessage(int index, int *size=NULL);
+	virtual int DetermineSourceEngine(const char *game);
 };
 
 extern IVEngineServer *engine;

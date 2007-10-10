@@ -283,6 +283,14 @@ namespace SourceMM
 		 * @return				Message name, or NULL on failure.
 		 */
 		virtual const char *GetUserMessage(int index, int *size=NULL) =0;
+
+		/**
+		 * @brief Returns the Source Engine build.
+		 *
+		 * @param game			Game folder.
+		 * @return				SOURCE_ENGINE constant.
+		 */
+		virtual int DetermineSourceEngine(const char *game) =0;
 	};
 };
 

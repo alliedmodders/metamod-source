@@ -324,6 +324,11 @@ const char *BaseProvider::GetGameDescription()
 	return server->GetGameDescription();
 }
 
+int BaseProvider::DetermineSourceEngine(const char *game)
+{
+	return SOURCE_ENGINE_ORANGEBOX;
+}
+
 ConVar *BaseProvider::CreateConVar(const char *name,
 								   const char *defval,
 								   const char *help,

@@ -239,7 +239,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
 		game_dir = provider->GetCommandLineValue("-game", "hl2");
 
-		engine_build = SOURCE_ENGINE_ORANGEBOX;
+		engine_build = provider->DetermineSourceEngine(game_dir);;
 
 		/* Get absolute path */
 		abspath(game_path, game_dir);

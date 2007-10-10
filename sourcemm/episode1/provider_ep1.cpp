@@ -309,6 +309,18 @@ const char *BaseProvider::GetGameDescription()
 	return server->GetGameDescription();
 }
 
+int BaseProvider::DetermineSourceEngine(const char *game)
+{
+	if (strcmp(game, "ship") == 0)
+	{
+		return SOURCE_ENGINE_ORIGINAL;
+	}
+	else
+	{
+		return SOURCE_ENGINE_EPISODEONE;
+	}
+}
+
 ConVar *BaseProvider::CreateConVar(const char *name,
 								   const char *defval,
 								   const char *help,
