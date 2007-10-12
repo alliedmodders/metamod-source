@@ -70,9 +70,15 @@ namespace SourceHook
 				return m_Proto;
 			}
 
+			// For old sourcehook.h: flags 0 -> assume ByVal
+			static unsigned int GetRealFlags(const PassInfo &info)
+			{
+				return (info.flags == 0) ? PassInfo::PassFlag_ByVal : info.flags;
+			}
+
 			static size_t GetRealSize(const PassInfo &info)
 			{
-				if (info.flags & PassInfo::PassFlag_ByRef)
+				if (GetRealFlags(info) & PassInfo::PassFlag_ByRef)
 				{
 					return sizeof(void*);
 				}

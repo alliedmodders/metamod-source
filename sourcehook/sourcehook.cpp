@@ -96,7 +96,7 @@ namespace SourceHook
 				{
 					if (p1->paramsPassInfo[i].type != p2->paramsPassInfo[i].type)
 						return false;
-					if (p1->paramsPassInfo[i].flags != p2->paramsPassInfo[i].flags)
+					if (GetRealFlags(p1->paramsPassInfo[i]) != GetRealFlags(p2->paramsPassInfo[i]))
 						return false;
 				}
 			}
