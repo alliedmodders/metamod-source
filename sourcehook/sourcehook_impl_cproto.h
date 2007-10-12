@@ -69,6 +69,16 @@ namespace SourceHook
 			{
 				return m_Proto;
 			}
+
+			static size_t GetRealSize(const PassInfo &info)
+			{
+				if (info.flags & PassInfo::PassFlag_ByRef)
+				{
+					return sizeof(void*);
+				}
+
+				return info.size;
+			}
 		};
 	}
 }

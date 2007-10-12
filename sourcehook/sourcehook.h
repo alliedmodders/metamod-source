@@ -171,8 +171,9 @@ namespace SourceHook
 			PassFlag_ByVal		= (1<<0),		/**< Passing by value */
 			PassFlag_ByRef		= (1<<1),		/**< Passing by reference */
 			PassFlag_ODtor		= (1<<2),		/**< Object has a destructor */
-			PassFlag_OCtor		= (1<<3),		/**< Object has a constructor */
-			PassFlag_AssignOp	= (1<<4)		/**< Object has an assignment operator */
+			PassFlag_OCtor		= (1<<3),		/**< Object has a normal non-trivial constructor */
+			PassFlag_AssignOp	= (1<<4),		/**< Object has a non-trivial assignment operator */
+			PassFlag_CCtor		= (1<<5)		/**< Object has a copy constructor (which takes const Object& as only parameter) */
 		};
 
 		size_t size;			//!< Size of the data being passed
@@ -181,6 +182,14 @@ namespace SourceHook
 		//  (might be used in future versions for automatic hookfunc generation)
 		int type;				//!< PassType value
 		unsigned int flags;		//!< Pass/return flags
+
+		struct V2Info
+		{
+			void *pDefCtor;
+			void *pCopyCtor;
+			void *pNormalCtor;
+			void *pAssignOperator;
+		};
 	};
 
 	struct ProtoInfo
@@ -196,8 +205,15 @@ namespace SourceHook
 		PassInfo retPassInfo;		//!< PassInfo for the return value. size=0 -> no retval
 		const PassInfo *paramsPassInfo;	//!< PassInfos for the parameters
 
+		// paramsPassInfo[0] is basically a dummy parameter.
+		// However, paramsPassInfo[0].size stores the version of the ProtoInfo structure.
+
 		// Extra info:
 		int convention;
+
+		// Version2:
+		//  PassInfo::V2Info retPassInfo2;
+		//  const PassInfo::V2Info *paramsPassInfo2;
 	};
 
 	struct IHookManagerInfo;
@@ -488,6 +504,18 @@ namespace SourceHook
 
 		return origentry ? origentry : *reinterpret_cast<void**>(vfnptr);
 	}
+
+	template <class T> struct GetPassInfo
+	{
+		static const int type = 0;
+		static const unsigned int flags = PassInfo::PassFlag_ByVal;
+	};
+
+	template <class T> struct GetPassInfo<T&>
+	{
+		static const int type = 0;
+		static const unsigned int flags = PassInfo::PassFlag_ByRef;
+	};
 }
 
 /************************************************************************/
@@ -831,7 +859,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	META_RES prev_res; \
 	META_RES cur_res; \
 	\
-	typedef ReferenceCarrier<rettype>::type my_rettype; \
+	typedef ReferenceCarrier< rettype >::type my_rettype; \
 	my_rettype orig_ret; \
 	my_rettype override_ret; \
 	my_rettype plugin_ret; \
@@ -966,6 +994,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 //  -> one should probably flag references in __SourceHook_ParamSizes_* !
 //		or simply assume that their size is sizeof(void*)=SH_PTRSIZE... could be doable through a simple template
 
+#define __SH_GPI(tt) { sizeof(tt), ::SourceHook::GetPassInfo< tt >::type, ::SourceHook::GetPassInfo< tt >::flags }
+
 
 // ********* Support for 0 arguments *********
 #define SH_DECL_HOOK0(ifacetype, ifacefunc, attr, overload, rettype) \
@@ -979,7 +1009,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		(static_cast<rettype (ifacetype::*)() attr>(&ifacetype::ifacefunc))) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 0, { sizeof(rettype), 0, 0 }, \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 0, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1015,7 +1045,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		(static_cast<rettype (ifacetype::*)(const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 0, { sizeof(rettype), 0, 0 }, \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 0, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK0_void_vafmt(ifacetype, ifacefunc, attr, overload) \
@@ -1050,7 +1080,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 0, { sizeof(rettype), 0, 0 }, \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 0, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK0_void(hookname, vtblidx, vtbloffs, thisptroffs) \
@@ -1078,8 +1108,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1093,7 +1123,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1114,8 +1144,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK1_void_vafmt(ifacetype, ifacefunc, attr, overload, param1) \
@@ -1135,7 +1165,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1149,8 +1179,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK1_void(hookname, vtblidx, vtbloffs, thisptroffs, param1) \
@@ -1162,7 +1192,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1178,8 +1208,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1193,7 +1223,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1214,8 +1244,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK2_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2) \
@@ -1235,7 +1265,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 2, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1249,8 +1279,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 2, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 2, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK2_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2) \
@@ -1262,7 +1292,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 2, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1278,8 +1308,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1293,7 +1323,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1314,8 +1344,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK3_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
@@ -1335,7 +1365,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 3, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1349,8 +1379,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 3, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 3, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK3_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3) \
@@ -1362,7 +1392,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 3, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1378,8 +1408,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1393,7 +1423,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1414,8 +1444,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK4_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
@@ -1435,7 +1465,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 4, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1449,8 +1479,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 4, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 4, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK4_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4) \
@@ -1462,7 +1492,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 4, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1478,8 +1508,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1493,7 +1523,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1514,8 +1544,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK5_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
@@ -1535,7 +1565,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 5, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1549,8 +1579,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 5, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 5, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK5_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5) \
@@ -1562,7 +1592,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 5, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1578,8 +1608,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1593,7 +1623,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1614,8 +1644,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK6_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
@@ -1635,7 +1665,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 6, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1649,8 +1679,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 6, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 6, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK6_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6) \
@@ -1662,7 +1692,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 6, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1678,8 +1708,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1693,7 +1723,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1714,8 +1744,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK7_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
@@ -1735,7 +1765,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 7, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1749,8 +1779,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 7, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 7, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK7_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7) \
@@ -1762,7 +1792,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 7, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1778,8 +1808,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1793,7 +1823,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1814,8 +1844,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK8_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
@@ -1835,7 +1865,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 8, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1849,8 +1879,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 8, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 8, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK8_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8) \
@@ -1862,7 +1892,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 8, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1878,8 +1908,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1893,7 +1923,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1914,8 +1944,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK9_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
@@ -1935,7 +1965,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 9, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1949,8 +1979,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 9, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 9, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK9_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
@@ -1962,7 +1992,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 9, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -1978,8 +2008,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -1993,7 +2023,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2014,8 +2044,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK10_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
@@ -2035,7 +2065,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 10, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2049,8 +2079,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 10, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 10, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK10_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
@@ -2062,7 +2092,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 10, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2078,8 +2108,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2093,7 +2123,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2114,8 +2144,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK11_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
@@ -2135,7 +2165,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 11, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2149,8 +2179,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 11, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 11, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK11_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
@@ -2162,7 +2192,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 11, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2178,8 +2208,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2193,7 +2223,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11),__SH_GPI(param12) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2214,8 +2244,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK12_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
@@ -2235,7 +2265,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 12, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2249,8 +2279,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 12, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 12, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK12_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
@@ -2262,7 +2292,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 12, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2278,8 +2308,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2293,7 +2323,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11),__SH_GPI(param12),__SH_GPI(param13) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2314,8 +2344,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK13_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
@@ -2335,7 +2365,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 13, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2349,8 +2379,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 13, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 13, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK13_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
@@ -2362,7 +2392,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 13, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2378,8 +2408,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2393,7 +2423,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11),__SH_GPI(param12),__SH_GPI(param13),__SH_GPI(param14) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2414,8 +2444,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK14_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
@@ -2435,7 +2465,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 14, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2449,8 +2479,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 14, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 14, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK14_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
@@ -2462,7 +2492,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 14, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2478,8 +2508,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2493,7 +2523,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11),__SH_GPI(param12),__SH_GPI(param13),__SH_GPI(param14),__SH_GPI(param15) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2514,8 +2544,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK15_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
@@ -2535,7 +2565,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 15, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2549,8 +2579,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 15, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 15, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK15_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
@@ -2562,7 +2592,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 15, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 
@@ -2578,8 +2608,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15), __SH_GPI(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -2593,7 +2623,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0},__SH_GPI(param1),__SH_GPI(param2),__SH_GPI(param3),__SH_GPI(param4),__SH_GPI(param5),__SH_GPI(param6),__SH_GPI(param7),__SH_GPI(param8),__SH_GPI(param9),__SH_GPI(param10),__SH_GPI(param11),__SH_GPI(param12),__SH_GPI(param13),__SH_GPI(param14),__SH_GPI(param15),__SH_GPI(param16) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2614,8 +2644,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15), __SH_GPI(param16) }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK16_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
@@ -2635,7 +2665,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15), __SH_GPI(param16) }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { 16, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -2649,8 +2679,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 16, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15), __SH_GPI(param16) }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 16, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK16_void(hookname, vtblidx, vtbloffs, thisptroffs, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
@@ -2662,7 +2692,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, {sizeof(param1), 0, 0}, {sizeof(param2), 0, 0}, {sizeof(param3), 0, 0}, {sizeof(param4), 0, 0}, {sizeof(param5), 0, 0}, {sizeof(param6), 0, 0}, {sizeof(param7), 0, 0}, {sizeof(param8), 0, 0}, {sizeof(param9), 0, 0}, {sizeof(param10), 0, 0}, {sizeof(param11), 0, 0}, {sizeof(param12), 0, 0}, {sizeof(param13), 0, 0}, {sizeof(param14), 0, 0}, {sizeof(param15), 0, 0}, {sizeof(param16), 0, 0} }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}, __SH_GPI(param1), __SH_GPI(param2), __SH_GPI(param3), __SH_GPI(param4), __SH_GPI(param5), __SH_GPI(param6), __SH_GPI(param7), __SH_GPI(param8), __SH_GPI(param9), __SH_GPI(param10), __SH_GPI(param11), __SH_GPI(param12), __SH_GPI(param13), __SH_GPI(param14), __SH_GPI(param15), __SH_GPI(param16) }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { 16, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 

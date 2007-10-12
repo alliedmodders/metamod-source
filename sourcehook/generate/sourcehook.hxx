@@ -171,8 +171,9 @@ namespace SourceHook
 			PassFlag_ByVal		= (1<<0),		/**< Passing by value */
 			PassFlag_ByRef		= (1<<1),		/**< Passing by reference */
 			PassFlag_ODtor		= (1<<2),		/**< Object has a destructor */
-			PassFlag_OCtor		= (1<<3),		/**< Object has a constructor */
-			PassFlag_AssignOp	= (1<<4)		/**< Object has an assignment operator */
+			PassFlag_OCtor		= (1<<3),		/**< Object has a normal non-trivial constructor */
+			PassFlag_AssignOp	= (1<<4),		/**< Object has a non-trivial assignment operator */
+			PassFlag_CCtor		= (1<<5)		/**< Object has a copy constructor (which takes const Object& as only parameter) */
 		};
 
 		size_t size;			//!< Size of the data being passed
@@ -181,6 +182,14 @@ namespace SourceHook
 		//  (might be used in future versions for automatic hookfunc generation)
 		int type;				//!< PassType value
 		unsigned int flags;		//!< Pass/return flags
+
+		struct V2Info
+		{
+			void *pDefCtor;
+			void *pCopyCtor;
+			void *pNormalCtor;
+			void *pAssignOperator;
+		};
 	};
 
 	struct ProtoInfo
@@ -196,8 +205,15 @@ namespace SourceHook
 		PassInfo retPassInfo;		//!< PassInfo for the return value. size=0 -> no retval
 		const PassInfo *paramsPassInfo;	//!< PassInfos for the parameters
 
+		// paramsPassInfo[0] is basically a dummy parameter.
+		// However, paramsPassInfo[0].size stores the version of the ProtoInfo structure.
+
 		// Extra info:
 		int convention;
+
+		// Version2:
+		//  PassInfo::V2Info retPassInfo2;
+		//  const PassInfo::V2Info *paramsPassInfo2;
 	};
 
 	struct IHookManagerInfo;
@@ -488,6 +504,18 @@ namespace SourceHook
 
 		return origentry ? origentry : *reinterpret_cast<void**>(vfnptr);
 	}
+
+	template <class T> struct GetPassInfo
+	{
+		static const int type = 0;
+		static const unsigned int flags = PassInfo::PassFlag_ByVal;
+	};
+
+	template <class T> struct GetPassInfo<T&>
+	{
+		static const int type = 0;
+		static const unsigned int flags = PassInfo::PassFlag_ByRef;
+	};
 }
 
 /************************************************************************/
@@ -831,7 +859,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	META_RES prev_res; \
 	META_RES cur_res; \
 	\
-	typedef ReferenceCarrier<rettype>::type my_rettype; \
+	typedef ReferenceCarrier< rettype >::type my_rettype; \
 	my_rettype orig_ret; \
 	my_rettype override_ret; \
 	my_rettype plugin_ret; \
@@ -966,6 +994,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 //  -> one should probably flag references in __SourceHook_ParamSizes_* !
 //		or simply assume that their size is sizeof(void*)=SH_PTRSIZE... could be doable through a simple template
 
+#define __SH_GPI(tt) { sizeof(tt), ::SourceHook::GetPassInfo< tt >::type, ::SourceHook::GetPassInfo< tt >::flags }
+
 @[$1,0,$a:
 // ********* Support for $1 arguments *********
 #define SH_DECL_HOOK$1(ifacetype, ifacefunc, attr, overload, rettype@[$2,1,$1:, param$2@]) \
@@ -978,8 +1008,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(@[$2,1,$1|, :param$2@]) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 
@@ -993,7 +1023,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(@[$2,1,$1|, :param$2@]) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:,__SH_GPI(param$2)@] }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1014,8 +1044,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(@[$2,1,$1|, :param$2@]@[$1!=0:, @]const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
-	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
+	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
 #define SH_DECL_HOOK$1_void_vafmt(ifacetype, ifacefunc, attr, overload@[$2,1,$1:, param$2@]) \
@@ -1035,7 +1065,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(@[$2,1,$1|, :param$2@]@[$1!=0:, @]const char *, ...) attr>(&ifacetype::ifacefunc))) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {0, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
 	::SourceHook::ProtoInfo SH_FHCls(ifacetype, ifacefunc, overload)::ms_Proto = { $1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0 };
 
@@ -1049,8 +1079,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
-	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, { sizeof(rettype), 0, 0 }, \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, __SH_GPI(rettype), \
 		__SourceHook_ParamInfosM_##hookname, 0 };
 
 #define SH_DECL_MANUALHOOK$1_void(hookname, vtblidx, vtbloffs, thisptroffs@[$2,1,$1:, param$2@]) \
@@ -1062,7 +1092,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1|, :param$2@]); \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
-	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}@[$2,1,$1:, {sizeof(param$2), 0, 0}@] }; \
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {0, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, { 0, 0, 0 }, \
 		__SourceHook_ParamInfosM_##hookname	, 0 };
 

@@ -24,6 +24,19 @@ namespace
 	MAKE_STATE_1(State_Result, int);
 	MAKE_STATE_1(State_Result_InHook, int);
 
+	MAKE_STATE_2(State_F2_Called, int, int);
+	MAKE_STATE_2(State_F2_Handler_Called, int, int);
+
+	struct POD
+	{
+		int a;
+		int b;
+		int c;
+		int d;
+		int e;
+		int f;
+	};
+	
 	class CBase
 	{
 		// Private copy constructor!
@@ -75,6 +88,21 @@ namespace
 		{
 			return sth.Func();
 		}
+
+		virtual void F2(POD a)
+		{
+		}
+	};
+
+
+	class Test2
+	{
+	public:
+		virtual void F1(){}
+		virtual void F2(POD &a)
+		{
+			ADD_STATE(State_F2_Called(a.a, a.b));
+		}
 	};
 
 	class CHook
@@ -85,8 +113,20 @@ namespace
 			ADD_STATE(State_Result_InHook(sth.Func()));
 			RETURN_META_VALUE(MRES_SUPERCEDE, 20);
 		}
+
+		virtual void F2(POD &a)
+		{
+			ADD_STATE(State_F2_Handler_Called(a.a, a.b));
+		}
+
+		virtual void F21(POD a)
+		{
+		}
 	};
+
 	SH_DECL_HOOK1(CHello, Func, SH_NOATTRIB, 0, int, CBase&);
+	SH_DECL_HOOK1_void(CHello, F2, SH_NOATTRIB, 0, POD);
+	SH_DECL_HOOK1_void(Test2, F2, SH_NOATTRIB, 0, POD&);
 
 	CHello *MyInstanceFactory()
 	{
@@ -105,7 +145,9 @@ bool TestRef(std::string &error)
 	CDerived2 der2(11);
 	CDerived2 der3(12);
 	CHello *pHello = MyInstanceFactory();
+	Test2 *pTest2 = new Test2;
 	CAutoPtrDestruction<CHello> apd(pHello);
+	CAutoPtrDestruction<Test2> apd2(pTest2);
 	CHook hook;
 
 	SourceHook::CallClass<CHello> *cc = SH_GET_CALLCLASS(pHello);
@@ -163,6 +205,23 @@ bool TestRef(std::string &error)
 		new State_Result(11),
 		new State_Result(12),
 		NULL), "Part 4");
+
+	// Check for correct ref proto handling
+
+	SH_ADD_HOOK(CHello, F2, pHello, SH_MEMBER(&hook, &(CHook::F21)), false);
+	SH_ADD_HOOK(Test2, F2, pTest2, SH_MEMBER(&hook, &(CHook::F2)), false);
+
+	POD pod = { 1, 2 };
+	pTest2->F2(pod);
+
+	int a = 5;
+
+	pHello->F2(pod);
+
+	CHECK_STATES((&g_States,
+		new State_F2_Handler_Called(1, 2),
+		new State_F2_Called(1, 2),
+		NULL), "Part 5");
 
    	return true;
 }

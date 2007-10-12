@@ -90,7 +90,7 @@ namespace SourceHook
 			// Skip params[0] : dummy
 			for (int i = 1; i <= p1->numOfParams; ++i)
 			{
-				if (p1->paramsPassInfo[i].size != p2->paramsPassInfo[i].size)
+				if (GetRealSize(p1->paramsPassInfo[i]) != GetRealSize(p2->paramsPassInfo[i]))
 					return false;
 				if (p1->paramsPassInfo[i].type != PassInfo::PassType_Unknown && p2->paramsPassInfo[i].type != PassInfo::PassType_Unknown)
 				{
