@@ -989,11 +989,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		bool IsEqual(ISHDelegate *pOtherDeleg) { return m_Deleg == static_cast<CMyDelegateImpl*>(pOtherDeleg)->m_Deleg; } \
 	};
 
-// :FIXME:
-//  sizeof on references returns the size of the datatype, NOT the pointer size or something
-//  -> one should probably flag references in __SourceHook_ParamSizes_* !
-//		or simply assume that their size is sizeof(void*)=SH_PTRSIZE... could be doable through a simple template
-
+// GetPassInfo -> easier access. __SH_GPI generates a SourceHook::PassInfo instance.
 #define __SH_GPI(tt) { sizeof(tt), ::SourceHook::GetPassInfo< tt >::type, ::SourceHook::GetPassInfo< tt >::flags }
 
 @[$1,0,$a:
