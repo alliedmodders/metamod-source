@@ -208,8 +208,8 @@ bool TestRef(std::string &error)
 
 	// Check for correct ref proto handling
 
-	SH_ADD_HOOK(CHello, F2, pHello, SH_MEMBER(&hook, &(CHook::F21)), false);
-	SH_ADD_HOOK(Test2, F2, pTest2, SH_MEMBER(&hook, &(CHook::F2)), false);
+	SH_ADD_HOOK(CHello, F2, pHello, SH_MEMBER(&hook, &CHook::F21), false);
+	SH_ADD_HOOK(Test2, F2, pTest2, SH_MEMBER(&hook, &CHook::F2), false);
 
 	POD pod = { 1, 2 };
 	pTest2->F2(pod);
