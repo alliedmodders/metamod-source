@@ -187,7 +187,7 @@ begin
       eStr.Free;
     // check for orangebox directory
     Source := True;
-    if (eStr.IndexOf('orangebox') <> -1) then begin
+    if (AnsiSameText(ExtractFileName(trvDirectories.Selected.Text), 'tf')) then begin
       case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
         mrYes: Source := False;
         mrNo: Source := True;
