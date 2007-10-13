@@ -229,7 +229,7 @@ begin
   frmMain.ggeItem.MaxValue := 1;
   frmMain.ggeItem.Progress := 0;
 
-  if (GetProcessID('Steam.exe') <> -1) and (SteamInstall) then begin
+  {if (GetProcessID('Steam.exe') <> -1) and (SteamInstall) then begin
     if MessageBox(frmMain.Handle, 'Steam is still running. It is necersarry to shut it down before you install Metamod:Source. Shut it down now?', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNO) = mrYes then begin
       AddStatus('Shutting down Steam...', clBlack, False);
       if GetProcessID('Steam.exe') = -1 then
@@ -247,7 +247,7 @@ begin
       Application.Terminate;
       exit;
     end;
-  end;
+  end;}
   frmMain.ggeAll.Progress := 1;
   frmMain.ggeItem.Progress := 1;
   { Unpack }
