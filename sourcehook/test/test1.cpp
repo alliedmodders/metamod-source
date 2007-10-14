@@ -353,6 +353,9 @@ namespace
 	SH_DECL_HOOK0(Test, F20, const, 0, float);
 	SH_DECL_HOOK1_void(Test, F60, SH_NOATTRIB, 0, int&);
 
+	SH_DECL_EXTERN1(Test, F299, SH_NOATTRIB, 0, bool, const char *);
+	SH_DECL_EXTERN0_void(Test, F1, SH_NOATTRIB, 0);
+
 	META_RES g_F1Pre_WhatToDo;
 	META_RES g_F1Post_WhatToDo;
 

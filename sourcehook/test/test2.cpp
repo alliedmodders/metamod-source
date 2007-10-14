@@ -55,6 +55,9 @@ namespace
 	SH_DECL_HOOK2_void_vafmt(IGaben, Vafmt1, SH_NOATTRIB, 0, bool, int);
 	SH_DECL_HOOK0_vafmt(IGaben, Vafmt2, SH_NOATTRIB, 0, float);
 
+	SH_DECL_EXTERN2_void_vafmt(IGaben, Vafmt1, SH_NOATTRIB, 0, bool, int);
+	SH_DECL_EXTERN0_vafmt(IGaben, Vafmt2, SH_NOATTRIB, 0, float);
+
 	void EatYams0_Handler()
 	{
 		ADD_STATE(State_EatYams_Handler_Called(0));
