@@ -10,77 +10,42 @@
 #include <string>
 #include <stdlib.h>
 #include <time.h>
-#include "sh_tinyhash.h"
-#include "sh_list.h"
+
 #include "sourcehook_impl.h"
 #include "sourcehook.h"
 
 using namespace std;
-
 bool g_Verbose;
 
-class Test
-{
-	typedef bool (*TestProto)(std::string&);
-	TestProto m_Func;
-	std::string m_Name;
-
-	static SourceHook::CVector<Test *> ms_Tests;
-public:
-	Test(TestProto func, const char *name) : m_Func(func), m_Name(name)
-	{
-		ms_Tests.push_back(this);
-	}
-
-	bool operator()()
-	{
-		std::string error;
-		if (!m_Func(error))
-		{
-			cout << "Test" << m_Name << " FAILED: " << error << endl;
-			return false;
-		}
-		else
-		{
-			cout << "Test" << m_Name << " passed" << endl;
-			return true;
-		}
-	}
-
-	static void DoTests()
-	{
-		int passed=0, failed=0;
-		for (SourceHook::CVector<Test*>::iterator iter = ms_Tests.begin(); iter != ms_Tests.end(); ++iter)
-		{
-			if ((**iter)())
-				++passed;
-			else
-				++failed;
-		}
-		cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
-		cout << "Total: " << passed + failed << endl;
-	}
-};
-
-SourceHook::CVector<Test *> Test::ms_Tests;
+#define DECL_TEST(x) bool Test##x(std::string &error);
 
 #define DO_TEST(x) \
-	bool Test##x(std::string &error); \
-	Test g_Test##x(Test##x, #x);
+	error.clear(); \
+	if (Test##x(error)) \
+	{ \
+		++passed; \
+		cout << "Test" << #x << " passed" << endl; \
+	} \
+	else \
+	{ \
+		++failed; \
+		cout << "Test" << #x << " FAILED: " << error << endl; \
+	} \
 
-DO_TEST(List);
-DO_TEST(Basic);
-DO_TEST(VafmtAndOverload);
-DO_TEST(ThisPtrOffs);
-DO_TEST(PlugSys);
-DO_TEST(Bail);
-DO_TEST(Reentr);
-DO_TEST(Manual);
-DO_TEST(Recall);
-DO_TEST(Multi);
-DO_TEST(Ref);
-DO_TEST(RefRet);
-DO_TEST(VPHooks);
+
+DECL_TEST(List);
+DECL_TEST(Basic);
+DECL_TEST(VafmtAndOverload);
+DECL_TEST(ThisPtrOffs);
+DECL_TEST(PlugSys);
+DECL_TEST(Bail);
+DECL_TEST(Reentr);
+DECL_TEST(Manual);
+DECL_TEST(Recall);
+DECL_TEST(Multi);
+DECL_TEST(Ref);
+DECL_TEST(RefRet);
+DECL_TEST(VPHooks);
 
 int main(int argc, char *argv[])
 {
@@ -88,7 +53,24 @@ int main(int argc, char *argv[])
 
 	g_Verbose = argc > 1 && strcmp(argv[1], "-v") == 0;
 
-	Test::DoTests();
+	int passed = 0, failed = 0;
+
+	DO_TEST(List);
+	DO_TEST(Basic);
+	DO_TEST(VafmtAndOverload);
+	DO_TEST(ThisPtrOffs);
+	DO_TEST(PlugSys);
+	DO_TEST(Bail);
+	DO_TEST(Reentr);
+	DO_TEST(Manual);
+	DO_TEST(Recall);
+	DO_TEST(Multi);
+	DO_TEST(Ref);
+	DO_TEST(RefRet);
+	DO_TEST(VPHooks);
+
+	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
+	cout << "Total: " << passed + failed << endl;
 
 	cout << "Press enter to continue" << endl;
 
