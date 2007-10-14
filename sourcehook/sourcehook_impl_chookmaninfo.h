@@ -18,6 +18,8 @@ namespace SourceHook
 {
 	namespace Impl
 	{
+		class CVfnPtr;
+		
 		class CHookManager : public IHookManagerInfo
 		{
 			// *** Data ***
@@ -29,7 +31,8 @@ namespace SourceHook
 			int m_Version;
 
 			void *m_HookfuncVfnptr;
-			List<CVfnPtr> m_VfnPtrList;
+
+			List<CVfnPtr*> m_VfnPtrs;
 		public:
 			// *** Descriptor ***
 			struct Descriptor
@@ -57,17 +60,27 @@ namespace SourceHook
 			inline void *GetHookFunc() const;
 			inline HookManagerPubFunc GetPubFunc() const;
 
-			inline List<CVfnPtr> &GetVfnPtrList();
-			inline const List<CVfnPtr> &GetVfnPtrList() const;
-
 			inline void Register();
 			inline void Unregister();
 
-			CVfnPtr &GetVfnPtr(void *vfnptr);
+			inline void IncrRef(CVfnPtr *pVfnPtr);
+			inline void DecrRef(CVfnPtr *pVfnPtr);
+
+			List<CVfnPtr*> &GetVfnPtrList()
+			{
+				return m_VfnPtrs;
+			}
 
 			// *** IHookManagerInfo interface ***
 			void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
 				ProtoInfo *proto, void *hookfunc_vfnptr);
+		};
+
+		class CHookManList : public List<CHookManager>
+		{
+		public:
+			inline CHookManager *GetHookMan(Plugin plug, HookManagerPubFunc pubFunc);
+			inline CHookManager *GetHookMan(CHookManager &hm);
 		};
 
 		// *** Implementation ***
@@ -135,16 +148,6 @@ namespace SourceHook
 			return m_PubFunc;
 		}
 
-		inline List<CVfnPtr> &CHookManager::GetVfnPtrList()
-		{
-			return m_VfnPtrList;
-		}
-
-		inline const List<CVfnPtr> &CHookManager::GetVfnPtrList() const
-		{
-			return m_VfnPtrList;
-		}
-
 		inline void CHookManager::Register()
 		{
 			m_PubFunc(true, this);
@@ -153,6 +156,40 @@ namespace SourceHook
 		inline void CHookManager::Unregister()
 		{
 			m_PubFunc(true, NULL);
+		}
+
+		inline void CHookManager::IncrRef(CVfnPtr *pVfnPtr)
+		{
+			m_VfnPtrs.push_back(pVfnPtr);
+			if (m_VfnPtrs.size() == 1)
+				Register();
+		}
+
+		inline void CHookManager::DecrRef(CVfnPtr *pVfnPtr)
+		{
+			m_VfnPtrs.remove(pVfnPtr);
+			if (m_VfnPtrs.empty())
+				Unregister();
+		}
+
+		inline CHookManager *CHookManList::GetHookMan(Plugin plug, HookManagerPubFunc pubFunc)
+		{
+			CHookManager hm(plug, pubFunc);
+			return GetHookMan(hm);
+		}
+
+		inline CHookManager *CHookManList::GetHookMan(CHookManager &hm)
+		{
+			iterator iter = find(hm);
+			if (iter == end())
+			{
+				push_back(hm);
+				return &(back());
+			}
+			else
+			{
+				return &(*iter);
+			}
 		}
 	}
 }

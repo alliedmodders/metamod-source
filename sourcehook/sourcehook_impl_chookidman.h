@@ -69,7 +69,7 @@ namespace SourceHook
 				void *adjustediface, Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post);
 
 			// Removes all hooks with a specified vfnptr
-			bool RemoveAll(void *vfnptr);
+			void RemoveAll(void *vfnptr);
 
 			void FindAllHooks(CVector<int> &output);
 			void FindAllHooks(CVector<int> &output, Plugin plug);

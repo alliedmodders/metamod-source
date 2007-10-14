@@ -12,11 +12,11 @@
 #define __SOURCEHOOK_IMPL_H__
 
 #include "sourcehook.h"
+#include "sh_memory.h"
 #include "sh_list.h"
 #include "sh_vector.h"
 #include "sh_tinyhash.h"
 #include "sh_stack.h"
-#include "sh_listcat.h"
 
 /*
 
@@ -173,11 +173,10 @@ New SH_CALL
 */
 
 #include "sourcehook_impl_cproto.h"
+#include "sourcehook_impl_chookmaninfo.h"
 #include "sourcehook_impl_chook.h"
 #include "sourcehook_impl_ciface.h"
 #include "sourcehook_impl_cvfnptr.h"
-#include "sourcehook_impl_chookmaninfo.h"
-#include "sourcehook_impl_chookmancont.h"
 #include "sourcehook_impl_chookidman.h"
 
 namespace SourceHook
@@ -188,15 +187,6 @@ namespace SourceHook
 
 	namespace Impl
 	{
-
-		class CHookManContainerList : public List<CHookManagerContainer>
-		{
-		public:
-			CHookManagerContainer &GetContainer(int vtbloffs, int vtblidx, const CProto &proto);
-			void RemoveHookMans(Plugin plug);
-			void RemoveHookMans(Plugin plug, HookManagerPubFunc pubFunc);
-		};
-
 		struct CHookContext : IHookContext
 		{
 			enum State
@@ -250,16 +240,25 @@ namespace SourceHook
 			bool ShouldCallOrig();
 		};
 
+		class CVfnPtrList : public List<CVfnPtr>
+		{
+		public:
+			CVfnPtr &GetVfnPtr(void *p);
+		};
+
 		typedef CStack<CHookContext> HookContextStack;
+		
 
 		class CSourceHookImpl : public ISourceHook
 		{
 		private:
-			CHookManContainerList m_HookManContainers;
+			CHookManList m_HookManList;
+			CVfnPtrList m_VfnPtrs;
 			CHookIDManager m_HookIDMan;
 			HookContextStack m_ContextStack;
 
 			bool SetHookPaused(int hookid, bool paused);
+			CHookManList::iterator RemoveHookManager(CHookManList::iterator iter);
 		public:
 			CSourceHookImpl();
 			virtual ~CSourceHookImpl();

@@ -15,60 +15,28 @@ namespace SourceHook
 {
 	namespace Impl
 	{
+		// Internal representation
+		struct IntPassInfo
+		{
+			size_t size;
+			int type;
+			unsigned int flags;
+
+			void *pNormalCtor;
+			void *pCopyCtor;
+			void *pDtor;
+			void *pAssignOperator;
+		};
 
 		class CProto
 		{
-			ProtoInfo *m_Proto;
+			int m_Version;				// -1 = invalid
+			int m_NumOfParams;
+			IntPassInfo m_RetPassInfo;
+			CVector<IntPassInfo> m_ParamsPassInfo;
+			int m_Convention;
 
-			static bool Equal(const ProtoInfo *p1, const ProtoInfo *p2);
-			static ProtoInfo *DupProto(const ProtoInfo *src);
-			static void FreeProto(ProtoInfo *prot);
-		public:
-			CProto() : m_Proto(NULL)
-			{
-			}
-
-			CProto(const ProtoInfo *pProto) : m_Proto(DupProto(pProto))
-			{
-			}
-
-			CProto(const CProto &other) : m_Proto(DupProto(other.m_Proto))
-			{
-			}
-
-			~CProto()
-			{
-				FreeProto(m_Proto);
-				m_Proto = NULL;
-			}
-
-			void operator = (const ProtoInfo *pProto)
-			{
-				if (m_Proto)
-					FreeProto(m_Proto);
-				m_Proto = DupProto(pProto);
-			}
-
-			void operator = (const CProto &other)
-			{
-				if (m_Proto)
-					FreeProto(m_Proto);
-				m_Proto = DupProto(other.m_Proto);
-			}
-
-			bool operator == (const ProtoInfo *pProto) const
-			{
-				return Equal(pProto, m_Proto);
-			}
-			bool operator == (const CProto &other) const
-			{
-				return Equal(other.m_Proto, m_Proto);
-			}
-
-			const ProtoInfo *GetProto() const
-			{
-				return m_Proto;
-			}
+			void Fill(const ProtoInfo *pProto);
 
 			// For old sourcehook.h: flags 0 -> assume ByVal
 			static unsigned int GetRealFlags(const PassInfo &info)
@@ -76,9 +44,62 @@ namespace SourceHook
 				return (info.flags == 0) ? PassInfo::PassFlag_ByVal : info.flags;
 			}
 
-			static size_t GetRealSize(const PassInfo &info)
+		public:
+			CProto() : m_Version(-1)
 			{
-				if (GetRealFlags(info) & PassInfo::PassFlag_ByRef)
+			}
+
+			CProto(const ProtoInfo *pProto)
+			{
+				Fill(pProto);
+			}
+
+			CProto(const CProto &other) : m_Version(other.m_Version), m_NumOfParams(other.m_NumOfParams),
+				m_RetPassInfo(other.m_RetPassInfo), m_ParamsPassInfo(other.m_ParamsPassInfo),
+				m_Convention(other.m_Convention)
+			{
+
+			}
+
+			~CProto()
+			{
+			}
+
+			void operator = (const ProtoInfo *pProto)
+			{
+				Fill (pProto);
+			}
+
+			bool operator == (const CProto &other) const;
+
+			int GetVersion() const
+			{
+				return m_Version;
+			}
+
+			int GetNumOfParams() const
+			{
+				return m_NumOfParams;
+			}
+
+			const IntPassInfo & GetParam(int i) const
+			{
+				return m_ParamsPassInfo[i];
+			}
+
+			const IntPassInfo & GetRet() const
+			{
+				return m_RetPassInfo;
+			}
+
+			int GetConvention() const
+			{
+				return m_Convention;
+			}
+
+			static size_t GetRealSize(const IntPassInfo &info)
+			{
+				if (info.flags & PassInfo::PassFlag_ByRef)
 				{
 					return sizeof(void*);
 				}
