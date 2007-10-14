@@ -153,7 +153,6 @@ bool TestVPHooks(std::string &error)
 		NULL), "Part 2");
 
 
-
 	// Normal hook, then vp hook
 
 	int hook2 = SH_ADD_HOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
@@ -258,3 +257,4 @@ bool TestVPHooks(std::string &error)
 
 	return true;
 }
+

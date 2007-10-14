@@ -749,7 +749,8 @@ namespace SourceHook
 					oldctx->m_State = CHookContext::State_Dead;
 
 					List<CVfnPtr*> &vfnptr_list = static_cast<CHookManager*>(hi)->GetVfnPtrList();
-					for (List<CVfnPtr*>::iterator vfnptr_iter = vfnptr_list.begin();
+					List<CVfnPtr*>::iterator vfnptr_iter;
+					for (vfnptr_iter = vfnptr_list.begin();
 						vfnptr_iter != vfnptr_list.end(); ++vfnptr_iter)
 					{
 						if (**vfnptr_iter == vfnptr)
@@ -805,7 +806,8 @@ namespace SourceHook
 			pCtx->pIface = NULL;
 
 			List<CVfnPtr*> &vfnptr_list = static_cast<CHookManager*>(hi)->GetVfnPtrList();
-			for (List<CVfnPtr*>::iterator vfnptr_iter = vfnptr_list.begin();
+			List<CVfnPtr*>::iterator vfnptr_iter; 
+			for (vfnptr_iter = vfnptr_list.begin();
 				vfnptr_iter != vfnptr_list.end(); ++vfnptr_iter)
 			{
 				if (**vfnptr_iter == vfnptr)
