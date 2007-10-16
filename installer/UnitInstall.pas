@@ -32,7 +32,7 @@ uses UnitfrmMain, UnitfrmProxy, UnitFunctions, UnitPackSystem;
 
 function InstallTime: String;
 begin
-  Result := FormatDateTime('HH:MM:SS', Now - StartTime);
+  Result := Copy(FormatDateTime('HH:MM:SS', Now - StartTime), 4, 5);
 end;
 
 procedure AddStatus(Text: String; Color: TColor; ShowTime: Boolean = True);
@@ -320,7 +320,6 @@ begin
       for i := 0 to eStr.Count -1 do begin
         if Trim(eStr[i]) = 'SearchPaths' then begin
           eStr.Insert(i +2, '			GameBin				|gameinfo_path|addons/metamod/bin');
-          AddDone;
           break;
         end;
       end;
@@ -365,7 +364,7 @@ begin
   Screen.Cursor := crDefault;
 
   if ListenInstall then
-    MessageBox(frmMain.Handle, PChar('hl2launch.exe has been copied to ' + ePath + '. You can use it if you want to start your Source game with Metamod:Source enabled.'), PChar(Application.Title), MB_ICONINFORMATION);
+    MessageBox(frmMain.Handle, PChar('The Source launcher "hl2launch.exe" has been copied to ' + ePath + '. You can use it to start your game with Metamod:Source enabled.'), PChar(Application.Title), MB_ICONINFORMATION);
 end;
 
 { Dedicated Server }
