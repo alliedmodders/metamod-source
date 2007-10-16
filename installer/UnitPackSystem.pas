@@ -54,6 +54,8 @@ begin
           { append the compressed file to the destination file }
           tmpFile := TFileStream.Create('tmp',fmOpenRead);
           try
+            l := tmpFile.Size;
+            outfile.WriteBuffer(l, SizeOf(l));
             outfile.CopyFrom(tmpFile,0);
           finally
             tmpFile.Free;
@@ -74,7 +76,7 @@ var
   dest,s : String;
   decompr : TDecompressionStream;
   outfile : TFilestream;
-  i,l,c : Integer;
+  i,l,lr,c : Integer;
 begin
   // IncludeTrailingPathDelimiter (D6/D7 only)
   dest := IncludeTrailingPathDelimiter(DestDirectory);
@@ -88,22 +90,26 @@ begin
       Stream.Read(l,SizeOf(l));
       SetLength(s,l);
       Stream.Read(s[1],l);
+      Stream.Read(l,SizeOf(l));
+      Stream.Read(lr,SizeOf(lr));
       { check if this is the right file }
-      if ((Pos('.source', s) <> 0) and (Source)) or ((Pos('.orangebox', s) <> 0) and (not Source)) then begin
+      if (s = 'hl2launch.exe') or ((Pos('.source', s) <> 0) and (Source)) or ((Pos('.orangebox', s) <> 0) and (not Source)) then begin
         { remove extension and read filesize }
-        s := ChangeFileExt(s, '');
-        Stream.Read(l,SizeOf(l));
+        if (s <> 'hl2launch.exe') then
+          s := ChangeFileExt(s, '');
         { decompress the files and store it }
         s := dest+s; //include the path
         outfile := TFileStream.Create(s,fmCreate);
-        decompr := TDecompressionStream.Create(Stream);
+        decompr := TDecompressionStream.Create(Stream);   
         try
           outfile.CopyFrom(decompr,l);
         finally
           outfile.Free;
           decompr.Free;
         end;
-      end;
+      end
+      else
+        Stream.Position := Stream.Position + lr;
     end;
   finally
     Result := True;
@@ -118,6 +124,7 @@ begin
   Result := False;
   if not FileExists(AFileName) then
     Exit;
+
   try
     aStream := TFileStream.Create(AFileName, fmOpenWrite or fmShareDenyWrite);
     MemoryStream.Seek(0, soFromBeginning);
