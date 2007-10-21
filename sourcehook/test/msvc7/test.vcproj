@@ -249,6 +249,9 @@
 				RelativePath="..\..\sourcehook.cpp">
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.cpp">
+			</File>
+			<File
 				RelativePath="..\test1.cpp">
 			</File>
 			<File
@@ -265,6 +268,9 @@
 			</File>
 			<File
 				RelativePath="..\testbail2.cpp">
+			</File>
+			<File
+				RelativePath="..\testhookmangen.cpp">
 			</File>
 			<File
 				RelativePath="..\testlist.cpp">
@@ -322,6 +328,12 @@
 				RelativePath="..\..\sourcehook.h">
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen_x86.h">
+			</File>
+			<File
 				RelativePath="..\..\sourcehook_impl.h">
 			</File>
 			<File
@@ -354,6 +366,9 @@
 			<File
 				RelativePath="..\testevents.h">
 			</File>
+			<File
+				RelativePath="..\testhookmangen.h">
+			</File>
 			<Filter
 				Name="generate"
 				Filter="">
@@ -377,6 +392,9 @@ popd
 "
 							Outputs="..\sourcehook.h"/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\testhookmangen.hxx">
 				</File>
 			</Filter>
 		</Filter>
