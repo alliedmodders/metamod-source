@@ -31,7 +31,23 @@ struct State
 		return (typeid(other) == typeid(this)) ? true : false;
 	}
 
+	virtual bool Ignore()
+	{
+		return false;
+	}
+
 	virtual void Dump() = 0;
+};
+
+struct IgnoreState : public State
+{
+	virtual bool Ignore()
+	{
+		return true;
+	}
+	virtual void Dump()
+	{
+	}
 };
 
 typedef std::list<State*> StateList;
@@ -53,6 +69,8 @@ namespace
 			State *cs = va_arg(argptr, State*);
 			if (!cs)
 				break;
+			if (cs->Ignore())
+				continue;
 			requiredstates.push_back(cs);
 		}
 		va_end(argptr);
@@ -84,6 +102,14 @@ namespace
 				ok = false;
 				break;
 			}
+		}
+
+		if (!ok && g_Verbose)
+		{
+			std::cout << std::endl << "FAIL: Should be:" << std::endl;
+			DumpStates(&requiredstates);
+			std::cout << std::endl << "FAIL: Is:" << std::endl;
+			DumpStates(sl);
 		}
 
 		for (StateList::iterator iter = requiredstates.begin(); iter != requiredstates.end(); ++iter)
