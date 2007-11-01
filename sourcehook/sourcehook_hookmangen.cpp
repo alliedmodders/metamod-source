@@ -25,6 +25,8 @@ namespace SourceHook
 {
 	namespace Impl
 	{
+		CPageAlloc GenBuffer::ms_Allocator;
+
 		template <class T>
 		jit_int32_t DownCastPtr(T ptr)
 		{
@@ -1123,6 +1125,9 @@ namespace SourceHook
 			// m_HookfuncVfnPtr is a pointer to a void* because SH expects a pointer
 			// into the hookman's vtable
 			*m_HookfuncVfnptr = reinterpret_cast<void*>(m_HookFunc.GetData());
+
+			m_HookFunc.SetRE();
+
 			return m_HookFunc.GetData();
 		}
 
@@ -1211,8 +1216,7 @@ namespace SourceHook
 			IA32_Pop_Reg(&m_PubFunc, REG_EBP);
 			IA32_Return(&m_PubFunc);
 
-			SetMemAccess(reinterpret_cast<void*>(m_PubFunc.GetData()), m_PubFunc.GetSize(),
-				SH_MEM_READ | SH_MEM_EXEC);
+			m_PubFunc.SetRE();
 
 			return m_PubFunc;
 		}

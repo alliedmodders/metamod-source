@@ -3,6 +3,7 @@
 #include "sourcehook_test.h"
 #include "testevents.h"
 #include "sourcehook_hookmangen.h"
+#include "sh_memory.h"
 
 // TESTHOOKMANGEN
 // Test automatic hookman generation
@@ -268,7 +269,6 @@ namespace
 	THGM_SETUP_RI(105, double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
 }
 
-
 bool TestHookManGen(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
@@ -466,5 +466,75 @@ bool TestHookManGen(std::string &error)
 	//  -> crash
 
 	Test_CompleteShutdown(g_SHPtr);
+	return true;
+}
+
+bool TestCPageAlloc(std::string &error)
+{
+	using namespace SourceHook;
+
+	CPageAlloc alloc;
+	int i;
+	size_t ps = alloc.GetPageSize();
+
+	char *test1[8];
+
+	for (i = 0; i < 8; ++i)
+		test1[i] = (char*) alloc.Alloc(ps / 4);
+
+	CHECK_COND(test1[1] == test1[0] + ps/4, "Part 1.1");
+	CHECK_COND(test1[2] == test1[1] + ps/4, "Part 1.2");
+	CHECK_COND(test1[3] == test1[2] + ps/4, "Part 1.3");
+
+	CHECK_COND(test1[5] == test1[4] + ps/4, "Part 1.4");
+	CHECK_COND(test1[6] == test1[5] + ps/4, "Part 1.5");
+	CHECK_COND(test1[7] == test1[6] + ps/4, "Part 1.6");
+
+	void *test2 = alloc.Alloc(ps * 3);
+
+	alloc.SetRW(test2);
+	memset(test2, 0, ps * 3);			// should not crash :)
+	alloc.SetRE(test2);
+
+	alloc.Free(test2);
+
+	// Dealloc a ps/4 block and place two ps/8 blocks into it
+	alloc.Free(test1[2]);
+
+	char *test3[2];
+	test3[0] = (char*) alloc.Alloc(ps / 8);
+	test3[1] = (char*) alloc.Alloc(ps / 8);
+
+	CHECK_COND(test3[0] == test1[2], "Part 2.1");
+	CHECK_COND(test3[1] == test1[2] + ps/8, "Part 2.2");
+
+	// Isolated
+	char *test4[8];
+	for (i = 0; i < 8; ++i)
+		test4[i] = (char*) alloc.AllocIsolated(ps / 4);
+
+	// -> The difference is at least one page
+	CHECK_COND(static_cast<size_t>(abs(test4[1] - test4[0])) >= ps, "Part 3.1");
+	CHECK_COND(static_cast<size_t>(abs(test4[2] - test4[1])) >= ps, "Part 3.2");
+	CHECK_COND(static_cast<size_t>(abs(test4[3] - test4[2])) >= ps, "Part 3.3");
+
+	CHECK_COND(static_cast<size_t>(abs(test4[5] - test4[4])) >= ps, "Part 3.4");
+	CHECK_COND(static_cast<size_t>(abs(test4[6] - test4[5])) >= ps, "Part 3.5");
+	CHECK_COND(static_cast<size_t>(abs(test4[7] - test4[6])) >= ps, "Part 3.6");
+
+	// Thus i can set everything except for test4[2] to RE and still write to test4[2]
+
+	alloc.SetRW(test4[2]);
+
+	alloc.SetRE(test4[0]);
+	alloc.SetRE(test4[1]);
+	alloc.SetRE(test4[3]);
+	alloc.SetRE(test4[4]);
+	alloc.SetRE(test4[5]);
+	alloc.SetRE(test4[6]);
+	alloc.SetRE(test4[7]);
+
+	memset((void*)test4[2], 0, ps / 4);
+
 	return true;
 }

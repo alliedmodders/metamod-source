@@ -372,6 +372,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\test1.cpp"
 				>
 			</File>
@@ -393,6 +397,10 @@
 			</File>
 			<File
 				RelativePath="..\testbail2.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\testhookmangen.cpp"
 				>
 			</File>
 			<File
@@ -431,6 +439,10 @@
 				RelativePath="..\testrefret.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\testvphooks.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -438,6 +450,10 @@
 			>
 			<File
 				RelativePath="..\..\sh_list.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sh_memory.h"
 				>
 			</File>
 			<File
@@ -458,6 +474,14 @@
 			</File>
 			<File
 				RelativePath="..\..\sourcehook.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen_x86.h"
 				>
 			</File>
 			<File
@@ -499,6 +523,10 @@
 							Outputs="..\..\sourcehook.h"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\testhookmangen.hxx"
+					>
 				</File>
 			</Filter>
 		</Filter>

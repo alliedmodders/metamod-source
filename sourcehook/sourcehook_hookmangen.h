@@ -42,6 +42,8 @@ namespace SourceHook
 
 		class GenBuffer
 		{
+			static CPageAlloc ms_Allocator;
+
 			unsigned char *m_pData;
 			jitoffs_t m_Size;
 			jitoffs_t m_AllocatedSize;
@@ -78,15 +80,8 @@ namespace SourceHook
 						m_AllocatedSize = 64;
 
 					unsigned char *newBuf;
-					try
-					{
-						//!!!! Better use of pages! or something!
-						newBuf = reinterpret_cast<unsigned char*>(VirtualAlloc(NULL, m_AllocatedSize, MEM_COMMIT, PAGE_READWRITE));
-					}
-					catch (std::bad_alloc)
-					{
-						newBuf = NULL;
-					}
+					newBuf = reinterpret_cast<unsigned char*>(ms_Allocator.Alloc(m_AllocatedSize));
+					ms_Allocator.SetRW(newBuf);
 					if (!newBuf)
 					{
 						SH_ASSERT(0, ("bad_alloc: couldn't allocate 0x%08X bytes of memory\n", m_AllocatedSize));
@@ -94,7 +89,7 @@ namespace SourceHook
 					}
 					memcpy((void*)newBuf, (const void*)m_pData, m_Size);
 					if (m_pData)
-						VirtualFree(m_pData, 0, MEM_RELEASE);
+						ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
 					m_pData = newBuf;
 				}
 				memcpy((void*)(m_pData + m_Size), (const void*)data, size);
@@ -116,10 +111,15 @@ namespace SourceHook
 			void clear()
 			{
 				if (m_pData)
-					VirtualFree(m_pData, 0, MEM_RELEASE);
+					ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
 				m_pData = NULL;
 				m_Size = 0;
 				m_AllocatedSize = 0;
+			}
+
+			void SetRE()
+			{
+				ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
 			}
 
 			operator unsigned char *()
@@ -149,7 +149,6 @@ namespace SourceHook
 			{
 				offs = get_outputpos() - offs;
 			}
-			// :TODO: real buffer which uses virtualalloc correctly	
 		};
 
 		class GenContext

@@ -47,6 +47,7 @@ DECL_TEST(Ref);
 DECL_TEST(RefRet);
 DECL_TEST(VPHooks);
 DECL_TEST(HookManGen);
+DECL_TEST(CPageAlloc);					// in testhookmangen.cpp
 
 int main(int argc, char *argv[])
 {
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
 	DO_TEST(RefRet);
 	DO_TEST(VPHooks);
 	DO_TEST(HookManGen);
+	DO_TEST(CPageAlloc);
 
 	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
 	cout << "Total: " << passed + failed << endl;
