@@ -92,6 +92,11 @@ namespace SourceHook
 				return m_RetPassInfo;
 			}
 
+			IntPassInfo & GetRet()
+			{
+				return m_RetPassInfo;
+			}
+
 			int GetConvention() const
 			{
 				return m_Convention;

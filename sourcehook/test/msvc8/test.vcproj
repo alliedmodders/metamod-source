@@ -303,6 +303,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				MinimalRebuild="true"
+				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -489,6 +490,30 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_impl_chook.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookidman.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookmaninfo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_ciface.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cproto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cvfnptr.h"
+				>
+			</File>
+			<File
 				RelativePath="..\sourcehook_test.h"
 				>
 			</File>
@@ -519,7 +544,7 @@
 						>
 						<Tool
 							Name="VCCustomBuildTool"
-							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h 20&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
+							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h 16&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
 							Outputs="..\..\sourcehook.h"
 						/>
 					</FileConfiguration>

@@ -306,7 +306,7 @@ namespace SourceHook
 		}
 
 		// May not touch eax!
-		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset)
+		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to)
 		{
 			jit_int32_t added_to_stack = 0;
 			jit_int32_t ret = 0;
@@ -348,20 +348,34 @@ namespace SourceHook
 				}
 				added_to_stack += ret;
 			}
+
+			// Memory return support
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+			{
+				// push address where to save it!
+				int reg = NextRegEBX_ECX_EDX();
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, reg, REG_EBP, save_ret_to);
+				IA32_Push_Reg(&m_HookFunc, reg);
+
+				added_to_stack += SIZE_PTR;
+			}
+
 			return added_to_stack;
 		}
 
 		void GenContext::SaveRetVal(int v_where)
 		{
-			// :TODO: assign op support
-			// :TODO: memory return support
-
 			size_t size = m_Proto.GetRet().size;
 			if (size == 0)
 			{
 				// No return value -> nothing
 				return;
 			}
+
+			// Memory return:
+			//   PushParams already did everything that was neccessary
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+				return;
 
 			if (m_Proto.GetRet().type == PassInfo::PassType_Float)
 			{
@@ -391,14 +405,35 @@ namespace SourceHook
 					IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_where);
 					IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EDX, v_where + 4);
 				}
-				else
+			}
+			else if (m_Proto.GetRet().type == PassInfo::PassType_Object)
+			{
+				if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetReg)
 				{
-					// size >8: return in memory
-					// :TODO:
-					//  add flag: MSVC_RetInMemory?
+					if (size <= 4)
+					{
+						// size <= 4: return in EAX
+						//  We align <4 sizes up to 4
+
+						// mov [ebp + v_plugin_ret], eax
+						IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_where);
+					}
+					else if (size <= 8)
+					{
+						// size <= 4: return in EAX:EDX
+						//  We align 4<x<8 sizes up to 8
+
+						// mov [ebp + v_plugin_ret], eax
+						// mov [ebp + v_plugin_ret + 4], edx
+						IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_where);
+						IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EDX, v_where + 4);
+					}
+					else
+					{
+						SH_ASSERT(0, ("RetReg and size > 8 !"));
+					}
 				}
 			}
-			// :TODO: object
 		}
 
 		void GenContext::ProcessPluginRetVal(int v_cur_res, int v_pContext, int v_plugin_ret)
@@ -559,7 +594,7 @@ namespace SourceHook
 			IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_retptr);
 		}
 
-		void GenContext::DoReturn(int v_retptr)
+		void GenContext::DoReturn(int v_retptr, int v_memret_outaddr)
 		{
 			size_t size = m_Proto.GetRet().size;
 			if (!size)
@@ -579,13 +614,13 @@ namespace SourceHook
 				else if (size == 8)
 					IA32_Fld_Mem64(&m_HookFunc, REG_ECX);
 			}
-			else if (m_Proto.GetRet().type == PassInfo::PassType_Basic)
+			else if (m_Proto.GetRet().type == PassInfo::PassType_Basic || 
+				((m_Proto.GetRet().type == PassInfo::PassType_Object) && (m_Proto.GetRet().flags & PassInfo::PassFlag_RetReg)) )
 			{
 				if (size <= 4)
 				{
 					// size <= 4: return in EAX
 					//  We align <4 sizes up to 4
-
 
 					// mov eax, [ecx]
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
@@ -603,11 +638,79 @@ namespace SourceHook
 				else
 				{
 					// size >8: return in memory
-					// :TODO:
-					//  add flag: MSVC_RetInMemory?
+					//  handled later
 				}
 			}
-			// :TODO: object
+
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+			{
+				// *memret_outaddr = plugin_ret
+				if (m_Proto.GetRet().pAssignOperator)
+				{
+					// mov edx, ecx				<-- src	( we set ecx to [ebp+v_retptr] before )
+					// msvc: ecx = [ebp + v_memret_outaddr]				<-- dest addr
+					// gcc: push [ebp + v_memret_outaddr]				<-- dest addr
+					// push edx					<-- src addr
+					// call it
+
+					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDX, REG_ECX, MOD_REG);
+
+#if SH_COMP == SH_COMP_MSVC
+					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_memret_outaddr);
+#elif SH_COMP == SH_COMP_GCC
+					IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, v_memret_outaddr);
+#endif
+					IA32_Push_Reg(&m_HookFunc, REG_EDX);
+
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				}
+				else
+				{
+					jit_uint32_t dwords = DownCastSize(m_Proto.GetRet().size) / 4;
+					jit_uint32_t bytes = DownCastSize(m_Proto.GetRet().size) % 4;
+
+					// bitwise copy
+					
+					//cld
+					//push edi
+					//push esi
+					//mov edi, [ebp+v_memret_outaddr]		<-- destination
+					//mov esi, ecx						<-- src	( we set ecx to [ebp+v_retptr] before )
+					//if dwords
+					// mov ecx, <dwords>
+					// rep movsd
+					//if bytes
+					// mov ecx, <bytes>
+					// rep movsb
+					//pop esi
+					//pop edi
+
+					IA32_Cld(&m_HookFunc);
+					IA32_Push_Reg(&m_HookFunc, REG_EDI);
+					IA32_Push_Reg(&m_HookFunc, REG_ESI);
+					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EDI, REG_EBP, v_memret_outaddr);
+					IA32_Mov_Reg_Rm(&m_HookFunc, REG_ESI, REG_ECX, MOD_REG);
+					if (dwords)
+					{
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
+						IA32_Rep(&m_HookFunc);
+						IA32_Movsd(&m_HookFunc);
+					}
+					if (bytes)
+					{
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
+						IA32_Rep(&m_HookFunc);
+						IA32_Movsb(&m_HookFunc);
+					}
+					IA32_Pop_Reg(&m_HookFunc, REG_ESI);
+					IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+				}
+
+				// In both cases: return the pointer in EAX
+				// mov eax, [ebp + v_memret_outaddr]
+				IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EBP, v_memret_outaddr);
+			}
 		}
 
 		void GenContext::GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
@@ -656,7 +759,7 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax+2*SIZE_PTR]
 			//   call eax
-			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset);
+			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 #if SH_COMP == SH_COMP_GCC
@@ -718,6 +821,13 @@ namespace SourceHook
 			{
 				acc += GetStackSize(m_Proto.GetParam(i));
 			}
+
+			// Memory return: address is first param
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+				acc += SIZE_PTR;
+
+			// :TODO: cdecl: THIS POINTER AS FIRST PARAM!!!
+
 			return acc;
 		}
 
@@ -775,7 +885,7 @@ namespace SourceHook
 			m_HookFunc.start_count(counter2);
 
 			// push params
-			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs);
+			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret);
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
@@ -1032,10 +1142,18 @@ namespace SourceHook
 			const jit_int8_t v_pContext =			-24 + addstackoffset;
 			
 #if SH_COMP == SH_COMP_GCC
-			const jit_int32_t param_base_offs =		16;
+			jit_int32_t param_base_offs =		16;
 #elif SH_COMP == SH_COMP_MSVC
-			const jit_int32_t param_base_offs =		12;
+			jit_int32_t param_base_offs =		12;
 #endif
+
+			// Memory return: first param is the address
+			jit_int32_t v_memret_addr = 0;
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+			{
+				v_memret_addr = param_base_offs;
+				param_base_offs += SIZE_PTR;
+			}
 
 			jit_int32_t v_ret_ptr =					-28 + addstackoffset;
 			jit_int32_t v_orig_ret =				-28	+ addstackoffset - GetStackSize(m_Proto.GetRet()) * 1;
@@ -1111,7 +1229,7 @@ namespace SourceHook
 				cur_param_pos += GetStackSize(pi);
 			}
 
-			DoReturn(v_ret_ptr);
+			DoReturn(v_ret_ptr, v_memret_addr);
 
 			// !! :TODO: Call destructors of orig_ret/ ...
 
@@ -1254,6 +1372,49 @@ namespace SourceHook
 			return true;
 		}
 
+		void GenContext::AutoDetectRetType()
+		{
+			IntPassInfo &pi = m_Proto.GetRet();
+
+			// Only relevant for byval types
+			if (pi.flags & PassInfo::PassFlag_ByVal)
+			{
+				// Basic + float: 
+				if (pi.type == PassInfo::PassType_Basic ||
+					pi.type == PassInfo::PassType_Float)
+				{
+					// <= 8 bytes:
+					//    _always_ in registers, no matter what the user says
+					if (pi.size <= 8)
+					{
+						pi.flags &= ~PassInfo::PassFlag_RetMem;
+						pi.flags |= PassInfo::PassFlag_RetReg;
+					}
+					else
+					{
+						// Does this even exist? No idea, if it does: in memory!
+						pi.flags &= ~PassInfo::PassFlag_RetReg;
+						pi.flags |= PassInfo::PassFlag_RetMem;
+					}
+				}
+				// Object: 
+				else if (pi.type == PassInfo::PassType_Object)
+				{
+					// If the user says nothing, auto-detect
+					if ((pi.flags & (PassInfo::PassFlag_RetMem | PassInfo::PassFlag_RetReg)) == 0)
+					{
+#if SH_COMP == SH_COMP_MSVC
+						// MSVC seems to return _all_ structs, classes, unions in memory
+						pi.flags |= PassInfo::PassFlag_RetMem;
+#elif SH_COMP == SH_COMP_GCC
+						// Same goes for GCC :)
+						pi.flags |= PassInfo::PassFlag_RetMem;
+#endif
+					}
+				}
+			}
+		}
+
 		HookManagerPubFunc GenContext::Generate()
 		{
 			Clear();
@@ -1269,6 +1430,8 @@ namespace SourceHook
 			{
 				return NULL;
 			}
+
+			AutoDetectRetType();
 
 			if (m_Proto.GetConvention() != ProtoInfo::CallConv_Cdecl &&
 				m_Proto.GetConvention() != ProtoInfo::CallConv_ThisCall)

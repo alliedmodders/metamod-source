@@ -173,7 +173,13 @@ namespace SourceHook
 			PassFlag_ODtor		= (1<<2),		/**< Object has a destructor */
 			PassFlag_OCtor		= (1<<3),		/**< Object has a normal non-trivial constructor */
 			PassFlag_AssignOp	= (1<<4),		/**< Object has a non-trivial assignment operator */
-			PassFlag_CCtor		= (1<<5)		/**< Object has a copy constructor (which takes const Object& as only parameter) */
+			PassFlag_CCtor		= (1<<5),		/**< Object has a copy constructor (which takes const Object& as only parameter) */
+
+			// The following two flags are only relevant for byval return types.
+			// SH tries to auto-detect these
+			// If you want to override SH's auto-detection, pass them in yourself
+			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
+			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
 		};
 
 		size_t size;			//!< Size of the data being passed

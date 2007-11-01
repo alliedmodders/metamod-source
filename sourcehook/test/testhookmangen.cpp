@@ -18,53 +18,6 @@
 
 namespace
 {
-	#include "testhookmangen.h"
-
-	StateList g_States;
-	SourceHook::ISourceHook *g_SHPtr;
-	SourceHook::Plugin g_PLID;
-
-	// PtrBuf(ptr) gives ptrs unique numbers
-	// in the order they appear
-	SourceHook::List<const void*> g_PtrHash;
-
-	bool g_Inside_LeafFunc = false;			// inside a hook or a func
-
-	template <class T>
-	int PtrBuf(T ptr)
-	{
-		int a = 0;
-
-		const void *vptr = reinterpret_cast<const void*>(ptr);
-		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end(); ++iter)
-		{
-			if (*iter == vptr)
-				return a;
-			else
-				++a;
-		}
-		g_PtrHash.push_back(vptr);
-		return static_cast<int>(g_PtrHash.size()) - 1;
-	}
-
-	template <class T>
-	T PtrBufPtr(T ptr)
-	{
-		PtrBuf(ptr);
-		return ptr;
-	}
-
-	void PtrBuf_Clear(int leave_in = 0)
-	{
-		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end();)
-		{
-			if (--leave_in < 0)
-				iter = g_PtrHash.erase(iter);
-			else
-				++iter;
-		}
-	}
-
 	// POD / Object types
 	template <int MYSIZE>
 	struct POD
@@ -74,6 +27,16 @@ namespace
 		bool operator==(const POD<MYSIZE> &other)
 		{
 			return memcmp(reinterpret_cast<void*>(x), reinterpret_cast<const void*>(other.x), MYSIZE) == 0;
+		}
+
+		bool operator==(char other)
+		{
+			for (int i = 0; i < MYSIZE; ++i)
+			{
+				if (x[i] != other)
+					return false;
+			}
+			return true;
 		}
 	};
 
@@ -130,6 +93,53 @@ namespace
 	{
 		os << "Some Obj!";
 		return os;
+	}
+
+	#include "testhookmangen.h"
+
+	StateList g_States;
+	SourceHook::ISourceHook *g_SHPtr;
+	SourceHook::Plugin g_PLID;
+
+	// PtrBuf(ptr) gives ptrs unique numbers
+	// in the order they appear
+	SourceHook::List<const void*> g_PtrHash;
+
+	bool g_Inside_LeafFunc = false;			// inside a hook or a func
+
+	template <class T>
+	int PtrBuf(T ptr)
+	{
+		int a = 0;
+
+		const void *vptr = reinterpret_cast<const void*>(ptr);
+		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end(); ++iter)
+		{
+			if (*iter == vptr)
+				return a;
+			else
+				++a;
+		}
+		g_PtrHash.push_back(vptr);
+		return static_cast<int>(g_PtrHash.size()) - 1;
+	}
+
+	template <class T>
+	T PtrBufPtr(T ptr)
+	{
+		PtrBuf(ptr);
+		return ptr;
+	}
+
+	void PtrBuf_Clear(int leave_in = 0)
+	{
+		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end();)
+		{
+			if (--leave_in < 0)
+				iter = g_PtrHash.erase(iter);
+			else
+				++iter;
+		}
 	}
 
 
@@ -267,6 +277,31 @@ namespace
 	THGM_MAKE_TEST0(105, double);
 	THGM_SETUP_PI0(105);
 	THGM_SETUP_RI(105, double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
+
+	// pod 1-13
+	THGM_MAKE_TEST1(106, POD<1>, int);
+	THGM_SETUP_PI1(106,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(106, POD<1>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1(107, POD<4>, int);
+	THGM_SETUP_PI1(107,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(107, POD<4>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1(108, POD<8>, int);
+	THGM_SETUP_PI1(108,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(108, POD<8>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1(109, POD<13>, int);
+	THGM_SETUP_PI1(109,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(109, POD<13>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
 }
 
 bool TestHookManGen(std::string &error)
@@ -292,10 +327,10 @@ bool TestHookManGen(std::string &error)
 	double b = 233.33;
 	THGM_DO_TEST_void(7, (a, b));
 
-	POD<7> pod7 = {78};
+	POD<7> pod7 = MakeRet< POD<7> >::Do(78);
 	THGM_DO_TEST_void(8, (pod7));
 
-	POD<600> pod600 = {34};
+	POD<600> pod600 = MakeRet< POD<600> >::Do(34);
 	THGM_DO_TEST_void(9, (pod600));
 	
 	THGM_DO_TEST_void(10, (pod600));
@@ -460,6 +495,12 @@ bool TestHookManGen(std::string &error)
 	THGM_DO_TEST(104, ());
 
 	THGM_DO_TEST(105, ());
+
+	// pod returns
+	THGM_DO_TEST(106, (5));
+	THGM_DO_TEST(107, (5));
+	THGM_DO_TEST(108, (5));
+	THGM_DO_TEST(109, (5));
 
 	// Shutdown now!
 	// If we don't SH will auto-shutdown _after_ genc's destructor is called

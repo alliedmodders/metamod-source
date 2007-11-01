@@ -13,6 +13,7 @@
 
 #include "sh_list.h"
 #include "sourcehook_impl_cproto.h"
+#include "sourcehook_hookmangen.h"
 
 namespace SourceHook
 {

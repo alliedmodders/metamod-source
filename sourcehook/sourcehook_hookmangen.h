@@ -87,6 +87,7 @@ namespace SourceHook
 						SH_ASSERT(0, ("bad_alloc: couldn't allocate 0x%08X bytes of memory\n", m_AllocatedSize));
 						return;
 					}
+					memset((void*)newBuf, 0xCC, m_AllocatedSize);			// :TODO: remove this !
 					memcpy((void*)newBuf, (const void*)m_pData, m_Size);
 					if (m_pData)
 						ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
@@ -183,7 +184,7 @@ namespace SourceHook
 
 
 			// Param push
-			jit_int32_t PushParams(jit_int32_t param_base_offset);
+			jit_int32_t PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to);		// save_ret_to only used for memory returns
 			jit_int32_t PushRef(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushBasic(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushFloat(jit_int32_t param_offset, const IntPassInfo &pi);
@@ -194,7 +195,7 @@ namespace SourceHook
 			void ProcessPluginRetVal(int v_cur_res, int v_pContext, int v_plugin_ret);
 
 			void PrepareReturn(int v_status, int v_pContext, int v_retptr);
-			void DoReturn(int v_retptr);
+			void DoReturn(int v_retptr, int v_memret_outaddr);
 
 			// Call hooks
 			void GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
@@ -212,6 +213,7 @@ namespace SourceHook
 			void CallEndContext(int v_pContext);
 
 			// Level 2 -> called from Generate()
+			void AutoDetectRetType();
 			bool PassInfoSupported(const IntPassInfo &pi, bool is_ret);
 			void Clear();
 			void BuildProtoInfo();
