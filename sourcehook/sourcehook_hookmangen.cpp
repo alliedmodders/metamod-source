@@ -1119,7 +1119,7 @@ namespace SourceHook
 #endif
 		}
 
-		unsigned char * GenContext::GenerateHookFunc()
+		void * GenContext::GenerateHookFunc()
 		{
 			// prologue
 			IA32_Push_Reg(&m_HookFunc, REG_EBP);
@@ -1317,7 +1317,7 @@ namespace SourceHook
 		}
 
 		// Pre-condition: GenerateHookFunc() has been called!
-		unsigned char * GenContext::GeneratePubFunc()
+		void * GenContext::GeneratePubFunc()
 		{
 			jitoffs_t counter, tmppos;
 
@@ -1525,7 +1525,7 @@ namespace SourceHook
 
 			BuildProtoInfo();
 			GenerateHookFunc();
-			return reinterpret_cast<HookManagerPubFunc>(GeneratePubFunc());
+			return fastdelegate::detail::horrible_cast<HookManagerPubFunc>(GeneratePubFunc());
 		}
 	}
 }

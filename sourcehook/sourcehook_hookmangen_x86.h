@@ -14,6 +14,16 @@
 
 #include <limits.h>
 
+#undef REG_EAX
+#undef REG_ECX
+#undef REG_EDX
+#undef REG_EBX
+#undef REG_ESP
+#undef REG_SIB
+#undef REG_EBP
+#undef REG_ESI
+#undef REG_EDI
+
 //MOD R/M
 #define MOD_MEM_REG	0
 #define MOD_DISP8	1

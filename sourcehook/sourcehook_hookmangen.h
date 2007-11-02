@@ -12,7 +12,6 @@
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
 #include "sourcehook_impl.h"
-#include "windows.h"
 
 namespace SourceHook
 {
@@ -20,7 +19,7 @@ namespace SourceHook
 	{
 
 		// Code gen stuff
-#if defined HAVE_STDINT_H && !defined WIN32
+#if SH_COMP == SH_COMP_GCC
 #include <stdint.h>
 		typedef int8_t jit_int8_t;
 		typedef uint8_t jit_uint8_t;
@@ -28,7 +27,7 @@ namespace SourceHook
 		typedef uint32_t jit_uint32_t;
 		typedef int64_t jit_int64_t;
 		typedef uint64_t jit_uint64_t;
-#elif defined WIN32
+#elif SH_COMP == SH_COMP_MSVC
 		typedef __int8 jit_int8_t;
 		typedef unsigned __int8 jit_uint8_t;
 		typedef __int32 jit_int32_t;
@@ -123,9 +122,9 @@ namespace SourceHook
 				ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
 			}
 
-			operator unsigned char *()
+			operator void *()
 			{
-				return GetData();
+				return reinterpret_cast<void*>(GetData());
 			}
 
 			void write_ubyte(jit_uint8_t x)			{ push(x); }
@@ -223,8 +222,8 @@ namespace SourceHook
 			bool PassInfoSupported(const IntPassInfo &pi, bool is_ret);
 			void Clear();
 			void BuildProtoInfo();
-			unsigned char *GenerateHookFunc();
-			unsigned char *GeneratePubFunc();
+			void *GenerateHookFunc();
+			void *GeneratePubFunc();
 		public:
 			// Level 1 -> Public interface
 			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);

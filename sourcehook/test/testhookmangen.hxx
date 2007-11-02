@@ -43,7 +43,15 @@ void *FindFuncAddr(T mfp)
 	if (sizeof(mfp) != sizeof(void*))
 		return NULL;
 	else
-		return fastdelegate::detail::horrible_cast<void*>(mfp);
+	{
+		union
+		{
+			T a;
+			void *b;
+		} u;
+		u.a = mfp;
+		return u.b;
+	}
 }
 
 // Reference carrier
@@ -133,7 +141,7 @@ struct ParamState$1
 		@[$1!=0:int i;@]
 		@[$2,1,$1:
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p$2 >::type>::Incr(m_$2);
+			Increment<typename StripRef< p$2 >::type >::Incr(m_$2);
 		@]
 		
 		return *this;

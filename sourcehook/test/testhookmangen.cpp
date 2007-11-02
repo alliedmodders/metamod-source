@@ -18,6 +18,17 @@
 
 namespace
 {
+	StateList g_States;
+	SourceHook::ISourceHook *g_SHPtr;
+	SourceHook::Plugin g_PLID;
+
+	// PtrBuf(ptr) gives ptrs unique numbers
+	// in the order they appear
+	SourceHook::List<const void*> g_PtrHash;
+
+	bool g_Inside_LeafFunc = false;			// inside a hook or a func
+
+
 	// POD / Object types
 	template <int MYSIZE>
 	struct POD
@@ -151,52 +162,6 @@ namespace
 		} \
 	};
 
-	#include "testhookmangen.h"
-
-	StateList g_States;
-	SourceHook::ISourceHook *g_SHPtr;
-	SourceHook::Plugin g_PLID;
-
-	// PtrBuf(ptr) gives ptrs unique numbers
-	// in the order they appear
-	SourceHook::List<const void*> g_PtrHash;
-
-	bool g_Inside_LeafFunc = false;			// inside a hook or a func
-
-	template <class T>
-	int PtrBuf(T ptr)
-	{
-		int a = 0;
-
-		const void *vptr = reinterpret_cast<const void*>(ptr);
-		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end(); ++iter)
-		{
-			if (*iter == vptr)
-				return a;
-			else
-				++a;
-		}
-		g_PtrHash.push_back(vptr);
-		return static_cast<int>(g_PtrHash.size()) - 1;
-	}
-
-	template <class T>
-	T PtrBufPtr(T ptr)
-	{
-		PtrBuf(ptr);
-		return ptr;
-	}
-
-	void PtrBuf_Clear(int leave_in = 0)
-	{
-		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end();)
-		{
-			if (--leave_in < 0)
-				iter = g_PtrHash.erase(iter);
-			else
-				++iter;
-		}
-	}
 
 
 	// "Increment" something:  (reproducible change for recall tests)
@@ -249,6 +214,44 @@ namespace
 				++ what.x[i];
 		}
 	};
+
+	#include "testhookmangen.h"
+
+	template <class T>
+	int PtrBuf(T ptr)
+	{
+		int a = 0;
+
+		const void *vptr = reinterpret_cast<const void*>(ptr);
+		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end(); ++iter)
+		{
+			if (*iter == vptr)
+				return a;
+			else
+				++a;
+		}
+		g_PtrHash.push_back(vptr);
+		return static_cast<int>(g_PtrHash.size()) - 1;
+	}
+
+	template <class T>
+	T PtrBufPtr(T ptr)
+	{
+		PtrBuf(ptr);
+		return ptr;
+	}
+
+	void PtrBuf_Clear(int leave_in = 0)
+	{
+		for (SourceHook::List<const void*>::iterator iter = g_PtrHash.begin(); iter != g_PtrHash.end();)
+		{
+			if (--leave_in < 0)
+				iter = g_PtrHash.erase(iter);
+			else
+				++iter;
+		}
+	}
+
 
 	// MyDelegate base class for other delegates
 	class MyDelegate : public SourceHook::ISHDelegate

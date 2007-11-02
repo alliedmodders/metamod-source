@@ -43,7 +43,15 @@ void *FindFuncAddr(T mfp)
 	if (sizeof(mfp) != sizeof(void*))
 		return NULL;
 	else
-		return fastdelegate::detail::horrible_cast<void*>(mfp);
+	{
+		union
+		{
+			T a;
+			void *b;
+		} u;
+		u.a = mfp;
+		return u.b;
+	}
 }
 
 // Reference carrier
@@ -166,7 +174,7 @@ struct ParamState1
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		
 		return *this;
@@ -202,10 +210,10 @@ struct ParamState2
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p2 >::type>::Incr(m_2);
+			Increment<typename StripRef< p2 >::type >::Incr(m_2);
 		
 		
 		return *this;
@@ -241,13 +249,13 @@ struct ParamState3
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p2 >::type>::Incr(m_2);
+			Increment<typename StripRef< p2 >::type >::Incr(m_2);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p3 >::type>::Incr(m_3);
+			Increment<typename StripRef< p3 >::type >::Incr(m_3);
 		
 		
 		return *this;
@@ -283,16 +291,16 @@ struct ParamState4
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p2 >::type>::Incr(m_2);
+			Increment<typename StripRef< p2 >::type >::Incr(m_2);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p3 >::type>::Incr(m_3);
+			Increment<typename StripRef< p3 >::type >::Incr(m_3);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p4 >::type>::Incr(m_4);
+			Increment<typename StripRef< p4 >::type >::Incr(m_4);
 		
 		
 		return *this;
@@ -328,19 +336,19 @@ struct ParamState5
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p2 >::type>::Incr(m_2);
+			Increment<typename StripRef< p2 >::type >::Incr(m_2);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p3 >::type>::Incr(m_3);
+			Increment<typename StripRef< p3 >::type >::Incr(m_3);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p4 >::type>::Incr(m_4);
+			Increment<typename StripRef< p4 >::type >::Incr(m_4);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p5 >::type>::Incr(m_5);
+			Increment<typename StripRef< p5 >::type >::Incr(m_5);
 		
 		
 		return *this;
@@ -376,22 +384,22 @@ struct ParamState6
 		int i;
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p1 >::type>::Incr(m_1);
+			Increment<typename StripRef< p1 >::type >::Incr(m_1);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p2 >::type>::Incr(m_2);
+			Increment<typename StripRef< p2 >::type >::Incr(m_2);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p3 >::type>::Incr(m_3);
+			Increment<typename StripRef< p3 >::type >::Incr(m_3);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p4 >::type>::Incr(m_4);
+			Increment<typename StripRef< p4 >::type >::Incr(m_4);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p5 >::type>::Incr(m_5);
+			Increment<typename StripRef< p5 >::type >::Incr(m_5);
 		
 		for (i = 0; i < incrsteps; ++i)
-			Increment<StripRef< p6 >::type>::Incr(m_6);
+			Increment<typename StripRef< p6 >::type >::Incr(m_6);
 		
 		
 		return *this;

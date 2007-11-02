@@ -24,7 +24,10 @@
 # elif /******/ defined __linux__
 #		include <sys/mman.h>
 #		include <stdio.h>
+namespace LinuxSignal
+{
 #		include <signal.h>
+}
 #		include <setjmp.h>
 // http://www.die.net/doc/linux/man/man2/mprotect.2.html
 #		include <limits.h>
@@ -163,7 +166,7 @@ namespace SourceHook
 			if (setjmp(g_BadReadJmpBuf))
 				return true;
 
-			prevHandler = signal(SIGSEGV, BadReadHandler);
+			prevHandler = LinuxSignal::signal(SIGSEGV, BadReadHandler);
 
 			volatile const char *p = reinterpret_cast<const char*>(addr);
 			char dummy;
@@ -173,7 +176,7 @@ namespace SourceHook
 
 			g_BadReadCalled = false;
 
-			signal(SIGSEGV, prevHandler);
+			LinuxSignal::signal(SIGSEGV, prevHandler);
 
 			return false;
 #else
@@ -320,7 +323,7 @@ namespace SourceHook
 				newRegion.size += m_PageSize;
 
 #ifdef __linux__
-			newRegion.startPtr = mmap(0, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAN_ANONYMOUS, -1);
+			newRegion.startPtr = mmap(0, newRegion.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
 			newRegion.startPtr = VirtualAlloc(NULL, newRegion.size, MEM_COMMIT, PAGE_READWRITE);
 #endif
