@@ -852,7 +852,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 			*reinterpret_cast<void***>( (reinterpret_cast<char*>(ptr) + pthisptroffs + pvtbloffs) ) + pvtblidx); \
 		/* patch mfp */ \
 		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
-		return SH_MFHCls(hookname)::CallEC(reinterpret_cast<::SourceHook::EmptyClass*>(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
+		return SH_MFHCls(hookname)::CallEC(reinterpret_cast< ::SourceHook::EmptyClass* >(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
 	} \
 	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \
 	{ \
@@ -1305,8 +1305,6 @@ SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]..
 
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp), SH_GLOB_SHPTR)
 #define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs), SH_GLOB_SHPTR)
-//#define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
-//	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
 #define SH_MCALL(ptr, mhookname) __SoureceHook_FHM_SHCall##mhookname(ptr)
 
 #undef SH_MAKE_EXECUTABLECLASS_OB
