@@ -584,7 +584,6 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		SH_MFHCls(hookname)::ECMFP mfp; \
 		void *addr; \
 	} u; \
-	SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
 	u.addr = (*reinterpret_cast<void***>(reinterpret_cast<char*>(thisptr) + SH_MFHCls(hookname)::ms_MFI.vtbloffs))[ \
 		SH_MFHCls(hookname)::ms_MFI.vtblindex];
 
@@ -600,7 +599,6 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 			intptr_t adjustor; \
 		} s; \
 	} u; \
-	SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
 	u.s.addr = (*reinterpret_cast<void***>(reinterpret_cast<char*>(thisptr) + SH_MFHCls(hookname)::ms_MFI.vtbloffs))[ \
 		SH_MFHCls(hookname)::ms_MFI.vtblindex]; \
 	u.s.adjustor = 0;
@@ -611,8 +609,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	do { \
 		SET_META_RESULT(result); \
 		SH_GLOB_SHPTR->DoRecall(); \
-		SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname); \
-		(thisptr->*(u.mfp)) newparams; \
+		SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
+		(thisptr->*(__SoureceHook_FHM_GetRecallMFP##hookname(thisptr))) newparams; \
 		RETURN_META(MRES_SUPERCEDE); \
 	} while (0)
 
@@ -623,20 +621,15 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		if ((result) >= MRES_OVERRIDE) \
 		{ \
 			/* see RETURN_META_VALUE_NEWPARAMS */ \
-			SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(SH_GLOB_SHPTR, value); \
+			__SoureceHook_FHM_SetOverrideResult##hookname(SH_GLOB_SHPTR, value); \
 		} \
-		SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname); \
-		RETURN_META_VALUE(MRES_SUPERCEDE, (thisptr->*(u.mfp)) newparams); \
+		SourceHook::EmptyClass *thisptr = reinterpret_cast<SourceHook::EmptyClass*>(SH_GLOB_SHPTR->GetIfacePtr()); \
+		RETURN_META_VALUE(MRES_SUPERCEDE, (thisptr->*(__SoureceHook_FHM_GetRecallMFP##hookname(thisptr))) newparams); \
 	} while (0)
 
 
 #define SH_MANUALHOOK_RECONFIGURE(hookname, pvtblindex, pvtbloffs, pthisptroffs) \
-	do { \
-		SH_GLOB_SHPTR->RemoveHookManager(SH_GLOB_PLUGPTR, SH_MFHCls(hookname)::HookManPubFunc); \
-		SH_MFHCls(hookname)::ms_MFI.thisptroffs = pthisptroffs; \
-		SH_MFHCls(hookname)::ms_MFI.vtblindex = pvtblindex; \
-		SH_MFHCls(hookname)::ms_MFI.vtbloffs = pvtbloffs; \
-	} while (0)
+	__SourceHook_FHM_Reconfigure##hookname(pvtblindex, pvtbloffs, pthisptroffs)
 
 #define SH_GET_ORIG_VFNPTR_ENTRY(inst, mfp) (SourceHook::GetOrigVfnPtrEntry(inst, mfp, SH_GLOB_SHPTR))
 
@@ -847,6 +840,27 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		return SH_GLOB_SHPTR->RemoveHook(SH_GLOB_PLUGPTR, iface, pthisptroffs, \
 			SH_MFHCls(hookname)::HookManPubFunc, &tmp, post); \
 	} \
+	SH_MFHCls(hookname)::ECMFP __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) \
+	{ \
+		SOUREHOOK__MNEWPARAMS_PREPAREMFP(hookname); \
+		return u.mfp; \
+	} \
+	SH_MFHCls(hookname)::CallEC __SoureceHook_FHM_SHCall##hookname(void *ptr) \
+	{ \
+		SH_MFHCls(hookname)::ECMFP mfp; \
+		void *vfnptr = reinterpret_cast<void*>( \
+			*reinterpret_cast<void***>( (reinterpret_cast<char*>(ptr) + pthisptroffs + pvtbloffs) ) + pvtblidx); \
+		/* patch mfp */ \
+		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
+		return SH_MFHCls(hookname)::CallEC(reinterpret_cast<::SourceHook::EmptyClass*>(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
+	} \
+	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \
+	{ \
+		SH_GLOB_SHPTR->RemoveHookManager(SH_GLOB_PLUGPTR, SH_MFHCls(hookname)::HookManPubFunc); \
+		SH_MFHCls(hookname)::ms_MFI.thisptroffs = p_thisptroffs; \
+		SH_MFHCls(hookname)::ms_MFI.vtblindex = p_vtblindex; \
+		SH_MFHCls(hookname)::ms_MFI.vtbloffs = p_vtbloffs; \
+	}
 
 #define SH_SETUPCALLS(rettype, paramtypes, params) \
 	/* 1) Set up */ \
@@ -1101,19 +1115,28 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		virtual rettype Func(@[$2,1,$1|, :param$2 p$2@]) \
 		{ SH_HANDLEFUNC((@[$2,1,$1|, :param$2@]), (@[$2,1,$1|, :p$2@]), rettype); } \
 		typedef rettype(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1|, :param$2@]); \
+		typedef SourceHook::ExecutableClass$1<SourceHook::EmptyClass, ECMFP, rettype@[$2,1,$1:, param$2@]> CallEC; \
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {1, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
 	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2M_##hookname[] = { __SH_EPI@[$2,1,$1:, __SH_EPI@] }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, __SH_GPI(rettype), \
-		__SourceHook_ParamInfosM_##hookname, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname };
+		__SourceHook_ParamInfosM_##hookname, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
+	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, const rettype value) \
+	{ \
+		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(shptr, value); \
+	}
 
 #define SH_DECL_MANUALEXTERN$1(hookname, rettype@[$2,1,$1:, param$2@]) \
 	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
 		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]@[$1!=0:, @]rettype> handler); \
 	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
-		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]@[$1!=0:, @]rettype> handler);
+		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]@[$1!=0:, @]rettype> handler); \
+	rettype(::SourceHook::EmptyClass::* __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) )(@[$2,1,$1|, :param$2@]); \
+	SourceHook::ExecutableClass$1<SourceHook::EmptyClass, rettype(::SourceHook::EmptyClass::*)(@[$2,1,$1|, :param$2@]), rettype@[$2,1,$1:, param$2@]> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
+	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, const rettype res); \
+	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
 
 #define SH_DECL_MANUALHOOK$1_void(hookname, vtblidx, vtbloffs, thisptroffs@[$2,1,$1:, param$2@]) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -1122,18 +1145,23 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		virtual void Func(@[$2,1,$1|, :param$2 p$2@]) \
 		{ SH_HANDLEFUNC_void((@[$2,1,$1|, :param$2@]), (@[$2,1,$1|, :p$2@])); } \
 		typedef void(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1|, :param$2@]); \
+		typedef SourceHook::ExecutableClass$1<SourceHook::EmptyClass, ECMFP, void@[$2,1,$1:, param$2@]> CallEC; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {1, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
 	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2M_##hookname[] = { __SH_EPI@[$2,1,$1:, __SH_EPI@] }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, { 0, 0, 0 }, \
-		__SourceHook_ParamInfosM_##hookname	, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname };
+		__SourceHook_ParamInfosM_##hookname	, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
 
 #define SH_DECL_MANUALEXTERN$1_void(hookname@[$2,1,$1:, param$2@]) \
 	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
 		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]> handler); \
 	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
-		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]> handler);
+		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]> handler); \
+	void(::SourceHook::EmptyClass::* __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) )(@[$2,1,$1|, :param$2@]); \
+	SourceHook::ExecutableClass$1<SourceHook::EmptyClass, void(::SourceHook::EmptyClass::*)(@[$2,1,$1|, :param$2@]), void@[$2,1,$1:, param$2@]> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
+	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
+
 @]
 
 
@@ -1277,8 +1305,9 @@ SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]..
 
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp), SH_GLOB_SHPTR)
 #define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs), SH_GLOB_SHPTR)
-#define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
-	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
+//#define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
+//	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
+#define SH_MCALL(ptr, mhookname) __SoureceHook_FHM_SHCall##mhookname(ptr)
 
 #undef SH_MAKE_EXECUTABLECLASS_OB
 #undef SH_MAKE_EXECUTABLECLASS_OB_void

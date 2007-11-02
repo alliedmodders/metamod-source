@@ -431,6 +431,10 @@
 				RelativePath="..\testrefret.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\testvphooks.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -438,6 +442,14 @@
 			>
 			<File
 				RelativePath="..\..\sh_list.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sh_memfuncinfo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sh_memory.h"
 				>
 			</File>
 			<File
@@ -462,6 +474,30 @@
 			</File>
 			<File
 				RelativePath="..\..\sourcehook_impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chook.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookidman.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_chookmaninfo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_ciface.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cproto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_impl_cvfnptr.h"
 				>
 			</File>
 			<File
@@ -495,7 +531,7 @@
 						>
 						<Tool
 							Name="VCCustomBuildTool"
-							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h 20&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
+							CommandLine="echo on&#x0D;&#x0A;pushd ..\..\generate&#x0D;&#x0A;shworker.exe iter sourcehook.hxx sourcehook.h 16&#x0D;&#x0A;copy sourcehook.h ..\sourcehook.h&#x0D;&#x0A;popd&#x0D;&#x0A;"
 							Outputs="..\..\sourcehook.h"
 						/>
 					</FileConfiguration>

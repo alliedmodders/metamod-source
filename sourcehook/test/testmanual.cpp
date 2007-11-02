@@ -65,7 +65,7 @@ namespace
 	SH_DECL_MANUALHOOK1(TheWall_Func4, 3, 0, 0, short, int);
 
 	SH_DECL_MANUALEXTERN0_void(TheWall_Func1);
-	SH_DECL_MANUALEXTERN1(TheWall_Func1, short, int);
+	SH_DECL_MANUALEXTERN1(TheWall_Func4, short, int);
 
 	typedef void (SourceHook::EmptyClass::*MFP_Func1)();
 	typedef void (SourceHook::EmptyClass::*MFP_Func2)(int);
