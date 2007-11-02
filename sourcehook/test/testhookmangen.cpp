@@ -371,7 +371,6 @@ namespace
 	THGM_SETUP_RI(110, ObjRet13, SourceHook::PassInfo::PassType_Object,
 		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
 		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
-
 }
 
 bool TestHookManGen(std::string &error)

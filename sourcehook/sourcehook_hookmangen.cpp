@@ -380,12 +380,21 @@ namespace SourceHook
 
 		void GenContext::SaveRetVal(int v_where, int v_place_for_memret)
 		{
-			size_t size = m_Proto.GetRet().size;
+			size_t size = GetRealSize(m_Proto.GetRet());
 			if (size == 0)
 			{
 				// No return value -> nothing
 				return;
 			}
+
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_ByRef)
+			{
+				// mov [ebp + v_plugin_ret], eax
+				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_where);
+				return;
+			}
+			// else: ByVal
+
 
 			// Memory return:
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
@@ -557,36 +566,46 @@ namespace SourceHook
 
 
 			// *eax = plugin_ret
-			if (m_Proto.GetRet().pAssignOperator)
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_ByRef)
 			{
-				// lea edx, [ebp + v_plugin_ret]
-				// msvc: ecx = eax				<-- dest addr
-				// gcc: push eax				<-- dest addr
-				// push edx					<-- src addr
-				// call it
-
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_plugin_ret);
-#if SH_COMP == SH_COMP_MSVC
-				IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
-#elif SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_EAX);
-#endif
-				IA32_Push_Reg(&m_HookFunc, REG_EDX);
-
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
-				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				// mov ecx, [ebp+v_plugin_ret]
+				// mov [eax], ecx
+				IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
+				IA32_Mov_Rm_Reg(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			}
 			else
 			{
-				// bitwise copy
-				BitwiseCopy_Setup();
+				if (m_Proto.GetRet().pAssignOperator)
+				{
+					// lea edx, [ebp + v_plugin_ret]
+					// msvc: ecx = eax				<-- dest addr
+					// gcc: push eax				<-- dest addr
+					// push edx					<-- src addr
+					// call it
 
-				//mov edi, eax					<-- destination
-				//lea esi, [ebp+v_plugin_ret]	<-- src
-				IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDI, REG_EAX, MOD_REG);
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_plugin_ret);
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_plugin_ret);
+#if SH_COMP == SH_COMP_MSVC
+					IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
+#elif SH_COMP == SH_COMP_GCC
+					IA32_Push_Reg(&m_HookFunc, REG_EAX);
+#endif
+					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
-				BitwiseCopy_Do(m_Proto.GetRet().size);
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				}
+				else
+				{
+					// bitwise copy
+					BitwiseCopy_Setup();
+
+					//mov edi, eax					<-- destination
+					//lea esi, [ebp+v_plugin_ret]	<-- src
+					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDI, REG_EAX, MOD_REG);
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_plugin_ret);
+
+					BitwiseCopy_Do(m_Proto.GetRet().size);
+				}
 			}
 
 			m_HookFunc.end_count(counter);
@@ -649,11 +668,17 @@ namespace SourceHook
 			if (!size)
 				return;
 
-			// :TODO: memory return support
-
 			// Get real ret pointer into ecx
 			// mov ecx, [ebp + v_ret_ptr]
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_retptr);
+
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_ByRef)
+			{
+				// mov eax, [ecx]
+				IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
+				return;
+			}
+			// else: byval
 
 			if (m_Proto.GetRet().type == PassInfo::PassType_Float)
 			{
@@ -1440,6 +1465,12 @@ namespace SourceHook
 #endif
 					}
 				}
+			}
+			else
+			{
+				// byref: make sure that the flag is _not_ set
+				pi.flags &= ~PassInfo::PassFlag_RetMem;
+				pi.flags |= PassInfo::PassFlag_RetReg;
 			}
 		}
 
