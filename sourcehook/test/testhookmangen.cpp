@@ -371,12 +371,55 @@ namespace
 	THGM_SETUP_RI(110, ObjRet13, SourceHook::PassInfo::PassType_Object,
 		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
 		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+
+	MAKE_OBJRET(111);
+	ObjRet111 g_O111_0;
+	ObjRet111 g_O111_1;
+	ObjRet111 g_O111_2;
+	ObjRet111 g_O111_3;
+	ObjRet111 g_O111_4;
+
+	template <>
+	struct MakeRet< ObjRet111& >
+	{
+		static ObjRet111 &Do(int a)
+		{
+			switch (a)
+			{
+			case 0:
+				return g_O111_0;
+			case 1:
+				return g_O111_1;
+			case 2:
+				return g_O111_2;
+			case 3:
+				return g_O111_3;
+			default:
+				return g_O111_4;
+			}
+		}
+	};
+
+	THGM_MAKE_TEST0(111, ObjRet111& );
+	THGM_SETUP_PI0(111);
+	THGM_SETUP_RI(111, ObjRet111& , SourceHook::PassInfo::PassType_Object,
+		SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
 }
 
 bool TestHookManGen(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;
+
+	// 5 Global constructors (g_O111_*)
+	CHECK_STATES((&g_States,
+		new State_ObjOCtor_Called(111),
+		new State_ObjOCtor_Called(111),
+		new State_ObjOCtor_Called(111),
+		new State_ObjOCtor_Called(111),
+		new State_ObjOCtor_Called(111),
+		NULL), "GlobCtors");
 
 	THGM_DO_TEST_void(0, ());
 
@@ -749,6 +792,10 @@ bool TestHookManGen(std::string &error)
 	THGM_REMOVE_HOOK(110, 2);
 	THGM_REMOVE_HOOK(110, 3);
 	THGM_REMOVE_HOOK(110, 4);
+
+
+	// RefRet
+	THGM_DO_TEST(111, ());
 
 	// Shutdown now!
 	// If we don't SH will auto-shutdown _after_ genc's destructor is called

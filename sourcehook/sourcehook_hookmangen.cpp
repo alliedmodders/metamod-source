@@ -965,35 +965,46 @@ namespace SourceHook
 			m_HookFunc.rewrite(tmppos2, static_cast<jit_uint32_t>(counter2));
 
 			// *v_orig_ret = *v_override_ret
-			if (m_Proto.GetRet().pAssignOperator)
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_ByRef)
 			{
-				// lea edx, [ebp + v_override_ret]			<-- src addr
-				// lea ecx, [ebp + v_orig_ret]				<-- dest addr
-				// gcc: push ecx
-				// push edx					<-- src addr
-				// call it
+				// mov ecx, [ebp + v_override_ret]
+				// mov [ebp + v_orig_ret], ecx
 
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_override_ret);
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
-#if SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
-				IA32_Push_Reg(&m_HookFunc, REG_EDX);
-
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
-				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
+				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_ECX, v_orig_ret);
 			}
 			else
 			{
-				// bitwise copy
-				BitwiseCopy_Setup();
+				if (m_Proto.GetRet().pAssignOperator)
+				{
+					// lea edx, [ebp + v_override_ret]			<-- src addr
+					// lea ecx, [ebp + v_orig_ret]				<-- dest addr
+					// gcc: push ecx
+					// push edx					<-- src addr
+					// call it
 
-				//lea edi, [ebp+v_orig_ret]			<-- destination
-				//lea esi, [ebp+v_override_ret]		<-- src
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDI, REG_EBP, v_orig_ret);
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_override_ret);
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_override_ret);
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
+#if SH_COMP == SH_COMP_GCC
+					IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
-				BitwiseCopy_Do(m_Proto.GetRet().size);
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				}
+				else
+				{
+					// bitwise copy
+					BitwiseCopy_Setup();
+
+					//lea edi, [ebp+v_orig_ret]			<-- destination
+					//lea esi, [ebp+v_override_ret]		<-- src
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDI, REG_EBP, v_orig_ret);
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_override_ret);
+
+					BitwiseCopy_Do(m_Proto.GetRet().size);
+				}
 			}
 
 			// skip don't call label target:
@@ -1194,7 +1205,8 @@ namespace SourceHook
 			IA32_Mov_Rm_Imm32_Disp8(&m_HookFunc, REG_EBP, MRES_IGNORED, v_status);
 
 			// Call constructors for ret vars if required
-			if(m_Proto.GetRet().pNormalCtor)
+			if((m_Proto.GetRet().flags & PassInfo::PassFlag_ByVal) &&
+				m_Proto.GetRet().pNormalCtor)
 			{
 				// :TODO: Gcc version
 
@@ -1256,7 +1268,8 @@ namespace SourceHook
 			DoReturn(v_ret_ptr, v_memret_addr);
 
 			// Call destructors of orig_ret/ ...
-			if(m_Proto.GetRet().pDtor)
+			if((m_Proto.GetRet().flags & PassInfo::PassFlag_ByVal) &&
+				m_Proto.GetRet().pDtor)
 			{
 				// Preserve return value in EAX(:EDX)
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);

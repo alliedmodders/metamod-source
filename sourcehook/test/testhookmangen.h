@@ -518,6 +518,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST0(id, ret_type) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState0<0 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -728,6 +729,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST1(id, ret_type, param1) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState1<0, param1 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -938,6 +940,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST2(id, ret_type, param1, param2) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState2<0, param1, param2 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -1148,6 +1151,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST3(id, ret_type, param1, param2, param3) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState3<0, param1, param2, param3 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -1358,6 +1362,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST4(id, ret_type, param1, param2, param3, param4) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState4<0, param1, param2, param3, param4 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -1568,6 +1573,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST5(id, ret_type, param1, param2, param3, param4, param5) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState5<0, param1, param2, param3, param4, param5 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -1778,6 +1784,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_MAKE_TEST6(id, ret_type, param1, param2, param3, param4, param5, param6) \
 	struct TestClass##id; \
+	typedef ret_type RetType##id; \
 	typedef ParamState6<0, param1, param2, param3, param4, param5, param6 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
 	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
@@ -2015,10 +2022,21 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	THGM_REMOVE_HOOK(id, 3); \
 	THGM_REMOVE_HOOK(id, 4);
 
+template<class T>
+T ComparableRef(T x)
+{
+	return x;
+}
+
+template <class T>
+T* ComparableRef(T& x)
+{
+	return &x;
+}
 
 #define THGM_CALLS(id, call_params, exp_ret_norm, exp_ret_shcall, err) \
-	CHECK_COND(pTest##id->Func call_params == exp_ret_norm, err " /retcallnorm"); \
-	CHECK_COND(SH_CALL(pTest##id, &TestClass##id::Func) call_params == exp_ret_shcall, err " /retcallshcall");
+	CHECK_COND(ComparableRef<RetType##id>(pTest##id->Func call_params) == ComparableRef<RetType##id>(MakeRet< RetType##id >::Do(exp_ret_norm)), err " /retcallnorm"); \
+	CHECK_COND(ComparableRef<RetType##id>(SH_CALL(pTest##id, &TestClass##id::Func) call_params) == ComparableRef<RetType##id>(MakeRet< RetType##id >::Do(exp_ret_shcall)), err " /retcallshcall");
 
 #define THGM_DO_TEST(id, call_params) \
 	setuppi_##id(); \
