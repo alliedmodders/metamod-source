@@ -182,28 +182,34 @@ namespace SourceHook
 			jit_int32_t GetStackSize(const IntPassInfo &info);
 			short GetParamsStackSize();		// sum(GetStackSize(i), 0 <= i < numOfParams)
 
+			// Helpers
+			void BitwiseCopy_Setup();
+			void BitwiseCopy_Do(size_t size);
 
 			// Param push
-			jit_int32_t PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to);		// save_ret_to only used for memory returns
+			jit_int32_t PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to, 
+				jit_int32_t v_place_for_memret);		// save_ret_to and v_place_for_memret only used for memory returns
 			jit_int32_t PushRef(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushBasic(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushFloat(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushObject(jit_int32_t param_offset, const IntPassInfo &pi);
 
 			// Ret val processing
-			void SaveRetVal(int v_where);
-			void ProcessPluginRetVal(int v_cur_res, int v_pContext, int v_plugin_ret);
+			void SaveRetVal(jit_int32_t v_where, jit_int32_t v_place_for_memret);
+			void ProcessPluginRetVal(jit_int32_t v_cur_res, jit_int32_t v_pContext, jit_int32_t v_plugin_ret);
 
-			void PrepareReturn(int v_status, int v_pContext, int v_retptr);
-			void DoReturn(int v_retptr, int v_memret_outaddr);
+			void PrepareReturn(jit_int32_t v_status, jit_int32_t v_pContext, jit_int32_t v_retptr);
+			void DoReturn(jit_int32_t v_retptr, jit_int32_t v_memret_outaddr);
+
+			bool MemRetWithTempObj();			// do we do a memory return AND need a temporary place for it?
 
 			// Call hooks
 			void GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-				int v_pContext, int base_param_offset, int v_plugin_ret);
+				int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret);
 
 			// Call orig
-			void GenerateCallOrig(int v_status, int v_pContext,
-				int param_base_offs, int v_this, int v_vfnptr_origentry, int v_orig_ret, int v_override_ret);
+			void GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
+				int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret);
 
 			// Hook loop
 			void CallSetupHookLoop(int v_orig_ret, int v_override_ret, 

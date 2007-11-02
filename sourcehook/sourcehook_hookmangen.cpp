@@ -147,6 +147,47 @@ namespace SourceHook
 			}
 		}
 
+		void GenContext::BitwiseCopy_Setup()
+		{
+			//cld
+			//push edi
+			//push esi
+
+			IA32_Cld(&m_HookFunc);
+			IA32_Push_Reg(&m_HookFunc, REG_EDI);
+			IA32_Push_Reg(&m_HookFunc, REG_ESI);
+		}
+
+		void GenContext::BitwiseCopy_Do(size_t size)
+		{
+			jit_uint32_t dwords = DownCastSize(size) / 4;
+			jit_uint32_t bytes = DownCastSize(size) % 4;
+
+			//if dwords
+			// mov ecx, <dwords>
+			// rep movsd
+			//if bytes
+			// mov ecx, <bytes>
+			// rep movsb
+			//pop esi
+			//pop edi
+
+			if (dwords)
+			{
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
+				IA32_Rep(&m_HookFunc);
+				IA32_Movsd(&m_HookFunc);
+			}
+			if (bytes)
+			{
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
+				IA32_Rep(&m_HookFunc);
+				IA32_Movsb(&m_HookFunc);
+			}
+			IA32_Pop_Reg(&m_HookFunc, REG_ESI);
+			IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+		}
+
 		jit_int32_t GenContext::PushRef(jit_int32_t param_offset, const IntPassInfo &pi)
 		{
 			// push [ebp+<offset>]
@@ -262,51 +303,24 @@ namespace SourceHook
 			}
 			else
 			{
-				jit_uint32_t dwords = DownCastSize(pi.size) / 4;
-				jit_uint32_t bytes = DownCastSize(pi.size) % 4;
-
 				// bitwise copy
 
-				//cld
-				//push edi
-				//push esi
+				
+				BitwiseCopy_Setup();
+
 				//lea edi, [esp+8]
 				//lea esi, [ebp+<offs>]
-				//if dwords
-				// mov ecx, <dwords>
-				// rep movsd
-				//if bytes
-				// mov ecx, <bytes>
-				// rep movsb
-				//pop esi
-				//pop edi
-
-				IA32_Cld(&m_HookFunc);
-				IA32_Push_Reg(&m_HookFunc, REG_EDI);
-				IA32_Push_Reg(&m_HookFunc, REG_ESI);
 				IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_EDI, REG_NOIDX, REG_ESP, NOSCALE, 8);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, param_offset);
-				if (dwords)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsd(&m_HookFunc);
-				}
-				if (bytes)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsb(&m_HookFunc);
-				}
-				IA32_Pop_Reg(&m_HookFunc, REG_ESI);
-				IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+
+				BitwiseCopy_Do(pi.size);
 			}
 
 			return DownCastSize(pi.size);
 		}
 
 		// May not touch eax!
-		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to)
+		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to, int v_place_for_memret)
 		{
 			jit_int32_t added_to_stack = 0;
 			jit_int32_t ret = 0;
@@ -354,7 +368,8 @@ namespace SourceHook
 			{
 				// push address where to save it!
 				int reg = NextRegEBX_ECX_EDX();
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, reg, REG_EBP, save_ret_to);
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, reg, REG_EBP,
+					MemRetWithTempObj() ? v_place_for_memret : save_ret_to);
 				IA32_Push_Reg(&m_HookFunc, reg);
 
 				added_to_stack += SIZE_PTR;
@@ -363,7 +378,7 @@ namespace SourceHook
 			return added_to_stack;
 		}
 
-		void GenContext::SaveRetVal(int v_where)
+		void GenContext::SaveRetVal(int v_where, int v_place_for_memret)
 		{
 			size_t size = m_Proto.GetRet().size;
 			if (size == 0)
@@ -373,9 +388,65 @@ namespace SourceHook
 			}
 
 			// Memory return:
-			//   PushParams already did everything that was neccessary
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
-				return;
+			{
+				if (MemRetWithTempObj())
+				{
+					// *v_where = *v_place_for_memret
+
+					// if we have an assign operator, use that
+					if (m_Proto.GetRet().pAssignOperator)
+					{
+						// lea edx, [ebp + v_place_for_memret]  <-- src addr
+						// lea ecx, [ebp + v_where]				<-- dest addr
+						// gcc: push ecx
+						// push edx
+						// call it
+
+						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_place_for_memret);
+						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_where);
+#if SH_COMP == SH_COMP_GCC
+						IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+						IA32_Push_Reg(&m_HookFunc, REG_EDX);
+
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+						IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					}
+					else
+					{
+						// bitwise copy
+						BitwiseCopy_Setup();
+
+						//lea edi, [evp+v_where]		<-- destination
+						//lea esi, [ebp+v_place_for_memret]	<-- src
+						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDI, REG_EBP, v_where);
+						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_place_for_memret);
+
+						BitwiseCopy_Do(m_Proto.GetRet().size);
+					}
+
+					// Then: destruct *v_place_for_memret if required
+					if (m_Proto.GetRet().pDtor)
+					{
+						//lea ecx, [ebp+v_place_for_memret]
+						//gcc: push ecx
+						//call it
+
+						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_place_for_memret);
+#if SH_COMP == SH_COMP_GCC
+						IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+						IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					}
+				}
+				else
+				{
+					// Already copied to correct address -> we're done
+					return;
+				}
+			}
 
 			if (m_Proto.GetRet().type == PassInfo::PassType_Float)
 			{
@@ -434,6 +505,13 @@ namespace SourceHook
 					}
 				}
 			}
+		}
+
+		bool GenContext::MemRetWithTempObj()
+		{
+			// Memory return AND (has destructor OR has assign operator)
+			return ((m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+				&& (m_Proto.GetRet().flags & (PassInfo::PassFlag_ODtor | PassInfo::PassFlag_AssignOp)));
 		}
 
 		void GenContext::ProcessPluginRetVal(int v_cur_res, int v_pContext, int v_plugin_ret)
@@ -500,44 +578,15 @@ namespace SourceHook
 			}
 			else
 			{
-				jit_uint32_t dwords = DownCastSize(m_Proto.GetRet().size) / 4;
-				jit_uint32_t bytes = DownCastSize(m_Proto.GetRet().size) % 4;
-
 				// bitwise copy
-				
-				//cld
-				//push edi
-				//push esi
+				BitwiseCopy_Setup();
+
 				//mov edi, eax					<-- destination
 				//lea esi, [ebp+v_plugin_ret]	<-- src
-				//if dwords
-				// mov ecx, <dwords>
-				// rep movsd
-				//if bytes
-				// mov ecx, <bytes>
-				// rep movsb
-				//pop esi
-				//pop edi
-
-				IA32_Cld(&m_HookFunc);
-				IA32_Push_Reg(&m_HookFunc, REG_EDI);
-				IA32_Push_Reg(&m_HookFunc, REG_ESI);
 				IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDI, REG_EAX, MOD_REG);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_plugin_ret);
-				if (dwords)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsd(&m_HookFunc);
-				}
-				if (bytes)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsb(&m_HookFunc);
-				}
-				IA32_Pop_Reg(&m_HookFunc, REG_ESI);
-				IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+
+				BitwiseCopy_Do(m_Proto.GetRet().size);
 			}
 
 			m_HookFunc.end_count(counter);
@@ -600,7 +649,6 @@ namespace SourceHook
 			if (!size)
 				return;
 
-			// :TODO: assign op support
 			// :TODO: memory return support
 
 			// Get real ret pointer into ecx
@@ -645,7 +693,7 @@ namespace SourceHook
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 			{
 				// *memret_outaddr = plugin_ret
-				if (m_Proto.GetRet().pAssignOperator)
+				if (m_Proto.GetRet().pCopyCtor)
 				{
 					// mov edx, ecx				<-- src	( we set ecx to [ebp+v_retptr] before )
 					// msvc: ecx = [ebp + v_memret_outaddr]				<-- dest addr
@@ -662,49 +710,20 @@ namespace SourceHook
 #endif
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pCopyCtor));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				}
 				else
 				{
-					jit_uint32_t dwords = DownCastSize(m_Proto.GetRet().size) / 4;
-					jit_uint32_t bytes = DownCastSize(m_Proto.GetRet().size) % 4;
-
 					// bitwise copy
+					BitwiseCopy_Setup();
 					
-					//cld
-					//push edi
-					//push esi
 					//mov edi, [ebp+v_memret_outaddr]		<-- destination
 					//mov esi, ecx						<-- src	( we set ecx to [ebp+v_retptr] before )
-					//if dwords
-					// mov ecx, <dwords>
-					// rep movsd
-					//if bytes
-					// mov ecx, <bytes>
-					// rep movsb
-					//pop esi
-					//pop edi
-
-					IA32_Cld(&m_HookFunc);
-					IA32_Push_Reg(&m_HookFunc, REG_EDI);
-					IA32_Push_Reg(&m_HookFunc, REG_ESI);
 					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EDI, REG_EBP, v_memret_outaddr);
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_ESI, REG_ECX, MOD_REG);
-					if (dwords)
-					{
-						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
-						IA32_Rep(&m_HookFunc);
-						IA32_Movsd(&m_HookFunc);
-					}
-					if (bytes)
-					{
-						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
-						IA32_Rep(&m_HookFunc);
-						IA32_Movsb(&m_HookFunc);
-					}
-					IA32_Pop_Reg(&m_HookFunc, REG_ESI);
-					IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+
+					BitwiseCopy_Do(m_Proto.GetRet().size);
 				}
 
 				// In both cases: return the pointer in EAX
@@ -714,7 +733,7 @@ namespace SourceHook
 		}
 
 		void GenContext::GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-			int v_pContext, int base_param_offset, int v_plugin_ret)
+			int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -759,7 +778,7 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax+2*SIZE_PTR]
 			//   call eax
-			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret);
+			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret, v_place_for_memret);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 #if SH_COMP == SH_COMP_GCC
@@ -769,7 +788,7 @@ namespace SourceHook
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
-			SaveRetVal(v_plugin_ret);
+			SaveRetVal(v_plugin_ret, v_place_for_memret);
 
 			// cleanup
 #if SH_COMP == SH_COMP_GCC
@@ -831,8 +850,8 @@ namespace SourceHook
 			return acc;
 		}
 
-		void GenContext::GenerateCallOrig(int v_status, int v_pContext,
-			int param_base_offs, int v_this, int v_vfnptr_origentry, int v_orig_ret, int v_override_ret)
+		void GenContext::GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
+			int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -885,7 +904,7 @@ namespace SourceHook
 			m_HookFunc.start_count(counter2);
 
 			// push params
-			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret);
+			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret, v_place_for_memret);
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
@@ -906,7 +925,7 @@ namespace SourceHook
 #endif
 
 			// save retval
-			SaveRetVal(v_orig_ret);
+			SaveRetVal(v_orig_ret, v_place_for_memret);
 
 			// Skip don't call variant
 			tmppos3 = IA32_Jump_Imm32(&m_HookFunc, 0);
@@ -941,44 +960,15 @@ namespace SourceHook
 			}
 			else
 			{
-				jit_uint32_t dwords = DownCastSize(m_Proto.GetRet().size) / 4;
-				jit_uint32_t bytes = DownCastSize(m_Proto.GetRet().size) % 4;
-
 				// bitwise copy
+				BitwiseCopy_Setup();
 
-				//cld
-				//push edi
-				//push esi
 				//lea edi, [ebp+v_orig_ret]			<-- destination
 				//lea esi, [ebp+v_override_ret]		<-- src
-				//if dwords
-				// mov ecx, <dwords>
-				// rep movsd
-				//if bytes
-				// mov ecx, <bytes>
-				// rep movsb
-				//pop esi
-				//pop edi
-
-				IA32_Cld(&m_HookFunc);
-				IA32_Push_Reg(&m_HookFunc, REG_EDI);
-				IA32_Push_Reg(&m_HookFunc, REG_ESI);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDI, REG_EBP, v_orig_ret);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, v_override_ret);
-				if (dwords)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, dwords);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsd(&m_HookFunc);
-				}
-				if (bytes)
-				{
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, bytes);
-					IA32_Rep(&m_HookFunc);
-					IA32_Movsb(&m_HookFunc);
-				}
-				IA32_Pop_Reg(&m_HookFunc, REG_ESI);
-				IA32_Pop_Reg(&m_HookFunc, REG_EDI);
+
+				BitwiseCopy_Do(m_Proto.GetRet().size);
 			}
 
 			// skip don't call label target:
@@ -1134,6 +1124,10 @@ namespace SourceHook
 			//   my_rettype plugin_ret					ebp - 28 - sizeof(my_rettype)*3			-4
 			//  == + 3 * sizeof(my_rettype) bytes
 
+			// if required:
+			//   my_rettype place_for_memret			ebp - 28 - sizeof(my_rettype)*4			-4
+			
+
 			const jit_int8_t v_vfnptr_origentry =	-4	+ addstackoffset;
 			const jit_int8_t v_status =				-8	+ addstackoffset;
 			const jit_int8_t v_prev_res =			-12	+ addstackoffset;
@@ -1160,10 +1154,13 @@ namespace SourceHook
 			jit_int32_t v_override_ret =			-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 2;
 			jit_int32_t v_plugin_ret =				-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 3;
 
+			jit_int32_t v_place_for_memret =		-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 4;
+
 			// Hash for temporary storage for byval params with copy constructors
 			// (param, offset into stack)
-			short usedStackBytes = 3*SIZE_MWORD + 3*SIZE_PTR +		// vfnptr_origentry, status, prev_res, cur_res, iter, pContext
-				3 * GetStackSize(m_Proto.GetRet()) + (m_Proto.GetRet().size == 0 ? 0 : SIZE_PTR)	// ret_ptr, orig_ret, override_ret, plugin_ret
+			short usedStackBytes = 3*SIZE_MWORD + 3*SIZE_PTR		// vfnptr_origentry, status, prev_res, cur_res, iter, pContext
+				+ 3 * GetStackSize(m_Proto.GetRet()) + (m_Proto.GetRet().size == 0 ? 0 : SIZE_PTR)	// ret_ptr, orig_ret, override_ret, plugin_ret
+				+ (MemRetWithTempObj() ? GetStackSize(m_Proto.GetRet()) : 0)
 				- addstackoffset;									// msvc: current thisptr	
 
 			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, usedStackBytes, MOD_REG);
@@ -1190,6 +1187,8 @@ namespace SourceHook
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+				// _don't_ call a constructor for v_place_for_memret !
 			}
 
 			// ********************** SetupHookLoop **********************
@@ -1198,15 +1197,15 @@ namespace SourceHook
 
 			// ********************** call pre hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret);
+				v_plugin_ret, v_place_for_memret);
 
 			// ********************** call orig func **********************
 			GenerateCallOrig(v_status, v_pContext, param_base_offs, v_this, v_vfnptr_origentry, v_orig_ret,
-				v_override_ret);
+				v_override_ret, v_place_for_memret);
 
 			// ********************** call post hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret);
+				v_plugin_ret, v_place_for_memret);
 
 			// ********************** end context and return **********************
 
@@ -1231,7 +1230,37 @@ namespace SourceHook
 
 			DoReturn(v_ret_ptr, v_memret_addr);
 
-			// !! :TODO: Call destructors of orig_ret/ ...
+			// Call destructors of orig_ret/ ...
+			if(m_Proto.GetRet().pDtor)
+			{
+				// Preserve return value in EAX(:EDX)
+				IA32_Push_Reg(&m_HookFunc, REG_EAX);
+				IA32_Push_Reg(&m_HookFunc, REG_EDX);
+
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
+#if SH_COMP == SH_COMP_GCC
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
+#if SH_COMP == SH_COMP_GCC
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
+#if SH_COMP == SH_COMP_GCC
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+#endif
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+				IA32_Pop_Reg(&m_HookFunc, REG_EDX);
+				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
+			}
 
 			// epilogue
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ESP, REG_EBP, MOD_REG);
@@ -1351,17 +1380,16 @@ namespace SourceHook
 			if (pi.type == PassInfo::PassType_Object &&
 				(pi.flags & PassInfo::PassFlag_ByVal))
 			{
-				if ((pi.flags & PassInfo::PassFlag_CCtor) && !pi.pNormalCtor)
+				if ((pi.flags & PassInfo::PassFlag_CCtor) && !pi.pCopyCtor)
 					return false;
 
 				if ((pi.flags & PassInfo::PassFlag_ODtor) && !pi.pDtor)
 					return false;
 
-				// only care for assignop and normalctor for return types
-				if (is_ret && (pi.flags & PassInfo::PassFlag_AssignOp) && !pi.pAssignOperator)
+				if ((pi.flags & PassInfo::PassFlag_AssignOp) && !pi.pAssignOperator)
 					return false;
 
-				if (is_ret && (pi.flags & PassInfo::PassFlag_CCtor) && !pi.pNormalCtor)
+				if ((pi.flags & PassInfo::PassFlag_OCtor) && !pi.pNormalCtor)
 					return false;
 			}
 

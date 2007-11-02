@@ -41,7 +41,7 @@ namespace
 	};
 
 	template <int MYSIZE>
-	std::ostream& operator <<(std::ostream &os, const POD<MYSIZE> &obj)
+		std::ostream& operator <<(std::ostream &os, const POD<MYSIZE> &obj)
 	{
 		os << "Some POD!";
 		return os;
@@ -50,6 +50,7 @@ namespace
 	MAKE_STATE_1(State_ObjOCtor_Called, int /*MYSIZE*/);
 	MAKE_STATE_1(State_ObjCCtor_Called, int /*MYSIZE*/);
 	MAKE_STATE_1(State_ObjODtor_Called, int /*MYSIZE*/);
+	MAKE_STATE_1(State_ObjAssignOp_Called, int /*MYSIZE*/);
 
 	template <int MYSIZE>
 	struct Object
@@ -82,6 +83,16 @@ namespace
 				ADD_STATE(State_ObjODtor_Called(MYSIZE));
 		}
 
+		Object & operator = (const Object &other)
+		{
+			if (!g_Inside_LeafFunc)
+				ADD_STATE(State_ObjAssignOp_Called(MYSIZE));
+
+			memcpy(reinterpret_cast<void*>(x), reinterpret_cast<const void*>(other.x), MYSIZE);
+
+			return *this;
+		}
+
 		bool operator==(const Object<MYSIZE> &other)
 		{
 			return memcmp(reinterpret_cast<void*>(x), reinterpret_cast<const void*>(other.x), MYSIZE) == 0;
@@ -94,6 +105,51 @@ namespace
 		os << "Some Obj!";
 		return os;
 	}
+
+	// Because of some weird bug in MSVC < 1400
+#define MAKE_PODRET(size) \
+	struct PodRet##size \
+	{ \
+		POD<size> actPod; \
+		bool operator==(const PodRet##size &other) { return actPod == other.actPod; } \
+		bool operator==(char other) { return actPod == other; } \
+	}; \
+	std::ostream& operator <<(std::ostream &os, const PodRet##size &obj) \
+	{ \
+		os << obj.actPod; \
+		return os; \
+	} \
+	template <> struct MakeRet< PodRet##size > \
+	{ \
+		static PodRet##size Do(int a) \
+		{ \
+			PodRet##size x; \
+			memset(reinterpret_cast<void*>(x.actPod.x), a, size); \
+			return x; \
+		} \
+	};
+
+#define MAKE_OBJRET(size) \
+	struct ObjRet##size \
+	{ \
+		Object<size> actObj; \
+		bool operator==(const ObjRet##size &other) { return actObj == other.actObj; } \
+		bool operator==(char other) { return actObj == other; } \
+	}; \
+	std::ostream& operator <<(std::ostream &os, const ObjRet##size &obj) \
+	{ \
+		os << obj.actObj; \
+		return os; \
+	} \
+	template <> struct MakeRet< ObjRet##size > \
+	{ \
+		static ObjRet##size Do(int a) \
+		{ \
+			ObjRet##size x; \
+			memset(reinterpret_cast<void*>(x.actObj.x), a, size); \
+			return x; \
+		} \
+	};
 
 	#include "testhookmangen.h"
 
@@ -279,29 +335,43 @@ namespace
 	THGM_SETUP_RI(105, double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
 
 	// pod 1-13
-	THGM_MAKE_TEST1(106, POD<1>, int);
+	MAKE_PODRET(1);
+	THGM_MAKE_TEST1(106, PodRet1, int);
 	THGM_SETUP_PI1(106,
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
-	THGM_SETUP_RI(106, POD<1>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+	THGM_SETUP_RI(106, PodRet1, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
 
-	THGM_MAKE_TEST1(107, POD<4>, int);
+	MAKE_PODRET(4);
+	THGM_MAKE_TEST1(107, PodRet4, int);
 	THGM_SETUP_PI1(107,
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
-	THGM_SETUP_RI(107, POD<4>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+	THGM_SETUP_RI(107, PodRet4, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
 
-	THGM_MAKE_TEST1(108, POD<8>, int);
+	MAKE_PODRET(8);
+	THGM_MAKE_TEST1(108, PodRet8, int);
 	THGM_SETUP_PI1(108,
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
-	THGM_SETUP_RI(108, POD<8>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+	THGM_SETUP_RI(108, PodRet8, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
 
-	THGM_MAKE_TEST1(109, POD<13>, int);
+	MAKE_PODRET(13);
+	THGM_MAKE_TEST1(109, PodRet13, int);
 	THGM_SETUP_PI1(109,
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
-	THGM_SETUP_RI(109, POD<13>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+	THGM_SETUP_RI(109, PodRet13, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	MAKE_OBJRET(13);
+	THGM_MAKE_TEST1(110, ObjRet13, int);
+	THGM_SETUP_PI1(110,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(110, ObjRet13, SourceHook::PassInfo::PassType_Object,
+		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+
 }
 
 bool TestHookManGen(std::string &error)
@@ -502,11 +572,196 @@ bool TestHookManGen(std::string &error)
 	THGM_DO_TEST(108, (5));
 	THGM_DO_TEST(109, (5));
 
+	// Test110: Special: constructors/destructors on return
+	PtrBuf_Clear();
+	ObjRet13 obj13;
+
+	CHECK_STATES((&g_States,
+		new State_ObjOCtor_Called(13),
+		NULL), "Test110 Part0");
+
+	setuppi_110();
+	setupri_110();
+
+	g_Genc110 = new SourceHook::Impl::GenContext(&protoinfo_110, 0, 0, g_SHPtr);
+	g_Genc_ad110.set(g_Genc110);
+	SourceHook::HookManagerPubFunc myhookman110 = g_Genc110->Generate();
+	int hook1_110, hook2_110, hook3_110, hook4_110;
+
+	TestClass110 *pTest110 = new TestClass110;
+	CAutoPtrDestruction<TestClass110> apd110(pTest110);
+
+	/* no hooks - no hooks */
+	PtrBuf_Clear();
+	obj13 = pTest110->Func(5);
+
+	g_Inside_LeafFunc = true;
+	CHECK_STATES((&g_States,
+		new State_Func110(pTest110, ParamState_m110 (5)),
+		new State_ObjOCtor_Called(13),			// MakeRet: Construction of x
+		new State_ObjCCtor_Called(13),			// Return from MakeRet	-> construct temporary object in our stack
+		new State_ObjODtor_Called(13),			// MakeRet: Destruction of x
+
+		new State_ObjAssignOp_Called(13),		// assign: obj13 = temporary object in our stack
+		new State_ObjODtor_Called(13),			// Func110: destruction of temporary object
+		NULL), "Test" "110" " Part1");
+	g_Inside_LeafFunc = false;
+
+	/* hook1 - no hooks */
+	THGM_ADD_HOOK(110, 1);
+
+	PtrBuf_Clear();
+	obj13 = pTest110->Func(5);
+	g_Inside_LeafFunc = true;
+	CHECK_STATES((&g_States,
+		// HookFunc: construct orig_ret/override_ret/plugin_ret objects
+		new State_ObjOCtor_Called(13),
+		new State_ObjOCtor_Called(13),
+		new State_ObjOCtor_Called(13),
+
+		// Calling delegate
+			new State_Deleg1_110(pTest110, 0, ParamState_m110 (5)),
+
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+		// Calling orig function Func110
+			new State_Func110(pTest110, ParamState_m110 (5)),
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: orig_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+		// hookfunc is returning:
+		new State_ObjCCtor_Called(13),		// copy to temp object in our stack
+
+		// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
+		new State_ObjODtor_Called(13),
+		new State_ObjODtor_Called(13),
+		new State_ObjODtor_Called(13),
+		
+		// we are in our function: assign 
+		new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
+		new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
+
+		NULL), "Test" "11" " Part2");
+	
+	CHECK_COND(obj13 == 0, "Test" "11" " Part 2.1");
+	g_Inside_LeafFunc = false;
+
+	THGM_REMOVE_HOOK(11, 1);
+
+	/* hook1, hook2 - hook3, hook4 */
+	THGM_ADD_HOOK(110, 1);
+	THGM_ADD_HOOK(110, 2);
+	THGM_ADD_HOOK(110, 3);
+	THGM_ADD_HOOK(110, 4);
+
+	PtrBuf_Clear();
+	obj13 = pTest110->Func(5);
+	g_Inside_LeafFunc = true;
+	CHECK_STATES((&g_States,
+		// HookFunc: construct orig_ret/override_ret/plugin_ret objects
+		new State_ObjOCtor_Called(13),
+		new State_ObjOCtor_Called(13),
+		new State_ObjOCtor_Called(13),
+
+		// Calling delegate1
+			new State_Deleg1_110(pTest110, 0, ParamState_m110 (5)),
+
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+
+		// Calling delegate2
+			new State_Deleg2_110(pTest110, 1, ParamState_m110 (5)),
+
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+		// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret
+		new State_ObjAssignOp_Called(13),
+
+		// SUPERCEDE -> orig function is not called
+		// instead: orig_ret = override_ret
+		new State_ObjAssignOp_Called(13),
+
+		// Calling delegate3
+			new State_Deleg3_110(pTest110, 2, ParamState_m110 (5)),
+
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+		// Calling delegate4
+			new State_Deleg4_110(pTest110, 3, ParamState_m110 (5)),
+
+			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+		// back in hookfunc
+		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+		// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret (yes really, we overwrite the old value!)
+		new State_ObjAssignOp_Called(13),
+
+		// hookfunc is returning:
+		new State_ObjCCtor_Called(13),		// copy to temp object in our stack
+
+		// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
+		new State_ObjODtor_Called(13),
+		new State_ObjODtor_Called(13),
+		new State_ObjODtor_Called(13),
+
+		// we are in our function: assign 
+		new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
+		new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
+
+		NULL), "Test" "11" " Part3");
+
+	CHECK_COND(obj13 == 4, "Test" "11" " Part 3.1");
+	g_Inside_LeafFunc = false;
+
+	THGM_REMOVE_HOOK(110, 1);
+	THGM_REMOVE_HOOK(110, 2);
+	THGM_REMOVE_HOOK(110, 3);
+	THGM_REMOVE_HOOK(110, 4);
+
 	// Shutdown now!
 	// If we don't SH will auto-shutdown _after_ genc's destructor is called
 	//  -> crash
 
 	Test_CompleteShutdown(g_SHPtr);
+
+	CHECK_COND(sizeof(PodRet1) == 1, "WTF!");
+	CHECK_COND(sizeof(PodRet4) == 4, "WTF!");
+	CHECK_COND(sizeof(PodRet8) == 8, "WTF!");
+	CHECK_COND(sizeof(PodRet13) == 13, "WTF!");
+
 	return true;
 }
 

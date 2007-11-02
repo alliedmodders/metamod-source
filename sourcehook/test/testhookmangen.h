@@ -29,6 +29,11 @@ public:
 	{
 		reinterpret_cast<T*>(this)->~T();
 	}
+
+	const T& AssignOp(const T &other)
+	{
+		return (*reinterpret_cast<T*>(this) = other);
+	}
 };
 
 
@@ -90,7 +95,7 @@ struct MakeRet
 {
 	static T Do(int a)
 	{
-		return static_cast<T>(a);
+		return a;
 	}
 };
 
@@ -530,7 +535,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id())); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -543,10 +548,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, ()); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -559,10 +564,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, ()); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -575,10 +580,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, ()); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -591,10 +596,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, ()); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -616,6 +621,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		\
 		 \
 		\
+		 \
 		 \
 		 \
 		 \
@@ -739,7 +745,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -752,10 +758,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -768,10 +774,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -784,10 +790,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -800,10 +806,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -828,6 +834,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -948,7 +955,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -961,10 +968,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -977,10 +984,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -993,10 +1000,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -1009,10 +1016,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -1037,6 +1044,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -1157,7 +1165,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -1170,10 +1178,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -1186,10 +1194,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -1202,10 +1210,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -1218,10 +1226,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -1246,6 +1254,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -1366,7 +1375,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -1379,10 +1388,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -1395,10 +1404,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -1411,10 +1420,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -1427,10 +1436,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -1455,6 +1464,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -1575,7 +1585,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4, p5))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -1588,10 +1598,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -1604,10 +1614,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -1620,10 +1630,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -1636,10 +1646,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -1664,6 +1674,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[5].pNormalCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[5].pCopyCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  paraminfos2_##id[5].pDtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  paraminfos2_##id[5].pAssignOperator = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -1784,7 +1795,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
 			g_Inside_LeafFunc = false; \
 			\
-			return MakeRet<ret_type>::Do(0); \
+			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
 		struct Delegate1 : public MyDelegate \
@@ -1797,10 +1808,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(1)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
 			} \
 		}; \
 		struct Delegate2 : public MyDelegate \
@@ -1813,10 +1824,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(2)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
 			} \
 		}; \
 		struct Delegate3 : public MyDelegate \
@@ -1829,10 +1840,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet<ret_type>::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet<ret_type>::Do(3)); \
+					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
 			} \
 		}; \
 		struct Delegate4 : public MyDelegate \
@@ -1845,10 +1856,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet<ret_type>::Do(4)); \
+					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
 			}; \
 		}; \
 	}; \
@@ -1873,6 +1884,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[5].pNormalCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[6].pNormalCtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::NormalConstructor) : NULL;  \
 		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[5].pCopyCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[6].pCopyCtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::CopyConstructor) : NULL;  \
 		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  paraminfos2_##id[5].pDtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL;  paraminfos2_##id[6].pDtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::Destructor) : NULL;  \
+		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  paraminfos2_##id[5].pAssignOperator = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL;  paraminfos2_##id[6].pAssignOperator = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::AssignOp) : NULL;  \
 	}
 	
 
@@ -1887,6 +1899,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		protoinfo_##id.retPassInfo2.pNormalCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::NormalConstructor) : NULL; \
 		protoinfo_##id.retPassInfo2.pCopyCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::CopyConstructor) : NULL; \
 		protoinfo_##id.retPassInfo2.pDtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::Destructor) : NULL; \
+		protoinfo_##id.retPassInfo2.pAssignOperator = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::AssignOp) : NULL; \
 	}
 	
 #define THGM_ADD_HOOK(id, num) \
