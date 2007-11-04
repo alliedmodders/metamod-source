@@ -4,6 +4,7 @@
 #include "testevents.h"
 #include "sourcehook_hookmangen.h"
 #include "sh_memory.h"
+#include "sh_pagealloc.h"
 
 // TESTHOOKMANGEN
 // Test automatic hookman generation

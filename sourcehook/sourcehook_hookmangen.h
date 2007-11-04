@@ -12,6 +12,7 @@
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
 #include "sourcehook_impl.h"
+#include "sh_pagealloc.h"
 
 namespace SourceHook
 {
