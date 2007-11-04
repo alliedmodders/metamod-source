@@ -52,6 +52,15 @@ namespace
 		{
 			ADD_STATE(State_Func5_Called(reinterpret_cast<void*>(this)));
 		}
+
+		virtual const char *Func6()
+		{
+			return 0;
+		}
+		virtual char *Func7()
+		{
+			return 0;
+		}
 	};
 
 	SH_DECL_HOOK0_void(TheWall, Func1, SH_NOATTRIB, 0);
@@ -63,6 +72,12 @@ namespace
 	SH_DECL_MANUALHOOK1_void(TheWall_Func2, 1, 0, 0, int);
 	SH_DECL_MANUALHOOK0(TheWall_Func3, 2, 0, 0, short);
 	SH_DECL_MANUALHOOK1(TheWall_Func4, 3, 0, 0, short, int);
+
+	SH_DECL_MANUALHOOK0(TheWall_Func6, 5, 0, 0, const char *);
+	SH_DECL_MANUALEXTERN0(TheWall_Func6, const char *);
+
+	SH_DECL_MANUALHOOK0(TheWall_Func7, 6, 0, 0, char *);
+	SH_DECL_MANUALEXTERN0(TheWall_Func7, char *);
 
 	SH_DECL_MANUALEXTERN0_void(TheWall_Func1);
 	SH_DECL_MANUALEXTERN1(TheWall_Func4, short, int);
@@ -344,8 +359,11 @@ bool TestManual(std::string &error)
 
 	p->Func5();
 
+	SH_MCALL(p, TheWall_Func1)();
+
 	CHECK_STATES((&g_States,
 		new State_Func1H_Called(p),
+		new State_Func5_Called(p),
 		new State_Func5_Called(p),
 		NULL), "Part 5");
 
