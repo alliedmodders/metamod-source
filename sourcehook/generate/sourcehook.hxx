@@ -1115,7 +1115,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		virtual rettype Func(@[$2,1,$1|, :param$2 p$2@]) \
 		{ SH_HANDLEFUNC((@[$2,1,$1|, :param$2@]), (@[$2,1,$1|, :p$2@]), rettype); } \
 		typedef rettype(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1|, :param$2@]); \
-		typedef SourceHook::ExecutableClass$1<::SourceHook::EmptyClass, ECMFP, rettype@[$2,1,$1:, param$2@]> CallEC; \
+		typedef SourceHook::ExecutableClass$1< ::SourceHook::EmptyClass, ECMFP, rettype@[$2,1,$1:, param$2@] > CallEC; \
 		typedef rettype RetType; \
 	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 	\
