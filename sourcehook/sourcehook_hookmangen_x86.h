@@ -218,6 +218,11 @@ namespace SourceHook
 			return sib;
 		}
 
+		inline void IA32_Int3(JitWriter *jit)
+		{
+			jit->write_ubyte(IA32_INT3);
+		}
+
 		/***********************
 		* INCREMENT/DECREMENT *
 		***********************/

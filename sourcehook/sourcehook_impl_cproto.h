@@ -87,6 +87,11 @@ namespace SourceHook
 				return m_ParamsPassInfo[i];
 			}
 
+			IntPassInfo & GetParam(int i)
+			{
+				return m_ParamsPassInfo[i];
+			}
+
 			const IntPassInfo & GetRet() const
 			{
 				return m_RetPassInfo;

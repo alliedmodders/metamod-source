@@ -19,6 +19,14 @@
 #include "sourcehook_hookmangen_x86.h"
 #include "sh_memory.h"
 
+#if SH_COMP == SH_COMP_MSVC
+# define GCC_ONLY(x)
+# define MSVC_ONLY(x) x
+#elif SH_COMP == SH_COMP_GCC
+# define GCC_ONLY(x) x
+# define MSVC_ONLY(x)
+#endif
+
 // :TODO: test BIG vtable indices
 
 namespace SourceHook
@@ -293,12 +301,10 @@ namespace SourceHook
 				IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_ECX, REG_NOIDX, REG_ESP, NOSCALE, 4);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_offset);
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
-#if SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(pi.pCopyCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EDX);
-
+				GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
 			}
 			else
@@ -408,19 +414,19 @@ namespace SourceHook
 					{
 						// lea edx, [ebp + v_place_for_memret]  <-- src addr
 						// lea ecx, [ebp + v_where]				<-- dest addr
-						// gcc: push ecx
 						// push edx
+						// gcc: push ecx
 						// call it
+						// gcc: clean up
 
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_place_for_memret);
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_where);
-#if SH_COMP == SH_COMP_GCC
-						IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
 						IA32_Push_Reg(&m_HookFunc, REG_EDX);
+						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
+						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 					}
 					else
 					{
@@ -441,13 +447,13 @@ namespace SourceHook
 						//lea ecx, [ebp+v_place_for_memret]
 						//gcc: push ecx
 						//call it
+						//gcc: clean up
 
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_place_for_memret);
-#if SH_COMP == SH_COMP_GCC
-						IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
+						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 					}
 				}
 				else
@@ -554,15 +560,15 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax + 4]
 			//   call eax
+			//   gcc: clean up
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_pContext);
-#if SH_COMP == SH_COMP_GCC
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 			// vtbloffs=0, vtblidx=1
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 4);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
+			GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 
 			// *eax = plugin_ret
@@ -578,21 +584,23 @@ namespace SourceHook
 				if (m_Proto.GetRet().pAssignOperator)
 				{
 					// lea edx, [ebp + v_plugin_ret]
+					// push edx					<-- src addr
 					// msvc: ecx = eax				<-- dest addr
 					// gcc: push eax				<-- dest addr
-					// push edx					<-- src addr
 					// call it
+					// gcc: clean up
 
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_plugin_ret);
+					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 #if SH_COMP == SH_COMP_MSVC
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 #elif SH_COMP == SH_COMP_GCC
 					IA32_Push_Reg(&m_HookFunc, REG_EAX);
 #endif
-					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
 				}
 				else
 				{
@@ -642,11 +650,10 @@ namespace SourceHook
 			//   mov edx, [edx]
 
 			//   call edx
+			// gcc: clean up
 
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_pContext);
-#if SH_COMP == SH_COMP_GCC
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 			IA32_Xor_Reg_Rm(&m_HookFunc, REG_EAX, REG_EAX, MOD_REG);
 			IA32_Cmp_Rm_Disp8_Imm8(&m_HookFunc, REG_EBP, v_status, MRES_OVERRIDE);
 			IA32_SetCC_Rm8(&m_HookFunc, REG_EAX, CC_L);
@@ -658,6 +665,7 @@ namespace SourceHook
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDX, REG_EDX, MOD_MEM_REG);
 			IA32_Call_Reg(&m_HookFunc, REG_EDX);
+			GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 			IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_retptr);
 		}
@@ -721,22 +729,24 @@ namespace SourceHook
 				if (m_Proto.GetRet().pCopyCtor)
 				{
 					// mov edx, ecx				<-- src	( we set ecx to [ebp+v_retptr] before )
+					// push edx					<-- src addr
 					// msvc: ecx = [ebp + v_memret_outaddr]				<-- dest addr
 					// gcc: push [ebp + v_memret_outaddr]				<-- dest addr
-					// push edx					<-- src addr
 					// call it
+					// gcc: clean up
 
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDX, REG_ECX, MOD_REG);
+					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
 #if SH_COMP == SH_COMP_MSVC
 					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_memret_outaddr);
 #elif SH_COMP == SH_COMP_GCC
 					IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, v_memret_outaddr);
 #endif
-					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pCopyCtor));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
 				}
 				else
 				{
@@ -776,15 +786,15 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax]
 			//   call eax
+			// gcc: clean up
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_pContext);
-#if SH_COMP == SH_COMP_GCC
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 			// vtbloffs=0, vtblidx=0
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_EAX, MOD_MEM_REG);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
+			GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 			// quit on zero
 			//  test eax, eax
@@ -803,12 +813,12 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax+2*SIZE_PTR]
 			//   call eax
+			//   gcc: clean up 
+
 			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret, v_place_for_memret);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
-#if SH_COMP == SH_COMP_GCC
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
@@ -816,10 +826,8 @@ namespace SourceHook
 			SaveRetVal(v_plugin_ret, v_place_for_memret);
 
 			// cleanup
-#if SH_COMP == SH_COMP_GCC
 			// params + thisptr
-			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG);
-#endif
+			GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG));
 
 			// process meta return:
 			//  prev_res = cur_res
@@ -914,15 +922,15 @@ namespace SourceHook
 			//   eax = [ecx]
 			//   eax = [eax + 3*PTR_SIZE]
 			//   call eax
+			// gcc: clean up
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_pContext);
-#if SH_COMP == SH_COMP_GCC
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 			// vtbloffs=0, vtblidx=3
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_Disp8(&m_HookFunc, REG_EAX, REG_EAX, 3*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
+			GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 			IA32_Test_Rm_Reg8(&m_HookFunc, REG_EAX, REG_EAX, MOD_REG);
 			tmppos2 = IA32_Jump_Cond_Imm32(&m_HookFunc, CC_Z, 0);
@@ -979,19 +987,19 @@ namespace SourceHook
 				{
 					// lea edx, [ebp + v_override_ret]			<-- src addr
 					// lea ecx, [ebp + v_orig_ret]				<-- dest addr
-					// gcc: push ecx
 					// push edx					<-- src addr
+					// gcc: push ecx
 					// call it
+					// gcc: clean up
 
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_override_ret);
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
-#if SH_COMP == SH_COMP_GCC
-					IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
+					GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG));
 				}
 				else
 				{
@@ -1067,7 +1075,7 @@ namespace SourceHook
 			// set up thisptr
 #if SH_COMP == SH_COMP_GCC
 			//  on gcc/mingw, this is the first parameter
-			IA32_Push_Imm32(&m_HookFunc, DownCastPtr(m_SHPtr));
+			GCC_ONLY(IA32_Push_Imm32(&m_HookFunc, DownCastPtr(m_SHPtr)));
 #elif SH_COMP == SH_COMP_MSVC
 			//  on msvc, it's ecx
 			IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, DownCastPtr(m_SHPtr));
@@ -1081,10 +1089,8 @@ namespace SourceHook
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
 			// on gcc/mingw, we have to clean up after the call
-#if SH_COMP == SH_COMP_GCC
 			// 9 params + hidden thisptr param
-			IA32_Add_Rm_Imm8(&m_HookFunc, REG_ESP, 10*SIZE_PTR, MOD_REG);
-#endif
+			GCC_ONLY(IA32_Add_Rm_Imm8(&m_HookFunc, REG_ESP, 10*SIZE_PTR, MOD_REG));
 
 			// store return value
 			IA32_Mov_Rm_Reg_Disp8(&m_HookFunc, REG_EBP, REG_EAX, v_pContext);
@@ -1113,10 +1119,8 @@ namespace SourceHook
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
 			// on gcc/mingw, we have to clean up after the call
-#if SH_COMP == SH_COMP_GCC
 			// 1 param + hidden thisptr param
-			IA32_Add_Rm_Imm8(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG);
-#endif
+			GCC_ONLY(IA32_Add_Rm_Imm8(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG));
 		}
 
 		void * GenContext::GenerateHookFunc()
@@ -1132,7 +1136,7 @@ namespace SourceHook
 			const int addstackoffset = -4;
 			IA32_Push_Reg(&m_HookFunc, REG_ECX);
 #elif SH_COMP == SH_COMP_GCC
-			const jit_int8_t v_this = 8;		// first param
+			const jit_int8_t v_this = 12;		// first param
 			const int addstackoffset = 0;
 #endif
 
@@ -1212,18 +1216,24 @@ namespace SourceHook
 
 				// orig_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				// override_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				// plugin_ret
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				// _don't_ call a constructor for v_place_for_memret !
 			}
@@ -1276,25 +1286,22 @@ namespace SourceHook
 				IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
-#if SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
-#if SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
-#if SH_COMP == SH_COMP_GCC
-				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#endif
+				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Pop_Reg(&m_HookFunc, REG_EDX);
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
@@ -1304,7 +1311,8 @@ namespace SourceHook
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ESP, REG_EBP, MOD_REG);
 			IA32_Pop_Reg(&m_HookFunc, REG_EBX);
 			IA32_Pop_Reg(&m_HookFunc, REG_EBP);
-			IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize());
+			MSVC_ONLY(IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize()));
+			GCC_ONLY(IA32_Return(&m_HookFunc));   // :TODO: ?? Memory return? Should I pop 4 bytes then?
 
 			// Store pointer for later use
 			// m_HookfuncVfnPtr is a pointer to a void* because SH expects a pointer
@@ -1487,6 +1495,23 @@ namespace SourceHook
 			}
 		}
 
+		void GenContext::AutoDetectParamFlags()
+		{
+#if SH_COMP == SH_COMP_GCC
+			// On GCC, all objects are passed by reference if they have a destructor
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				IntPassInfo &pi = m_Proto.GetParam(i);
+				if (pi.type == PassInfo::PassType_Object &&
+					(pi.flags & PassInfo::PassFlag_ODtor))
+				{
+					pi.flags &= ~PassInfo::PassFlag_ByVal;
+					pi.flags |= PassInfo::PassFlag_ByRef;
+				}
+			}
+#endif
+		}
+
 		HookManagerPubFunc GenContext::Generate()
 		{
 			Clear();
@@ -1504,6 +1529,7 @@ namespace SourceHook
 			}
 
 			AutoDetectRetType();
+			AutoDetectParamFlags();
 
 			if (m_Proto.GetConvention() != ProtoInfo::CallConv_Cdecl &&
 				m_Proto.GetConvention() != ProtoInfo::CallConv_ThisCall)

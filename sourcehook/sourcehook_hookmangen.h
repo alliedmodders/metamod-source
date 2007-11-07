@@ -220,6 +220,7 @@ namespace SourceHook
 
 			// Level 2 -> called from Generate()
 			void AutoDetectRetType();
+			void AutoDetectParamFlags();
 			bool PassInfoSupported(const IntPassInfo &pi, bool is_ret);
 			void Clear();
 			void BuildProtoInfo();
