@@ -156,6 +156,7 @@ namespace SourceHook
 		{
 			const static int SIZE_MWORD = 4;
 			const static int SIZE_PTR = sizeof(void*);
+			const static int PassFlag_ForcedByRef = (1<<30);   // ByVal in source, but actually passed by reference (GCC) -> private pass, destruct
 
 			CProto m_Proto;
 			int m_VtblOffs;
@@ -180,19 +181,22 @@ namespace SourceHook
 			// size info
 			jit_int32_t GetRealSize(const IntPassInfo &info);
 			jit_int32_t GetStackSize(const IntPassInfo &info);
-			short GetParamsStackSize();		// sum(GetStackSize(i), 0 <= i < numOfParams)
+			short GetParamsStackSize();		// sum(GetStackSize(param[i]), 0 <= i < numOfParams)
 
 			// Helpers
 			void BitwiseCopy_Setup();
 			void BitwiseCopy_Do(size_t size);
 
 			// Param push
+			short GetForcedByRefParamsSize();		// sum(param[i] is forcedbyref ? GetStackSize(param[i]) : 0, 0 <= i < numOfParams)
+			short GetForcedByRefParamOffset(int p);		// sum(param[i] is forcedbyref ? GetStackSize(param[i]) : 0, 0 <= i < p)
 			jit_int32_t PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to, 
-				jit_int32_t v_place_for_memret);		// save_ret_to and v_place_for_memret only used for memory returns
+				jit_int32_t v_place_for_memret, jit_int32_t v_place_fbrr_base);		// save_ret_to and v_place_for_memret only used for memory returns
 			jit_int32_t PushRef(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushBasic(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushFloat(jit_int32_t param_offset, const IntPassInfo &pi);
-			jit_int32_t PushObject(jit_int32_t param_offset, const IntPassInfo &pi);
+			jit_int32_t PushObject(jit_int32_t param_offset, const IntPassInfo &pi, jit_int32_t v_place_fbrr);
+			void DestroyParams(jit_int32_t fbrr_base);
 
 			// Ret val processing
 			void SaveRetVal(jit_int32_t v_where, jit_int32_t v_place_for_memret);
@@ -205,11 +209,11 @@ namespace SourceHook
 
 			// Call hooks
 			void GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-				int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret);
+				int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base);
 
 			// Call orig
 			void GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
-				int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret);
+				int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base);
 
 			// Hook loop
 			void CallSetupHookLoop(int v_orig_ret, int v_override_ret, 

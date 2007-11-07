@@ -196,6 +196,39 @@ namespace SourceHook
 			IA32_Pop_Reg(&m_HookFunc, REG_EDI);
 		}
 
+		short GenContext::GetParamsStackSize()
+		{
+			short acc = 0;
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				acc += GetStackSize(m_Proto.GetParam(i));
+			}
+
+			// Memory return: address is first param
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+				acc += SIZE_PTR;
+
+			// :TODO: cdecl: THIS POINTER AS FIRST PARAM!!!
+
+			return acc;
+		}
+
+		short GenContext::GetForcedByRefParamOffset(int p)
+		{
+			short off = 0;
+			for (int i = 0; i < p; ++i)
+			{
+				if (m_Proto.GetParam(i).flags & PassFlag_ForcedByRef)
+					off += GetStackSize(m_Proto.GetParam(i));
+			}
+			return off;
+		}
+
+		short GenContext::GetForcedByRefParamsSize()
+		{
+			return GetForcedByRefParamOffset(m_Proto.GetNumOfParams());
+		}
+
 		jit_int32_t GenContext::PushRef(jit_int32_t param_offset, const IntPassInfo &pi)
 		{
 			// push [ebp+<offset>]
@@ -282,23 +315,31 @@ namespace SourceHook
 			}
 		}
 
-		jit_int32_t GenContext::PushObject(jit_int32_t param_offset, const IntPassInfo &pi)
+		jit_int32_t GenContext::PushObject(jit_int32_t param_offset, const IntPassInfo &pi, jit_int32_t place_fbrr)
 		{
-			// make room on the stack
-			// sub esp, <size>
-			IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, GetStackSize(pi), MOD_REG);
+			if ((pi.flags & PassFlag_ForcedByRef) == 0)
+			{
+				// make room on the stack
+				// sub esp, <size>
+				IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, GetStackSize(pi), MOD_REG);
+			}
 
 			// if there is a copy constructor..
 			if (pi.pCopyCtor)
 			{
 				// save eax
 				// push src addr
-				// this= target addr = esp+12
+				// this= target addr = forcedbyref ? ebp+place_fbrr : esp+12
 				// call copy constructor
 				// restore eax
 			
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
-				IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_ECX, REG_NOIDX, REG_ESP, NOSCALE, 4);
+				
+				if (pi.flags & PassFlag_ForcedByRef)
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, place_fbrr);
+				else
+					IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_ECX, REG_NOIDX, REG_ESP, NOSCALE, 4);
+				
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_offset);
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
@@ -314,19 +355,50 @@ namespace SourceHook
 				
 				BitwiseCopy_Setup();
 
-				//lea edi, [esp+8]
+				//if forcedbyref:
+				//  lea edi, [ebp_place_fbrr]
+				//else
+				//  lea edi, [esp+8]			-  bc_setup pushed two regs onto the stack!
 				//lea esi, [ebp+<offs>]
-				IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_EDI, REG_NOIDX, REG_ESP, NOSCALE, 8);
+				if (pi.flags & PassFlag_ForcedByRef)
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDI, REG_EBP, place_fbrr);
+				else
+					IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_EDI, REG_NOIDX, REG_ESP, NOSCALE, 8);
+
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ESI, REG_EBP, param_offset);
 
 				BitwiseCopy_Do(pi.size);
 			}
 
+			// forcedref: push reference to ebp+place_fbrr
+			if (pi.flags & PassFlag_ForcedByRef)
+			{
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, place_fbrr);
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				return SIZE_PTR;
+			}
+			
 			return DownCastSize(pi.size);
 		}
 
+		void GenContext::DestroyParams(jit_int32_t fbrr_base)
+		{
+			for (int i = m_Proto.GetNumOfParams() - 1; i >= 0; --i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
+					(pi.flags & PassInfo::PassFlag_ByVal) && (pi.flags & PassFlag_ForcedByRef))
+				{
+					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, fbrr_base + GetForcedByRefParamOffset(i));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
+					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+				}
+			}
+		}
+		
 		// May not touch eax!
-		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to, int v_place_for_memret)
+		jit_int32_t GenContext::PushParams(jit_int32_t param_base_offset, jit_int32_t save_ret_to, int v_place_for_memret,
+				jit_int32_t v_place_fbrr_base)
 		{
 			jit_int32_t added_to_stack = 0;
 			jit_int32_t ret = 0;
@@ -354,7 +426,7 @@ namespace SourceHook
 						ret = PushFloat(cur_offset, pi);
 						break;
 					case PassInfo::PassType_Object:
-						ret = PushObject(cur_offset, pi);
+						ret = PushObject(cur_offset, pi, v_place_fbrr_base + GetForcedByRefParamOffset(i));
 						break;
 					}
 				}
@@ -768,7 +840,7 @@ namespace SourceHook
 		}
 
 		void GenContext::GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-			int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret)
+			int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -815,7 +887,7 @@ namespace SourceHook
 			//   call eax
 			//   gcc: clean up 
 
-			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret, v_place_for_memret);
+			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
@@ -823,11 +895,16 @@ namespace SourceHook
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
+			DestroyParams(v_place_fbrr_base);
+
 			SaveRetVal(v_plugin_ret, v_place_for_memret);
 
 			// cleanup
+#if SH_COMP == SH_COMP_GCC
+			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG);
+#endif
+
 			// params + thisptr
-			GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG));
 
 			// process meta return:
 			//  prev_res = cur_res
@@ -866,25 +943,8 @@ namespace SourceHook
 			m_HookFunc.rewrite(tmppos, static_cast<jit_int32_t>(counter));
 		}
 
-		short GenContext::GetParamsStackSize()
-		{
-			short acc = 0;
-			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
-			{
-				acc += GetStackSize(m_Proto.GetParam(i));
-			}
-
-			// Memory return: address is first param
-			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
-				acc += SIZE_PTR;
-
-			// :TODO: cdecl: THIS POINTER AS FIRST PARAM!!!
-
-			return acc;
-		}
-
 		void GenContext::GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
-			int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret)
+			int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -937,7 +997,7 @@ namespace SourceHook
 			m_HookFunc.start_count(counter2);
 
 			// push params
-			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret, v_place_for_memret);
+			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
@@ -953,9 +1013,10 @@ namespace SourceHook
 
 			// cleanup
 #if SH_COMP == SH_COMP_GCC
-			// params + thisptr
 			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG);
 #endif
+
+			DestroyParams(v_place_fbrr_base);
 
 			// save retval
 			SaveRetVal(v_orig_ret, v_place_for_memret);
@@ -1166,6 +1227,9 @@ namespace SourceHook
 
 			// if required:
 			//   my_rettype place_for_memret			ebp - 28 - sizeof(my_rettype)*4			-4
+
+			// gcc only: if required:
+			//   place forced byref params              ebp - 28 - sizeof(my_rettype)*{4 or 5}
 			
 
 			const jit_int8_t v_vfnptr_origentry =	-4	+ addstackoffset;
@@ -1196,11 +1260,14 @@ namespace SourceHook
 
 			jit_int32_t v_place_for_memret =		-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 4;
 
+			jit_int32_t v_place_fbrr_base  =		-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * (MemRetWithTempObj() ? 5 : 4);
+
 			// Hash for temporary storage for byval params with copy constructors
 			// (param, offset into stack)
 			short usedStackBytes = 3*SIZE_MWORD + 3*SIZE_PTR		// vfnptr_origentry, status, prev_res, cur_res, iter, pContext
 				+ 3 * GetStackSize(m_Proto.GetRet()) + (m_Proto.GetRet().size == 0 ? 0 : SIZE_PTR)	// ret_ptr, orig_ret, override_ret, plugin_ret
 				+ (MemRetWithTempObj() ? GetStackSize(m_Proto.GetRet()) : 0)
+				+ GetForcedByRefParamsSize()
 				- addstackoffset;									// msvc: current thisptr	
 
 			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, usedStackBytes, MOD_REG);
@@ -1244,15 +1311,15 @@ namespace SourceHook
 
 			// ********************** call pre hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret, v_place_for_memret);
+				v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// ********************** call orig func **********************
 			GenerateCallOrig(v_status, v_pContext, param_base_offs, v_this, v_vfnptr_origentry, v_orig_ret,
-				v_override_ret, v_place_for_memret);
+				v_override_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// ********************** call post hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret, v_place_for_memret);
+				v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// ********************** end context and return **********************
 
@@ -1265,8 +1332,9 @@ namespace SourceHook
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
 			{
 				const IntPassInfo &pi = m_Proto.GetParam(i);
+				// GCC: NOT of forced byref params. the caller destructs those.
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
-					(pi.flags & PassInfo::PassFlag_ByVal))
+					(pi.flags & PassInfo::PassFlag_ByVal) && !(pi.flags & PassFlag_ForcedByRef))
 				{
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, cur_param_pos);
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
@@ -1420,6 +1488,7 @@ namespace SourceHook
 				pi.type != PassInfo::PassType_Float &&
 				pi.type != PassInfo::PassType_Object)
 			{
+				printf("A\n");
 				return false;
 			}
 
@@ -1427,16 +1496,28 @@ namespace SourceHook
 				(pi.flags & PassInfo::PassFlag_ByVal))
 			{
 				if ((pi.flags & PassInfo::PassFlag_CCtor) && !pi.pCopyCtor)
+				{
+					printf("B\n");
 					return false;
+				}
 
 				if ((pi.flags & PassInfo::PassFlag_ODtor) && !pi.pDtor)
+				{
+					printf("C\n");
 					return false;
-
+				}
+				
 				if ((pi.flags & PassInfo::PassFlag_AssignOp) && !pi.pAssignOperator)
+				{
+					printf("D\n");
 					return false;
+				}
 
 				if ((pi.flags & PassInfo::PassFlag_OCtor) && !pi.pNormalCtor)
+				{
+					printf("D\n");
 					return false;
+				}
 			}
 
 			if ((pi.flags & (PassInfo::PassFlag_ByVal | PassInfo::PassFlag_ByRef)) == 0)
@@ -1505,8 +1586,7 @@ namespace SourceHook
 				if (pi.type == PassInfo::PassType_Object &&
 					(pi.flags & PassInfo::PassFlag_ODtor))
 				{
-					pi.flags &= ~PassInfo::PassFlag_ByVal;
-					pi.flags |= PassInfo::PassFlag_ByRef;
+					pi.flags |= PassFlag_ForcedByRef;
 				}
 			}
 #endif

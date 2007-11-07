@@ -114,7 +114,7 @@ namespace
 	template <int MYSIZE>
 	std::ostream& operator <<(std::ostream &os, const Object<MYSIZE> &obj)
 	{
-		os << "Some Obj!";
+		os << "Some Obj" << static_cast<int>(obj.x[0]);
 		return os;
 	}
 

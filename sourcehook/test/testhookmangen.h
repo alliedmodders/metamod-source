@@ -40,18 +40,13 @@ public:
 template <class T>
 void *FindFuncAddr(T mfp)
 {
-	if (sizeof(mfp) != sizeof(void*))
-		return NULL;
-	else
+	union
 	{
-		union
-		{
-			T a;
-			void *b;
-		} u;
-		u.a = mfp;
-		return u.b;
-	}
+		T a;
+		void *b;
+	} u;
+	u.a = mfp;
+	return u.b;
 }
 
 // Reference carrier
