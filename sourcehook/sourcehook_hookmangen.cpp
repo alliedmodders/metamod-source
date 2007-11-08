@@ -441,19 +441,25 @@ namespace SourceHook
 				added_to_stack += ret;
 			}
 
+			return added_to_stack;
+		}
+
+		// It is IMPORTANT that PushMemRetPtr doesn't touch ecx and eax
+		jit_int32_t GenContext::PushMemRetPtr(jit_int32_t save_ret_to, jit_int32_t v_place_for_memret)
+		{
 			// Memory return support
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 			{
 				// push address where to save it!
-				int reg = NextRegEBX_ECX_EDX();
+				int reg = REG_EDX;
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, reg, REG_EBP,
 					MemRetWithTempObj() ? v_place_for_memret : save_ret_to);
 				IA32_Push_Reg(&m_HookFunc, reg);
 
-				added_to_stack += SIZE_PTR;
+				return (SH_COMP==SH_COMP_MSVC) ? 4 : 0;			// varargs funcs on msvc might need this.
+																// gcc doesn't: callee cleans the memret ptr, caller the other params :s
 			}
-
-			return added_to_stack;
+			return 0;
 		}
 
 		void GenContext::SaveRetVal(int v_where, int v_place_for_memret)
@@ -891,6 +897,7 @@ namespace SourceHook
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
+			gcc_clean_bytes += PushMemRetPtr(v_plugin_ret, v_place_for_memret);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
@@ -1006,6 +1013,7 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_ECX);
 			//  on msvc, simply leave it in ecx
 #endif
+			gcc_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
 
 			// call
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EBP, v_vfnptr_origentry);
@@ -1193,11 +1201,11 @@ namespace SourceHook
 
 			// on msvc, save thisptr
 #if SH_COMP == SH_COMP_MSVC
-			const jit_int8_t v_this = -4;
+			jit_int8_t v_this = -4;
 			const int addstackoffset = -4;
 			IA32_Push_Reg(&m_HookFunc, REG_ECX);
 #elif SH_COMP == SH_COMP_GCC
-			const jit_int8_t v_this = 12;		// first param
+			jit_int8_t v_this = 12;		// first param
 			const int addstackoffset = 0;
 #endif
 
@@ -1249,8 +1257,17 @@ namespace SourceHook
 			jit_int32_t v_memret_addr = 0;
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 			{
+#if SH_COMP == SH_COMP_GCC
+				// gcc: now:	first param = mem ret addr
+				//				second param = this pointer
+				//				third param = actual first param
+				v_memret_addr = 12;
+				v_this += 4;
+				param_base_offs += SIZE_PTR;
+#elif SH_COMP == SH_COMP_MSVC
 				v_memret_addr = param_base_offs;
 				param_base_offs += SIZE_PTR;
+#endif
 			}
 
 			jit_int32_t v_ret_ptr =					-28 + addstackoffset;
@@ -1380,8 +1397,14 @@ namespace SourceHook
 			IA32_Pop_Reg(&m_HookFunc, REG_EBX);
 			IA32_Pop_Reg(&m_HookFunc, REG_EBP);
 			MSVC_ONLY(IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize()));
-			GCC_ONLY(IA32_Return(&m_HookFunc));   // :TODO: ?? Memory return? Should I pop 4 bytes then?
-
+			// gcc: Remove 4 bytes from stack on memory return
+#if SH_COMP == SH_COMP_GCC
+			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+				IA32_Return_Popstack(&m_HookFunc, SIZE_PTR);
+			else
+				IA32_Return(&m_HookFunc);
+#endif
+			
 			// Store pointer for later use
 			// m_HookfuncVfnPtr is a pointer to a void* because SH expects a pointer
 			// into the hookman's vtable

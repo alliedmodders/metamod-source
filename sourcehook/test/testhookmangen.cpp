@@ -133,7 +133,7 @@ namespace
 	} \
 	template <> struct MakeRet< PodRet##size > \
 	{ \
-		static PodRet##size Do(int a) \
+		static PodRet##size Do(int a) NO_OPTIMIZE \
 		{ \
 			PodRet##size x; \
 			memset(reinterpret_cast<void*>(x.actPod.x), a, size); \
@@ -155,7 +155,7 @@ namespace
 	} \
 	template <> struct MakeRet< ObjRet##size > \
 	{ \
-		static ObjRet##size Do(int a) \
+		static ObjRet##size Do(int a) NO_OPTIMIZE \
 		{ \
 			ObjRet##size x; \
 			memset(reinterpret_cast<void*>(x.actObj.x), a, size); \
@@ -639,6 +639,7 @@ bool TestHookManGen(std::string &error)
 
 	/* no hooks - no hooks */
 	PtrBuf_Clear();
+	asm("int $3");
 	obj13 = pTest110->Func(5);
 
 	g_Inside_LeafFunc = true;

@@ -196,6 +196,7 @@ namespace SourceHook
 			jit_int32_t PushBasic(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushFloat(jit_int32_t param_offset, const IntPassInfo &pi);
 			jit_int32_t PushObject(jit_int32_t param_offset, const IntPassInfo &pi, jit_int32_t v_place_fbrr);
+			jit_int32_t PushMemRetPtr(jit_int32_t save_ret_to, jit_int32_t v_place_for_memret);
 			void DestroyParams(jit_int32_t fbrr_base);
 
 			// Ret val processing

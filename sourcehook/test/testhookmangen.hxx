@@ -92,6 +92,12 @@ template <class T> struct MyRefCarrier<T&>
 	};
 };
 
+#if SH_COMP==SH_COMP_GCC
+#define NO_OPTIMIZE __attribute__((noinline))
+#else
+#define NO_OPTIMIZE
+#endif
+
 // Return value maker
 template <class T>
 struct MakeRet
