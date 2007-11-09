@@ -133,7 +133,7 @@ namespace
 	} \
 	template <> struct MakeRet< PodRet##size > \
 	{ \
-		static PodRet##size Do(int a) NO_OPTIMIZE \
+		static PodRet##size Do(int a) \
 		{ \
 			PodRet##size x; \
 			memset(reinterpret_cast<void*>(x.actPod.x), a, size); \
@@ -157,9 +157,10 @@ namespace
 	{ \
 		static ObjRet##size Do(int a) NO_OPTIMIZE \
 		{ \
-			ObjRet##size x; \
-			memset(reinterpret_cast<void*>(x.actObj.x), a, size); \
-			return x; \
+			ObjRet##size *x = new ObjRet##size; /* ptr: otherwise gcc optimizes away the temp obj */ \
+			CAutoPtrDestruction< ObjRet##size > apd(x); \
+			memset(reinterpret_cast<void*>(x->actObj.x), a, size); \
+			return *x; \
 		} \
 	};
 
