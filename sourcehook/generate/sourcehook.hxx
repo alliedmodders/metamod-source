@@ -1008,6 +1008,13 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 // Extra pass info V2
 #define __SH_EPI { 0, 0, 0, 0 }
 
+#define __SH_VAFMT_SEQ(fmt, buf) \
+	char buf[::SourceHook::STRBUF_LEN]; \
+	va_list ap; \
+	va_start(ap, fmt); \
+	vsnprintf(buf, sizeof(buf), fmt, ap); \
+	va_end(ap);
+
 @[$1,0,$a:
 // ********* Support for $1 arguments *********
 #define SH_DECL_HOOK$1(ifacetype, ifacefunc, attr, overload, rettype@[$2,1,$1:, param$2@]) \
@@ -1059,12 +1066,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		MAKE_DELEG(rettype, (@[$2,1,$1|, :param$2 p$2@]@[$1!=0:, @]const char *px), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]px)); \
 		virtual rettype Func(@[$2,1,$1|, :param$2 p$2@] @[$1!=0:, @]const char *fmt, ...) \
 		{ \
-			char buf[::SourceHook::STRBUF_LEN]; \
-			va_list ap; \
-			va_start(ap, fmt); \
-			vsnprintf(buf, sizeof(buf), fmt, ap); \
-			va_end(ap); \
-			SH_HANDLEFUNC_vafmt((@[$2,1,$1|, :param$2@]@[$1!=0:, @]...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf), rettype); \
+			__SH_VAFMT_SEQ(fmt, buf); \
+			SH_HANDLEFUNC_vafmt((@[$2,1,$1:param$2, @]const char *, ...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf), rettype); \
 		} \
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<rettype (ifacetype::*)(@[$2,1,$1|, :param$2@]@[$1!=0:, @]const char *, ...) attr>(&ifacetype::ifacefunc))) \
@@ -1087,12 +1090,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		MAKE_DELEG_void((@[$2,1,$1|, :param$2 p$2@]@[$1!=0:, @]const char *px), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]px)); \
 		virtual void Func(@[$2,1,$1|, :param$2 p$2@]@[$1!=0:, @]const char *fmt, ...) \
 		{ \
-			char buf[::SourceHook::STRBUF_LEN]; \
-			va_list ap; \
-			va_start(ap, fmt); \
-			vsnprintf(buf, sizeof(buf), fmt, ap); \
-			va_end(ap); \
-			SH_HANDLEFUNC_void_vafmt((@[$2,1,$1|, :param$2@]@[$1!=0:, @]...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf)); \
+			__SH_VAFMT_SEQ(fmt, buf); \
+			SH_HANDLEFUNC_void_vafmt((@[$2,1,$1:param$2, @]const char *, ...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf)); \
 		} \
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
 		(static_cast<void (ifacetype::*)(@[$2,1,$1|, :param$2@]@[$1!=0:, @]const char *, ...) attr>(&ifacetype::ifacefunc))) \
@@ -1138,6 +1137,39 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype res); \
 	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
 
+#define SH_DECL_MANUALHOOK$1_vafmt(hookname, vtblidx, vtbloffs, thisptroffs, rettype@[$2,1,$1:, param$2@]) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *, rettype> FD; \
+		MAKE_DELEG(rettype, (@[$2,1,$1:param$2 p$2, @]const char *px), (@[$2,1,$1:p$2, @]px)); \
+		virtual rettype Func(@[$2,1,$1:param$2 p$2, @]const char *fmt, ...) \
+		{ \
+			__SH_VAFMT_SEQ(fmt, buf); \
+			SH_HANDLEFUNC_vafmt((@[$2,1,$1:param$2, @]const char *, ...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf), rettype); \
+		} \
+		typedef rettype(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1:param$2, @]const char *, ...); \
+		typedef SourceHook::ExecutableClass@($1+1)< ::SourceHook::EmptyClass, ECMFP, rettype@[$2,1,$1:, param$2@], const char * > CallEC; \
+		typedef rettype RetType; \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {1, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
+	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2M_##hookname[] = { __SH_EPI@[$2,1,$1:, __SH_EPI@] }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, __SH_GPI(rettype), \
+		__SourceHook_ParamInfosM_##hookname, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
+	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype value) \
+	{ \
+		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(shptr, value); \
+	}
+
+#define SH_DECL_MANUALEXTERN$1_vafmt(hookname, rettype@[$2,1,$1:, param$2@]) \
+	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
+		fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *, rettype> handler); \
+	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
+		fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *, rettype> handler); \
+	rettype(::SourceHook::EmptyClass::* __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) )(@[$2,1,$1:param$2, @]const char *, ...); \
+	SourceHook::ExecutableClass@($1+1)<SourceHook::EmptyClass, rettype(::SourceHook::EmptyClass::*)(@[$2,1,$1:param$2, @]const char *, ...), rettype@[$2,1,$1:, param$2@], const char*> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
+	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype res); \
+	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
+
 #define SH_DECL_MANUALHOOK$1_void(hookname, vtblidx, vtbloffs, thisptroffs@[$2,1,$1:, param$2@]) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
 		typedef fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]> FD; \
@@ -1151,7 +1183,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {1, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
 	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2M_##hookname[] = { __SH_EPI@[$2,1,$1:, __SH_EPI@] }; \
 	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, { 0, 0, 0 }, \
-		__SourceHook_ParamInfosM_##hookname	, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
+		__SourceHook_ParamInfosM_##hookname	, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname };
 
 #define SH_DECL_MANUALEXTERN$1_void(hookname@[$2,1,$1:, param$2@]) \
 	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
@@ -1162,6 +1194,32 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SourceHook::ExecutableClass$1<SourceHook::EmptyClass, void(::SourceHook::EmptyClass::*)(@[$2,1,$1|, :param$2@]), void@[$2,1,$1:, param$2@]> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
 	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
 
+#define SH_DECL_MANUALHOOK$1_void_vafmt(hookname, vtblidx, vtbloffs, thisptroffs@[$2,1,$1:, param$2@]) \
+	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+		typedef fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *> FD; \
+		MAKE_DELEG_void((@[$2,1,$1:param$2 p$2, @]const char *px), (@[$2,1,$1:p$2, @]px)); \
+		virtual void Func(@[$2,1,$1:param$2 p$2, @]const char *fmt, ...) \
+		{ \
+			__SH_VAFMT_SEQ(fmt, buf); \
+			SH_HANDLEFUNC_void_vafmt((@[$2,1,$1:param$2, @]const char *, ...), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]"%s", buf), (@[$2,1,$1|, :p$2@]@[$1!=0:, @]buf)); \
+		} \
+		typedef void(::SourceHook::EmptyClass::*ECMFP)(@[$2,1,$1:param$2, @]const char *, ...); \
+		typedef SourceHook::ExecutableClass@($1+1)< ::SourceHook::EmptyClass, ECMFP, void@[$2,1,$1:, param$2@], const char * > CallEC; \
+	SHINT_MAKE_GENERICSTUFF_END_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
+	\
+	const ::SourceHook::PassInfo __SourceHook_ParamInfosM_##hookname[] = { {1, 0, 0}@[$2,1,$1:, __SH_GPI(param$2)@] }; \
+	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2M_##hookname[] = { __SH_EPI@[$2,1,$1:, __SH_EPI@] }; \
+	::SourceHook::ProtoInfo SH_MFHCls(hookname)::ms_Proto = { $1, { 0, 0, 0 }, \
+		__SourceHook_ParamInfosM_##hookname	, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname };
+
+#define SH_DECL_MANUALEXTERN$1_void_vafmt(hookname@[$2,1,$1:, param$2@]) \
+	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
+		fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *> handler); \
+	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
+		fastdelegate::FastDelegate@($1+1)<@[$2,1,$1:param$2, @]const char *> handler); \
+	void(::SourceHook::EmptyClass::* __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) )(@[$2,1,$1:param$2, @]const char *, ...); \
+	SourceHook::ExecutableClass@($1+1)<SourceHook::EmptyClass, void(::SourceHook::EmptyClass::*)(@[$2,1,$1:param$2, @]const char *, ...), void@[$2,1,$1:, param$2@], const char*> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
+	void __SourceHook_FHM_Reconfigure##hookname(int pvtblindex, int pvtbloffs, int pthisptroffs);
 @]
 
 

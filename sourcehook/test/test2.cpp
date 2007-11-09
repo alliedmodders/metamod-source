@@ -58,6 +58,13 @@ namespace
 	SH_DECL_EXTERN2_void_vafmt(IGaben, Vafmt1, SH_NOATTRIB, 0, bool, int);
 	SH_DECL_EXTERN0_vafmt(IGaben, Vafmt2, SH_NOATTRIB, 0, float);
 
+	// Hook also using manual hooks!
+	SH_DECL_MANUALHOOK0_vafmt(IGaben_Vafmt2, 3, 0, 0, float);
+	SH_DECL_MANUALEXTERN0_vafmt(IGaben_Vafmt2, float);
+
+	SH_DECL_MANUALHOOK2_void_vafmt(IGaben_Vafmt1, 2, 0, 0, bool, int);
+	SH_DECL_MANUALEXTERN2_void_vafmt(IGaben_Vafmt1, bool, int);
+
 	void EatYams0_Handler()
 	{
 		ADD_STATE(State_EatYams_Handler_Called(0));
@@ -171,6 +178,40 @@ bool TestVafmtAndOverload(std::string &error)
 		new State_Vafmt_Called(1, "Hello BA1L"),
 		new State_Vafmt_Called(2, "Hello BA1LOPAN"),
 		NULL), "Part 4");
+
+	// Part5: Part3 but with manualhooks
+	h1 = SH_ADD_MANUALHOOK(IGaben_Vafmt1, pGab, SH_STATIC(Vafmt1_PreHandler), false);
+	h2 = SH_ADD_MANUALHOOK(IGaben_Vafmt1, pGab, SH_STATIC(Vafmt1_PostHandler), true);
+	h3 = SH_ADD_MANUALHOOK(IGaben_Vafmt2, pGab, SH_STATIC(Vafmt2_PreHandler), false);
+	h4 = SH_ADD_MANUALHOOK(IGaben_Vafmt2, pGab, SH_STATIC(Vafmt2_PostHandler), true);
+
+	pGab->Vafmt1(true, 55, "Hello %s%d%s", "BA", 1, "L");
+	SH_CALL(pGab, &IGaben::Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
+	SH_MCALL(pGab, IGaben_Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
+
+	CHECK_STATES((&g_States,
+		new State_Vafmt_PreHandler_Called(1, std::string("Hello BA1L")),
+		new State_Vafmt_Called(1, std::string("Hello BA1L")),
+		new State_Vafmt_PostHandler_Called(1, std::string("Hello BA1L")),
+
+		// SH_CALL and SH_MCALL
+		new State_Vafmt_Called(1, std::string("Hello BA1L")),
+		new State_Vafmt_Called(1, std::string("Hello BA1L")),
+		NULL), "Part 5.1");
+
+	pGab->Vafmt2("Hello %s%d%s", "BA", 1, "LOPAN");
+	SH_CALL(pGab, &IGaben::Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
+	SH_MCALL(pGab, IGaben_Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
+
+	CHECK_STATES((&g_States,
+		new State_Vafmt_PreHandler_Called(2, std::string("Hello BA1LOPAN")),
+		new State_Vafmt_Called(2, std::string("Hello BA1LOPAN")),
+		new State_Vafmt_PostHandler_Called(2, std::string("Hello BA1LOPAN")),
+
+		// SH_CALL and SH_MCALL
+		new State_Vafmt_Called(2, "Hello BA1LOPAN"),
+		new State_Vafmt_Called(2, "Hello BA1LOPAN"),
+		NULL), "Part 5.2");
 
 	return true;
 }
