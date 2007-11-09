@@ -640,7 +640,6 @@ bool TestHookManGen(std::string &error)
 
 	/* no hooks - no hooks */
 	PtrBuf_Clear();
-	asm("int $3");
 	obj13 = pTest110->Func(5);
 
 	g_Inside_LeafFunc = true;

@@ -1507,11 +1507,11 @@ namespace SourceHook
 
 		bool GenContext::PassInfoSupported(const IntPassInfo &pi, bool is_ret)
 		{
+			// :TODO: Error returns
 			if (pi.type != PassInfo::PassType_Basic &&
 				pi.type != PassInfo::PassType_Float &&
 				pi.type != PassInfo::PassType_Object)
 			{
-				printf("A\n");
 				return false;
 			}
 
@@ -1520,25 +1520,21 @@ namespace SourceHook
 			{
 				if ((pi.flags & PassInfo::PassFlag_CCtor) && !pi.pCopyCtor)
 				{
-					printf("B\n");
 					return false;
 				}
 
 				if ((pi.flags & PassInfo::PassFlag_ODtor) && !pi.pDtor)
 				{
-					printf("C\n");
 					return false;
 				}
 				
 				if ((pi.flags & PassInfo::PassFlag_AssignOp) && !pi.pAssignOperator)
 				{
-					printf("D\n");
 					return false;
 				}
 
 				if ((pi.flags & PassInfo::PassFlag_OCtor) && !pi.pNormalCtor)
 				{
-					printf("D\n");
 					return false;
 				}
 			}
