@@ -3,9 +3,6 @@
 
 # if	/********/ defined _WIN32
 #		include <windows.h>
-#		define SH_MEM_READ 1
-#		define SH_MEM_WRITE 2
-#		define SH_MEM_EXEC 4
 # elif /******/ defined __linux__
 #		include <sys/mman.h>
 #		include <unistd.h>
@@ -23,7 +20,7 @@ namespace SourceHook
 	If we alloc with malloc and then set the page access type to read/exec only, other regions returned by
 	malloc that are in the same page would lose their write access as well and the process could crash.
 
-	Allocating one page per code generation session is usually a waste of memory and on some plattforms also
+	Allocating one page per code generation session is usually a waste of memory and on some platforms also
 	a waste of virtual address space (Windows’ VirtualAlloc has a granularity of 64K).
 
 

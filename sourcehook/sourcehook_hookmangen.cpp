@@ -1630,8 +1630,8 @@ namespace SourceHook
 			AutoDetectRetType();
 			AutoDetectParamFlags();
 
-			if (m_Proto.GetConvention() != ProtoInfo::CallConv_Cdecl &&
-				m_Proto.GetConvention() != ProtoInfo::CallConv_ThisCall)
+			// Basically, we only support ThisCall/thiscall with varargs
+			if ((m_Proto.GetConvention() & (~ProtoInfo::CallConv_HasVafmt)) != ProtoInfo::CallConv_ThisCall)
 			{
 				return NULL;
 			}

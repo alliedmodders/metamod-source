@@ -202,9 +202,13 @@ namespace SourceHook
 	{
 		enum CallConvention
 		{
-			CallConv_Unknown,		/**< Unknown  -- no extra info available */
-			CallConv_ThisCall,		/**< This call (object pointer required) */
-			CallConv_Cdecl,			/**< Standard C call */
+			CallConv_Unknown,		/**< Unknown  -- no extra info available (0)*/
+			CallConv_ThisCall,		/**< This call (object pointer required) (1)*/
+			CallConv_Cdecl,			/**< C call								 (2)*/
+			CallConv_StdCall,		/**< Windows "stdcall"					 (3)*/
+
+			CallConv_HasVarArgs = (1<<16),	/**< Has variable arguments */
+			CallConv_HasVafmt = CallConv_HasVarArgs | (1<<17)	/**< last params: const char*, ... */
 		};
 
 		int numOfParams;			//!< number of parameters
