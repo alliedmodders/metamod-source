@@ -34,3 +34,16 @@ void Test_CompleteShutdown(SourceHook::ISourceHook *shptr);
 void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
 void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
 void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
+
+SourceHook::IHookManagerAutoGen *Test_HMAG_Factory(SourceHook::ISourceHook *pSHPtr);
+void Test_HMAG_Delete(SourceHook::IHookManagerAutoGen *ptr);
+
+struct CHMAGAutoDestruction
+{
+	SourceHook::IHookManagerAutoGen *m_Ptr;
+	CHMAGAutoDestruction(SourceHook::IHookManagerAutoGen *ptr) : m_Ptr(ptr) {}
+	~CHMAGAutoDestruction() { Test_HMAG_Delete(m_Ptr); }
+};
+
+
+#define GET_HMAG(var, shptr) var = Test_HMAG_Factory(shptr); CHMAGAutoDestruction __hmagautodestruction(var);

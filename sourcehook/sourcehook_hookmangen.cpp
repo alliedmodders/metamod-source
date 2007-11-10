@@ -15,6 +15,7 @@
 // http://www.angelcode.com/dev/callconv/callconv.html
 // http://www.arl.wustl.edu/~lockwood/class/cs306/books/artofasm/Chapter_6/CH06-1.html
 
+#include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
 #include "sourcehook_hookmangen_x86.h"
 #include "sh_memory.h"
@@ -47,7 +48,7 @@ namespace SourceHook
 		}
 
 		GenContext::GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
-			: m_Proto(proto), m_VtblOffs(vtbl_offs), m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr),
+			: m_GeneratedPubFunc(NULL), m_Proto(proto), m_VtblOffs(vtbl_offs), m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr),
 			  m_pHI(NULL), m_HookfuncVfnptr(NULL), m_RegCounter(0)
 		{
 			m_pHI = new void*;
@@ -1651,6 +1652,92 @@ namespace SourceHook
 			BuildProtoInfo();
 			GenerateHookFunc();
 			return fastdelegate::detail::horrible_cast<HookManagerPubFunc>(GeneratePubFunc());
+		}
+
+		HookManagerPubFunc GenContext::GetPubFunc()
+		{
+			if (m_GeneratedPubFunc == 0)
+				m_GeneratedPubFunc = Generate();
+
+			return m_GeneratedPubFunc;
+		}
+
+		bool GenContext::Equal(const CProto &proto, int vtbl_offs, int vtbl_idx)
+		{
+			return (m_Proto.ExactlyEqual(proto) && m_VtblOffs == vtbl_offs && m_VtblIdx == vtbl_idx);
+		}
+
+		bool GenContext::Equal(HookManagerPubFunc other)
+		{
+			return m_GeneratedPubFunc == other;
+		}
+
+		// *********************************** class GenContextContainer
+		CHookManagerAutoGen::CHookManagerAutoGen(ISourceHook *pSHPtr) : m_pSHPtr(pSHPtr)
+		{
+		}
+
+		CHookManagerAutoGen::~CHookManagerAutoGen()
+		{
+			for (List<StoredContext>::iterator iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
+			{
+				delete iter->m_GenContext;
+			}
+		}
+
+		int CHookManagerAutoGen::GetIfaceVersion()
+		{
+			return SH_HOOKMANAUTOGEN_IFACE_VERSION;
+		}
+
+		int CHookManagerAutoGen::GetImplVersion()
+		{
+			return SH_HOOKMANAUTOGEN_IMPL_VERSION;
+		}
+
+		HookManagerPubFunc CHookManagerAutoGen::MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx)
+		{
+			CProto mproto(proto);
+			for (List<StoredContext>::iterator iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
+			{
+				if (iter->m_GenContext->Equal(mproto, vtbl_offs, vtbl_idx))
+				{
+					iter->m_RefCnt++;
+					return iter->m_GenContext->GetPubFunc();
+				}
+			}
+
+			// Not found yet -> new one
+			StoredContext sctx;
+			sctx.m_RefCnt = 1;
+			sctx.m_GenContext = new GenContext(proto, vtbl_offs, vtbl_idx, m_pSHPtr);
+
+			if (sctx.m_GenContext->GetPubFunc() == NULL)
+			{
+				return NULL;
+			}
+			else
+			{
+				m_Contexts.push_back(sctx);
+				return sctx.m_GenContext->GetPubFunc();
+			}
+		}
+
+		void CHookManagerAutoGen::ReleaseHookMan(HookManagerPubFunc pubFunc)
+		{
+			for (List<StoredContext>::iterator iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
+			{
+				if (iter->m_GenContext->Equal(pubFunc))
+				{
+					iter->m_RefCnt--;
+					if (iter->m_RefCnt == 0)
+					{
+						delete iter->m_GenContext;
+						m_Contexts.erase(iter);
+					}
+					break;
+				}
+			}
 		}
 	}
 }

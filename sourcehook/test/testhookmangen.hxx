@@ -1,3 +1,15 @@
+struct CAutoReleaseHookMan
+{
+	SourceHook::HookManagerPubFunc m_Ptr;
+	CAutoReleaseHookMan(SourceHook::HookManagerPubFunc ptr) : m_Ptr(ptr)
+	{
+	}
+	~CAutoReleaseHookMan()
+	{
+		g_HMAGPtr->ReleaseHookMan(m_Ptr);
+	}
+};
+
 // Strip &
 template <class T> struct StripRef
 {
@@ -262,9 +274,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	SourceHook::PassInfo::V2Info paraminfos2_##id[$1+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { $1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST$1(id, ret_type@[$2,1,$1:, param$2@]) \
@@ -363,8 +372,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	SourceHook::ProtoInfo protoinfo_##id = { $1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \
@@ -407,9 +415,8 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 
 #define THGM_DO_TEST_void(id, call_params) \
 	setuppi_##id(); \
-	g_Genc##id = new SourceHook::Impl::GenContext(&protoinfo_##id, 0, 0, g_SHPtr); \
-	g_Genc_ad##id.set(g_Genc##id); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_Genc##id->Generate(); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
 	TestClass##id::ms_DoRecall = false; \
@@ -526,9 +533,8 @@ T* ComparableRef(T& x)
 #define THGM_DO_TEST(id, call_params) \
 	setuppi_##id(); \
 	setupri_##id(); \
-	g_Genc##id = new SourceHook::Impl::GenContext(&protoinfo_##id, 0, 0, g_SHPtr); \
-	g_Genc_ad##id.set(g_Genc##id); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_Genc##id->Generate(); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
 	TestClass##id::ms_DoRecall = false; \

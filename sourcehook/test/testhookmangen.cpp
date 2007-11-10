@@ -2,7 +2,6 @@
 #include "sourcehook.h"
 #include "sourcehook_test.h"
 #include "testevents.h"
-#include "sourcehook_hookmangen.h"
 #include "sh_memory.h"
 #include "sh_pagealloc.h"
 
@@ -22,6 +21,8 @@ namespace
 	StateList g_States;
 	SourceHook::ISourceHook *g_SHPtr;
 	SourceHook::Plugin g_PLID;
+
+	SourceHook::IHookManagerAutoGen *g_HMAGPtr;
 
 	// PtrBuf(ptr) gives ptrs unique numbers
 	// in the order they appear
@@ -254,7 +255,6 @@ namespace
 		}
 	}
 
-
 	// MyDelegate base class for other delegates
 	class MyDelegate : public SourceHook::ISHDelegate
 	{
@@ -415,6 +415,7 @@ namespace
 bool TestHookManGen(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
+	GET_HMAG(g_HMAGPtr, g_SHPtr);
 	g_PLID = 1337;
 
 	// 5 Global constructors (g_O111_*)
@@ -463,9 +464,8 @@ bool TestHookManGen(std::string &error)
 		NULL), "Test11 Part0");
 
 	setuppi_11();
-	g_Genc11 = new SourceHook::Impl::GenContext(&protoinfo_11, 0, 0, g_SHPtr);
-	g_Genc_ad11.set(g_Genc11);
-	SourceHook::HookManagerPubFunc myhookman11 = g_Genc11->Generate();
+	SourceHook::HookManagerPubFunc myhookman11 = g_HMAGPtr->MakeHookMan(&protoinfo_11, 0, 0); \
+	CAutoReleaseHookMan arhm_11(myhookman11); \
 	int hook1_11, hook2_11, hook3_11, hook4_11;
 	
 	TestClass11 *pTest11 = new TestClass11;
@@ -630,9 +630,8 @@ bool TestHookManGen(std::string &error)
 	setuppi_110();
 	setupri_110();
 
-	g_Genc110 = new SourceHook::Impl::GenContext(&protoinfo_110, 0, 0, g_SHPtr);
-	g_Genc_ad110.set(g_Genc110);
-	SourceHook::HookManagerPubFunc myhookman110 = g_Genc110->Generate();
+	SourceHook::HookManagerPubFunc myhookman110 = g_HMAGPtr->MakeHookMan(&protoinfo_110, 0, 0); \
+	CAutoReleaseHookMan arhm_110(myhookman110); \
 	int hook1_110, hook2_110, hook3_110, hook4_110;
 
 	TestClass110 *pTest110 = new TestClass110;

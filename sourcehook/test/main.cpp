@@ -13,6 +13,7 @@
 
 #include "sourcehook_impl.h"
 #include "sourcehook.h"
+#include "sourcehook_hookmangen.h"
 
 using namespace std;
 bool g_Verbose;
@@ -111,3 +112,14 @@ void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
 }
+
+SourceHook::IHookManagerAutoGen *Test_HMAG_Factory(SourceHook::ISourceHook *shptr)
+{
+	return new SourceHook::Impl::CHookManagerAutoGen(shptr);
+}
+
+void Test_HMAG_Delete(SourceHook::IHookManagerAutoGen *ptr)
+{
+	delete static_cast<SourceHook::Impl::CHookManagerAutoGen*>(ptr);
+}
+

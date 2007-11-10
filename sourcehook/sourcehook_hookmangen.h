@@ -11,7 +11,6 @@
 #ifndef __SOURCEHOOK_HOOKMANGEN_H__
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
-#include "sourcehook_impl.h"
 #include "sh_pagealloc.h"
 
 namespace SourceHook
@@ -158,6 +157,8 @@ namespace SourceHook
 			const static int SIZE_PTR = sizeof(void*);
 			const static int PassFlag_ForcedByRef = (1<<30);   // ByVal in source, but actually passed by reference (GCC) -> private pass, destruct
 
+			HookManagerPubFunc m_GeneratedPubFunc;
+
 			CProto m_Proto;
 			int m_VtblOffs;
 			int m_VtblIdx;
@@ -231,13 +232,40 @@ namespace SourceHook
 			void BuildProtoInfo();
 			void *GenerateHookFunc();
 			void *GeneratePubFunc();
+			
+			HookManagerPubFunc Generate();
 		public:
 			// Level 1 -> Public interface
 			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
 			~GenContext();
 
-			HookManagerPubFunc Generate();
+			bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx);
+			bool Equal(HookManagerPubFunc other);
+
+			HookManagerPubFunc GetPubFunc();
 		};
+
+		class CHookManagerAutoGen : public IHookManagerAutoGen 
+		{
+			struct StoredContext
+			{
+				int m_RefCnt;
+				GenContext *m_GenContext;
+			};
+			List<StoredContext> m_Contexts;
+			ISourceHook *m_pSHPtr;
+
+		public:
+			CHookManagerAutoGen(ISourceHook *pSHPtr);
+			~CHookManagerAutoGen();
+
+			int GetIfaceVersion();
+			int GetImplVersion();
+
+			HookManagerPubFunc MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx);
+			void ReleaseHookMan(HookManagerPubFunc pubFunc);
+		};
+
 	}
 }
 

@@ -1,3 +1,15 @@
+struct CAutoReleaseHookMan
+{
+	SourceHook::HookManagerPubFunc m_Ptr;
+	CAutoReleaseHookMan(SourceHook::HookManagerPubFunc ptr) : m_Ptr(ptr)
+	{
+	}
+	~CAutoReleaseHookMan()
+	{
+		g_HMAGPtr->ReleaseHookMan(m_Ptr);
+	}
+};
+
 // Strip &
 template <class T> struct StripRef
 {
@@ -520,9 +532,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[0+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 0, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST0(id, ret_type) \
@@ -621,8 +630,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 0, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI0(id) \
 	void setuppi_##id() \
@@ -731,9 +739,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[1+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST1(id, ret_type, param1) \
@@ -832,8 +837,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI1(id, p1_type, p1_passtype, p1_flags) \
 	void setuppi_##id() \
@@ -942,9 +946,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[2+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 2, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST2(id, ret_type, param1, param2) \
@@ -1043,8 +1044,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 2, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI2(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags) \
 	void setuppi_##id() \
@@ -1153,9 +1153,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[3+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 3, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST3(id, ret_type, param1, param2, param3) \
@@ -1254,8 +1251,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 3, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI3(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags) \
 	void setuppi_##id() \
@@ -1364,9 +1360,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[4+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 4, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST4(id, ret_type, param1, param2, param3, param4) \
@@ -1465,8 +1458,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 4, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI4(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags) \
 	void setuppi_##id() \
@@ -1575,9 +1567,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[5+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 5, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST5(id, ret_type, param1, param2, param3, param4, param5) \
@@ -1676,8 +1665,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 5, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI5(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags) \
 	void setuppi_##id() \
@@ -1786,9 +1774,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[6+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 6, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
 
 
 #define THGM_MAKE_TEST6(id, ret_type, param1, param2, param3, param4, param5, param6) \
@@ -1887,8 +1872,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::ProtoInfo protoinfo_##id = { 6, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
 	\
-	SourceHook::Impl::GenContext *g_Genc##id = NULL; \
-	CAutoPtrDestruction<SourceHook::Impl::GenContext> g_Genc_ad##id(NULL); 
+	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI6(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags, p6_type, p6_passtype, p6_flags) \
 	void setuppi_##id() \
@@ -1931,9 +1915,8 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_DO_TEST_void(id, call_params) \
 	setuppi_##id(); \
-	g_Genc##id = new SourceHook::Impl::GenContext(&protoinfo_##id, 0, 0, g_SHPtr); \
-	g_Genc_ad##id.set(g_Genc##id); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_Genc##id->Generate(); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
 	TestClass##id::ms_DoRecall = false; \
@@ -2050,9 +2033,8 @@ T* ComparableRef(T& x)
 #define THGM_DO_TEST(id, call_params) \
 	setuppi_##id(); \
 	setupri_##id(); \
-	g_Genc##id = new SourceHook::Impl::GenContext(&protoinfo_##id, 0, 0, g_SHPtr); \
-	g_Genc_ad##id.set(g_Genc##id); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_Genc##id->Generate(); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
 	TestClass##id::ms_DoRecall = false; \

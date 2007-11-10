@@ -35,6 +35,11 @@
 // 1 - standard
 #define SH_HOOKMAN_VERSION 1
 
+// Hookmanautogen versions
+//  1 - initial
+#define SH_HOOKMANAUTOGEN_IFACE_VERSION 1
+#define SH_HOOKMANAUTOGEN_IMPL_VERSION 1
+
 // The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
 // It's used in various macros
 #ifndef SH_GLOB_SHPTR
@@ -472,6 +477,17 @@ namespace SourceHook
 		virtual void EndContext(IHookContext *pCtx) = 0;
 	};
 
+
+	class IHookManagerAutoGen
+	{
+	public:
+		virtual int GetIfaceVersion() = 0;
+		virtual int GetImplVersion() = 0;
+		
+		virtual HookManagerPubFunc MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx) = 0;
+		virtual void ReleaseHookMan(HookManagerPubFunc pubFunc) = 0;
+	};
+	
 	// For META_RESULT_ORIG_RET and META_RESULT_OVERRIDE_RET:
 	//  These have to be able to return references. If T is a reference, the pointers returned
 	//  from the SH_GLOB_SHPTR are pointers to instances of ReferenceCarrier<T>::type.
