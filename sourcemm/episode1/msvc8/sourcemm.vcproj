@@ -331,6 +331,11 @@
 				RelativePath="..\..\..\sourcehook\sourcehook.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\sourcehook\sourcehook_hookmangen.cpp"
+				>
+			</File>
+
 		</Filter>
 	</Files>
 	<Globals>

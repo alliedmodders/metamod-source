@@ -49,6 +49,7 @@
 
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
+#define MMIFACE_SH_HOOKMANAUTOGEN	"IHookManagerAutoGen"		/**< SourceHook::IHookManagerAutoGen Pointer */
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
 
 namespace SourceMM
