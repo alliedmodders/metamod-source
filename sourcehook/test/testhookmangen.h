@@ -629,8 +629,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[0+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 0, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI0(id) \
 	void setuppi_##id() \
@@ -836,8 +834,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[1+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI1(id, p1_type, p1_passtype, p1_flags) \
 	void setuppi_##id() \
@@ -1043,8 +1039,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[2+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 2, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI2(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags) \
 	void setuppi_##id() \
@@ -1250,8 +1244,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[3+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 3, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI3(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags) \
 	void setuppi_##id() \
@@ -1457,8 +1449,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[4+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 4, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI4(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags) \
 	void setuppi_##id() \
@@ -1664,8 +1654,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[5+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 5, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI5(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags) \
 	void setuppi_##id() \
@@ -1871,8 +1859,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	SourceHook::PassInfo::V2Info paraminfos2_##id[6+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { 6, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI6(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags, p6_type, p6_passtype, p6_flags) \
 	void setuppi_##id() \

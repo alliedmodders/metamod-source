@@ -159,6 +159,7 @@ namespace SourceHook
 
 			HookManagerPubFunc m_GeneratedPubFunc;
 
+			CProto m_OrigProto;			// original passed-in prototype
 			CProto m_Proto;
 			int m_VtblOffs;
 			int m_VtblIdx;

@@ -371,8 +371,6 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	SourceHook::PassInfo::V2Info paraminfos2_##id[$1+1]; \
 	SourceHook::ProtoInfo protoinfo_##id = { $1, {0, 0, 0}, paraminfos_##id, \
 		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
-	\
-	CAutoReleaseHookMan g_Genc_ad##id(NULL); 
 	
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \

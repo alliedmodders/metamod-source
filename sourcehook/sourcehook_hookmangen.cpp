@@ -48,8 +48,8 @@ namespace SourceHook
 		}
 
 		GenContext::GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
-			: m_GeneratedPubFunc(NULL), m_Proto(proto), m_VtblOffs(vtbl_offs), m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr),
-			  m_pHI(NULL), m_HookfuncVfnptr(NULL), m_RegCounter(0)
+			: m_GeneratedPubFunc(NULL), m_OrigProto(proto), m_Proto(proto), m_VtblOffs(vtbl_offs),
+			  m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr), m_pHI(NULL), m_HookfuncVfnptr(NULL), m_RegCounter(0)
 		{
 			m_pHI = new void*;
 			m_HookfuncVfnptr = new void*;
@@ -1664,7 +1664,7 @@ namespace SourceHook
 
 		bool GenContext::Equal(const CProto &proto, int vtbl_offs, int vtbl_idx)
 		{
-			return (m_Proto.ExactlyEqual(proto) && m_VtblOffs == vtbl_offs && m_VtblIdx == vtbl_idx);
+			return (m_OrigProto.ExactlyEqual(proto) && m_VtblOffs == vtbl_offs && m_VtblIdx == vtbl_idx);
 		}
 
 		bool GenContext::Equal(HookManagerPubFunc other)
