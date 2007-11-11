@@ -411,6 +411,119 @@ namespace
 	THGM_SETUP_RI(111, ObjRet111& , SourceHook::PassInfo::PassType_Object,
 		SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
 		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+
+	MAKE_STATE(State_Hello_Func4_Called);
+	MAKE_STATE(State_Hello_Func79_Called);
+
+	MAKE_STATE(State_Hello_Func4_PreHook);
+	MAKE_STATE(State_Hello_Func79_PreHook);
+
+	// Test for larger vtable indices
+	class Hello
+	{
+	public:
+		virtual void Func0() {}
+		virtual void Func1() {}
+		virtual void Func2() {}
+		virtual void Func3() {}
+		virtual void Func4()
+		{
+			ADD_STATE(State_Hello_Func4_Called);
+		}
+		virtual void Func5() {}
+		virtual void Func6() {}
+		virtual void Func7() {}
+		virtual void Func8() {}
+		virtual void Func9() {}
+		virtual void Func10() {}
+		virtual void Func11() {}
+		virtual void Func12() {}
+		virtual void Func13() {}
+		virtual void Func14() {}
+		virtual void Func15() {}
+		virtual void Func16() {}
+		virtual void Func17() {}
+		virtual void Func18() {}
+		virtual void Func19() {}
+		virtual void Func20() {}
+		virtual void Func21() {}
+		virtual void Func22() {}
+		virtual void Func23() {}
+		virtual void Func24() {}
+		virtual void Func25() {}
+		virtual void Func26() {}
+		virtual void Func27() {}
+		virtual void Func28() {}
+		virtual void Func29() {}
+		virtual void Func30() {}
+		virtual void Func31() {}
+		virtual void Func32() {}
+		virtual void Func33() {}
+		virtual void Func34() {}
+		virtual void Func35() {}
+		virtual void Func36() {}
+		virtual void Func37() {}
+		virtual void Func38() {}
+		virtual void Func39() {}
+		virtual void Func40() {}
+		virtual void Func41() {}
+		virtual void Func42() {}
+		virtual void Func43() {}
+		virtual void Func44() {}
+		virtual void Func45() {}
+		virtual void Func46() {}
+		virtual void Func47() {}
+		virtual void Func48() {}
+		virtual void Func49() {}
+		virtual void Func50() {}
+		virtual void Func51() {}
+		virtual void Func52() {}
+		virtual void Func53() {}
+		virtual void Func54() {}
+		virtual void Func55() {}
+		virtual void Func56() {}
+		virtual void Func57() {}
+		virtual void Func58() {}
+		virtual void Func59() {}
+		virtual void Func60() {}
+		virtual void Func61() {}
+		virtual void Func62() {}
+		virtual void Func63() {}
+		virtual void Func64() {}
+		virtual void Func65() {}
+		virtual void Func66() {}
+		virtual void Func67() {}
+		virtual void Func68() {}
+		virtual void Func69() {}
+		virtual void Func70() {}
+		virtual void Func71() {}
+		virtual void Func72() {}
+		virtual void Func73() {}
+		virtual void Func74() {}
+		virtual void Func75() {}
+		virtual void Func76() {}
+		virtual void Func77() {}
+		virtual void Func78() {}
+		virtual void Func79()
+		{
+			ADD_STATE(State_Hello_Func79_Called);
+		}
+	};
+	class Hello_Func4_Deleg : public MyDelegate
+	{
+		virtual void Func()
+		{
+			ADD_STATE(State_Hello_Func4_PreHook);
+		}
+	};
+	class Hello_Func79_Deleg : public MyDelegate
+	{
+		int a;
+		virtual void Func()
+		{
+			ADD_STATE(State_Hello_Func79_PreHook);
+		}
+	};
 }
 
 bool TestHookManGen(std::string &error)
@@ -801,6 +914,49 @@ bool TestHookManGen(std::string &error)
 
 	// RefRet
 	THGM_DO_TEST(111, ());
+
+	// Test for lange vtable indices
+	Hello *pHello = new Hello;
+	SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
+	SourceHook::HookManagerPubFunc helloHM_4 = g_HMAGPtr->MakeHookMan(helloPi, 0, 4);
+	SourceHook::HookManagerPubFunc helloHM_79 = g_HMAGPtr->MakeHookMan(helloPi, 0, 79);
+
+	pHello->Func4();
+	pHello->Func79();
+	SH_CALL(pHello, &Hello::Func4)();
+	SH_CALL(pHello, &Hello::Func79)();
+	CHECK_STATES((&g_States,
+		new State_Hello_Func4_Called,
+		new State_Hello_Func79_Called,
+		new State_Hello_Func4_Called,
+		new State_Hello_Func79_Called,
+		NULL), "Test" "Hello" " Part1");
+
+	int helloHook4 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
+		0, helloHM_4, new Hello_Func4_Deleg, false);
+
+	int helloHook79 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
+		0, helloHM_79, new Hello_Func79_Deleg, false);
+
+	pHello->Func4();
+	pHello->Func79();
+	SH_CALL(pHello, &Hello::Func4)();
+	SH_CALL(pHello, &Hello::Func79)();
+
+	CHECK_STATES((&g_States,
+		new State_Hello_Func4_PreHook,
+		new State_Hello_Func4_Called,
+		new State_Hello_Func79_PreHook,
+		new State_Hello_Func79_Called,
+		new State_Hello_Func4_Called,
+		new State_Hello_Func79_Called,
+		NULL), "Test" "Hello" " Part2");
+
+	g_SHPtr->RemoveHookByID(helloHook4);
+	g_SHPtr->RemoveHookByID(helloHook79);
+
+	g_HMAGPtr->ReleaseHookMan(helloHM_4);
+	g_HMAGPtr->ReleaseHookMan(helloHM_79);
 
 	// Shutdown now!
 	// If we don't SH will auto-shutdown _after_ genc's destructor is called
