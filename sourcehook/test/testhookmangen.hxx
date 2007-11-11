@@ -269,11 +269,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[$1+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[$1+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { $1, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST$1(id, ret_type@[$2,1,$1:, param$2@]) \
@@ -366,23 +362,19 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[$1+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[$1+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { $1, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		@[$2,1,$1: paraminfos_##id[$2].size = sizeof(p$2_type); paraminfos_##id[$2].type = p$2_passtype; paraminfos_##id[$2].flags = p$2_flags; @] \
-		\
-		@[$2,1,$1: paraminfos2_##id[$2].pNormalCtor = (paraminfos_##id[$2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::NormalConstructor) : NULL; @] \
-		@[$2,1,$1: paraminfos2_##id[$2].pCopyCtor = (paraminfos_##id[$2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::CopyConstructor) : NULL; @] \
-		@[$2,1,$1: paraminfos2_##id[$2].pDtor = (paraminfos_##id[$2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::Destructor) : NULL; @] \
-		@[$2,1,$1: paraminfos2_##id[$2].pAssignOperator = (paraminfos_##id[$2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::AssignOp) : NULL; @] \
+		@[$2,1,$1: \
+		protoinfo_##id.AddParam(sizeof(p$2_type), p$2_passtype, p$2_flags, \
+			(p$2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::NormalConstructor) : NULL, \
+			(p$2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::CopyConstructor) : NULL, \
+			(p$2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::Destructor) : NULL, \
+			(p$2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p$2_type >::type>::AssignOp) : NULL \
+			); \
+		@] \
 	}
 	
 @]
@@ -390,14 +382,12 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 #define THGM_SETUP_RI(id, ret_type, ret_passtype, ret_flags) \
 	void setupri_##id() \
 	{ \
-		protoinfo_##id.retPassInfo.size = sizeof(ret_type); \
-		protoinfo_##id.retPassInfo.type = ret_passtype; \
-		protoinfo_##id.retPassInfo.flags = ret_flags; \
-		\
-		protoinfo_##id.retPassInfo2.pNormalCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::NormalConstructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pCopyCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::CopyConstructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pDtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::Destructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pAssignOperator = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::AssignOp) : NULL; \
+		protoinfo_##id.SetReturnType(sizeof(ret_type), ret_passtype, ret_flags, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::NormalConstructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::CopyConstructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::Destructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::AssignOp) : NULL \
+			); \
 	}
 	
 #define THGM_ADD_HOOK(id, num) \
@@ -413,7 +403,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 
 #define THGM_DO_TEST_void(id, call_params) \
 	setuppi_##id(); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(protoinfo_##id, 0, 0); \
 	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
@@ -531,7 +521,7 @@ T* ComparableRef(T& x)
 #define THGM_DO_TEST(id, call_params) \
 	setuppi_##id(); \
 	setupri_##id(); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(protoinfo_##id, 0, 0); \
 	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\

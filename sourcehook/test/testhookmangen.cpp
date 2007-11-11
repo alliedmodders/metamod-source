@@ -4,6 +4,7 @@
 #include "testevents.h"
 #include "sh_memory.h"
 #include "sh_pagealloc.h"
+#include "sourcehook_pibuilder.h"
 
 // TESTHOOKMANGEN
 // Test automatic hookman generation
@@ -464,7 +465,7 @@ bool TestHookManGen(std::string &error)
 		NULL), "Test11 Part0");
 
 	setuppi_11();
-	SourceHook::HookManagerPubFunc myhookman11 = g_HMAGPtr->MakeHookMan(&protoinfo_11, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman11 = g_HMAGPtr->MakeHookMan(protoinfo_11, 0, 0); \
 	CAutoReleaseHookMan arhm_11(myhookman11); \
 	int hook1_11, hook2_11, hook3_11, hook4_11;
 	
@@ -630,7 +631,7 @@ bool TestHookManGen(std::string &error)
 	setuppi_110();
 	setupri_110();
 
-	SourceHook::HookManagerPubFunc myhookman110 = g_HMAGPtr->MakeHookMan(&protoinfo_110, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman110 = g_HMAGPtr->MakeHookMan(protoinfo_110, 0, 0); \
 	CAutoReleaseHookMan arhm_110(myhookman110); \
 	int hook1_110, hook2_110, hook3_110, hook4_110;
 

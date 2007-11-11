@@ -514,6 +514,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_pibuilder.h"
+				>
+			</File>
+			<File
 				RelativePath="..\sourcehook_test.h"
 				>
 			</File>

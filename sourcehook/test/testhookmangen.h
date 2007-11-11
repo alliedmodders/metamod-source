@@ -527,11 +527,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[0+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[0+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 0, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST0(id, ret_type) \
@@ -624,22 +620,11 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[0+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[0+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 0, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI0(id) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 \
-		\
-		 \
-		 \
-		 \
 		 \
 	}
 	
@@ -732,11 +717,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[1+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[1+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 1, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST1(id, ret_type, param1) \
@@ -829,23 +810,19 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[1+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[1+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 1, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI1(id, p1_type, p1_passtype, p1_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -937,11 +914,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[2+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[2+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 2, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST2(id, ret_type, param1, param2) \
@@ -1034,23 +1007,26 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[2+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[2+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 2, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI2(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  paraminfos_##id[2].size = sizeof(p2_type); paraminfos_##id[2].type = p2_passtype; paraminfos_##id[2].flags = p2_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p2_type), p2_passtype, p2_flags, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -1142,11 +1118,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[3+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[3+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 3, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST3(id, ret_type, param1, param2, param3) \
@@ -1239,23 +1211,33 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[3+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[3+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 3, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI3(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  paraminfos_##id[2].size = sizeof(p2_type); paraminfos_##id[2].type = p2_passtype; paraminfos_##id[2].flags = p2_flags;  paraminfos_##id[3].size = sizeof(p3_type); paraminfos_##id[3].type = p3_passtype; paraminfos_##id[3].flags = p3_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p2_type), p2_passtype, p2_flags, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p3_type), p3_passtype, p3_flags, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -1347,11 +1329,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[4+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[4+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 4, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST4(id, ret_type, param1, param2, param3, param4) \
@@ -1444,23 +1422,40 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[4+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[4+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 4, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI4(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  paraminfos_##id[2].size = sizeof(p2_type); paraminfos_##id[2].type = p2_passtype; paraminfos_##id[2].flags = p2_flags;  paraminfos_##id[3].size = sizeof(p3_type); paraminfos_##id[3].type = p3_passtype; paraminfos_##id[3].flags = p3_flags;  paraminfos_##id[4].size = sizeof(p4_type); paraminfos_##id[4].type = p4_passtype; paraminfos_##id[4].flags = p4_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p2_type), p2_passtype, p2_flags, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p3_type), p3_passtype, p3_flags, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p4_type), p4_passtype, p4_flags, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -1552,11 +1547,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[5+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[5+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 5, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST5(id, ret_type, param1, param2, param3, param4, param5) \
@@ -1649,23 +1640,47 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[5+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[5+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 5, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI5(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  paraminfos_##id[2].size = sizeof(p2_type); paraminfos_##id[2].type = p2_passtype; paraminfos_##id[2].flags = p2_flags;  paraminfos_##id[3].size = sizeof(p3_type); paraminfos_##id[3].type = p3_passtype; paraminfos_##id[3].flags = p3_flags;  paraminfos_##id[4].size = sizeof(p4_type); paraminfos_##id[4].type = p4_passtype; paraminfos_##id[4].flags = p4_flags;  paraminfos_##id[5].size = sizeof(p5_type); paraminfos_##id[5].type = p5_passtype; paraminfos_##id[5].flags = p5_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[5].pNormalCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[5].pCopyCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  paraminfos2_##id[5].pDtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  paraminfos2_##id[5].pAssignOperator = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p2_type), p2_passtype, p2_flags, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p3_type), p3_passtype, p3_flags, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p4_type), p4_passtype, p4_flags, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p5_type), p5_passtype, p5_flags, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -1757,11 +1772,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[6+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[6+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 6, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 
 
 #define THGM_MAKE_TEST6(id, ret_type, param1, param2, param3, param4, param5, param6) \
@@ -1854,23 +1865,54 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	\
-	SourceHook::PassInfo paraminfos_##id[6+1]; \
-	SourceHook::PassInfo::V2Info paraminfos2_##id[6+1]; \
-	SourceHook::ProtoInfo protoinfo_##id = { 6, {0, 0, 0}, paraminfos_##id, \
-		SourceHook::ProtoInfo::CallConv_ThisCall, __SH_EPI, paraminfos2_##id }; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
 	
 #define THGM_SETUP_PI6(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags, p6_type, p6_passtype, p6_flags) \
 	void setuppi_##id() \
 	{ \
-		paraminfos_##id[0].size = 1; paraminfos_##id[0].type = 0; paraminfos_##id[0].flags = 0; \
-		\
-		 paraminfos_##id[1].size = sizeof(p1_type); paraminfos_##id[1].type = p1_passtype; paraminfos_##id[1].flags = p1_flags;  paraminfos_##id[2].size = sizeof(p2_type); paraminfos_##id[2].type = p2_passtype; paraminfos_##id[2].flags = p2_flags;  paraminfos_##id[3].size = sizeof(p3_type); paraminfos_##id[3].type = p3_passtype; paraminfos_##id[3].flags = p3_flags;  paraminfos_##id[4].size = sizeof(p4_type); paraminfos_##id[4].type = p4_passtype; paraminfos_##id[4].flags = p4_flags;  paraminfos_##id[5].size = sizeof(p5_type); paraminfos_##id[5].type = p5_passtype; paraminfos_##id[5].flags = p5_flags;  paraminfos_##id[6].size = sizeof(p6_type); paraminfos_##id[6].type = p6_passtype; paraminfos_##id[6].flags = p6_flags;  \
-		\
-		 paraminfos2_##id[1].pNormalCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[2].pNormalCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[3].pNormalCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[4].pNormalCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[5].pNormalCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL;  paraminfos2_##id[6].pNormalCtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::NormalConstructor) : NULL;  \
-		 paraminfos2_##id[1].pCopyCtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[2].pCopyCtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[3].pCopyCtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[4].pCopyCtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[5].pCopyCtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL;  paraminfos2_##id[6].pCopyCtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::CopyConstructor) : NULL;  \
-		 paraminfos2_##id[1].pDtor = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL;  paraminfos2_##id[2].pDtor = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL;  paraminfos2_##id[3].pDtor = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL;  paraminfos2_##id[4].pDtor = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL;  paraminfos2_##id[5].pDtor = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL;  paraminfos2_##id[6].pDtor = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::Destructor) : NULL;  \
-		 paraminfos2_##id[1].pAssignOperator = (paraminfos_##id[1].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL;  paraminfos2_##id[2].pAssignOperator = (paraminfos_##id[2].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL;  paraminfos2_##id[3].pAssignOperator = (paraminfos_##id[3].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL;  paraminfos2_##id[4].pAssignOperator = (paraminfos_##id[4].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL;  paraminfos2_##id[5].pAssignOperator = (paraminfos_##id[5].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL;  paraminfos2_##id[6].pAssignOperator = (paraminfos_##id[6].flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::AssignOp) : NULL;  \
+		 \
+		protoinfo_##id.AddParam(sizeof(p1_type), p1_passtype, p1_flags, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::NormalConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::CopyConstructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::Destructor) : NULL, \
+			(p1_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p1_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p2_type), p2_passtype, p2_flags, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::NormalConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::CopyConstructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::Destructor) : NULL, \
+			(p2_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p2_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p3_type), p3_passtype, p3_flags, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::NormalConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::CopyConstructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::Destructor) : NULL, \
+			(p3_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p3_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p4_type), p4_passtype, p4_flags, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::NormalConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::CopyConstructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::Destructor) : NULL, \
+			(p4_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p4_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p5_type), p5_passtype, p5_flags, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::NormalConstructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::CopyConstructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::Destructor) : NULL, \
+			(p5_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p5_type >::type>::AssignOp) : NULL \
+			); \
+		 \
+		protoinfo_##id.AddParam(sizeof(p6_type), p6_passtype, p6_flags, \
+			(p6_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::NormalConstructor) : NULL, \
+			(p6_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::CopyConstructor) : NULL, \
+			(p6_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::Destructor) : NULL, \
+			(p6_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< p6_type >::type>::AssignOp) : NULL \
+			); \
+		 \
 	}
 	
 
@@ -1878,14 +1920,12 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 #define THGM_SETUP_RI(id, ret_type, ret_passtype, ret_flags) \
 	void setupri_##id() \
 	{ \
-		protoinfo_##id.retPassInfo.size = sizeof(ret_type); \
-		protoinfo_##id.retPassInfo.type = ret_passtype; \
-		protoinfo_##id.retPassInfo.flags = ret_flags; \
-		\
-		protoinfo_##id.retPassInfo2.pNormalCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::NormalConstructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pCopyCtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::CopyConstructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pDtor = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::Destructor) : NULL; \
-		protoinfo_##id.retPassInfo2.pAssignOperator = (protoinfo_##id.retPassInfo.flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::AssignOp) : NULL; \
+		protoinfo_##id.SetReturnType(sizeof(ret_type), ret_passtype, ret_flags, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_OCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::NormalConstructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_CCtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::CopyConstructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_ODtor) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::Destructor) : NULL, \
+			(ret_flags & SourceHook::PassInfo::PassFlag_AssignOp) ? FindFuncAddr(&Ctor_Thunk<StripRef< ret_type >::type>::AssignOp) : NULL \
+			); \
 	}
 	
 #define THGM_ADD_HOOK(id, num) \
@@ -1901,7 +1941,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 
 #define THGM_DO_TEST_void(id, call_params) \
 	setuppi_##id(); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(protoinfo_##id, 0, 0); \
 	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
@@ -2019,7 +2059,7 @@ T* ComparableRef(T& x)
 #define THGM_DO_TEST(id, call_params) \
 	setuppi_##id(); \
 	setupri_##id(); \
-	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(&protoinfo_##id, 0, 0); \
+	SourceHook::HookManagerPubFunc myhookman##id = g_HMAGPtr->MakeHookMan(protoinfo_##id, 0, 0); \
 	CAutoReleaseHookMan arhm_##id(myhookman##id); \
 	int hook1_##id, hook2_##id, hook3_##id, hook4_##id; \
 	\
