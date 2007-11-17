@@ -19,6 +19,7 @@
 #include "sourcehook_hookmangen.h"
 #include "sourcehook_hookmangen_x86.h"
 #include "sh_memory.h"
+#include <stdarg.h>							// we might need the address of vsnprintf
 
 #if SH_COMP == SH_COMP_MSVC
 # define GCC_ONLY(x)
@@ -988,7 +989,7 @@ namespace SourceHook
 			//   ECX = pContext
 			//   gcc: push ecx
 			//   eax = [ecx]
-			//   eax = [eax + 3*PTR_SIZE]
+			//   eax = [eax + 3*SIZE_PTR]
 			//   call eax
 			// gcc: clean up
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_pContext);
@@ -1193,6 +1194,24 @@ namespace SourceHook
 			GCC_ONLY(IA32_Add_Rm_Imm8(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG));
 		}
 
+		void GenContext::ResetFrame(jit_int32_t startOffset)
+		{
+			m_HookFunc_FrameOffset = startOffset;
+			m_HookFunc_FrameVarsSize = 0;
+		}
+		
+		jit_int32_t GenContext::AddVarToFrame(jit_int32_t size)
+		{
+			m_HookFunc_FrameOffset -= size;
+			m_HookFunc_FrameVarsSize += size;
+			return m_HookFunc_FrameOffset;
+		}
+
+		jit_int32_t GenContext::ComputeVarsSize()
+		{
+			return m_HookFunc_FrameVarsSize;
+		}
+		
 		void * GenContext::GenerateHookFunc()
 		{
 			// prologue
@@ -1200,19 +1219,21 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_EBX);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EBP, REG_ESP, MOD_REG);
 
+
 			// on msvc, save thisptr
 #if SH_COMP == SH_COMP_MSVC
-			jit_int8_t v_this = -4;
-			const int addstackoffset = -4;
+			jit_int32_t v_this = -4;
 			IA32_Push_Reg(&m_HookFunc, REG_ECX);
 #elif SH_COMP == SH_COMP_GCC
-			jit_int8_t v_this = 12;		// first param
-			const int addstackoffset = 0;
+			jit_int32_t v_this = 12;		// first param
 #endif
 
+			ResetFrame(
+					(SH_COMP==SH_COMP_MSVC) ? -4 : 0
+					);			// on msvc, start on offset -4 because there already is the thisptr variable
 
 			// ********************** stack frame **********************
-			//														MSVC
+			//															MSVC
 			//   second param (gcc: first real param)	ebp + 16
 			//   first param (gcc: thisptr)				ebp + 12
 			//   ret address:							ebp + 8
@@ -1227,26 +1248,33 @@ namespace SourceHook
 			//   IHookContext *pContext					ebp - 24		-4
 			//  == 3 ptrs + 3 enums = 24 bytes
 			//
+			// varargs:
+			//   va_list argptr							ebp - 28		-4
+			//
 			// non-void: add:
-			//   my_rettype *ret_ptr					ebp - 28		-4
-			//   my_rettype orig_ret					ebp - 28 - sizeof(my_rettype)			-4
-			//   my_rettype override_ret				ebp - 28 - sizeof(my_rettype)*2			-4
-			//   my_rettype plugin_ret					ebp - 28 - sizeof(my_rettype)*3			-4
+			//   my_rettype *ret_ptr					ebp - 28 (va: -4)		-4
+			//   my_rettype orig_ret					ebp - 28 (va: -4) - sizeof(my_rettype)			-4
+			//   my_rettype override_ret				ebp - 28 (va: -4) - sizeof(my_rettype)*2			-4
+			//   my_rettype plugin_ret					ebp - 28 (va: -4) - sizeof(my_rettype)*3			-4
 			//  == + 3 * sizeof(my_rettype) bytes
 
 			// if required:
-			//   my_rettype place_for_memret			ebp - 28 - sizeof(my_rettype)*4			-4
+			//   my_rettype place_for_memret			ebp - 28 (va: -4) - sizeof(my_rettype)*4			-4
 
 			// gcc only: if required:
-			//   place forced byref params              ebp - 28 - sizeof(my_rettype)*{4 or 5}
+			//   place forced byref params              ebp - 28 (va: -4) - sizeof(my_rettype)*{4 or 5}
 			
 
-			const jit_int8_t v_vfnptr_origentry =	-4	+ addstackoffset;
-			const jit_int8_t v_status =				-8	+ addstackoffset;
-			const jit_int8_t v_prev_res =			-12	+ addstackoffset;
-			const jit_int8_t v_cur_res =			-16	+ addstackoffset;
-			const jit_int8_t v_iter =				-20	+ addstackoffset;
-			const jit_int8_t v_pContext =			-24 + addstackoffset;
+			const jit_int8_t v_vfnptr_origentry =	AddVarToFrame(SIZE_PTR);
+			const jit_int8_t v_status =				AddVarToFrame(sizeof(META_RES));
+			const jit_int8_t v_prev_res =			AddVarToFrame(sizeof(META_RES));
+			const jit_int8_t v_cur_res =			AddVarToFrame(sizeof(META_RES));
+			const jit_int8_t v_iter =				AddVarToFrame(SIZE_PTR);
+			const jit_int8_t v_pContext =			AddVarToFrame(SIZE_PTR);
+			// Only exists for varargs functions
+			const jit_int8_t v_va_argptr =			(m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs) ?
+														AddVarToFrame(sizeof(va_list)) :
+														0;
 			
 #if SH_COMP == SH_COMP_GCC
 			jit_int32_t param_base_offs =		16;
@@ -1271,34 +1299,51 @@ namespace SourceHook
 #endif
 			}
 
-			jit_int32_t v_ret_ptr =					-28 + addstackoffset;
-			jit_int32_t v_orig_ret =				-28	+ addstackoffset - GetStackSize(m_Proto.GetRet()) * 1;
-			jit_int32_t v_override_ret =			-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 2;
-			jit_int32_t v_plugin_ret =				-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 3;
+			jit_int32_t v_ret_ptr = 0;
+			jit_int32_t v_orig_ret = 0;
+			jit_int32_t v_override_ret = 0;
+			jit_int32_t v_plugin_ret = 0;
+			
+			if (m_Proto.GetRet().size != 0)
+			{
+				v_ret_ptr =				AddVarToFrame(SIZE_PTR);
+				v_orig_ret =			AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+				v_override_ret =		AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+				v_plugin_ret =			AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+			}
 
-			jit_int32_t v_place_for_memret =		-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * 4;
+			jit_int32_t v_place_for_memret = 0;
+			if (MemRetWithTempObj())
+			{
+				v_place_for_memret = 	AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+			}
 
-			jit_int32_t v_place_fbrr_base  =		-28 + addstackoffset - GetStackSize(m_Proto.GetRet()) * (MemRetWithTempObj() ? 5 : 4);
+			jit_int32_t v_place_fbrr_base  = 0;
+			if (GetForcedByRefParamsSize())
+			{
+				v_place_fbrr_base =		AddVarToFrame(GetForcedByRefParamsSize());
+			}
 
-			// Hash for temporary storage for byval params with copy constructors
-			// (param, offset into stack)
-			short usedStackBytes = 3*SIZE_MWORD + 3*SIZE_PTR		// vfnptr_origentry, status, prev_res, cur_res, iter, pContext
-				+ 3 * GetStackSize(m_Proto.GetRet()) + (m_Proto.GetRet().size == 0 ? 0 : SIZE_PTR)	// ret_ptr, orig_ret, override_ret, plugin_ret
-				+ (MemRetWithTempObj() ? GetStackSize(m_Proto.GetRet()) : 0)
-				+ GetForcedByRefParamsSize()
-				- addstackoffset;									// msvc: current thisptr	
-
-			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, usedStackBytes, MOD_REG);
+			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, ComputeVarsSize(), MOD_REG);
 
 			// init status localvar
 			IA32_Mov_Rm_Imm32_Disp8(&m_HookFunc, REG_EBP, MRES_IGNORED, v_status);
 
+			// VarArgs: init argptr
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs)
+			{
+				// argptr = first vararg param
+				// lea eax, [esp + param_base_offs + paramssize]
+				// mov argptr, eax
+
+				IA32_Lea_Reg_DispRegMultImm32(&m_HookFunc, REG_EAX, REG_NOIDX, REG_ESP, NOSCALE, param_base_offs + GetParamsStackSize());
+				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, v_va_argptr, REG_EAX);
+			}
+			
 			// Call constructors for ret vars if required
 			if((m_Proto.GetRet().flags & PassInfo::PassFlag_ByVal) &&
 				m_Proto.GetRet().pNormalCtor)
 			{
-				// :TODO: Gcc version
-
 				// orig_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));

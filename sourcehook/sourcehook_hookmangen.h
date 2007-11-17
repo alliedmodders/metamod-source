@@ -189,6 +189,15 @@ namespace SourceHook
 			void BitwiseCopy_Setup();
 			void BitwiseCopy_Do(size_t size);
 
+
+			// HookFunc frame
+			jit_int32_t m_HookFunc_FrameOffset;
+			jit_int32_t m_HookFunc_FrameVarsSize;
+
+			void ResetFrame(jit_int32_t startOffset);
+			jit_int32_t AddVarToFrame(jit_int32_t size);
+			jit_int32_t ComputeVarsSize();
+
 			// Param push
 			short GetForcedByRefParamsSize();		// sum(param[i] is forcedbyref ? GetStackSize(param[i]) : 0, 0 <= i < numOfParams)
 			short GetForcedByRefParamOffset(int p);		// sum(param[i] is forcedbyref ? GetStackSize(param[i]) : 0, 0 <= i < p)

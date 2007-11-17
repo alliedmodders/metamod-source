@@ -20,7 +20,7 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-CFLAGS += -Wall
+CFLAGS += -Wall -Wno-non-virtual-dtor
 # Also, enable SH_ASSERT
 CFLAGS += -DSH_DEBUG
 
