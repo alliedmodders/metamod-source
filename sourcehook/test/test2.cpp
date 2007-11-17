@@ -33,8 +33,9 @@ namespace
 		{
 			va_list ap;
 			va_start(ap, fmt);
-			char buffer[512];
-			vsprintf(buffer, fmt, ap);
+			char buffer[9999];
+			vsnprintf(buffer, 9998, fmt, ap);
+			buffer[9998] = 0;
 			va_end(ap);
 			ADD_STATE(State_Vafmt_Called(1, std::string(buffer)));
 		}
@@ -42,8 +43,9 @@ namespace
 		{
 			va_list ap;
 			va_start(ap, fmt);
-			char buffer[512];
-			vsprintf(buffer, fmt, ap);
+			char buffer[9999];
+			vsnprintf(buffer, 9998, fmt, ap);
+			buffer[9998] = 0;
 			va_end(ap);
 			ADD_STATE(State_Vafmt_Called(2, std::string(buffer)));
 			return 0.0f;
@@ -164,6 +166,29 @@ bool TestVafmtAndOverload(std::string &error)
 		new State_Vafmt_Called(2, std::string("Hello BA1LOPAN")),
 		new State_Vafmt_PostHandler_Called(2, std::string("Hello BA1LOPAN")),
 		NULL), "Part 3");
+
+	
+	// Check LARGE stuff
+	char tmpbuf[501];
+	for (int i = 0; i < 500; ++i)
+		tmpbuf[i] = (i % 10) + '0';
+	tmpbuf[500] = 0;
+
+	pGab->Vafmt2("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf,
+		tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf);
+
+	char refbuf[SourceHook::STRBUF_LEN];
+	for (int i = 0; i < (SourceHook::STRBUF_LEN - 1); ++i)
+		refbuf[i] = (i % 10) + '0';
+	refbuf[SourceHook::STRBUF_LEN - 1] = 0;
+
+	CHECK_STATES((&g_States,
+		new State_Vafmt_PreHandler_Called(2, std::string(refbuf)),
+		new State_Vafmt_Called(2, std::string(refbuf)),
+		new State_Vafmt_PostHandler_Called(2, std::string(refbuf)),
+		NULL
+		), "Part 3.1");
 
 	// Part 4
 	SH_REMOVE_HOOK_ID(h1);

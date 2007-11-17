@@ -1014,7 +1014,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	char buf[::SourceHook::STRBUF_LEN]; \
 	va_list ap; \
 	va_start(ap, fmt); \
-	vsnprintf(buf, sizeof(buf), fmt, ap); \
+	vsnprintf(buf, sizeof(buf) - 1, fmt, ap); \
+	buf[sizeof(buf) - 1] = 0; \
 	va_end(ap);
 
 

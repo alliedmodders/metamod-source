@@ -1014,7 +1014,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	char buf[::SourceHook::STRBUF_LEN]; \
 	va_list ap; \
 	va_start(ap, fmt); \
-	vsnprintf(buf, sizeof(buf), fmt, ap); \
+	vsnprintf(buf, sizeof(buf) - 1, fmt, ap); \
+	buf[sizeof(buf) - 1] = 0; \
 	va_end(ap);
 
 @[$1,0,$a:
@@ -1131,9 +1132,9 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 
 #define SH_DECL_MANUALEXTERN$1(hookname, rettype@[$2,1,$1:, param$2@]) \
 	int __SourceHook_FHMAdd##hookname(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]@[$1!=0:, @]rettype> handler); \
+		fastdelegate::FastDelegate$1<@[$2,1,$1:param$2, @]rettype> handler); \
 	bool __SourceHook_FHMRemove##hookname(void *iface, bool post, \
-		fastdelegate::FastDelegate$1<@[$2,1,$1|, :param$2@]@[$1!=0:, @]rettype> handler); \
+		fastdelegate::FastDelegate$1<@[$2,1,$1:param$2, @]rettype> handler); \
 	rettype(::SourceHook::EmptyClass::* __SoureceHook_FHM_GetRecallMFP##hookname(::SourceHook::EmptyClass *thisptr) )(@[$2,1,$1|, :param$2@]); \
 	SourceHook::ExecutableClass$1<SourceHook::EmptyClass, rettype(::SourceHook::EmptyClass::*)(@[$2,1,$1|, :param$2@]), rettype@[$2,1,$1:, param$2@]> __SoureceHook_FHM_SHCall##hookname(void *ptr); \
 	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype res); \
