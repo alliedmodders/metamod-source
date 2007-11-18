@@ -565,7 +565,487 @@ namespace
 			ADD_STATE(State_Hello_Func79_PreHook);
 		}
 	};
+
+	bool Tests1(std::string &error)
+	{
+		THGM_DO_TEST_void(0, ());
+
+		THGM_DO_TEST_void(1, (100));
+		
+		THGM_DO_TEST_void(2, (0x1F00));
+
+		THGM_DO_TEST_void(3, (0x1F000000));
+
+		THGM_DO_TEST_void(4, (0.5f));
+
+		THGM_DO_TEST_void(5, (5.5));
+
+		THGM_DO_TEST_void(6, (100, 0x1f00, 0x1f000000, 0.5f, 5.5));
+
+		return true;
+	}
+
+	bool Tests2(std::string &error)
+	{
+		char a = 5;
+		double b = 233.33;
+		THGM_DO_TEST_void(7, (a, b));
+
+		POD<7> pod7 = MakeRet< POD<7> >::Do(78);
+		THGM_DO_TEST_void(8, (pod7));
+
+		POD<600> pod600 = MakeRet< POD<600> >::Do(34);
+		THGM_DO_TEST_void(9, (pod600));
+		
+		THGM_DO_TEST_void(10, (pod600));
+
+		// Test11: Special: constructors/destructors
+		PtrBuf_Clear();
+		Object<3> *obj3_real = new Object<3>(33);
+		Object<600> *obj600_real = new Object<600>(21);
+
+		Object<3> & obj3 = *obj3_real;
+		Object<600> & obj600 = *obj600_real;
+
+		CHECK_STATES((&g_States,
+			new State_ObjOCtor_Called(3),
+			new State_ObjOCtor_Called(600),
+			NULL), "Test11 Part0");
+
+		setuppi_11();
+		SourceHook::HookManagerPubFunc myhookman11 = g_HMAGPtr->MakeHookMan(protoinfo_11, 0, 0); \
+		CAutoReleaseHookMan arhm_11(myhookman11); \
+		int hook1_11, hook2_11, hook3_11, hook4_11;
+		
+		TestClass11 *pTest11 = new TestClass11;
+		CAutoPtrDestruction<TestClass11> apd11(pTest11);
+		
+		/* no hooks - no hooks */
+		PtrBuf_Clear();
+		pTest11->Func(obj3, obj600);
+
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			new State_ObjCCtor_Called(3),
+			new State_Func11(pTest11, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+			NULL), "Test" "11" " Part1");
+		g_Inside_LeafFunc = false;
+
+		/* hook1 - no hooks */
+		THGM_ADD_HOOK(11, 1);
+		
+		PtrBuf_Clear();
+		pTest11->Func(obj3, obj600);
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			new State_ObjCCtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new State_Deleg_11(1, pTest11, 0, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new State_Func11(pTest11, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjODtor_Called(3),
+			NULL), "Test" "11" " Part2");
+		g_Inside_LeafFunc = false;
+
+		THGM_REMOVE_HOOK(11, 1);
+
+		/* hook1, hook2 - hook3, hook4 */
+		THGM_ADD_HOOK(11, 1);
+		THGM_ADD_HOOK(11, 2);
+		THGM_ADD_HOOK(11, 3);
+		THGM_ADD_HOOK(11, 4);
+		PtrBuf_Clear();
+		pTest11->Func(obj3, obj600);
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			new State_ObjCCtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new	State_Deleg_11(1, pTest11, 0, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new State_Deleg_11(2, pTest11, 1, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new State_Deleg_11(3, pTest11, 2, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new State_Deleg_11(4, pTest11, 3, ParamState_m11 (obj3, obj600)),
+			new State_ObjODtor_Called(3),
+
+			new State_ObjODtor_Called(3),
+		NULL), "Test" "11" " Part3");
+		g_Inside_LeafFunc = false;
+
+		/* hook1 - hook3, hook4 WITH RECALLS */
+		THGM_REMOVE_HOOK(11, 2);
+		PtrBuf_Clear();
+		TestClass11::ms_DoRecall = true;
+		pTest11->Func(obj3, obj600);
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			new State_ObjCCtor_Called(3),
+
+			new State_ObjCCtor_Called(3),
+			new	State_Deleg_11(1, pTest11, 0 /* first deleg ptr */, ParamState_m11 (obj3, obj600)),
+
+			// recall !
+				// second hookfunc -> new copy
+				new State_ObjCCtor_Called(3),
+
+				// in second hookfunc now
+				//   -> calls orig func
+
+				new State_ObjCCtor_Called(3),
+				new State_Func11(pTest11, ParamState_m11 (obj3, obj600)(1)),
+				new State_ObjODtor_Called(3),
+
+				// calls first posthook
+				new State_ObjCCtor_Called(3),
+				new State_Deleg_11(3, pTest11, 1 /* second deleg ptr */, ParamState_m11 (obj3, obj600)(1)),
+
+				// recall!
+					// third hookfunc -> new copy
+					new State_ObjCCtor_Called(3),
+
+					// calls second posthook
+
+					new State_ObjCCtor_Called(3),
+					new State_Deleg_11(4, pTest11, 2 /* third deleg ptr */, ParamState_m11 (obj3, obj600)(2)),
+
+					// recall!
+						// fourth hookfunc -> new copy
+						new State_ObjCCtor_Called(3),
+
+						// has nothing to do though!
+
+						// fourth hookfunc done -> ret
+						new State_ObjODtor_Called(3),
+
+					// third hookfunc done -> ret
+					new State_ObjODtor_Called(3),
+					// ret from hookhandler which did the recall
+					new State_ObjODtor_Called(3),
+
+				// second hookfunc done -> ret
+				new State_ObjODtor_Called(3),
+				// ret from hookhandler which did the recall
+				new State_ObjODtor_Called(3),
+
+			// deleg1's instance
+			new State_ObjODtor_Called(3),
+			// first hookfunc done -> ret
+			new State_ObjODtor_Called(3),
+			NULL), "Test" "11" " Part4");
+		g_Inside_LeafFunc = false;
+
+		THGM_REMOVE_HOOK(11, 1);
+		THGM_REMOVE_HOOK(11, 3);
+		THGM_REMOVE_HOOK(11, 4);
+
+		delete obj3_real;
+		delete obj600_real;
+
+		CHECK_STATES((&g_States,
+			new State_ObjODtor_Called(3),
+			new State_ObjODtor_Called(600),
+			NULL), "Test11 Part100");
+
+		return true;
+	}
+
+	bool Tests3(std::string &error)
+	{
+		THGM_DO_TEST(101, ());
+
+		THGM_DO_TEST(102, ());
+
+		THGM_DO_TEST(103, ());
+
+		THGM_DO_TEST(104, ());
+
+		THGM_DO_TEST(105, ());
+
+		// pod returns
+		THGM_DO_TEST(106, (5));
+		THGM_DO_TEST(107, (5));
+		THGM_DO_TEST(108, (5));
+		THGM_DO_TEST(109, (5));
+
+		return true;
+	}
+
+	bool Tests4(std::string &error)
+	{
+		// Test110: Special: constructors/destructors on return
+		PtrBuf_Clear();
+		ObjRet13 *obj13_real = new ObjRet13;
+		ObjRet13 &obj13 = *obj13_real;
+
+		CHECK_STATES((&g_States,
+			new State_ObjOCtor_Called(13),
+			NULL), "Test110 Part0");
+
+		setuppi_110();
+		setupri_110();
+
+		SourceHook::HookManagerPubFunc myhookman110 = g_HMAGPtr->MakeHookMan(protoinfo_110, 0, 0); \
+		CAutoReleaseHookMan arhm_110(myhookman110); \
+		int hook1_110, hook2_110, hook3_110, hook4_110;
+
+		TestClass110 *pTest110 = new TestClass110;
+		CAutoPtrDestruction<TestClass110> apd110(pTest110);
+
+		/* no hooks - no hooks */
+		PtrBuf_Clear();
+		obj13 = pTest110->Func(5);
+
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			new State_Func110(pTest110, ParamState_m110 (5)),
+			new State_ObjOCtor_Called(13),			// MakeRet: Construction of x
+			new State_ObjCCtor_Called(13),			// Return from MakeRet	-> construct temporary object in our stack
+			new State_ObjODtor_Called(13),			// MakeRet: Destruction of x
+
+			new State_ObjAssignOp_Called(13),		// assign: obj13 = temporary object in our stack
+			new State_ObjODtor_Called(13),			// Func110: destruction of temporary object
+			NULL), "Test" "110" " Part1");
+		g_Inside_LeafFunc = false;
+
+		/* hook1 - no hooks */
+		THGM_ADD_HOOK(110, 1);
+
+		PtrBuf_Clear();
+		obj13 = pTest110->Func(5);
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			// HookFunc: construct orig_ret/override_ret/plugin_ret objects
+			new State_ObjOCtor_Called(13),
+			new State_ObjOCtor_Called(13),
+			new State_ObjOCtor_Called(13),
+
+			// Calling delegate
+				new State_Deleg_110(1, pTest110, 0, ParamState_m110 (5)),
+
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+			// Calling orig function Func110
+				new State_Func110(pTest110, ParamState_m110 (5)),
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: orig_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+			// hookfunc is returning:
+			new State_ObjCCtor_Called(13),		// copy to temp object in our stack
+
+			// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
+			new State_ObjODtor_Called(13),
+			new State_ObjODtor_Called(13),
+			new State_ObjODtor_Called(13),
+			
+			// we are in our function: assign 
+			new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
+			new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
+
+			NULL), "Test" "11" " Part2");
+		
+		CHECK_COND(obj13 == 0, "Test" "11" " Part 2.1");
+		g_Inside_LeafFunc = false;
+
+		THGM_REMOVE_HOOK(110, 1);
+
+		/* hook1, hook2 - hook3, hook4 */
+		THGM_ADD_HOOK(110, 1);
+		THGM_ADD_HOOK(110, 2);
+		THGM_ADD_HOOK(110, 3);
+		THGM_ADD_HOOK(110, 4);
+
+		PtrBuf_Clear();
+		obj13 = pTest110->Func(5);
+		g_Inside_LeafFunc = true;
+		CHECK_STATES((&g_States,
+			// HookFunc: construct orig_ret/override_ret/plugin_ret objects
+			new State_ObjOCtor_Called(13),
+			new State_ObjOCtor_Called(13),
+			new State_ObjOCtor_Called(13),
+
+			// Calling delegate1
+				new State_Deleg_110(1, pTest110, 0, ParamState_m110 (5)),
+
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+
+			// Calling delegate2
+				new State_Deleg_110(2, pTest110, 1, ParamState_m110 (5)),
+
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+			// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret
+			new State_ObjAssignOp_Called(13),
+
+			// SUPERCEDE -> orig function is not called
+			// instead: orig_ret = override_ret
+			new State_ObjAssignOp_Called(13),
+
+			// Calling delegate3
+				new State_Deleg_110(3, pTest110, 2, ParamState_m110 (5)),
+
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+			// Calling delegate4
+				new State_Deleg_110(4, pTest110, 3, ParamState_m110 (5)),
+
+				new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
+				new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
+				new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
+
+			// back in hookfunc
+			new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
+			new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
+
+			// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret (yes really, we overwrite the old value!)
+			new State_ObjAssignOp_Called(13),
+
+			// hookfunc is returning:
+			new State_ObjCCtor_Called(13),		// copy to temp object in our stack
+
+			// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
+			new State_ObjODtor_Called(13),
+			new State_ObjODtor_Called(13),
+			new State_ObjODtor_Called(13),
+
+			// we are in our function: assign 
+			new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
+			new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
+
+			NULL), "Test" "11" " Part3");
+
+		CHECK_COND(obj13 == 4, "Test" "11" " Part 3.1");
+		g_Inside_LeafFunc = false;
+
+		THGM_REMOVE_HOOK(110, 1);
+		THGM_REMOVE_HOOK(110, 2);
+		THGM_REMOVE_HOOK(110, 3);
+		THGM_REMOVE_HOOK(110, 4);
+
+		delete obj13_real;
+
+		CHECK_STATES((&g_States,
+			new State_ObjODtor_Called(13),
+			NULL), "Test110 Part100");
+
+		return true;
+	}
+
+	bool Tests5(std::string &error)
+	{
+		// RefRet
+		THGM_DO_TEST(111, ());
+
+		// Vafmt
+
+		THGM_DO_TEST_void(200, ("Hello %s%d%s", "BA", 1, "L!"));
+
+		THGM_DO_TEST_void(201, (100, "Hello %s%d%s", "BA", 1, "L!"));
+		
+		THGM_DO_TEST_void(203, (0x1F000000, "Hello %s%d%s", "BA", 1, "L!"));
+
+		THGM_DO_TEST_void(206, (100, 0x1f00, 0x1f000000, 0.5f, 5.5, "Hello %s%d%s", "BA", 1, "L!"));
+
+		char a = 5;
+		double b = 233.33;
+		THGM_DO_TEST_void(207, (a, b, "Hello %s%d%s", "BA", 1, "L!"));
+
+		POD<7> pod7 = MakeRet< POD<7> >::Do(78);
+		THGM_DO_TEST_void(208, (pod7, "Hello %s%d%s", "BA", 1, "L!"));
+	
+		POD<600> pod600 = MakeRet< POD<600> >::Do(34);
+		THGM_DO_TEST_void(210, (pod600, "Hello %s%d%s", "BA", 1, "L!"));
+		
+		// Test for lange vtable indices
+		Hello *pHello = new Hello;
+		SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
+		SourceHook::HookManagerPubFunc helloHM_4 = g_HMAGPtr->MakeHookMan(helloPi, 0, 4);
+		SourceHook::HookManagerPubFunc helloHM_79 = g_HMAGPtr->MakeHookMan(helloPi, 0, 79);
+
+		pHello->Func4();
+		pHello->Func79();
+		SH_CALL(pHello, &Hello::Func4)();
+		SH_CALL(pHello, &Hello::Func79)();
+		CHECK_STATES((&g_States,
+			new State_Hello_Func4_Called,
+			new State_Hello_Func79_Called,
+			new State_Hello_Func4_Called,
+			new State_Hello_Func79_Called,
+			NULL), "Test" "Hello" " Part1");
+
+		int helloHook4 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
+			0, helloHM_4, new Hello_Func4_Deleg, false);
+
+		int helloHook79 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
+			0, helloHM_79, new Hello_Func79_Deleg, false);
+
+		pHello->Func4();
+		pHello->Func79();
+		SH_CALL(pHello, &Hello::Func4)();
+		SH_CALL(pHello, &Hello::Func79)();
+
+		CHECK_STATES((&g_States,
+			new State_Hello_Func4_PreHook,
+			new State_Hello_Func4_Called,
+			new State_Hello_Func79_PreHook,
+			new State_Hello_Func79_Called,
+			new State_Hello_Func4_Called,
+			new State_Hello_Func79_Called,
+			NULL), "Test" "Hello" " Part2");
+
+		g_SHPtr->RemoveHookByID(helloHook4);
+		g_SHPtr->RemoveHookByID(helloHook79);
+
+		g_HMAGPtr->ReleaseHookMan(helloHM_4);
+		g_HMAGPtr->ReleaseHookMan(helloHM_79);
+
+		return true;
+	}
 }
+
 
 bool TestHookManGen(std::string &error)
 {
@@ -582,441 +1062,16 @@ bool TestHookManGen(std::string &error)
 		new State_ObjOCtor_Called(111),
 		NULL), "GlobCtors");
 
-	THGM_DO_TEST_void(0, ());
-
-	THGM_DO_TEST_void(1, (100));
-	
-	THGM_DO_TEST_void(2, (0x1F00));
-
-	THGM_DO_TEST_void(3, (0x1F000000));
-
-	THGM_DO_TEST_void(4, (0.5f));
-
-	THGM_DO_TEST_void(5, (5.5));
-
-	THGM_DO_TEST_void(6, (100, 0x1f00, 0x1f000000, 0.5f, 5.5));
-
-	char a = 5;
-	double b = 233.33;
-	THGM_DO_TEST_void(7, (a, b));
-
-	POD<7> pod7 = MakeRet< POD<7> >::Do(78);
-	THGM_DO_TEST_void(8, (pod7));
-
-	POD<600> pod600 = MakeRet< POD<600> >::Do(34);
-	THGM_DO_TEST_void(9, (pod600));
-	
-	THGM_DO_TEST_void(10, (pod600));
-
-	// Test11: Special: constructors/destructors
-	PtrBuf_Clear();
-	Object<3> obj3(33);
-	Object<600> obj600(21);
-
-	CHECK_STATES((&g_States,
-		new State_ObjOCtor_Called(3),
-		new State_ObjOCtor_Called(600),
-		NULL), "Test11 Part0");
-
-	setuppi_11();
-	SourceHook::HookManagerPubFunc myhookman11 = g_HMAGPtr->MakeHookMan(protoinfo_11, 0, 0); \
-	CAutoReleaseHookMan arhm_11(myhookman11); \
-	int hook1_11, hook2_11, hook3_11, hook4_11;
-	
-	TestClass11 *pTest11 = new TestClass11;
-	CAutoPtrDestruction<TestClass11> apd11(pTest11);
-	
-	/* no hooks - no hooks */
-	PtrBuf_Clear();
-	pTest11->Func(obj3, obj600);
-
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		new State_ObjCCtor_Called(3),
-		new State_Func11(pTest11, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-		NULL), "Test" "11" " Part1");
-	g_Inside_LeafFunc = false;
-
-	/* hook1 - no hooks */
-	THGM_ADD_HOOK(11, 1);
-	
-	PtrBuf_Clear();
-	pTest11->Func(obj3, obj600);
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		new State_ObjCCtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new State_Deleg1_11(pTest11, 0, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new State_Func11(pTest11, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjODtor_Called(3),
-		NULL), "Test" "11" " Part2");
-	g_Inside_LeafFunc = false;
-
-	THGM_REMOVE_HOOK(11, 1);
-
-	/* hook1, hook2 - hook3, hook4 */
-	THGM_ADD_HOOK(11, 1);
-	THGM_ADD_HOOK(11, 2);
-	THGM_ADD_HOOK(11, 3);
-	THGM_ADD_HOOK(11, 4);
-	PtrBuf_Clear();
-	pTest11->Func(obj3, obj600);
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		new State_ObjCCtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new	State_Deleg1_11(pTest11, 0, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new State_Deleg2_11(pTest11, 1, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new State_Deleg3_11(pTest11, 2, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new State_Deleg4_11(pTest11, 3, ParamState_m11 (obj3, obj600)),
-		new State_ObjODtor_Called(3),
-
-		new State_ObjODtor_Called(3),
-	NULL), "Test" "11" " Part3");
-	g_Inside_LeafFunc = false;
-
-	/* hook1 - hook3, hook4 WITH RECALLS */
-	THGM_REMOVE_HOOK(11, 2);
-	PtrBuf_Clear();
-	TestClass11::ms_DoRecall = true;
-	pTest11->Func(obj3, obj600);
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		new State_ObjCCtor_Called(3),
-
-		new State_ObjCCtor_Called(3),
-		new	State_Deleg1_11(pTest11, 0 /* first deleg ptr */, ParamState_m11 (obj3, obj600)),
-
-		// recall !
-			// second hookfunc -> new copy
-			new State_ObjCCtor_Called(3),
-
-			// in second hookfunc now
-			//   -> calls orig func
-
-			new State_ObjCCtor_Called(3),
-			new State_Func11(pTest11, ParamState_m11 (obj3, obj600)(1)),
-			new State_ObjODtor_Called(3),
-
-			// calls first posthook
-			new State_ObjCCtor_Called(3),
-			new State_Deleg3_11(pTest11, 1 /* second deleg ptr */, ParamState_m11 (obj3, obj600)(1)),
-
-			// recall!
-				// third hookfunc -> new copy
-				new State_ObjCCtor_Called(3),
-
-				// calls second posthook
-
-				new State_ObjCCtor_Called(3),
-				new State_Deleg4_11(pTest11, 2 /* third deleg ptr */, ParamState_m11 (obj3, obj600)(2)),
-
-				// recall!
-					// fourth hookfunc -> new copy
-					new State_ObjCCtor_Called(3),
-
-					// has nothing to do though!
-
-					// fourth hookfunc done -> ret
-					new State_ObjODtor_Called(3),
-
-				// third hookfunc done -> ret
-				new State_ObjODtor_Called(3),
-				// ret from hookhandler which did the recall
-				new State_ObjODtor_Called(3),
-
-			// second hookfunc done -> ret
-			new State_ObjODtor_Called(3),
-			// ret from hookhandler which did the recall
-			new State_ObjODtor_Called(3),
-
-		// deleg1's instance
-		new State_ObjODtor_Called(3),
-		// first hookfunc done -> ret
-		new State_ObjODtor_Called(3),
-		NULL), "Test" "11" " Part4");
-	g_Inside_LeafFunc = false;
-
-	THGM_REMOVE_HOOK(11, 1);
-	THGM_REMOVE_HOOK(11, 3);
-	THGM_REMOVE_HOOK(11, 4);
-
-	THGM_DO_TEST(101, ());
-
-	THGM_DO_TEST(102, ());
-
-	THGM_DO_TEST(103, ());
-
-	THGM_DO_TEST(104, ());
-
-	THGM_DO_TEST(105, ());
-
-	// pod returns
-	THGM_DO_TEST(106, (5));
-	THGM_DO_TEST(107, (5));
-	THGM_DO_TEST(108, (5));
-	THGM_DO_TEST(109, (5));
-
-	// Test110: Special: constructors/destructors on return
-	PtrBuf_Clear();
-	ObjRet13 obj13;
-
-	CHECK_STATES((&g_States,
-		new State_ObjOCtor_Called(13),
-		NULL), "Test110 Part0");
-
-	setuppi_110();
-	setupri_110();
-
-	SourceHook::HookManagerPubFunc myhookman110 = g_HMAGPtr->MakeHookMan(protoinfo_110, 0, 0); \
-	CAutoReleaseHookMan arhm_110(myhookman110); \
-	int hook1_110, hook2_110, hook3_110, hook4_110;
-
-	TestClass110 *pTest110 = new TestClass110;
-	CAutoPtrDestruction<TestClass110> apd110(pTest110);
-
-	/* no hooks - no hooks */
-	PtrBuf_Clear();
-	obj13 = pTest110->Func(5);
-
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		new State_Func110(pTest110, ParamState_m110 (5)),
-		new State_ObjOCtor_Called(13),			// MakeRet: Construction of x
-		new State_ObjCCtor_Called(13),			// Return from MakeRet	-> construct temporary object in our stack
-		new State_ObjODtor_Called(13),			// MakeRet: Destruction of x
-
-		new State_ObjAssignOp_Called(13),		// assign: obj13 = temporary object in our stack
-		new State_ObjODtor_Called(13),			// Func110: destruction of temporary object
-		NULL), "Test" "110" " Part1");
-	g_Inside_LeafFunc = false;
-
-	/* hook1 - no hooks */
-	THGM_ADD_HOOK(110, 1);
-
-	PtrBuf_Clear();
-	obj13 = pTest110->Func(5);
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		// HookFunc: construct orig_ret/override_ret/plugin_ret objects
-		new State_ObjOCtor_Called(13),
-		new State_ObjOCtor_Called(13),
-		new State_ObjOCtor_Called(13),
-
-		// Calling delegate
-			new State_Deleg1_110(pTest110, 0, ParamState_m110 (5)),
-
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-		// Calling orig function Func110
-			new State_Func110(pTest110, ParamState_m110 (5)),
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: orig_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-		// hookfunc is returning:
-		new State_ObjCCtor_Called(13),		// copy to temp object in our stack
-
-		// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
-		new State_ObjODtor_Called(13),
-		new State_ObjODtor_Called(13),
-		new State_ObjODtor_Called(13),
-		
-		// we are in our function: assign 
-		new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
-		new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
-
-		NULL), "Test" "11" " Part2");
-	
-	CHECK_COND(obj13 == 0, "Test" "11" " Part 2.1");
-	g_Inside_LeafFunc = false;
-
-	THGM_REMOVE_HOOK(11, 1);
-
-	/* hook1, hook2 - hook3, hook4 */
-	THGM_ADD_HOOK(110, 1);
-	THGM_ADD_HOOK(110, 2);
-	THGM_ADD_HOOK(110, 3);
-	THGM_ADD_HOOK(110, 4);
-
-	PtrBuf_Clear();
-	obj13 = pTest110->Func(5);
-	g_Inside_LeafFunc = true;
-	CHECK_STATES((&g_States,
-		// HookFunc: construct orig_ret/override_ret/plugin_ret objects
-		new State_ObjOCtor_Called(13),
-		new State_ObjOCtor_Called(13),
-		new State_ObjOCtor_Called(13),
-
-		// Calling delegate1
-			new State_Deleg1_110(pTest110, 0, ParamState_m110 (5)),
-
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-
-		// Calling delegate2
-			new State_Deleg2_110(pTest110, 1, ParamState_m110 (5)),
-
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-		// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret
-		new State_ObjAssignOp_Called(13),
-
-		// SUPERCEDE -> orig function is not called
-		// instead: orig_ret = override_ret
-		new State_ObjAssignOp_Called(13),
-
-		// Calling delegate3
-			new State_Deleg3_110(pTest110, 2, ParamState_m110 (5)),
-
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-		// Calling delegate4
-			new State_Deleg4_110(pTest110, 3, ParamState_m110 (5)),
-
-			new State_ObjOCtor_Called(13),	// MakeRet: Construction of x
-			new State_ObjCCtor_Called(13),	// Return from MakeRet	-> construct temporary object in HookFunc's stack
-			new State_ObjODtor_Called(13),	// MakeRet: Destruction of x
-
-		// back in hookfunc
-		new State_ObjAssignOp_Called(13),	// assign: plugin_ret = temporary object in HookFunc's stack
-		new State_ObjODtor_Called(13),		// destruction of temporary object in HookFunc's stack
-
-		// hookfunc finds out that the hook wanted to SUPERCEDE --> copy to override_Ret (yes really, we overwrite the old value!)
-		new State_ObjAssignOp_Called(13),
-
-		// hookfunc is returning:
-		new State_ObjCCtor_Called(13),		// copy to temp object in our stack
-
-		// hookfunc cleans up its stack -> destroys plugin_ret/override_ret/orig_ret
-		new State_ObjODtor_Called(13),
-		new State_ObjODtor_Called(13),
-		new State_ObjODtor_Called(13),
-
-		// we are in our function: assign 
-		new State_ObjAssignOp_Called(13),	// assign: obj13 = temporary object in our stack
-		new State_ObjODtor_Called(13),		// Func110: destruction of temporary object
-
-		NULL), "Test" "11" " Part3");
-
-	CHECK_COND(obj13 == 4, "Test" "11" " Part 3.1");
-	g_Inside_LeafFunc = false;
-
-	THGM_REMOVE_HOOK(110, 1);
-	THGM_REMOVE_HOOK(110, 2);
-	THGM_REMOVE_HOOK(110, 3);
-	THGM_REMOVE_HOOK(110, 4);
-
-
-	// RefRet
-	THGM_DO_TEST(111, ());
-
-	// Vafmt
-
-	THGM_DO_TEST_void(200, ("Hello %s%d%s", "BA", 1, "L!"));
-
-	THGM_DO_TEST_void(201, (100, "Hello %s%d%s", "BA", 1, "L!"));
-	
-	THGM_DO_TEST_void(203, (0x1F000000, "Hello %s%d%s", "BA", 1, "L!"));
-
-	THGM_DO_TEST_void(206, (100, 0x1f00, 0x1f000000, 0.5f, 5.5, "Hello %s%d%s", "BA", 1, "L!"));
-
-	a = 5;
-	b = 233.33;
-	THGM_DO_TEST_void(207, (a, b, "Hello %s%d%s", "BA", 1, "L!"));
-
-	pod7 = MakeRet< POD<7> >::Do(78);
-	THGM_DO_TEST_void(208, (pod7, "Hello %s%d%s", "BA", 1, "L!"));
-	
-	THGM_DO_TEST_void(210, (pod600, "Hello %s%d%s", "BA", 1, "L!"));
-	
-	// Test for lange vtable indices
-	Hello *pHello = new Hello;
-	SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
-	SourceHook::HookManagerPubFunc helloHM_4 = g_HMAGPtr->MakeHookMan(helloPi, 0, 4);
-	SourceHook::HookManagerPubFunc helloHM_79 = g_HMAGPtr->MakeHookMan(helloPi, 0, 79);
-
-	pHello->Func4();
-	pHello->Func79();
-	SH_CALL(pHello, &Hello::Func4)();
-	SH_CALL(pHello, &Hello::Func79)();
-	CHECK_STATES((&g_States,
-		new State_Hello_Func4_Called,
-		new State_Hello_Func79_Called,
-		new State_Hello_Func4_Called,
-		new State_Hello_Func79_Called,
-		NULL), "Test" "Hello" " Part1");
-
-	int helloHook4 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
-		0, helloHM_4, new Hello_Func4_Deleg, false);
-
-	int helloHook79 = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pHello),
-		0, helloHM_79, new Hello_Func79_Deleg, false);
-
-	pHello->Func4();
-	pHello->Func79();
-	SH_CALL(pHello, &Hello::Func4)();
-	SH_CALL(pHello, &Hello::Func79)();
-
-	CHECK_STATES((&g_States,
-		new State_Hello_Func4_PreHook,
-		new State_Hello_Func4_Called,
-		new State_Hello_Func79_PreHook,
-		new State_Hello_Func79_Called,
-		new State_Hello_Func4_Called,
-		new State_Hello_Func79_Called,
-		NULL), "Test" "Hello" " Part2");
-
-	g_SHPtr->RemoveHookByID(helloHook4);
-	g_SHPtr->RemoveHookByID(helloHook79);
-
-	g_HMAGPtr->ReleaseHookMan(helloHM_4);
-	g_HMAGPtr->ReleaseHookMan(helloHM_79);
+	if (!Tests1(error))
+		return false;
+	if (!Tests2(error))
+		return false;
+	if (!Tests3(error))
+		return false;
+	if (!Tests4(error))
+		return false;
+	if (!Tests5(error))
+		return false;
 
 	// Shutdown now!
 	// If we don't SH will auto-shutdown _after_ genc's destructor is called

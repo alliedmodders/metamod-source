@@ -507,10 +507,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState0<0 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -523,69 +520,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call() \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ()); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -598,10 +550,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState0<0 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -616,69 +565,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call() \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, ()); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, ()); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -689,10 +593,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState1<0, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -713,168 +614,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ("%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, ("%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ("%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ("%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, ("%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST0_vafmt(id, ret_type) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState0<0 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func() \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id())); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call() \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id())); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					 \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, ()); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI0(id) \
 	void setuppi_##id() \
@@ -888,10 +650,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState1<0, param1 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -904,69 +663,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -979,10 +693,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState1<0, param1 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -997,69 +708,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -1070,10 +736,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState2<0, param1, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1094,168 +757,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST1_vafmt(id, ret_type, param1) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState1<0, param1 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI1(id, p1_type, p1_passtype, p1_flags) \
 	void setuppi_##id() \
@@ -1276,10 +800,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState2<0, param1, param2 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1292,69 +813,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -1367,10 +843,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState2<0, param1, param2 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1385,69 +858,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1, param2 p2) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1, p2)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -1458,10 +886,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState3<0, param1, param2, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1482,168 +907,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST2_vafmt(id, ret_type, param1, param2) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState2<0, param1, param2 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1, param2 p2) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI2(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags) \
 	void setuppi_##id() \
@@ -1671,10 +957,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState3<0, param1, param2, param3 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1687,69 +970,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -1762,10 +1000,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState3<0, param1, param2, param3 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1780,69 +1015,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1, p2, p3)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -1853,10 +1043,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState4<0, param1, param2, param3, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -1877,168 +1064,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST3_vafmt(id, ret_type, param1, param2, param3) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState3<0, param1, param2, param3 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1, param2 p2, param3 p3) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI3(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags) \
 	void setuppi_##id() \
@@ -2073,10 +1121,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState4<0, param1, param2, param3, param4 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2089,69 +1134,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -2164,10 +1164,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState4<0, param1, param2, param3, param4 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2182,69 +1179,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1, p2, p3, p4)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -2255,10 +1207,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState5<0, param1, param2, param3, param4, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2279,168 +1228,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST4_vafmt(id, ret_type, param1, param2, param3, param4) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState4<0, param1, param2, param3, param4 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1, param2 p2, param3 p3, param4 p4) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI4(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags) \
 	void setuppi_##id() \
@@ -2482,10 +1292,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState5<0, param1, param2, param3, param4, param5 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2498,69 +1305,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -2573,10 +1335,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState5<0, param1, param2, param3, param4, param5 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2591,69 +1350,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -2664,10 +1378,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState6<0, param1, param2, param3, param4, param5, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2688,168 +1399,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST5_vafmt(id, ret_type, param1, param2, param3, param4, param5) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState5<0, param1, param2, param3, param4, param5 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4, p5))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI5(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags) \
 	void setuppi_##id() \
@@ -2898,10 +1470,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState6<0, param1, param2, param3, param4, param5, param6 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -2914,69 +1483,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -2989,10 +1513,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	typedef ret_type RetType##id; \
 	typedef ParamState6<0, param1, param2, param3, param4, param5, param6 > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -3007,69 +1528,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -3080,10 +1556,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	struct TestClass##id; \
 	typedef ParamState7<0, param1, param2, param3, param4, param5, param6, std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -3104,168 +1577,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6, buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6, buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6, "%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6, "%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6, buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (p1, p2, p3, p4, p5, p6, "%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST6_vafmt(id, ret_type, param1, param2, param3, param4, param5, param6) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState6<0, param1, param2, param3, param4, param5, param6 > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(p1, p2, p3, p4, p5, p6))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					Increment<StripRef< param1 >::type>::Incr(p1);Increment<StripRef< param2 >::type>::Incr(p2);Increment<StripRef< param3 >::type>::Incr(p3);Increment<StripRef< param4 >::type>::Incr(p4);Increment<StripRef< param5 >::type>::Incr(p5);Increment<StripRef< param6 >::type>::Incr(p6); \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (p1, p2, p3, p4, p5, p6)); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI6(id, p1_type, p1_passtype, p1_flags, p2_type, p2_passtype, p2_flags, p3_type, p3_passtype, p3_flags, p4_type, p4_passtype, p4_flags, p5_type, p5_passtype, p5_flags, p6_type, p6_passtype, p6_flags) \
 	void setuppi_##id() \
@@ -3330,7 +1664,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	
 #define THGM_ADD_HOOK(id, num) \
 	CAT4(hook, num, _, id) = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pTest##id), \
-		0, myhookman##id, PtrBufPtr(new TestClass##id::Delegate##num), num >= 3);
+		0, myhookman##id, PtrBufPtr(new TestClass##id::Delegate(num)), num >= 3);
 
 #define THGM_REMOVE_HOOK(id, num) \
 	g_SHPtr->RemoveHookByID(CAT4(hook, num, _, id));
@@ -3357,37 +1691,15 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part1"); \
 	\
-			/* hook1 - no hooks */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_CALLS_void(id, call_params); \
-	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part2"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	\
-			/* no hooks - hook3 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 3); \
-	THGM_CALLS_void(id, call_params); \
-	CHECK_STATES((&g_States, \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part3"); \
-	THGM_REMOVE_HOOK(id, 3); \
-	\
 			/* hook1 - hook3 */ \
 	PtrBuf_Clear(); \
 	THGM_ADD_HOOK(id, 1); \
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 1, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part4"); \
 	THGM_REMOVE_HOOK(id, 1); \
@@ -3400,26 +1712,19 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part5"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	THGM_REMOVE_HOOK(id, 2); \
-	THGM_REMOVE_HOOK(id, 3); \
 			/* hook1, hook2 - hook3, hook4 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_ADD_HOOK(id, 2); \
-	THGM_ADD_HOOK(id, 3); \
 	THGM_ADD_HOOK(id, 4); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part6"); \
 		\
@@ -3429,10 +1734,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState6<0, p1, p2, p3, p4, 
 	THGM_REMOVE_HOOK(id, 2); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params(0)), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params(0)), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params(1)), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params(1)), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params(2)), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params(1)), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params(2)), \
 		/* sh_call one */ \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part7"); \
@@ -3475,37 +1780,15 @@ T* ComparableRef(T& x)
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part1"); \
 	\
-			/* hook1 - no hooks */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_CALLS(id, call_params, 0, 0, "Part2"); \
-	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part2"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	\
-			/* no hooks - hook3 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 3); \
-	THGM_CALLS(id, call_params, 0, 0, "Part3"); \
-	CHECK_STATES((&g_States, \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part3"); \
-	THGM_REMOVE_HOOK(id, 3); \
-	\
 			/* hook1 - hook3 */ \
 	PtrBuf_Clear(); \
 	THGM_ADD_HOOK(id, 1); \
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS(id, call_params, 0, 0, "Part4"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 1, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part4"); \
 	THGM_REMOVE_HOOK(id, 1); \
@@ -3518,26 +1801,19 @@ T* ComparableRef(T& x)
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS(id, call_params, 2, 0, "Part5"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part5"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	THGM_REMOVE_HOOK(id, 2); \
-	THGM_REMOVE_HOOK(id, 3); \
 			/* hook1, hook2 - hook3, hook4 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_ADD_HOOK(id, 2); \
-	THGM_ADD_HOOK(id, 3); \
 	THGM_ADD_HOOK(id, 4); \
 	THGM_CALLS(id, call_params, 4, 0, "Part6"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part6"); \
 		\
@@ -3547,10 +1823,10 @@ T* ComparableRef(T& x)
 	THGM_REMOVE_HOOK(id, 2); \
 	THGM_CALLS(id, call_params, 4, 0, "Part7"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params(0)), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params(0)), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params(1)), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params(1)), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params(2)), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params(1)), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params(2)), \
 		/* sh_call one */ \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part7"); \

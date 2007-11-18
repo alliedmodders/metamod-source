@@ -529,6 +529,10 @@
 				RelativePath="..\testevents.h"
 				>
 			</File>
+			<File
+				RelativePath="..\testhookmangen.h"
+				>
+			</File>
 			<Filter
 				Name="generate"
 				>

@@ -203,10 +203,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	struct TestClass##id; \
 	typedef ParamState$1<0@[$2,1,$1:, param$2@] > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -219,69 +216,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(@[$2,1,$1|, :param$2 p$2@]) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_SUPERCEDE, &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
@@ -294,10 +246,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	typedef ret_type RetType##id; \
 	typedef ParamState$1<0@[$2,1,$1:, param$2@] > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -312,69 +261,24 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 			return MakeRet< ret_type >::Do(0); \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
 				} \
 				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
 		}; \
 	}; \
 	\
@@ -385,10 +289,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	struct TestClass##id; \
 	typedef ParamState@($1+1)<0@[$2,1,$1:, param$2@], std::string > ParamState_m##id; \
 	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
 	\
 	struct TestClass##id \
 	{ \
@@ -409,168 +310,29 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 			g_Inside_LeafFunc = false; \
 		} \
 		\
-		struct Delegate1 : public MyDelegate \
+		struct Delegate : public MyDelegate \
 		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
 			virtual void Call(@[$2,1,$1:param$2 p$2, @]const char *buf) \
 			{ \
 				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
 				g_Inside_LeafFunc = false; \
 				if (ms_DoRecall) \
 				{ \
 					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
+					RETURN_META_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
 				} \
 				else \
-					RETURN_META(MRES_IGNORED); \
+					RETURN_META((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE); \
 			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1:param$2 p$2, @]const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1:param$2 p$2, @]const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_IGNORED); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual void Call(@[$2,1,$1:param$2 p$2, @]const char *buf) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_NEWPARAMS(MRES_IGNORED, &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
-				} \
-				else \
-					RETURN_META(MRES_SUPERCEDE); \
-			}; \
 		}; \
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
-
-
-#define THGM_MAKE_TEST$1_vafmt(id, ret_type@[$2,1,$1:, param$2@]) \
-	struct TestClass##id; \
-	typedef ret_type RetType##id; \
-	typedef ParamState$1<0@[$2,1,$1:, param$2@] > ParamState_m##id; \
-	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg1_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg2_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg3_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	MAKE_STATE_3(State_Deleg4_##id, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
-	\
-	struct TestClass##id \
-	{ \
-		static bool ms_DoRecall; \
-		\
-		virtual ret_type Func(@[$2,1,$1|, :param$2 p$2@]) \
-		{ \
-			g_Inside_LeafFunc = true; \
-			ADD_STATE(State_Func##id(this, ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-			g_Inside_LeafFunc = false; \
-			\
-			return MakeRet< ret_type >::Do(0); \
-		} \
-		\
-		struct Delegate1 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg1_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(1), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(1)); \
-			} \
-		}; \
-		struct Delegate2 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg2_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(2)); \
-			} \
-		}; \
-		struct Delegate3 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg3_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, MakeRet< ret_type >::Do(3), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_IGNORED, MakeRet< ret_type >::Do(3)); \
-			} \
-		}; \
-		struct Delegate4 : public MyDelegate \
-		{ \
-			virtual ret_type Call(@[$2,1,$1|, :param$2 p$2@]) \
-			{ \
-				g_Inside_LeafFunc = true; \
-				ADD_STATE(State_Deleg4_##id(META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1|, :p$2@]))); \
-				g_Inside_LeafFunc = false; \
-				if (ms_DoRecall) \
-				{ \
-					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
-					RETURN_META_VALUE_NEWPARAMS(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4), &TestClass##id::Func, (@[$2,1,$1|, :p$2@])); \
-				} \
-				else \
-					RETURN_META_VALUE(MRES_SUPERCEDE, MakeRet< ret_type >::Do(4)); \
-			}; \
-		}; \
-	}; \
-	\
-	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall)
-
 
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \
@@ -600,7 +362,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	
 #define THGM_ADD_HOOK(id, num) \
 	CAT4(hook, num, _, id) = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal, reinterpret_cast<void*>(pTest##id), \
-		0, myhookman##id, PtrBufPtr(new TestClass##id::Delegate##num), num >= 3);
+		0, myhookman##id, PtrBufPtr(new TestClass##id::Delegate(num)), num >= 3);
 
 #define THGM_REMOVE_HOOK(id, num) \
 	g_SHPtr->RemoveHookByID(CAT4(hook, num, _, id));
@@ -627,37 +389,15 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part1"); \
 	\
-			/* hook1 - no hooks */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_CALLS_void(id, call_params); \
-	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part2"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	\
-			/* no hooks - hook3 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 3); \
-	THGM_CALLS_void(id, call_params); \
-	CHECK_STATES((&g_States, \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part3"); \
-	THGM_REMOVE_HOOK(id, 3); \
-	\
 			/* hook1 - hook3 */ \
 	PtrBuf_Clear(); \
 	THGM_ADD_HOOK(id, 1); \
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 1, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part4"); \
 	THGM_REMOVE_HOOK(id, 1); \
@@ -670,26 +410,19 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part5"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	THGM_REMOVE_HOOK(id, 2); \
-	THGM_REMOVE_HOOK(id, 3); \
 			/* hook1, hook2 - hook3, hook4 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_ADD_HOOK(id, 2); \
-	THGM_ADD_HOOK(id, 3); \
 	THGM_ADD_HOOK(id, 4); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part6"); \
 		\
@@ -699,10 +432,10 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	THGM_REMOVE_HOOK(id, 2); \
 	THGM_CALLS_void(id, call_params); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params(0)), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params(0)), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params(1)), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params(1)), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params(2)), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params(1)), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params(2)), \
 		/* sh_call one */ \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part7"); \
@@ -745,37 +478,15 @@ T* ComparableRef(T& x)
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part1"); \
 	\
-			/* hook1 - no hooks */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_CALLS(id, call_params, 0, 0, "Part2"); \
-	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part2"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	\
-			/* no hooks - hook3 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 3); \
-	THGM_CALLS(id, call_params, 0, 0, "Part3"); \
-	CHECK_STATES((&g_States, \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		NULL), "Test" #id " Part3"); \
-	THGM_REMOVE_HOOK(id, 3); \
-	\
 			/* hook1 - hook3 */ \
 	PtrBuf_Clear(); \
 	THGM_ADD_HOOK(id, 1); \
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS(id, call_params, 0, 0, "Part4"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 1, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part4"); \
 	THGM_REMOVE_HOOK(id, 1); \
@@ -788,26 +499,19 @@ T* ComparableRef(T& x)
 	THGM_ADD_HOOK(id, 3); \
 	THGM_CALLS(id, call_params, 2, 0, "Part5"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part5"); \
-	THGM_REMOVE_HOOK(id, 1); \
-	THGM_REMOVE_HOOK(id, 2); \
-	THGM_REMOVE_HOOK(id, 3); \
 			/* hook1, hook2 - hook3, hook4 */ \
-	PtrBuf_Clear(); \
-	THGM_ADD_HOOK(id, 1); \
-	THGM_ADD_HOOK(id, 2); \
-	THGM_ADD_HOOK(id, 3); \
 	THGM_ADD_HOOK(id, 4); \
 	THGM_CALLS(id, call_params, 4, 0, "Part6"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params), \
-		new State_Deleg2_##id(pTest##id, 1, ParamState_m##id call_params), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params), \
+		new State_Deleg_##id(2, pTest##id, 1, ParamState_m##id call_params), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part6"); \
 		\
@@ -817,10 +521,10 @@ T* ComparableRef(T& x)
 	THGM_REMOVE_HOOK(id, 2); \
 	THGM_CALLS(id, call_params, 4, 0, "Part7"); \
 	CHECK_STATES((&g_States, \
-		new State_Deleg1_##id(pTest##id, 0, ParamState_m##id call_params(0)), \
+		new State_Deleg_##id(1, pTest##id, 0, ParamState_m##id call_params(0)), \
 		new State_Func##id(pTest##id, ParamState_m##id call_params(1)), \
-		new State_Deleg3_##id(pTest##id, 2, ParamState_m##id call_params(1)), \
-		new State_Deleg4_##id(pTest##id, 3, ParamState_m##id call_params(2)), \
+		new State_Deleg_##id(3, pTest##id, 2, ParamState_m##id call_params(1)), \
+		new State_Deleg_##id(4, pTest##id, 3, ParamState_m##id call_params(2)), \
 		/* sh_call one */ \
 		new State_Func##id(pTest##id, ParamState_m##id call_params), \
 		NULL), "Test" #id " Part7"); \
