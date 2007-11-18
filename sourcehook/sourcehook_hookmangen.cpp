@@ -20,6 +20,7 @@
 #include "sourcehook_hookmangen_x86.h"
 #include "sh_memory.h"
 #include <stdarg.h>							// we might need the address of vsnprintf
+#include <stdio.h>
 
 #if SH_COMP == SH_COMP_MSVC
 # define GCC_ONLY(x)
@@ -895,20 +896,21 @@ namespace SourceHook
 			//   call eax
 			//   gcc: clean up 
 			
-			jit_int32_t gcc_clean_bytes = 0;
+			jit_int32_t caller_clean_bytes = 0;			// gcc always, msvc never (hooks never have varargs!)
 			// vafmt: push va_buf
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
 			{
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-				gcc_clean_bytes += SIZE_PTR;
+				caller_clean_bytes += SIZE_PTR;
 			}
 
-			gcc_clean_bytes += PushParams(base_param_offset, v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
+			caller_clean_bytes += PushParams(base_param_offset, v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
-			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-			gcc_clean_bytes += PushMemRetPtr(v_plugin_ret, v_place_for_memret);
+			if (SH_COMP == SH_COMP_GCC)
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+			caller_clean_bytes += PushMemRetPtr(v_plugin_ret, v_place_for_memret);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
@@ -917,12 +919,10 @@ namespace SourceHook
 
 			SaveRetVal(v_plugin_ret, v_place_for_memret);
 
-			// cleanup
-#if SH_COMP == SH_COMP_GCC
-			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG);
-#endif
-
-			// params + thisptr
+			// cleanup (gcc only)
+			//   params + thisptr
+			if (SH_COMP == SH_COMP_GCC)
+				IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, caller_clean_bytes + SIZE_PTR, MOD_REG);
 
 			// process meta return:
 			//  prev_res = cur_res
@@ -1014,7 +1014,7 @@ namespace SourceHook
 			tmppos2 = IA32_Jump_Cond_Imm32(&m_HookFunc, CC_Z, 0);
 			m_HookFunc.start_count(counter2);
 
-			jit_int32_t gcc_clean_bytes = 0;
+			jit_int32_t caller_clean_bytes = 0;			// gcc always, msvc when cdecl-like (varargs)
 			
 			// vafmt: push va_buf, then "%s"
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
@@ -1022,29 +1022,29 @@ namespace SourceHook
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
 				IA32_Push_Imm32(&m_HookFunc, DownCastPtr("%s"));
-				gcc_clean_bytes += 2*SIZE_PTR;
+				caller_clean_bytes += 2*SIZE_PTR;
 			}
 
 			// push params
-			gcc_clean_bytes += PushParams(param_base_offs, v_orig_ret, v_place_for_memret, v_place_fbrr_base);
+			caller_clean_bytes += PushParams(param_base_offs, v_orig_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
-#if SH_COMP == SH_COMP_GCC
-			//  on gcc/mingw, this is the first parameter
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-			//  on msvc, simply leave it in ecx
-#endif
-			gcc_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
+			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+			{
+				//  on gcc/mingw or msvc with varargs, this is the first parameter
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				//  on msvc without varargs, simply leave it in ecx
+			}
+			caller_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
 
 			// call
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EBP, v_vfnptr_origentry);
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
 			// cleanup
-#if SH_COMP == SH_COMP_GCC
-			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, gcc_clean_bytes + SIZE_PTR, MOD_REG);
-#endif
+			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+				IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, caller_clean_bytes + SIZE_PTR, MOD_REG);
 
 			DestroyParams(v_place_fbrr_base);
 
@@ -1239,21 +1239,27 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_EBX);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EBP, REG_ESP, MOD_REG);
 
-
-			// on msvc, save thisptr
-#if SH_COMP == SH_COMP_MSVC
-			jit_int32_t v_this = -4;
-			IA32_Push_Reg(&m_HookFunc, REG_ECX);
-#elif SH_COMP == SH_COMP_GCC
-			jit_int32_t v_this = 12;		// first param
-#endif
-
-			ResetFrame(
-					(SH_COMP==SH_COMP_MSVC) ? -4 : 0
-					);			// on msvc, start on offset -4 because there already is the thisptr variable
+			jit_int32_t v_this = 0;
+			jit_int32_t param_base_offs = 0;
+			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+			{
+				// gcc or msvc with varargs:
+				v_this = 12;		// first param
+				param_base_offs = 16;
+				ResetFrame(0);
+			}
+			else
+			{
+				// on msvc without varargs, save thisptr
+				v_this = -4;
+				param_base_offs = 12;
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				ResetFrame(-4);			// start placing local vars on offset -4
+										// because there already is the thisptr variable
+			}
 
 			// ********************** stack frame **********************
-			//															MSVC
+			//															MSVC without varargs
 			//   second param (gcc: first real param)	ebp + 16
 			//   first param (gcc: thisptr)				ebp + 12
 			//   ret address:							ebp + 8
@@ -1292,28 +1298,25 @@ namespace SourceHook
 			const jit_int8_t v_cur_res =			AddVarToFrame(sizeof(META_RES));
 			const jit_int8_t v_iter =				AddVarToFrame(SIZE_PTR);
 			const jit_int8_t v_pContext =			AddVarToFrame(SIZE_PTR);
-			
-#if SH_COMP == SH_COMP_GCC
-			jit_int32_t param_base_offs =		16;
-#elif SH_COMP == SH_COMP_MSVC
-			jit_int32_t param_base_offs =		12;
-#endif
 
 			// Memory return: first param is the address
 			jit_int32_t v_memret_addr = 0;
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 			{
-#if SH_COMP == SH_COMP_GCC
-				// gcc: now:	first param = mem ret addr
-				//				second param = this pointer
-				//				third param = actual first param
-				v_memret_addr = 12;
-				v_this += 4;
-				param_base_offs += SIZE_PTR;
-#elif SH_COMP == SH_COMP_MSVC
-				v_memret_addr = param_base_offs;
-				param_base_offs += SIZE_PTR;
-#endif
+				if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+				{
+					// gcc: now:	first param = mem ret addr
+					//				second param = this pointer
+					//				third param = actual first param
+					v_memret_addr = 12;
+					v_this += 4;
+					param_base_offs += SIZE_PTR;
+				}
+				else
+				{
+					v_memret_addr = param_base_offs;
+					param_base_offs += SIZE_PTR;
+				}
 			}
 
 			jit_int32_t v_ret_ptr = 0;
@@ -1494,14 +1497,23 @@ namespace SourceHook
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ESP, REG_EBP, MOD_REG);
 			IA32_Pop_Reg(&m_HookFunc, REG_EBX);
 			IA32_Pop_Reg(&m_HookFunc, REG_EBP);
-			MSVC_ONLY(IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize()));
-			// gcc: Remove 4 bytes from stack on memory return
-#if SH_COMP == SH_COMP_GCC
-			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
-				IA32_Return_Popstack(&m_HookFunc, SIZE_PTR);
+
+			if (SH_COMP == SH_COMP_MSVC && !(m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+			{
+				// msvc without varargs:
+				//  callee cleans the stack
+				IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize());
+			}
 			else
-				IA32_Return(&m_HookFunc);
-#endif
+			{
+				// gcc or msvc with varargs: caller cleans the stack
+				//  exception: gcc removes the memret addr on memret: 
+				if (SH_COMP == SH_COMP_GCC && (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem))
+					IA32_Return_Popstack(&m_HookFunc, SIZE_PTR);
+				else
+					IA32_Return(&m_HookFunc);
+			}
+			
 			
 			// Store pointer for later use
 			// m_HookfuncVfnPtr is a pointer to a void* because SH expects a pointer
