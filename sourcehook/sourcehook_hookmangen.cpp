@@ -848,7 +848,7 @@ namespace SourceHook
 		}
 
 		void GenContext::GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-			int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base)
+			int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base, jit_int32_t v_va_buf)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -894,8 +894,17 @@ namespace SourceHook
 			//   eax = [eax+2*SIZE_PTR]
 			//   call eax
 			//   gcc: clean up 
+			
+			jit_int32_t gcc_clean_bytes = 0;
+			// vafmt: push va_buf
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				gcc_clean_bytes += SIZE_PTR;
+			}
 
-			jit_int32_t gcc_clean_bytes = PushParams(base_param_offset, v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
+			gcc_clean_bytes += PushParams(base_param_offset, v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
 
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_ECX, REG_EAX, MOD_REG);
 			GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
@@ -953,7 +962,7 @@ namespace SourceHook
 		}
 
 		void GenContext::GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
-			int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base)
+			int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base, jit_int32_t v_va_buf)
 		{
 			jitoffs_t counter, tmppos;
 			jitoffs_t counter2, tmppos2;
@@ -1005,8 +1014,19 @@ namespace SourceHook
 			tmppos2 = IA32_Jump_Cond_Imm32(&m_HookFunc, CC_Z, 0);
 			m_HookFunc.start_count(counter2);
 
+			jit_int32_t gcc_clean_bytes = 0;
+			
+			// vafmt: push va_buf, then "%s"
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				IA32_Push_Imm32(&m_HookFunc, DownCastPtr("%s"));
+				gcc_clean_bytes += 2*SIZE_PTR;
+			}
+
 			// push params
-			jit_int32_t gcc_clean_bytes = PushParams(param_base_offs, v_orig_ret, v_place_for_memret, v_place_fbrr_base);
+			gcc_clean_bytes += PushParams(param_base_offs, v_orig_ret, v_place_for_memret, v_place_fbrr_base);
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
@@ -1248,21 +1268,22 @@ namespace SourceHook
 			//   IHookContext *pContext					ebp - 24		-4
 			//  == 3 ptrs + 3 enums = 24 bytes
 			//
-			// varargs:
-			//   va_list argptr							ebp - 28		-4
-			//
 			// non-void: add:
-			//   my_rettype *ret_ptr					ebp - 28 (va: -4)		-4
-			//   my_rettype orig_ret					ebp - 28 (va: -4) - sizeof(my_rettype)			-4
-			//   my_rettype override_ret				ebp - 28 (va: -4) - sizeof(my_rettype)*2			-4
-			//   my_rettype plugin_ret					ebp - 28 (va: -4) - sizeof(my_rettype)*3			-4
+			//   my_rettype *ret_ptr					ebp - 28 		-4
+			//   my_rettype orig_ret					ebp - 28 - sizeof(my_rettype)			-4
+			//   my_rettype override_ret				ebp - 28 - sizeof(my_rettype)*2			-4
+			//   my_rettype plugin_ret					ebp - 28 - sizeof(my_rettype)*3			-4
 			//  == + 3 * sizeof(my_rettype) bytes
 
 			// if required:
-			//   my_rettype place_for_memret			ebp - 28 (va: -4) - sizeof(my_rettype)*4			-4
+			//   my_rettype place_for_memret			ebp - 28 - sizeof(my_rettype)*4			-4
 
 			// gcc only: if required:
-			//   place forced byref params              ebp - 28 (va: -4) - sizeof(my_rettype)*{4 or 5}
+			//   place forced byref params              ebp - 28 - sizeof(my_rettype)*{4 or 5}
+			//
+			// varargs:
+			//   va_list argptr
+			//   char va_buf[something];
 			
 
 			const jit_int8_t v_vfnptr_origentry =	AddVarToFrame(SIZE_PTR);
@@ -1271,10 +1292,6 @@ namespace SourceHook
 			const jit_int8_t v_cur_res =			AddVarToFrame(sizeof(META_RES));
 			const jit_int8_t v_iter =				AddVarToFrame(SIZE_PTR);
 			const jit_int8_t v_pContext =			AddVarToFrame(SIZE_PTR);
-			// Only exists for varargs functions
-			const jit_int8_t v_va_argptr =			(m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs) ?
-														AddVarToFrame(sizeof(va_list)) :
-														0;
 			
 #if SH_COMP == SH_COMP_GCC
 			jit_int32_t param_base_offs =		16;
@@ -1319,25 +1336,60 @@ namespace SourceHook
 			}
 
 			jit_int32_t v_place_fbrr_base  = 0;
-			if (GetForcedByRefParamsSize())
+			if (SH_COMP == SH_COMP_GCC && GetForcedByRefParamsSize())
 			{
 				v_place_fbrr_base =		AddVarToFrame(GetForcedByRefParamsSize());
 			}
 
+			// Only exists for varargs functions
+			jit_int32_t v_va_argptr = 0;
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs)
+			{
+				v_va_argptr = AddVarToFrame(SIZE_PTR);
+			}
+			
+			jit_int32_t v_va_buf = 0;
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				v_va_buf = AddVarToFrame(SourceHook::STRBUF_LEN);
+			}
+			
 			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, ComputeVarsSize(), MOD_REG);
 
 			// init status localvar
 			IA32_Mov_Rm_Imm32_Disp8(&m_HookFunc, REG_EBP, MRES_IGNORED, v_status);
 
-			// VarArgs: init argptr
+			// VarArgs: init argptr & format
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs)
 			{
 				// argptr = first vararg param
-				// lea eax, [esp + param_base_offs + paramssize]
+				// lea eax, [ebp + param_base_offs + paramssize]
 				// mov argptr, eax
 
-				IA32_Lea_Reg_DispRegMultImm32(&m_HookFunc, REG_EAX, REG_NOIDX, REG_ESP, NOSCALE, param_base_offs + GetParamsStackSize());
-				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, v_va_argptr, REG_EAX);
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_base_offs + GetParamsStackSize() + SIZE_PTR);	// +SIZE_PTR: last const char * is not in protoinfo
+				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_va_argptr);
+			}
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				// vsnprintf
+				
+				// push valist, fmt param, maxsize, buffer
+				IA32_Push_Reg(&m_HookFunc, REG_EAX);
+				IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, param_base_offs + GetParamsStackSize());		// last given param (+4-4, see above)
+				IA32_Push_Imm32(&m_HookFunc, SourceHook::STRBUF_LEN - 1);
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
+				IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				
+				// call
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(&vsnprintf));
+				IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+				// Clean up (cdecl)
+				IA32_Add_Rm_Imm32(&m_HookFunc, REG_ESP, 0x10, MOD_REG);
+
+				// Set trailing zero
+				IA32_Xor_Reg_Rm(&m_HookFunc, REG_EDX, REG_EDX, MOD_REG);
+				IA32_Mov_Rm8_Reg8_DispAuto(&m_HookFunc, REG_EBP, REG_EDX, v_va_buf + SourceHook::STRBUF_LEN - 1);
 			}
 			
 			// Call constructors for ret vars if required
@@ -1374,15 +1426,15 @@ namespace SourceHook
 
 			// ********************** call pre hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
+				v_plugin_ret, v_place_for_memret, v_place_fbrr_base, v_va_buf);
 
 			// ********************** call orig func **********************
 			GenerateCallOrig(v_status, v_pContext, param_base_offs, v_this, v_vfnptr_origentry, v_orig_ret,
-				v_override_ret, v_place_for_memret, v_place_fbrr_base);
+				v_override_ret, v_place_for_memret, v_place_fbrr_base, v_va_buf);
 
 			// ********************** call post hooks **********************
 			GenerateCallHooks(v_status, v_prev_res, v_cur_res, v_iter, v_pContext, param_base_offs,
-				v_plugin_ret, v_place_for_memret, v_place_fbrr_base);
+				v_plugin_ret, v_place_for_memret, v_place_fbrr_base, v_va_buf);
 
 			// ********************** end context and return **********************
 

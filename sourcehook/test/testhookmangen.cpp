@@ -219,6 +219,15 @@ namespace
 		}
 	};
 
+	template<>
+	struct Increment<std::string>
+	{
+		static void Incr(std::string &what)
+		{
+			what += "!";
+		}
+	};
+
 	#include "testhookmangen.h"
 
 	template <class T>
@@ -412,6 +421,38 @@ namespace
 		SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
 		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
 
+
+	// vafmt tests
+	THGM_MAKE_TEST0_vafmt_void(200);
+	THGM_SETUP_PI0(200);
+
+	THGM_MAKE_TEST1_vafmt_void(201, char);
+	THGM_SETUP_PI1(201, char, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1_vafmt_void(203, int);
+	THGM_SETUP_PI1(203, int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal);
+	
+	THGM_MAKE_TEST5_vafmt_void(206, char, short, int, float, double);
+	THGM_SETUP_PI5(206,
+		char, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal,
+		short, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal,
+		float, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal,
+		double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal
+		);
+
+	THGM_MAKE_TEST2_vafmt_void(207, char&, double&);
+	THGM_SETUP_PI2(207,
+		char&, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByRef,
+		double&, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByRef
+		);
+
+	THGM_MAKE_TEST1_vafmt_void(208, POD<7>);
+	THGM_SETUP_PI1(208, POD<7>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1_vafmt_void(210, POD<600> &);
+	THGM_SETUP_PI1(210, POD<600> &, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByRef)
+	
 	MAKE_STATE(State_Hello_Func4_Called);
 	MAKE_STATE(State_Hello_Func79_Called);
 
@@ -915,6 +956,25 @@ bool TestHookManGen(std::string &error)
 	// RefRet
 	THGM_DO_TEST(111, ());
 
+	// Vafmt
+
+	THGM_DO_TEST_void(200, ("Hello %s%d%s", "BA", 1, "L!"));
+
+	THGM_DO_TEST_void(201, (100, "Hello %s%d%s", "BA", 1, "L!"));
+	
+	THGM_DO_TEST_void(203, (0x1F000000, "Hello %s%d%s", "BA", 1, "L!"));
+
+	THGM_DO_TEST_void(206, (100, 0x1f00, 0x1f000000, 0.5f, 5.5, "Hello %s%d%s", "BA", 1, "L!"));
+
+	a = 5;
+	b = 233.33;
+	THGM_DO_TEST_void(207, (a, b, "Hello %s%d%s", "BA", 1, "L!"));
+
+	pod7 = MakeRet< POD<7> >::Do(78);
+	THGM_DO_TEST_void(208, (pod7, "Hello %s%d%s", "BA", 1, "L!"));
+	
+	THGM_DO_TEST_void(210, (pod600, "Hello %s%d%s", "BA", 1, "L!"));
+	
 	// Test for lange vtable indices
 	Hello *pHello = new Hello;
 	SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);

@@ -23,7 +23,7 @@ namespace SourceHook
 		CVector<PassInfo> m_Params;
 		CVector<PassInfo::V2Info> m_Params2;
 	public:
-		CProtoInfoBuilder(ProtoInfo::CallConvention cc)
+		CProtoInfoBuilder(int cc)
 		{
 			memset(reinterpret_cast<void*>(&m_PI), 0, sizeof(ProtoInfo));
 			m_PI.convention = cc;

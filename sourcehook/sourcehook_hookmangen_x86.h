@@ -943,6 +943,28 @@ namespace SourceHook
 			jit->write_ubyte(ia32_modrm(mode, src, dest));
 		}
 
+		inline void IA32_Mov_Rm8_Reg8_Disp8(JitWriter *jit, jit_uint8_t dest, jit_uint8_t src, jit_int8_t disp)
+		{
+			jit->write_ubyte(IA32_MOV_RM8_REG8);
+			jit->write_ubyte(ia32_modrm(MOD_DISP8, src, dest));
+			jit->write_byte(disp);
+		}
+
+		inline void IA32_Mov_Rm8_Reg8_Disp32(JitWriter *jit, jit_uint8_t dest, jit_uint8_t src, jit_int32_t disp)
+		{
+			jit->write_ubyte(IA32_MOV_RM8_REG8);
+			jit->write_ubyte(ia32_modrm(MOD_DISP32, src, dest));
+			jit->write_int32(disp);
+		}
+
+		inline void IA32_Mov_Rm8_Reg8_DispAuto(JitWriter *jit, jit_uint8_t dest, jit_uint8_t src, jit_int32_t disp)
+		{
+			if (disp >= SCHAR_MIN && disp <= SCHAR_MAX)
+				IA32_Mov_Rm8_Reg8_Disp8(jit, dest, src, static_cast<jit_int8_t>(disp));
+			else
+				IA32_Mov_Rm8_Reg8_Disp32(jit, dest, src, disp);
+		}
+		
 		inline void IA32_Mov_RmESP_Reg(JitWriter *jit, jit_uint8_t src)
 		{
 			jit->write_ubyte(IA32_MOV_RM_REG);

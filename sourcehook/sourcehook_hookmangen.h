@@ -221,11 +221,11 @@ namespace SourceHook
 
 			// Call hooks
 			void GenerateCallHooks(int v_status, int v_prev_res, int v_cur_res, int v_iter,
-				int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base);
+				int v_pContext, int base_param_offset, int v_plugin_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base, jit_int32_t v_va_buf);
 
 			// Call orig
 			void GenerateCallOrig(int v_status, int v_pContext, int param_base_offs, int v_this,
-				int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base);
+				int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret, jit_int32_t v_place_fbrr_base, jit_int32_t v_va_buf);
 
 			// Hook loop
 			void CallSetupHookLoop(int v_orig_ret, int v_override_ret, 
