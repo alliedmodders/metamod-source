@@ -207,12 +207,6 @@ namespace SourceHook
 				acc += GetStackSize(m_Proto.GetParam(i));
 			}
 
-			// Memory return: address is first param
-			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
-				acc += SIZE_PTR;
-
-			// :TODO: cdecl: THIS POINTER AS FIRST PARAM!!!
-
 			return acc;
 		}
 
@@ -1030,13 +1024,28 @@ namespace SourceHook
 
 			// thisptr
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_ECX, REG_EBP, v_this);
-			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+			if (SH_COMP == SH_COMP_GCC)
 			{
-				//  on gcc/mingw or msvc with varargs, this is the first parameter
+				//  on gcc/mingw, this is the first parameter
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
 				//  on msvc without varargs, simply leave it in ecx
+
+				// actually, if we're returning in memory, this pointer is the second param
+				// and the memret pointer is the real first parameter
+				caller_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
 			}
-			caller_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
+			else
+			{
+				// On msvc, if we're returning in memory, the memret pointer is the first parameter
+				caller_clean_bytes += PushMemRetPtr(v_orig_ret, v_place_for_memret);
+
+				// actually, with varargs, the this pointer is the first param and the memret ptr
+				// is the second one
+				if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs)
+				{
+					IA32_Push_Reg(&m_HookFunc, REG_ECX);
+				}
+			}
 
 			// call
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EBP, v_vfnptr_origentry);
@@ -1239,6 +1248,9 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_EBX);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EBP, REG_ESP, MOD_REG);
 
+			if ((m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs) && (m_Proto.GetRet().type == PassInfo::PassType_Object))
+				IA32_Int3(&m_HookFunc);
+
 			jit_int32_t v_this = 0;
 			jit_int32_t param_base_offs = 0;
 			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
@@ -1303,7 +1315,7 @@ namespace SourceHook
 			jit_int32_t v_memret_addr = 0;
 			if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 			{
-				if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
+				if (SH_COMP == SH_COMP_GCC)
 				{
 					// gcc: now:	first param = mem ret addr
 					//				second param = this pointer
@@ -1312,10 +1324,25 @@ namespace SourceHook
 					v_this += 4;
 					param_base_offs += SIZE_PTR;
 				}
-				else
+				else   // MSVC
 				{
-					v_memret_addr = param_base_offs;
-					param_base_offs += SIZE_PTR;
+					if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs)
+					{
+						// varargs -> cdecl
+						// msvc: now:
+						//     first param = this pointer
+						//     second param = mem ret addr
+						//     third param = actual first param
+
+						// params_base_offs is already updated to point to after the this pointer
+						v_memret_addr = param_base_offs;
+						param_base_offs += SIZE_PTR;
+					}
+					else
+					{
+						v_memret_addr = param_base_offs;
+						param_base_offs += SIZE_PTR;
+					}
 				}
 			}
 
@@ -1502,7 +1529,13 @@ namespace SourceHook
 			{
 				// msvc without varargs:
 				//  callee cleans the stack
-				IA32_Return_Popstack(&m_HookFunc, GetParamsStackSize());
+
+				short cleansize = GetParamsStackSize();
+				// Memory return: address is first param
+				if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
+					cleansize += SIZE_PTR;
+				
+				IA32_Return_Popstack(&m_HookFunc, cleansize);
 			}
 			else
 			{

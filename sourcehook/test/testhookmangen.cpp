@@ -469,7 +469,7 @@ namespace
 	THGM_SETUP_PI1(212,
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
-	THGM_SETUP_RI(212, float, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
+	THGM_SETUP_RI(212, double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
 
 	THGM_MAKE_TEST1_vafmt(213, PodRet8, int);
 	THGM_SETUP_PI1(213,

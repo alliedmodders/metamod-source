@@ -383,7 +383,7 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	}; \
 	\
 	bool TestClass##id::ms_DoRecall = false; \
-	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
 
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \
