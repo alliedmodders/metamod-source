@@ -1248,9 +1248,6 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_EBX);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EBP, REG_ESP, MOD_REG);
 
-			if ((m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs) && (m_Proto.GetRet().type == PassInfo::PassType_Object))
-				IA32_Int3(&m_HookFunc);
-
 			jit_int32_t v_this = 0;
 			jit_int32_t param_base_offs = 0;
 			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
