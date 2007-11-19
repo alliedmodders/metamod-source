@@ -334,6 +334,57 @@ std::ostream& operator <<(std::ostream &os,const ParamState$1<0@[$2,1,$1:, p$2@]
 	bool TestClass##id::ms_DoRecall = false; \
 	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall | SourceHook::ProtoInfo::CallConv_HasVafmt);
 
+#define THGM_MAKE_TEST$1_vafmt(id, ret_type@[$2,1,$1:, param$2@]) \
+	struct TestClass##id; \
+	typedef ret_type RetType##id; \
+	typedef ParamState@($1+1)<0@[$2,1,$1:, param$2@], std::string > ParamState_m##id; \
+	MAKE_STATE_2(State_Func##id, TestClass##id* /*thisptr*/, ParamState_m##id ); \
+	MAKE_STATE_4(State_Deleg_##id, int /*delegnumber*/, TestClass##id* /*ifptr*/, int /*deleg thisptr*/, ParamState_m##id ); \
+	\
+	struct TestClass##id \
+	{ \
+		static bool ms_DoRecall; \
+		\
+		virtual ret_type Func(@[$2,1,$1:param$2 p$2, @]const char *fmt, ...) \
+		{ \
+			g_Inside_LeafFunc = true; \
+			\
+			char buf[9999]; \
+			va_list ap; \
+			va_start(ap, fmt); \
+			vsnprintf(buf, 9998, fmt, ap); \
+			buf[9998] = 0; \
+			va_end(ap); \
+			\
+			ADD_STATE(State_Func##id(this, ParamState_m##id(@[$2,1,$1:p$2, @]std::string(buf)))); \
+			\
+			return MakeRet< ret_type >::Do(0); \
+		} \
+		\
+		struct Delegate : public MyDelegate \
+		{ \
+			int m_DelegNumber; \
+			Delegate(int num) : m_DelegNumber(num) { } \
+			\
+			virtual ret_type Call(@[$2,1,$1:param$2 p$2, @]const char *buf) \
+			{ \
+				g_Inside_LeafFunc = true; \
+				ADD_STATE(State_Deleg_##id(m_DelegNumber, META_IFACEPTR(TestClass##id), PtrBuf(this), ParamState_m##id(@[$2,1,$1:p$2, @]buf))); \
+				g_Inside_LeafFunc = false; \
+				if (ms_DoRecall) \
+				{ \
+					@[$2,1,$1:Increment<StripRef< param$2 >::type>::Incr(p$2);@] \
+					RETURN_META_VALUE_NEWPARAMS((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber), &TestClass##id::Func, (@[$2,1,$1:p$2, @]"%s!", buf)); \
+				} \
+				else \
+					RETURN_META_VALUE((m_DelegNumber & 1) ? MRES_IGNORED : MRES_SUPERCEDE, MakeRet< ret_type >::Do(m_DelegNumber)); \
+			} \
+		}; \
+	}; \
+	\
+	bool TestClass##id::ms_DoRecall = false; \
+	SourceHook::CProtoInfoBuilder protoinfo_##id(SourceHook::ProtoInfo::CallConv_ThisCall);
+
 #define THGM_SETUP_PI$1(id@[$2,1,$1:, p$2_type, p$2_passtype, p$2_flags@]) \
 	void setuppi_##id() \
 	{ \

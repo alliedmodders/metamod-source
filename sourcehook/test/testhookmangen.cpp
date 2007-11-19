@@ -422,6 +422,12 @@ namespace
 		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
 
 
+	THGM_MAKE_TEST3_void(150, int, double, int);
+	THGM_SETUP_PI3(150,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal,
+		double, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal);
+
 	// vafmt tests
 	THGM_MAKE_TEST0_vafmt_void(200);
 	THGM_SETUP_PI0(200);
@@ -453,6 +459,25 @@ namespace
 	THGM_MAKE_TEST1_vafmt_void(210, POD<600> &);
 	THGM_SETUP_PI1(210, POD<600> &, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByRef)
 	
+	THGM_MAKE_TEST1_vafmt(211, int, int);
+	THGM_SETUP_PI1(211,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(211, int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1_vafmt(212, double, int);
+	THGM_SETUP_PI1(212,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(212, float, SourceHook::PassInfo::PassType_Float, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1_vafmt(213, PodRet8, int);
+	THGM_SETUP_PI1(213,
+		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
+		);
+	THGM_SETUP_RI(213, PodRet8, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+
 	MAKE_STATE(State_Hello_Func4_Called);
 	MAKE_STATE(State_Hello_Func79_Called);
 
@@ -971,6 +996,9 @@ namespace
 			new State_ObjODtor_Called(13),
 			NULL), "Test110 Part100");
 
+
+		THGM_DO_TEST_void(150, (5, 5.5, 6));
+
 		return true;
 	}
 
@@ -999,6 +1027,12 @@ namespace
 		POD<600> pod600 = MakeRet< POD<600> >::Do(34);
 		THGM_DO_TEST_void(210, (pod600, "Hello %s%d%s", "BA", 1, "L!"));
 		
+
+		THGM_DO_TEST(211, (5, "Hello %s%d%s", "BA", 1, "L!"));
+		THGM_DO_TEST(212, (5, "Hello %s%d%s", "BA", 1, "L!"));
+		THGM_DO_TEST(213, (5, "Hello %s%d%s", "BA", 1, "L!"));
+
+
 		// Test for lange vtable indices
 		Hello *pHello = new Hello;
 		SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
