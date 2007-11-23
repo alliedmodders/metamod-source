@@ -30,6 +30,7 @@ namespace
 	SourceHook::List<const void*> g_PtrHash;
 
 	bool g_Inside_LeafFunc = false;			// inside a hook or a func
+	bool g_Silent_CtorDtor = false;			// inside a hook or a func
 
 
 	// POD / Object types
@@ -74,32 +75,32 @@ namespace
 		Object(char initch)
 		{
 			memset(reinterpret_cast<void*>(x), initch, MYSIZE);
-			if (!g_Inside_LeafFunc)
+			if (!g_Inside_LeafFunc && !g_Silent_CtorDtor)
 				ADD_STATE(State_ObjOCtor_Called(MYSIZE));
 		}
 
 		Object()
 		{
-			if (!g_Inside_LeafFunc)
+			if (!g_Inside_LeafFunc && !g_Silent_CtorDtor)
 				ADD_STATE(State_ObjOCtor_Called(MYSIZE));
 		}
 
 		Object(const Object<MYSIZE> & other)
 		{
 			memcpy(reinterpret_cast<void*>(x), reinterpret_cast<const void*>(other.x), MYSIZE);
-			if (!g_Inside_LeafFunc)
+			if (!g_Inside_LeafFunc && !g_Silent_CtorDtor)
 				ADD_STATE(State_ObjCCtor_Called(MYSIZE));
 		}
 
 		~Object()
 		{
-			if (!g_Inside_LeafFunc)
+			if (!g_Inside_LeafFunc && !g_Silent_CtorDtor)
 				ADD_STATE(State_ObjODtor_Called(MYSIZE));
 		}
 
 		Object & operator = (const Object &other)
 		{
-			if (!g_Inside_LeafFunc)
+			if (!g_Inside_LeafFunc && !g_Silent_CtorDtor)
 				ADD_STATE(State_ObjAssignOp_Called(MYSIZE));
 
 			memcpy(reinterpret_cast<void*>(x), reinterpret_cast<const void*>(other.x), MYSIZE);
@@ -476,6 +477,11 @@ namespace
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
 	THGM_SETUP_RI(213, PodRet8, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal);
+
+	THGM_MAKE_TEST1_vafmt_void(214, Object<133>);
+	THGM_SETUP_PI1(214, Object<133>, SourceHook::PassInfo::PassType_Object,
+		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
 
 
 	MAKE_STATE(State_Hello_Func4_Called);
@@ -1032,8 +1038,14 @@ namespace
 		THGM_DO_TEST(212, (5, "Hello %s%d%s", "BA", 1, "L!"));
 		THGM_DO_TEST(213, (5, "Hello %s%d%s", "BA", 1, "L!"));
 
+		// Silence Object's ctors/dtors: we only want a forced byref param
+		g_Silent_CtorDtor = true;
+		Object<133> *myobj133 = new Object<133>;
+		THGM_DO_TEST_void(214, (*myobj133, "Hello %s%d%s", "BA", 1, "L!"));
+		delete myobj133;
+		g_Silent_CtorDtor = false;
 
-		// Test for lange vtable indices
+		// Test for high vtable indices
 		Hello *pHello = new Hello;
 		SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
 		SourceHook::HookManagerPubFunc helloHM_4 = g_HMAGPtr->MakeHookMan(helloPi, 0, 4);
