@@ -181,9 +181,10 @@ namespace SourceHook
 			jit_int8_t NextRegEBX_ECX_EDX();
 
 			// size info
-			jit_int32_t GetRealSize(const IntPassInfo &info);
-			jit_int32_t GetStackSize(const IntPassInfo &info);
-			short GetParamsStackSize();		// sum(GetStackSize(param[i]), 0 <= i < numOfParams)
+			jit_int32_t GetRealSize(const IntPassInfo &info);			// checks for reference
+			jit_int32_t AlignSize(jit_int32_t x, jit_int32_t boundary);	// align a size
+			jit_int32_t GetParamStackSize(const IntPassInfo &info);		// get the size of a param in the param stack
+			short GetParamsTotalStackSize();		// sum(GetParamStackSize(param[i]), 0 <= i < numOfParams)
 
 			// Helpers
 			void BitwiseCopy_Setup();

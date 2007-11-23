@@ -126,21 +126,25 @@ namespace SourceHook
 
 		jit_int32_t GenContext::GetRealSize(const IntPassInfo &info)
 		{
-			if (info.flags & PassInfo::PassFlag_ByRef)
+			if (info.flags & (PassInfo::PassFlag_ByRef | PassFlag_ForcedByRef))
 			{
 				return SIZE_PTR;
 			}
 			return static_cast<jit_int32_t>(info.size);
 		}
 
+		jit_int32_t GenContext::AlignSize(jit_int32_t x, jit_int32_t boundary)
+		{
+			if (x % boundary != 0)
+				x = (x & ~(boundary-1)) + boundary;
+			return x;
+		}
+		
 		// Computes size on the stack
-		jit_int32_t GenContext::GetStackSize(const IntPassInfo &info)
+		jit_int32_t GenContext::GetParamStackSize(const IntPassInfo &info)
 		{
 			// Align up to 4 byte boundaries
-			jit_int32_t rs = GetRealSize(info);
-			if (rs % 4 != 0)
-				rs = (rs & ~(3)) + 4;
-			return rs;
+			return AlignSize(GetRealSize(info), 4);
 		}
 
 		jit_int8_t GenContext::NextRegEBX_ECX_EDX()
@@ -199,12 +203,12 @@ namespace SourceHook
 			IA32_Pop_Reg(&m_HookFunc, REG_EDI);
 		}
 
-		short GenContext::GetParamsStackSize()
+		short GenContext::GetParamsTotalStackSize()
 		{
 			short acc = 0;
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
 			{
-				acc += GetStackSize(m_Proto.GetParam(i));
+				acc += GetParamStackSize(m_Proto.GetParam(i));
 			}
 
 			return acc;
@@ -216,7 +220,7 @@ namespace SourceHook
 			for (int i = 0; i < p; ++i)
 			{
 				if (m_Proto.GetParam(i).flags & PassFlag_ForcedByRef)
-					off += GetStackSize(m_Proto.GetParam(i));
+					off += AlignSize(m_Proto.GetParam(i).size, 4);
 			}
 			return off;
 		}
@@ -318,7 +322,7 @@ namespace SourceHook
 			{
 				// make room on the stack
 				// sub esp, <size>
-				IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, GetStackSize(pi), MOD_REG);
+				IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, GetParamStackSize(pi), MOD_REG);
 			}
 
 			// if there is a copy constructor..
@@ -404,14 +408,14 @@ namespace SourceHook
 			jit_int32_t cur_offset = param_base_offset;
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
 			{
-				cur_offset += GetStackSize(m_Proto.GetParam(i));
+				cur_offset += GetParamStackSize(m_Proto.GetParam(i));
 			}
 
 			// push parameters in reverse order
 			for (int i = m_Proto.GetNumOfParams() - 1; i >= 0; --i)
 			{
 				const IntPassInfo &pi = m_Proto.GetParam(i);
-				cur_offset -= GetStackSize(pi);
+				cur_offset -= GetParamStackSize(pi);
 				if (pi.flags & PassInfo::PassFlag_ByVal)
 				{
 					switch (pi.type)
@@ -1351,15 +1355,15 @@ namespace SourceHook
 			if (m_Proto.GetRet().size != 0)
 			{
 				v_ret_ptr =				AddVarToFrame(SIZE_PTR);
-				v_orig_ret =			AddVarToFrame(GetStackSize(m_Proto.GetRet()));
-				v_override_ret =		AddVarToFrame(GetStackSize(m_Proto.GetRet()));
-				v_plugin_ret =			AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+				v_orig_ret =			AddVarToFrame(GetParamStackSize(m_Proto.GetRet()));
+				v_override_ret =		AddVarToFrame(GetParamStackSize(m_Proto.GetRet()));
+				v_plugin_ret =			AddVarToFrame(GetParamStackSize(m_Proto.GetRet()));
 			}
 
 			jit_int32_t v_place_for_memret = 0;
 			if (MemRetWithTempObj())
 			{
-				v_place_for_memret = 	AddVarToFrame(GetStackSize(m_Proto.GetRet()));
+				v_place_for_memret = 	AddVarToFrame(GetParamStackSize(m_Proto.GetRet()));
 			}
 
 			jit_int32_t v_place_fbrr_base  = 0;
@@ -1393,7 +1397,7 @@ namespace SourceHook
 				// lea eax, [ebp + param_base_offs + paramssize]
 				// mov argptr, eax
 
-				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_base_offs + GetParamsStackSize() + SIZE_PTR);	// +SIZE_PTR: last const char * is not in protoinfo
+				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_base_offs + GetParamsTotalStackSize() + SIZE_PTR);	// +SIZE_PTR: last const char * is not in protoinfo
 				IA32_Mov_Rm_Reg_DispAuto(&m_HookFunc, REG_EBP, REG_EAX, v_va_argptr);
 			}
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
@@ -1402,7 +1406,7 @@ namespace SourceHook
 				
 				// push valist, fmt param, maxsize, buffer
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
-				IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, param_base_offs + GetParamsStackSize());		// last given param (+4-4, see above)
+				IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, param_base_offs + GetParamsTotalStackSize());		// last given param (+4-4, see above)
 				IA32_Push_Imm32(&m_HookFunc, SourceHook::STRBUF_LEN - 1);
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
@@ -1482,7 +1486,7 @@ namespace SourceHook
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				}
-				cur_param_pos += GetStackSize(pi);
+				cur_param_pos += GetParamStackSize(pi);
 			}
 
 			DoReturn(v_ret_ptr, v_memret_addr);
@@ -1527,7 +1531,7 @@ namespace SourceHook
 				// msvc without varargs:
 				//  callee cleans the stack
 
-				short cleansize = GetParamsStackSize();
+				short cleansize = GetParamsTotalStackSize();
 				// Memory return: address is first param
 				if (m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem)
 					cleansize += SIZE_PTR;
