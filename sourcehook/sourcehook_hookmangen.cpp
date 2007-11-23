@@ -390,9 +390,12 @@ namespace SourceHook
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
 					(pi.flags & PassInfo::PassFlag_ByVal) && (pi.flags & PassFlag_ForcedByRef))
 				{
+					// Actually, this is only for GCC (see line above: ForcedByRef)
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, fbrr_base + GetForcedByRefParamOffset(i));
+					IA32_Push_Reg(&m_HookFunc, REG_ECX);
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					IA32_Pop_Reg(&m_HookFunc, REG_ECX);
 				}
 			}
 		}
