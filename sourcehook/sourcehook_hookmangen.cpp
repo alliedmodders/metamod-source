@@ -378,6 +378,8 @@ namespace SourceHook
 				// :TODO: alignment here?
 				//  can't use normal alignment methods
 				//  because an unknown number of bytes has been pushed already (the other params)
+
+				// save eax
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
 
 				// compute dest addr to ECX
@@ -397,6 +399,11 @@ namespace SourceHook
 				// call
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(pi.pCopyCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EDX);
+
+				// gcc: pop this ptr off the stack
+				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
+				// pop other params off the stack
+				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
 
 				// restore eax
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
@@ -1883,7 +1890,7 @@ namespace SourceHook
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
 			{
 				IntPassInfo &pi = m_Proto.GetParam(i);
-				if (pi.type == PassInfo::PassType_Object &&
+				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ByVal) && 
 					(pi.flags & PassInfo::PassFlag_ODtor))
 				{
 					pi.flags |= PassFlag_ForcedByRef;
