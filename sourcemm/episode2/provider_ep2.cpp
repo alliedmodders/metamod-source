@@ -99,6 +99,7 @@ void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
 		DisplayError("Could not find ICvar! Metamod cannot load.");
 		return;
 	}
+	g_pCVar = icvar;
 
 	if ((gameclients = (IServerGameClients *)(serverFactory("ServerGameClients003", NULL)))
 		== NULL)
