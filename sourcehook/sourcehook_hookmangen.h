@@ -180,6 +180,17 @@ namespace SourceHook
 			int m_RegCounter;
 			jit_int8_t NextRegEBX_ECX_EDX();
 
+			int m_BytesPushedAfterInitialAlignment;
+			enum AlignStackFlags
+			{
+				AlignStack_GCC_ThisOnStack = 1,
+				AlignStack_MSVC_ThisOnStack = 2,
+				AlignStack_MemRet = 4
+			};
+			jit_int32_t AlignStackBeforeCall(int paramsize, int flags);
+			void AlignStackAfterCall(jit_int32_t numofbytes);
+			void CheckAlignmentBeforeCall();
+
 			// size info
 			jit_int32_t GetRealSize(const IntPassInfo &info);			// checks for reference
 			jit_int32_t AlignSize(jit_int32_t x, jit_int32_t boundary);	// align a size

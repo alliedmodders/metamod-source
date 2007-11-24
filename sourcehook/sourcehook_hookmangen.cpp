@@ -203,6 +203,53 @@ namespace SourceHook
 			IA32_Pop_Reg(&m_HookFunc, REG_EDI);
 		}
 
+		jit_int32_t GenContext::AlignStackBeforeCall(int paramsize, int flags)
+		{
+			paramsize +=
+				GCC_ONLY(	((flags & AlignStack_GCC_ThisOnStack)!=0	? SIZE_PTR : 0) + )
+				MSVC_ONLY(	((flags & AlignStack_MSVC_ThisOnStack)!=0	? SIZE_PTR : 0) + )
+							((flags & AlignStack_MemRet)!=0				? SIZE_PTR : 0);
+
+			// At the beginning of the hookfunc, the stack is aligned to a 16 bytes boundary.
+			// Then, m_BytesPushedAfterInitialAlignment were pushed (can also be 0).
+			
+			// After this function is called, paramsize bytes will be pushed onto the stack
+			// After that, the alignment has to be a 16 bytes boundary again.
+
+
+			// How many bytes we would subtract if the alignment was alright now:
+			int subtractFromEsp = 16 - (paramsize % 16);
+			if (subtractFromEsp == 16)
+				subtractFromEsp = 0;
+
+			// But: there might be bytes pushed alreay!
+			subtractFromEsp -= m_BytesPushedAfterInitialAlignment;
+
+			// For example: paramsize was 0 and m_BytesPushedAfterInitialAlignment was 4.
+			//	we then have to push another 12 bytes to reach 16 bytes alignment again.
+
+			if (subtractFromEsp < 0)
+				subtractFromEsp = 16 - ((-subtractFromEsp) % 16);
+
+			IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, subtractFromEsp, MOD_REG);
+
+			return subtractFromEsp;
+		}
+
+		void GenContext::AlignStackAfterCall(jit_int32_t numofbytes)
+		{
+			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, numofbytes, MOD_REG);
+		}
+
+		void GenContext::CheckAlignmentBeforeCall()
+		{
+#if 0
+			IA32_Test_Rm_Imm32(&m_HookFunc, REG_ESP, 15, MOD_REG);
+			IA32_Jump_Cond_Imm8(&m_HookFunc, CC_Z, 1);
+			IA32_Int3(&m_HookFunc);
+#endif
+		}
+
 		short GenContext::GetParamsTotalStackSize()
 		{
 			short acc = 0;
@@ -220,7 +267,7 @@ namespace SourceHook
 			for (int i = 0; i < p; ++i)
 			{
 				if (m_Proto.GetParam(i).flags & PassFlag_ForcedByRef)
-					off += AlignSize(m_Proto.GetParam(i).size, 4);
+					off += AlignSize(static_cast<jit_int32_t>(m_Proto.GetParam(i).size), 4);
 			}
 			return off;
 		}
@@ -328,31 +375,35 @@ namespace SourceHook
 			// if there is a copy constructor..
 			if (pi.pCopyCtor)
 			{
-				// save eax
-				// push src addr
-				// this= target addr = forcedbyref ? ebp+place_fbrr : esp+12
-				// call copy constructor
-				// restore eax
-			
+				// :TODO: alignment here?
+				//  can't use normal alignment methods
+				//  because an unknown number of bytes has been pushed already (the other params)
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
-				
+
+				// compute dest addr to ECX
+				// = forcedbyref ? ebp+place_fbrr : esp+12
 				if (pi.flags & PassFlag_ForcedByRef)
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, place_fbrr);
 				else
 					IA32_Lea_Reg_DispRegMultImm8(&m_HookFunc, REG_ECX, REG_NOIDX, REG_ESP, NOSCALE, 4);
 				
+				// compute src addr to EAX
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EAX, REG_EBP, param_offset);
+
+				// push params (gcc: also this)
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
+
+				// call
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(pi.pCopyCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EDX);
-				GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
+
+				// restore eax
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
 			}
 			else
 			{
 				// bitwise copy
-
 				
 				BitwiseCopy_Setup();
 
@@ -379,7 +430,7 @@ namespace SourceHook
 				return SIZE_PTR;
 			}
 			
-			return DownCastSize(pi.size);
+			return GetParamStackSize(pi);
 		}
 
 		void GenContext::DestroyParams(jit_int32_t fbrr_base)
@@ -391,11 +442,15 @@ namespace SourceHook
 					(pi.flags & PassInfo::PassFlag_ByVal) && (pi.flags & PassFlag_ForcedByRef))
 				{
 					// Actually, this is only for GCC (see line above: ForcedByRef)
+					jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, fbrr_base + GetForcedByRefParamOffset(i));
 					IA32_Push_Reg(&m_HookFunc, REG_ECX);
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
+					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					IA32_Pop_Reg(&m_HookFunc, REG_ECX);
+
+					AlignStackAfterCall(tmpAlign);
 				}
 			}
 		}
@@ -436,7 +491,7 @@ namespace SourceHook
 				}
 				else if (pi.flags & PassInfo::PassFlag_ByRef)
 				{
-					PushRef(cur_offset, pi);
+					ret = PushRef(cur_offset, pi);
 				}
 				else
 				{
@@ -501,14 +556,19 @@ namespace SourceHook
 						// call it
 						// gcc: clean up
 
+						jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR, AlignStack_GCC_ThisOnStack);
+
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_place_for_memret);
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_where);
 						IA32_Push_Reg(&m_HookFunc, REG_EDX);
 						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+						CheckAlignmentBeforeCall();
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
 						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
+
+						AlignStackAfterCall(tmpAlign);
 					}
 					else
 					{
@@ -531,11 +591,16 @@ namespace SourceHook
 						//call it
 						//gcc: clean up
 
+						jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
+
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_place_for_memret);
 						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+						CheckAlignmentBeforeCall();
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
 						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
+
+						AlignStackAfterCall(tmpAlign);
 					}
 				}
 				else
@@ -636,7 +701,7 @@ namespace SourceHook
 			tmppos = IA32_Jump_Cond_Imm8(&m_HookFunc, CC_NGE, 0);
 			m_HookFunc.start_count(counter);
 
-			// eax = pContext->GetOverrideRetPtr()
+			// eax = pContext->GetOverrideRetPtr()					no alignment needs
 			//   ECX = pContext
 			//   gcc: push ecx
 			//   eax = [ecx]
@@ -672,6 +737,8 @@ namespace SourceHook
 					// call it
 					// gcc: clean up
 
+					jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR, AlignStack_GCC_ThisOnStack);
+
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_plugin_ret);
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 #if SH_COMP == SH_COMP_MSVC
@@ -681,8 +748,11 @@ namespace SourceHook
 #endif
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
+
+					AlignStackAfterCall(tmpAlign);
 				}
 				else
 				{
@@ -817,6 +887,8 @@ namespace SourceHook
 					// call it
 					// gcc: clean up
 
+					jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR, AlignStack_GCC_ThisOnStack);
+
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EDX, REG_ECX, MOD_REG);
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
@@ -827,8 +899,11 @@ namespace SourceHook
 #endif
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pCopyCtor));
+					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
+
+					AlignStackAfterCall(tmpAlign);
 				}
 				else
 				{
@@ -898,6 +973,12 @@ namespace SourceHook
 			//   gcc: clean up 
 			
 			jit_int32_t caller_clean_bytes = 0;			// gcc always, msvc never (hooks never have varargs!)
+
+			jit_int32_t alignBytes = AlignStackBeforeCall(
+				GetParamsTotalStackSize() + ((m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)!=0 ? SIZE_PTR : 0),
+				AlignStack_GCC_ThisOnStack | ((m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem) == 0 ? 0 : AlignStack_MemRet)
+				);
+
 			// vafmt: push va_buf
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
 			{
@@ -914,7 +995,10 @@ namespace SourceHook
 			caller_clean_bytes += PushMemRetPtr(v_plugin_ret, v_place_for_memret);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EAX, 2*SIZE_PTR);
+			CheckAlignmentBeforeCall();
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+			AlignStackAfterCall(alignBytes);
 
 			DestroyParams(v_place_fbrr_base);
 
@@ -956,7 +1040,7 @@ namespace SourceHook
 			// jump back to loop begin
 			tmppos2 = IA32_Jump_Imm32(&m_HookFunc, 0);
 			m_HookFunc.end_count(loop_begin_counter);
-			m_HookFunc.rewrite(tmppos2, -static_cast<jit_int32_t>(loop_begin_counter));
+			m_HookFunc.rewrite(tmppos2, static_cast<jit_int32_t>(-loop_begin_counter));
 
 			m_HookFunc.end_count(counter);
 			m_HookFunc.rewrite(tmppos, static_cast<jit_int32_t>(counter));
@@ -1016,7 +1100,14 @@ namespace SourceHook
 			m_HookFunc.start_count(counter2);
 
 			jit_int32_t caller_clean_bytes = 0;			// gcc always, msvc when cdecl-like (varargs)
-			
+		
+			jit_int32_t alignBytes = AlignStackBeforeCall(
+				GetParamsTotalStackSize()  + ((m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)!=0 ? 2*SIZE_PTR : 0),
+				AlignStack_GCC_ThisOnStack |
+				((m_Proto.GetRet().flags & PassInfo::PassFlag_RetMem) == 0 ? 0 : AlignStack_MemRet) |
+				((m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs) == 0 ? 0 : AlignStack_MSVC_ThisOnStack)
+				);
+
 			// vafmt: push va_buf, then "%s"
 			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
 			{
@@ -1056,7 +1147,10 @@ namespace SourceHook
 
 			// call
 			IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_EBP, v_vfnptr_origentry);
+			CheckAlignmentBeforeCall();
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
+
+			AlignStackAfterCall(alignBytes);
 
 			// cleanup
 			if (SH_COMP == SH_COMP_GCC || (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVarArgs))
@@ -1099,14 +1193,19 @@ namespace SourceHook
 					// call it
 					// gcc: clean up
 
+					jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR, AlignStack_GCC_ThisOnStack);
+
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_EDX, REG_EBP, v_override_ret);
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 					GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG));
+
+					AlignStackAfterCall(tmpAlign);
 				}
 				else
 				{
@@ -1390,6 +1489,10 @@ namespace SourceHook
 			
 			IA32_Sub_Rm_Imm32(&m_HookFunc, REG_ESP, ComputeVarsSize(), MOD_REG);
 
+			// Initial stack alignment
+			IA32_And_Rm_Imm32(&m_HookFunc, REG_ESP, MOD_REG, -16);
+			m_BytesPushedAfterInitialAlignment = 0;
+
 			// init status localvar
 			IA32_Mov_Rm_Imm32_Disp8(&m_HookFunc, REG_EBP, MRES_IGNORED, v_status);
 
@@ -1407,6 +1510,8 @@ namespace SourceHook
 			{
 				// vsnprintf
 				
+				jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR*3 + sizeof(size_t), AlignStack_GCC_ThisOnStack);
+
 				// push valist, fmt param, maxsize, buffer
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
 				IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, param_base_offs + GetParamsTotalStackSize());		// last given param (+4-4, see above)
@@ -1416,10 +1521,13 @@ namespace SourceHook
 				
 				// call
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(&vsnprintf));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
 				// Clean up (cdecl)
 				IA32_Add_Rm_Imm32(&m_HookFunc, REG_ESP, 0x10, MOD_REG);
+
+				AlignStackAfterCall(tmpAlign);
 
 				// Set trailing zero
 				IA32_Xor_Reg_Rm(&m_HookFunc, REG_EDX, REG_EDX, MOD_REG);
@@ -1430,10 +1538,13 @@ namespace SourceHook
 			if((m_Proto.GetRet().flags & PassInfo::PassFlag_ByVal) &&
 				m_Proto.GetRet().pNormalCtor)
 			{
+				jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
+
 				// orig_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
@@ -1441,6 +1552,7 @@ namespace SourceHook
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
@@ -1448,8 +1560,11 @@ namespace SourceHook
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
+
+				AlignStackAfterCall(tmpAlign);
 
 				// _don't_ call a constructor for v_place_for_memret !
 			}
@@ -1477,6 +1592,9 @@ namespace SourceHook
 			CallEndContext(v_pContext);
 
 			// Call destructors of byval object params which have a destructor
+
+			jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
+
 			jit_int32_t cur_param_pos = param_base_offs;
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
 			{
@@ -1487,10 +1605,15 @@ namespace SourceHook
 				{
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, cur_param_pos);
 					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
+					GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
+					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
+					GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 				}
 				cur_param_pos += GetParamStackSize(pi);
 			}
+
+			AlignStackAfterCall(tmpAlign);
 
 			DoReturn(v_ret_ptr, v_memret_addr);
 
@@ -1502,26 +1625,37 @@ namespace SourceHook
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);
 				IA32_Push_Reg(&m_HookFunc, REG_EDX);
 
+				m_BytesPushedAfterInitialAlignment += 8;
+
+				jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
+
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
+				AlignStackAfterCall(tmpAlign);
+
 				IA32_Pop_Reg(&m_HookFunc, REG_EDX);
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
+
+				m_BytesPushedAfterInitialAlignment -= 8;
 			}
 
 			// epilogue

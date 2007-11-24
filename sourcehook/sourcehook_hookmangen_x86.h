@@ -111,6 +111,7 @@
 #define IA32_CMPSB				0xA6	// no extra encoding
 #define IA32_TEST_RM_REG8		0x84	// encoding is /r
 #define IA32_TEST_RM_REG		0x85	// encoding is /r
+#define IA32_TEST_RM_IMM32		0xF7	// encoding is /0 <imm32>
 #define IA32_JCC_IMM			0x70	// encoding is +cc <imm8>
 #define IA32_JCC_IMM32_1		0x0F	// opcode part 1
 #define IA32_JCC_IMM32_2		0x80	// encoding is +cc <imm32>
@@ -1475,6 +1476,13 @@ namespace SourceHook
 		{
 			jit->write_ubyte(IA32_TEST_RM_REG8);
 			jit->write_ubyte(ia32_modrm(mode, reg2, reg1));
+		}
+
+		inline void IA32_Test_Rm_Imm32(JitWriter *jit, jit_uint8_t operand1, jit_int32_t imm_operand, jit_uint8_t mode)
+		{
+			jit->write_ubyte(IA32_TEST_RM_IMM32);
+			jit->write_ubyte(ia32_modrm(mode, 0, operand1));
+			jit->write_int32(imm_operand);
 		}
 
 		inline void IA32_Cmp_Rm_Reg(JitWriter *jit, jit_uint8_t dest, jit_uint8_t src, jit_uint8_t mode)
