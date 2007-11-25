@@ -66,11 +66,11 @@ namespace SourceHook
 				alignBytes %= minAlignment;
 				neededSize += alignBytes;
 
-				if (gap_end - gap_begin >= neededSize)
+				if (gapsize >= neededSize)
 				{
-					if (gap_end - gap_begin < smallestgap_size)
+					if (gapsize < smallestgap_size)
 					{
-						smallestgap_size = gap_end - gap_begin;
+						smallestgap_size = gapsize;
 						smallestgap_pos = gap_begin;
 						outAlignBytes = alignBytes;
 					}
