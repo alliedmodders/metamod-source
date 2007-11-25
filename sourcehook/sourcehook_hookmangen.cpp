@@ -243,11 +243,11 @@ namespace SourceHook
 
 		void GenContext::CheckAlignmentBeforeCall()
 		{
-#if 0
+//#if 0
 			IA32_Test_Rm_Imm32(&m_HookFunc, REG_ESP, 15, MOD_REG);
 			IA32_Jump_Cond_Imm8(&m_HookFunc, CC_Z, 1);
 			IA32_Int3(&m_HookFunc);
-#endif
+//#endif
 		}
 
 		short GenContext::GetParamsTotalStackSize()
@@ -400,10 +400,8 @@ namespace SourceHook
 				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(pi.pCopyCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EDX);
 
-				// gcc: pop this ptr off the stack
-				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
-				// pop other params off the stack
-				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
+				// gcc: clean up stack
+				GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
 
 				// restore eax
 				IA32_Pop_Reg(&m_HookFunc, REG_EAX);
@@ -573,7 +571,7 @@ namespace SourceHook
 						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
 						CheckAlignmentBeforeCall();
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
-						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
+						GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
 
 						AlignStackAfterCall(tmpAlign);
 					}
@@ -1006,15 +1004,15 @@ namespace SourceHook
 			IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
 			AlignStackAfterCall(alignBytes);
-
-			DestroyParams(v_place_fbrr_base);
-
-			SaveRetVal(v_plugin_ret, v_place_for_memret);
-
+			
 			// cleanup (gcc only)
 			//   params + thisptr
 			if (SH_COMP == SH_COMP_GCC)
 				IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, caller_clean_bytes + SIZE_PTR, MOD_REG);
+
+			DestroyParams(v_place_fbrr_base);
+
+			SaveRetVal(v_plugin_ret, v_place_for_memret);
 
 			// process meta return:
 			//  prev_res = cur_res
@@ -1517,7 +1515,7 @@ namespace SourceHook
 			{
 				// vsnprintf
 				
-				jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR*3 + sizeof(size_t), AlignStack_GCC_ThisOnStack);
+				jit_int32_t tmpAlign = AlignStackBeforeCall(SIZE_PTR*3 + sizeof(size_t), 0);
 
 				// push valist, fmt param, maxsize, buffer
 				IA32_Push_Reg(&m_HookFunc, REG_EAX);

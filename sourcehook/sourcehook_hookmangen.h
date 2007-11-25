@@ -89,7 +89,11 @@ namespace SourceHook
 					memset((void*)newBuf, 0xCC, m_AllocatedSize);			// :TODO: remove this !
 					memcpy((void*)newBuf, (const void*)m_pData, m_Size);
 					if (m_pData)
+					{
+						ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
+						ms_Allocator.SetRW(newBuf);
 						ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
+					}
 					m_pData = newBuf;
 				}
 				memcpy((void*)(m_pData + m_Size), (const void*)data, size);
