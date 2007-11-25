@@ -231,14 +231,16 @@ namespace SourceHook
 			if (subtractFromEsp < 0)
 				subtractFromEsp = 16 - ((-subtractFromEsp) % 16);
 
-			IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, subtractFromEsp, MOD_REG);
+			if (subtractFromEsp != 0)
+				IA32_Sub_Rm_ImmAuto(&m_HookFunc, REG_ESP, subtractFromEsp, MOD_REG);
 
 			return subtractFromEsp;
 		}
 
 		void GenContext::AlignStackAfterCall(jit_int32_t numofbytes)
 		{
-			IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, numofbytes, MOD_REG);
+			if (numofbytes != 0)
+				IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, numofbytes, MOD_REG);
 		}
 
 		void GenContext::CheckAlignmentBeforeCall()
