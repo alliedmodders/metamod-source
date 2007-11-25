@@ -243,11 +243,11 @@ namespace SourceHook
 
 		void GenContext::CheckAlignmentBeforeCall()
 		{
-//#if 0
+#if 0
 			IA32_Test_Rm_Imm32(&m_HookFunc, REG_ESP, 15, MOD_REG);
 			IA32_Jump_Cond_Imm8(&m_HookFunc, CC_Z, 1);
 			IA32_Int3(&m_HookFunc);
-//#endif
+#endif
 		}
 
 		short GenContext::GetParamsTotalStackSize()
