@@ -1200,5 +1200,30 @@ bool TestCPageAlloc(std::string &error)
 
 	memset((void*)test4[2], 0, ps / 4);
 
+	// alignement tests
+	CPageAlloc alloc1(1);
+	CPageAlloc alloc4(4);
+	CPageAlloc alloc16(16);
+
+	void *last1 = alloc1.Alloc(1);
+	void *last4 = alloc4.Alloc(4);
+	void *last16 = alloc16.Alloc(16);
+	void *cur;
+	for (int i = 0; i < 20; ++i)
+	{
+		cur = alloc1.Alloc(1);
+		CHECK_COND(reinterpret_cast<intptr_t>(cur) == reinterpret_cast<intptr_t>(last1) + 1, "Part 4.1");
+		last1 = cur;
+
+		cur = alloc4.Alloc(1);
+		CHECK_COND(reinterpret_cast<intptr_t>(cur) == reinterpret_cast<intptr_t>(last4) + 4, "Part 4.2");
+		last4 = cur;
+
+		cur = alloc16.Alloc(1);
+		CHECK_COND(reinterpret_cast<intptr_t>(cur) == reinterpret_cast<intptr_t>(last16) + 16, "Part 4.3");
+		last16 = cur;
+	}
+
+	alloc16.Free(alloc16.Alloc(1));
 	return true;
 }

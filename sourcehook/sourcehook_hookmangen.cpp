@@ -36,7 +36,7 @@ namespace SourceHook
 {
 	namespace Impl
 	{
-		CPageAlloc GenBuffer::ms_Allocator;
+		CPageAlloc GenBuffer::ms_Allocator(16);
 
 		template <class T>
 		jit_int32_t DownCastPtr(T ptr)

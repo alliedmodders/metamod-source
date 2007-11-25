@@ -46,13 +46,36 @@ namespace SourceHook
 		};
 
 		typedef List<AllocationUnit> AUList;
-
 		struct AllocatedRegion
 		{
 			void *startPtr;
 			size_t size;
 			bool isolated;					// may contain only one AU
+			size_t minAlignment;
 			AUList allocUnits;
+
+			void CheckGap(size_t gap_begin, size_t gap_end, size_t reqsize,
+				size_t &smallestgap_pos, size_t &smallestgap_size, size_t &outAlignBytes)
+			{
+				size_t gapsize = gap_end - gap_begin;
+				// How many bytes do we actually need here?
+				//   = requested size + alignment bytes
+				size_t neededSize = reqsize;
+				size_t alignBytes = minAlignment - ((reinterpret_cast<intptr_t>(startPtr) + gap_begin) % minAlignment);
+
+				alignBytes %= minAlignment;
+				neededSize += alignBytes;
+
+				if (gap_end - gap_begin >= neededSize)
+				{
+					if (gap_end - gap_begin < smallestgap_size)
+					{
+						smallestgap_size = gap_end - gap_begin;
+						smallestgap_pos = gap_begin;
+						outAlignBytes = alignBytes;
+					}
+				}
+			}
 
 			bool TryAlloc(size_t reqsize, void * &outAddr)
 			{
@@ -64,33 +87,20 @@ namespace SourceHook
 				size_t lastend = 0;
 				size_t smallestgap_pos = size + 1;
 				size_t smallestgap_size = size + 1;
+				size_t alignmentbytes = 0;
 
 				for (AUList::iterator iter = allocUnits.begin(); iter != allocUnits.end(); ++iter)
 				{
-					if (iter->begin_offset - lastend >= reqsize)
-					{
-						if (iter->begin_offset - lastend < smallestgap_size)
-						{
-							smallestgap_size = iter->begin_offset - lastend;
-							smallestgap_pos = lastend;
-						}
-					}
+					CheckGap(lastend, iter->begin_offset, reqsize, smallestgap_pos, smallestgap_size, alignmentbytes);
 					lastend = iter->begin_offset + iter->size;
 				}
 
-				if (size - lastend >= reqsize)
-				{
-					if (size - lastend < smallestgap_size)
-					{
-						smallestgap_size = size - lastend;
-						smallestgap_pos = lastend;
-					}
-				}
+				CheckGap(lastend, size, reqsize, smallestgap_pos, smallestgap_size, alignmentbytes);
 
 				if (smallestgap_pos < size)
 				{
-					outAddr = reinterpret_cast<void*>(reinterpret_cast<char*>(startPtr) + smallestgap_pos);
-					allocUnits.push_sorted( AllocationUnit(smallestgap_pos, reqsize) );
+					outAddr = reinterpret_cast<void*>(reinterpret_cast<char*>(startPtr) + smallestgap_pos + alignmentbytes);
+					allocUnits.push_sorted( AllocationUnit(smallestgap_pos, reqsize + alignmentbytes) );
 					return true;
 				}
 				else
@@ -104,11 +114,16 @@ namespace SourceHook
 				if (addr < startPtr || addr >= reinterpret_cast<void*>(reinterpret_cast<char*>(startPtr) + size))
 					return false;
 
-				size_t offs = reinterpret_cast<char*>(addr) - reinterpret_cast<char*>(startPtr);
+				intptr_t start = reinterpret_cast<intptr_t>(startPtr);
 
 				for (AUList::iterator iter = allocUnits.begin(); iter != allocUnits.end(); ++iter)
 				{
-					if (iter->begin_offset == offs)
+					size_t AUBegin = start + iter->begin_offset;
+					void *alignedAUBegin = reinterpret_cast<void*>(
+						AUBegin + ((minAlignment - AUBegin % minAlignment) % minAlignment)
+						);
+					
+					if (addr == alignedAUBegin)
 					{
 						allocUnits.erase(iter);
 						return true;
@@ -135,6 +150,7 @@ namespace SourceHook
 
 		typedef List<AllocatedRegion> ARList;
 
+		size_t m_MinAlignment;
 		size_t m_PageSize;
 		ARList m_Regions;
 
@@ -143,6 +159,7 @@ namespace SourceHook
 			AllocatedRegion newRegion;
 			newRegion.startPtr = 0;
 			newRegion.isolated = isolated;
+			newRegion.minAlignment = m_MinAlignment;
 
 			// Compute real size -> align up to m_PageSize boundary
 
@@ -190,7 +207,7 @@ namespace SourceHook
 		}
 
 	public:
-		CPageAlloc()
+		CPageAlloc(size_t minAlignment = 1 /* power of 2 */ ) : m_MinAlignment(minAlignment)
 		{
 #ifdef __linux__
 			m_PageSize = sysconf(_SC_PAGESIZE);
