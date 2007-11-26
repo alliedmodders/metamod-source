@@ -13,6 +13,7 @@
 
 #include "sourcehook_impl.h"
 #include "sourcehook.h"
+#include "sourcehook_hookmangen.h"
 
 using namespace std;
 bool g_Verbose;
@@ -46,6 +47,8 @@ DECL_TEST(Multi);
 DECL_TEST(Ref);
 DECL_TEST(RefRet);
 DECL_TEST(VPHooks);
+DECL_TEST(CPageAlloc);					// in testhookmangen.cpp
+DECL_TEST(HookManGen);
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +71,8 @@ int main(int argc, char *argv[])
 	DO_TEST(Ref);
 	DO_TEST(RefRet);
 	DO_TEST(VPHooks);
+	DO_TEST(CPageAlloc);
+	DO_TEST(HookManGen);
 
 	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
 	cout << "Total: " << passed + failed << endl;
@@ -107,3 +112,14 @@ void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
 }
+
+SourceHook::IHookManagerAutoGen *Test_HMAG_Factory(SourceHook::ISourceHook *shptr)
+{
+	return new SourceHook::Impl::CHookManagerAutoGen(shptr);
+}
+
+void Test_HMAG_Delete(SourceHook::IHookManagerAutoGen *ptr)
+{
+	delete static_cast<SourceHook::Impl::CHookManagerAutoGen*>(ptr);
+}
+

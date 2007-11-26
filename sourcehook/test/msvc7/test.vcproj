@@ -249,6 +249,9 @@
 				RelativePath="..\..\sourcehook.cpp">
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.cpp">
+			</File>
+			<File
 				RelativePath="..\test1.cpp">
 			</File>
 			<File
@@ -265,6 +268,9 @@
 			</File>
 			<File
 				RelativePath="..\testbail2.cpp">
+			</File>
+			<File
+				RelativePath="..\testhookmangen.cpp">
 			</File>
 			<File
 				RelativePath="..\testlist.cpp">
@@ -307,6 +313,12 @@
 				RelativePath="..\..\sh_list.h">
 			</File>
 			<File
+				RelativePath="..\..\sh_memory.h">
+			</File>
+			<File
+				RelativePath="..\..\sh_pagealloc.h">
+			</File>
+			<File
 				RelativePath="..\..\sh_stack.h">
 			</File>
 			<File
@@ -320,6 +332,12 @@
 			</File>
 			<File
 				RelativePath="..\..\sourcehook.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen.h">
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen_x86.h">
 			</File>
 			<File
 				RelativePath="..\..\sourcehook_impl.h">
@@ -346,6 +364,9 @@
 				RelativePath="..\..\sourcehook_impl_cvfnptr.h">
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_pibuilder.h">
+			</File>
+			<File
 				RelativePath="..\sourcehook_test.h">
 			</File>
 			<File
@@ -353,6 +374,9 @@
 			</File>
 			<File
 				RelativePath="..\testevents.h">
+			</File>
+			<File
+				RelativePath="..\testhookmangen.h">
 			</File>
 			<Filter
 				Name="generate"
@@ -377,6 +401,9 @@ popd
 "
 							Outputs="..\sourcehook.h"/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\testhookmangen.hxx">
 				</File>
 			</Filter>
 		</Filter>

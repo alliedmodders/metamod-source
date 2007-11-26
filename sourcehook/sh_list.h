@@ -103,6 +103,20 @@ namespace SourceHook
 			insert(begin(), obj);
 		}
 
+		void push_sorted(const T &obj)
+		{
+			iterator iter;
+			for (iter = begin(); iter != end(); ++iter)
+			{
+				if (obj < *iter)
+				{
+					insert(iter, obj);
+					return;
+				}
+			}
+			push_back(obj);
+		}
+
 		size_t size() const
 		{
 			return m_Size;
@@ -301,6 +315,7 @@ namespace SourceHook
 			return *this;
 		}
 	};
+
 };	//NAMESPACE
 
 #endif //_INCLUDE_CSDM_LIST_H

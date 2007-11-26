@@ -94,6 +94,7 @@ CreateInterfaceFn physics_factory = NULL;
 CreateInterfaceFn filesystem_factory = NULL;
 CGlobalVars *gpGlobals = NULL;
 CSourceHookImpl g_SourceHook;
+CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
 ISourceHook *g_SHPtr = &g_SourceHook;
 PluginId g_PLID = Pl_Console;
 META_RES last_meta_res;
@@ -1089,6 +1090,14 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 			*ret = IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
+	}
+	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
+	{
+		if (ret)
+		{
+			*ret = IFACE_OK;
+		}
+		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
 	}
 
 	CPluginManager::CPlugin *pl;

@@ -35,6 +35,11 @@
 // 1 - standard
 #define SH_HOOKMAN_VERSION 1
 
+// Hookmanautogen versions
+//  1 - initial
+#define SH_HOOKMANAUTOGEN_IFACE_VERSION 1
+#define SH_HOOKMANAUTOGEN_IMPL_VERSION 1
+
 // The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
 // It's used in various macros
 #ifndef SH_GLOB_SHPTR
@@ -173,7 +178,13 @@ namespace SourceHook
 			PassFlag_ODtor		= (1<<2),		/**< Object has a destructor */
 			PassFlag_OCtor		= (1<<3),		/**< Object has a normal non-trivial constructor */
 			PassFlag_AssignOp	= (1<<4),		/**< Object has a non-trivial assignment operator */
-			PassFlag_CCtor		= (1<<5)		/**< Object has a copy constructor (which takes const Object& as only parameter) */
+			PassFlag_CCtor		= (1<<5),		/**< Object has a copy constructor (which takes const Object& as only parameter) */
+
+			// The following two flags are only relevant for byval return types.
+			// SH tries to auto-detect these
+			// If you want to override SH's auto-detection, pass them in yourself
+			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
+			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
 		};
 
 		size_t size;			//!< Size of the data being passed
@@ -196,9 +207,13 @@ namespace SourceHook
 	{
 		enum CallConvention
 		{
-			CallConv_Unknown,		/**< Unknown  -- no extra info available */
-			CallConv_ThisCall,		/**< This call (object pointer required) */
-			CallConv_Cdecl,			/**< Standard C call */
+			CallConv_Unknown,		/**< Unknown  -- no extra info available (0)*/
+			CallConv_ThisCall,		/**< This call (object pointer required) (1)*/
+			CallConv_Cdecl,			/**< C call								 (2)*/
+			CallConv_StdCall,		/**< Windows "stdcall"					 (3)*/
+
+			CallConv_HasVarArgs = (1<<16),	/**< Has variable arguments */
+			CallConv_HasVafmt = CallConv_HasVarArgs | (1<<17)	/**< last params: const char*, ... */
 		};
 
 		int numOfParams;			//!< number of parameters
@@ -462,6 +477,17 @@ namespace SourceHook
 		virtual void EndContext(IHookContext *pCtx) = 0;
 	};
 
+
+	class IHookManagerAutoGen
+	{
+	public:
+		virtual int GetIfaceVersion() = 0;
+		virtual int GetImplVersion() = 0;
+		
+		virtual HookManagerPubFunc MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx) = 0;
+		virtual void ReleaseHookMan(HookManagerPubFunc pubFunc) = 0;
+	};
+	
 	// For META_RESULT_ORIG_RET and META_RESULT_OVERRIDE_RET:
 	//  These have to be able to return references. If T is a reference, the pointers returned
 	//  from the SH_GLOB_SHPTR are pointers to instances of ReferenceCarrier<T>::type.
@@ -1014,7 +1040,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	char buf[::SourceHook::STRBUF_LEN]; \
 	va_list ap; \
 	va_start(ap, fmt); \
-	vsnprintf(buf, sizeof(buf) - 1, fmt, ap); \
+	vsnprintf(buf, sizeof(buf), fmt, ap); \
 	buf[sizeof(buf) - 1] = 0; \
 	va_end(ap);
 
@@ -1416,7 +1442,19 @@ namespace SourceHook
 	}
 
 	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
+	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(@[$2,1,$1:Param$2, @]...))
+	{
+		return OverrideFunctor<RetType>();
+	}
+
+	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
 	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
+
+	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1:Param$2, @]...))
 	{
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}

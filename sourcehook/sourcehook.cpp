@@ -151,6 +151,25 @@ namespace SourceHook
 
 			return true;
 		}
+
+		bool CProto::ExactlyEqual(const CProto &other) const
+		{
+			if (m_Version != other.m_Version ||
+				m_NumOfParams != other.m_NumOfParams ||
+				m_Convention != other.m_Convention ||
+				GetRet() != other.GetRet())
+			{
+				return false;
+			}
+
+			for (int i = 0; i < m_NumOfParams; ++i)
+			{
+				if(GetParam(i) != other.GetParam(i))
+					return false;
+			}
+
+			return true;
+		}
 		
 		//////////////////////////////////////////////////////////////////////////
 		// CHookManager

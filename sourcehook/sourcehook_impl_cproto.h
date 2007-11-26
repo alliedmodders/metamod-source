@@ -26,6 +26,21 @@ namespace SourceHook
 			void *pCopyCtor;
 			void *pDtor;
 			void *pAssignOperator;
+
+			bool operator == (const IntPassInfo &other) const
+			{
+				return size == other.size
+					&& type == other.type
+					&& flags == other.flags
+					&& pNormalCtor == other.pNormalCtor
+					&& pDtor == other.pDtor
+					&& pAssignOperator == other.pAssignOperator;
+			}
+
+			bool operator != (const IntPassInfo &other) const
+			{
+				return !(*this == other);
+			}
 		};
 
 		class CProto
@@ -72,6 +87,8 @@ namespace SourceHook
 
 			bool operator == (const CProto &other) const;
 
+			bool ExactlyEqual(const CProto &other) const;
+
 			int GetVersion() const
 			{
 				return m_Version;
@@ -87,7 +104,17 @@ namespace SourceHook
 				return m_ParamsPassInfo[i];
 			}
 
+			IntPassInfo & GetParam(int i)
+			{
+				return m_ParamsPassInfo[i];
+			}
+
 			const IntPassInfo & GetRet() const
+			{
+				return m_RetPassInfo;
+			}
+
+			IntPassInfo & GetRet()
 			{
 				return m_RetPassInfo;
 			}

@@ -178,7 +178,7 @@ bool TestVafmtAndOverload(std::string &error)
 		tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf,
 		tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf, tmpbuf);
 
-	char refbuf[SourceHook::STRBUF_LEN];
+	char refbuf[SourceHook::STRBUF_LEN]; 
 	for (int i = 0; i < (SourceHook::STRBUF_LEN - 1); ++i)
 		refbuf[i] = (i % 10) + '0';
 	refbuf[SourceHook::STRBUF_LEN - 1] = 0;

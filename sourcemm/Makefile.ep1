@@ -17,7 +17,7 @@ HL2PUB = $(HL2SDK)/public
 HL2LIB = $(HL2SDK)/linux_sdk
 
 OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp metamod_plugins.cpp \
-	sourcehook.cpp episode1/console.cpp episode1/provider_ep1.cpp episode1/vsp_listener.cpp
+	sourcehook.cpp sourcehook_hookmangen.cpp episode1/console.cpp episode1/provider_ep1.cpp episode1/vsp_listener.cpp
 
 LINK = $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
@@ -56,6 +56,7 @@ all:
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
+	ln -sf $(SMM_ROOT)/sourcehook/sourcehook_hookmangen.cpp sourcehook_hookmangen.cpp
 	$(MAKE) -f Makefile.ep1 sourcemm
 	rm -rf $(BINARY)
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)

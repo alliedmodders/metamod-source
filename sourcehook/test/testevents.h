@@ -19,6 +19,19 @@
 
 extern bool g_Verbose;
 
+static unsigned int MakeHash(const char *name)
+{
+	int a = 0;
+	unsigned int res = 0xFFFFFFFF;
+
+	while (*name)
+	{
+		res ^= ((unsigned int)*name << ((a++ % 4)*8));
+		++name;
+	}
+	return res;
+}
+
 struct State
 {
 	virtual ~State()
@@ -28,10 +41,27 @@ struct State
 
 	virtual bool IsEqual(State *other)
 	{
-		return (typeid(other) == typeid(this)) ? true : false;
+		return (MakeHash(GetName()) == MakeHash(other->GetName())) ? true : false;
+	}
+
+	virtual bool Ignore()
+	{
+		return false;
 	}
 
 	virtual void Dump() = 0;
+	virtual const char *GetName() = 0;
+};
+
+struct IgnoreState : public State
+{
+	virtual bool Ignore()
+	{
+		return true;
+	}
+	virtual void Dump()
+	{
+	}
 };
 
 typedef std::list<State*> StateList;
@@ -53,6 +83,8 @@ namespace
 			State *cs = va_arg(argptr, State*);
 			if (!cs)
 				break;
+			if (cs->Ignore())
+				continue;
 			requiredstates.push_back(cs);
 		}
 		va_end(argptr);
@@ -112,19 +144,21 @@ namespace
 #define MAKE_STATE(name) struct name : State { \
 		virtual void Dump() { \
 			std::cout << "  " << #name << std::endl; } \
+		const char *GetName() { return #name; } \
 	};
 
 #define MAKE_STATE_1(name, p1_type) struct name : State { \
 		p1_type m_Param1; \
 		name(p1_type param1) : m_Param1(param1) {} \
 		virtual bool IsEqual(State *other) { \
-			name *other2 = dynamic_cast<name*>(other); \
-			if (!other2) \
+			if (MakeHash(GetName()) != MakeHash(other->GetName())) \
 				return false; \
+			name *other2 = static_cast<name*>(other); \
 			return other2->m_Param1 == m_Param1;\
 		} \
 		virtual void Dump() { \
 			std::cout << "  " << #name << "; Param1=" << m_Param1 << std::endl; } \
+		const char *GetName() { return #name; } \
 	}
 
 #define MAKE_STATE_2(name, p1_type, p2_type) struct name : State { \
@@ -132,13 +166,14 @@ namespace
 		p2_type m_Param2; \
 		name(p1_type param1, p2_type param2) : m_Param1(param1), m_Param2(param2) {} \
 		virtual bool IsEqual(State *other) { \
-			name *other2 = dynamic_cast<name*>(other); \
-			if (!other2) \
+			if (MakeHash(GetName()) != MakeHash(other->GetName())) \
 				return false; \
+			name *other2 = static_cast<name*>(other); \
 			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2;\
 		} \
 		virtual void Dump() { \
 			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << std::endl; } \
+		const char *GetName() { return #name; } \
 	}
 
 #define MAKE_STATE_3(name, p1_type, p2_type, p3_type) struct name : State { \
@@ -147,13 +182,31 @@ namespace
 		p3_type m_Param3; \
 		name(p1_type param1, p2_type param2, p3_type param3) : m_Param1(param1), m_Param2(param2), m_Param3(param3) {} \
 		virtual bool IsEqual(State *other) { \
-			name *other2 = dynamic_cast<name*>(other); \
-			if (!other2) \
+			if (MakeHash(GetName()) != MakeHash(other->GetName())) \
 				return false; \
+			name *other2 = static_cast<name*>(other); \
 			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2 && other2->m_Param3 == m_Param3;\
 		} \
 		virtual void Dump() { \
 			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << "; Param3=" << m_Param3 << std::endl; } \
+		const char *GetName() { return #name; } \
+	}
+
+#define MAKE_STATE_4(name, p1_type, p2_type, p3_type, p4_type) struct name : State { \
+		p1_type m_Param1; \
+		p2_type m_Param2; \
+		p3_type m_Param3; \
+		p4_type m_Param4; \
+		name(p1_type param1, p2_type param2, p3_type param3, p4_type param4) : m_Param1(param1), m_Param2(param2), m_Param3(param3), m_Param4(param4) {} \
+		virtual bool IsEqual(State *other) { \
+			if (MakeHash(GetName()) != MakeHash(other->GetName())) \
+				return false; \
+			name *other2 = static_cast<name*>(other); \
+			return other2->m_Param1 == m_Param1 && other2->m_Param2 == m_Param2 && other2->m_Param3 == m_Param3 && other2->m_Param4 == m_Param4;\
+		} \
+		virtual void Dump() { \
+			std::cout << "  " << #name << "; Param1=" << m_Param1 << "; Param2=" << m_Param2 << "; Param3=" << m_Param3 << "; Param4=" << m_Param4 << std::endl; } \
+		const char *GetName() { return #name; } \
 	}
 
 #define CHECK_COND(c, err) if (!(c)) { error = err; return false; }

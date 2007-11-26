@@ -9,7 +9,7 @@ INCLUDE = -I. -I..
 MAX_PARAMS=20
 
 BINARY = sourcehook_test
-OBJECTS = main.cpp sourcehook.cpp $(shell ls -t test*.cpp)
+OBJECTS = main.cpp sourcehook.cpp ../sourcehook_hookmangen.cpp $(shell ls -t test*.cpp)
 HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h
 
 ifeq "$(DEBUG)" "true"
@@ -20,7 +20,7 @@ else
 	CFLAGS = $(OPT_FLAGS)
 endif
 
-CFLAGS += -Wall
+CFLAGS += -Wall -Wno-non-virtual-dtor
 # Also, enable SH_ASSERT
 CFLAGS += -DSH_DEBUG
 

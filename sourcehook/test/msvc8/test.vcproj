@@ -303,6 +303,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				MinimalRebuild="true"
+				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -372,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\test1.cpp"
 				>
 			</File>
@@ -393,6 +398,10 @@
 			</File>
 			<File
 				RelativePath="..\testbail2.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\testhookmangen.cpp"
 				>
 			</File>
 			<File
@@ -473,6 +482,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_hookmangen.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sourcehook_hookmangen_x86.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\sourcehook_impl.h"
 				>
 			</File>
@@ -501,6 +518,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\sourcehook_pibuilder.h"
+				>
+			</File>
+			<File
 				RelativePath="..\sourcehook_test.h"
 				>
 			</File>
@@ -510,6 +531,10 @@
 			</File>
 			<File
 				RelativePath="..\testevents.h"
+				>
+			</File>
+			<File
+				RelativePath="..\testhookmangen.h"
 				>
 			</File>
 			<Filter
@@ -535,6 +560,10 @@
 							Outputs="..\..\sourcehook.h"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\testhookmangen.hxx"
+					>
 				</File>
 			</Filter>
 		</Filter>

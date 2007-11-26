@@ -37,6 +37,7 @@
 #include <interface.h>
 #include <eiface.h>
 #include <sourcehook/sourcehook_impl.h>
+#include <sourcehook/sourcehook_hookmangen.h>
 #include <sourcehook/sourcehook.h>
 #include <ISmmPlugin.h>
 #include "metamod_provider.h"
