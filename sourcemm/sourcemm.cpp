@@ -19,6 +19,7 @@
 #include "CPlugin.h"
 #include "util.h"
 #include "vsp_listener.h"
+#include <filesystem.h>
 
 using namespace SourceMM;
 
@@ -43,6 +44,7 @@ void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
 bool GameInit_handler();
+void LookForVDFs(const char *dir);
 
 GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
 EngineInfo g_Engine;
@@ -61,6 +63,8 @@ int g_GameDllVersion = 0;
 const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
+IBaseFileSystem *baseFs = NULL;
+
 
 void ClearGamedllList();
 
@@ -172,16 +176,29 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
 	}
 
+	baseFs = (IBaseFileSystem *)((filesystemFactory)(BASEFILESYSTEM_INTERFACE_VERSION, NULL));
+	if (baseFs == NULL)
+	{
+		LogMessage("[META] Failed to find filesystem interface, .vdf files will not be parsed.");
+	}
+
 	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
+	const char *mmBaseDir = g_Engine.icvar->GetCommandLineValue("mm_basedir");
 	if (!pluginFile) 
 	{
 		pluginFile = GetPluginsFile();
 	}
+	if (!mmBaseDir)
+	{
+		mmBaseDir = GetMetamodBaseDir();
+	}
 
 	char full_path[260];
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
 
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
 	LoadPluginsFromFile(full_path);
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), mmBaseDir);
+	LookForVDFs(full_path);
 
 	bInFirstLevel = true;
 
@@ -496,6 +513,136 @@ void DLLShutdown_handler()
 	RETURN_META(MRES_SUPERCEDE);
 }
 
+void LoadFromVDF(const char *file)
+{
+	PluginId id;
+	bool already;
+	KeyValues *pValues;
+	const char *plugin_file, *alias;
+	char full_path[256], error[256];
+	
+	pValues = new KeyValues("Metamod Plugin");
+
+	if (!pValues->LoadFromFile(baseFs, file))
+	{
+		pValues->deleteThis();
+		return;
+	}
+
+	if ((plugin_file = pValues->GetString("file", NULL)) == NULL)
+	{
+		pValues->deleteThis();
+		return;
+	}
+
+	if ((alias = pValues->GetString("alias", NULL)) != NULL)
+	{
+		g_PluginMngr.SetAlias(alias, plugin_file);
+	}
+
+	/* Attempt to find a file extension */
+	if (UTIL_GetExtension(plugin_file) == NULL)
+	{
+		g_SmmAPI.PathFormat(full_path, 
+			sizeof(full_path), 
+			"%s/%s%s", 
+			g_ModPath.c_str(), 
+			plugin_file, 
+#if defined WIN32 || defined _WIN32
+			".dll"
+#else
+			"_i486.so"
+#endif
+			);
+	}
+	else
+	{
+		g_SmmAPI.PathFormat(full_path,
+			sizeof(full_path),
+			"%s/%s", 
+			g_ModPath.c_str(),
+			plugin_file);
+	}
+
+	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
+	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+	{
+		LogMessage("[META] Failed to load plugin %s: %s", plugin_file, error);
+	}
+
+	pValues->deleteThis();
+}
+
+void LookForVDFs(const char *dir)
+{
+	char path[MAX_PATH];
+
+#if defined _MSC_VER
+	HANDLE hFind;
+	WIN32_FIND_DATA fd;
+	char error[255];
+
+	g_SmmAPI.PathFormat(path, sizeof(path), "%s\\*.*", dir);
+	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
+	{
+		DWORD dw = GetLastError();
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			error,
+			sizeof(error),
+			NULL);
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
+		return;
+	}
+
+	do
+	{
+		if (strcmp(fd.cFileName, ".") == 0
+			|| strcmp(fd.cFileName, "..") == 0)
+		{
+			continue;
+		}
+		if (strstr(fd.cFileName, ".vdf") == NULL)
+		{
+			continue;
+		}
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
+		LoadFromVDF(path);
+	} while (FindNextFile(hFind, &fd));
+
+	FindClose(hFind);
+#else
+	DIR *pDir;
+	char error[255];
+	struct dirent *pEnt;
+
+	if ((pDir = opendir(dir)) == NULL)
+	{
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
+		return;
+	}
+
+	while ((pEnt = readdir(pDir)) != NULL)
+	{
+		if (strcmp(pEnt->d_name, ".") == 0
+			|| strcmp(pEnt->d_name, "..") == 0)
+		{
+			continue;
+		}
+		if (strstr(pEnt->d_name, ".vdf") == NULL)
+		{
+			continue;
+		}
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
+		LoadFromVDF(path);
+	}
+
+	closedir(pDir);
+#endif
+}
+
 int LoadPluginsFromFile(const char *_file)
 {
 	FILE *fp;
@@ -671,10 +818,15 @@ void LevelShutdown_handler(void)
 	if (!bInFirstLevel)
 	{
 		char full_path[255];
-		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 		LoadPluginsFromFile(full_path);
-	} else {
+
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetMetamodBaseDir());
+		LookForVDFs(full_path);
+	}
+	else
+	{
 		bInFirstLevel = false;
 	}
 

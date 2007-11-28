@@ -47,6 +47,7 @@ public:
 void ClientCommand_handler(edict_t *client);
 
 const char *GetPluginsFile();
+const char *GetMetamodBaseDir();
 
 extern SMConVarAccessor g_SMConVarAccessor;
 
