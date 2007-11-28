@@ -615,7 +615,6 @@ void LookForVDFs(const char *dir)
 	FindClose(hFind);
 #else
 	DIR *pDir;
-	char error[255];
 	struct dirent *pEnt;
 
 	if ((pDir = opendir(dir)) == NULL)
