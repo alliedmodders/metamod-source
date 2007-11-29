@@ -87,6 +87,8 @@ struct EngineInfo
 	IVEngineServer *engine;
 };
 
+bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory);
+
 /** @brief Global variable for GameDLL info */
 extern GameDllInfo g_GameDll;
 
@@ -115,6 +117,8 @@ extern PluginId g_PLID;
 extern int g_GameDllVersion;
 
 extern bool bGameInit;
+
+void UnloadMetamod();
 
 /** @brief Global CallClass for IServerGameDLL */
 extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;

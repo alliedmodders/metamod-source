@@ -19,6 +19,7 @@ VSPListener::VSPListener()
 {
 	m_Loaded = false;
 	m_Loadable = false;
+	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::ClientActive(edict_t *pEntity)
@@ -92,6 +93,7 @@ void VSPListener::ServerActivate(edict_t *pEdictList, int edictCount, int client
 
 void VSPListener::Unload()
 {
+	UnloadMetamod();
 }
 
 void VSPListener::SetLoadable(bool set)
@@ -99,25 +101,28 @@ void VSPListener::SetLoadable(bool set)
 	m_Loadable = set;
 }
 
+bool VSPListener::IsRootLoadMethod()
+{
+	return m_bIsRootLoadMethod;
+}
+
 bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
 {
-	if (!g_GameDll.loaded)
-	{
-		Error("Metamod:Source is not a Valve Server Plugin\n");
-
-		return false;
-	}
-
-	if (!m_Loadable)
-	{
-		Warning("Do not manually load Metamod:Source as a Valve Server Plugin\n");
-
-		return false;
-	}
-
 	if (m_Loaded)
 	{
 		return false;
+	}
+
+	if (!m_Loadable && !g_GameDll.loaded)
+	{
+		/* New loading mechanism, do a bunch o' stuff! */
+		m_bIsRootLoadMethod = true;
+		m_Loaded = true;
+		SetLoadable(false);
+		if (!AlternatelyLoadMetamod(interfaceFactory, gameServerFactory))
+		{
+			return false;
+		}
 	}
 
 	m_Loaded = true;

@@ -487,7 +487,7 @@ void CSmmAPI::LoadAsVSP()
 void CSmmAPI::EnableVSPListener()
 {
 	/* If GameInit already passed and we're not already enabled or loaded, go ahead and LoadAsVSP load */
-	if (bGameInit && !m_VSP && !g_VspListener.IsLoaded())
+	if (bGameInit && !m_VSP && !g_VspListener.IsLoaded() && !g_VspListener.IsRootLoadMethod())
 	{
 		LoadAsVSP();
 	}

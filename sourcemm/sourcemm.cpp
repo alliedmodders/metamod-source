@@ -19,6 +19,7 @@
 #include "CPlugin.h"
 #include "util.h"
 #include "vsp_listener.h"
+#include "iplayerinfo.h"
 #include <filesystem.h>
 
 using namespace SourceMM;
@@ -63,7 +64,7 @@ int g_GameDllVersion = 0;
 const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
-IBaseFileSystem *baseFs = NULL;
+IFileSystem *baseFs = NULL;
 
 
 void ClearGamedllList();
@@ -125,14 +126,10 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
 }
 
-bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+bool StartupMetamod(CreateInterfaceFn engineFactory)
 {
-	g_Engine.engineFactory = engineFactory;
-	g_Engine.fileSystemFactory = filesystemFactory;
-	g_Engine.physicsFactory = physicsFactory;
-	g_Engine.pGlobals = pGlobals;
-
 	g_Engine.engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
+
 	if (!g_Engine.engine)
 	{
 		Error("Could not find IVEngineServer! Metamod cannot load.");
@@ -147,7 +144,6 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	g_Engine.loaded = true;
 
-	/* Initialize our console hooks */
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
 	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
@@ -155,7 +151,9 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	if (g_GameDll.pGameClients)
 	{
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
-	} else {
+	}
+	else
+	{
 		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
 		LogMessage("[META] Warning: Could not find IServerGameClients!");
 		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
@@ -170,13 +168,13 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	if (!g_SmmAPI.CacheUserMessages())
 	{
 		/* Don't know of a mod that has stripped out user messages completely, 
-		 * but perhaps should do something different here?
-		 */
+		* but perhaps should do something different here?
+		*/
 		LogMessage("[META] Warning: Failed to get list of user messages.");
 		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
 	}
 
-	baseFs = (IBaseFileSystem *)((filesystemFactory)(BASEFILESYSTEM_INTERFACE_VERSION, NULL));
+	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
 	if (baseFs == NULL)
 	{
 		LogMessage("[META] Failed to find filesystem interface, .vdf files will not be parsed.");
@@ -202,7 +200,88 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	bInFirstLevel = true;
 
+	return true;
+}
+
+bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+{
+	g_Engine.engineFactory = engineFactory;
+	g_Engine.fileSystemFactory = filesystemFactory;
+	g_Engine.physicsFactory = physicsFactory;
+	g_Engine.pGlobals = pGlobals;
+
+	StartupMetamod(engineFactory);
+
 	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory)
+{
+	g_Engine.engineFactory = ifaceFactory;
+	g_Engine.fileSystemFactory = ifaceFactory;
+	g_Engine.physicsFactory = ifaceFactory;
+
+	IPlayerInfoManager *playerInfoManager = (IPlayerInfoManager *)serverFactory("PlayerInfoManager002", NULL);
+	if (playerInfoManager == NULL)
+	{
+		Error("Metamod:Source requires gameinfo.txt modification to load on this game.");
+		return false;
+	}
+
+	g_Engine.pGlobals = playerInfoManager->GetGlobalVars();
+
+	/* Now find the server */
+	g_GameDll.factory = serverFactory;
+	g_GameDll.lib = NULL;
+
+	char gamedll_iface[] = "ServerGameDLL000";
+	for (unsigned int i = 3; i <= 50; i++)
+	{
+		gamedll_iface[15] = '0' + i;
+		g_GameDll.pGameDLL = (IServerGameDLL *)serverFactory(gamedll_iface, NULL);
+		if (g_GameDll.pGameDLL != NULL)
+		{
+			g_GameDllVersion = i;
+			break;
+		}
+	}
+
+	if (g_GameDll.pGameDLL == NULL)
+	{
+		Error("Metamod:Source requires gameinfo.txt modification to load on this game.");
+		return false;
+	}
+
+	char gameclients_iface[] = "ServerGameClients000";
+	for (unsigned int i = 3; i <= 4; i++)
+	{
+		gameclients_iface[19] = '0' + i;
+		g_GameDll.pGameClients = (IServerGameClients *)serverFactory(gameclients_iface, NULL);
+		if (g_GameDll.pGameClients != NULL)
+		{
+			break;
+		}
+	}
+
+	char smm_path[PATH_SIZE];
+	const char *game_dir;
+	GetFileOfAddress((void *)AlternatelyLoadMetamod, smm_path, sizeof(smm_path));
+	g_SmmPath.assign(smm_path);
+
+	game_dir = CommandLine()->ParmValue("-game", "hl2");
+	abspath(smm_path, game_dir);
+	g_ModPath.assign(smm_path);
+
+	InitMainStates();
+
+	if (!StartupMetamod(ifaceFactory))
+	{
+		return false;
+	}
+
+	g_PluginMngr.SetAllLoaded();
+
+	return true;
 }
 
 bool GameInit_handler()
@@ -212,7 +291,7 @@ bool GameInit_handler()
 		return true;
 	}
 
-	if (g_SmmAPI.VSPEnabled())
+	if (g_SmmAPI.VSPEnabled() && !g_VspListener.IsRootLoadMethod())
 	{
 		g_SmmAPI.LoadAsVSP();
 	}
@@ -234,7 +313,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
 	if (strcmp(iface, PLAPI_NAME) == 0)
 	{
-		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
+		Warning("Do not try loading Metamod:Source as a Metamod:Source plugin");
 
 		if (ret)
 		{
@@ -255,6 +334,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			*ret = IFACE_OK;
 		}
 		return &g_VspListener;
+	}
+
+	/* If we're a VSP, bypass this by default */
+	if (g_VspListener.IsRootLoadMethod())
+	{
+		IFACE_MACRO(g_GameDll.factory, GameDLL);
 	}
 
 	if (!gParsedGameInfo)
@@ -490,7 +575,7 @@ void ClearGamedllList()
 	gamedll_list.clear();
 }
 
-void DLLShutdown_handler()
+void UnloadMetamod()
 {
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
@@ -507,9 +592,15 @@ void DLLShutdown_handler()
 	g_SourceHook.CompleteShutdown();
 
 	if (g_GameDll.lib && g_GameDll.loaded)
+	{
 		dlclose(g_GameDll.lib);
+	}
 	memset(&g_GameDll, 0, sizeof(GameDllInfo));
+}
 
+void DLLShutdown_handler()
+{
+	UnloadMetamod();
 	RETURN_META(MRES_SUPERCEDE);
 }
 
@@ -586,7 +677,7 @@ void LookForVDFs(const char *dir)
 	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
 	{
 		DWORD dw = GetLastError();
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
 			dw,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
