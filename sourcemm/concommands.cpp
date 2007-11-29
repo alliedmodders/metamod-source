@@ -760,6 +760,14 @@ void ClientCommand_handler(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
+void SMConVarAccessor::UnloadMetamodCommands()
+{
+	Unregister(&metamod_version);
+	Unregister(&mm_pluginsfile);
+	Unregister(&mm_basedir);
+	Unregister(&meta_command);
+}
+
 const char *GetPluginsFile()
 {
 	return mm_pluginsfile.GetString();

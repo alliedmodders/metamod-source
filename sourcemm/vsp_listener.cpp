@@ -10,6 +10,7 @@
 
 #include "vsp_listener.h"
 #include "CPlugin.h"
+#include "concommands.h"
 
 using namespace SourceMM;
 
@@ -95,6 +96,7 @@ void VSPListener::Unload()
 {
 	if (IsRootLoadMethod())
 	{
+		g_SMConVarAccessor.UnloadMetamodCommands();
 		UnloadMetamod(false);
 	}
 	m_Loadable = true;

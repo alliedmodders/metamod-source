@@ -31,6 +31,7 @@ public:
 	void MarkCommandsAsGameDLL();
 	void Unregister(ConCommandBase *pCommand);
 	void UnregisterGameDLLCommands();
+	void UnloadMetamodCommands();
 };
 
 class CAlwaysRegisterableCommand : public ConCommandBase
