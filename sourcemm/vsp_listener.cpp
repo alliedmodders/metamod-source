@@ -93,7 +93,13 @@ void VSPListener::ServerActivate(edict_t *pEdictList, int edictCount, int client
 
 void VSPListener::Unload()
 {
-	UnloadMetamod();
+	if (IsRootLoadMethod())
+	{
+		UnloadMetamod(false);
+	}
+	m_Loadable = true;
+	m_Loaded = false;
+	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::SetLoadable(bool set)

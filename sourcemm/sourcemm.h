@@ -118,7 +118,7 @@ extern int g_GameDllVersion;
 
 extern bool bGameInit;
 
-void UnloadMetamod();
+void UnloadMetamod(bool shutting_down);
 
 /** @brief Global CallClass for IServerGameDLL */
 extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;

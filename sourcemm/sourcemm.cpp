@@ -575,16 +575,19 @@ void ClearGamedllList()
 	gamedll_list.clear();
 }
 
-void UnloadMetamod()
+void UnloadMetamod(bool shutting_down)
 {
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
-	/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
-	g_SMConVarAccessor.MarkCommandsAsGameDLL();
-	g_SMConVarAccessor.UnregisterGameDLLCommands();
+	if (shutting_down)
+	{
+		/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
+		g_SMConVarAccessor.MarkCommandsAsGameDLL();
+		g_SMConVarAccessor.UnregisterGameDLLCommands();
 
-	SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
+		SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
+	}
 
 	SH_RELEASE_CALLCLASS(g_GameDllPatch);
 	g_GameDllPatch = NULL;
@@ -600,7 +603,7 @@ void UnloadMetamod()
 
 void DLLShutdown_handler()
 {
-	UnloadMetamod();
+	UnloadMetamod(true);
 	RETURN_META(MRES_SUPERCEDE);
 }
 
