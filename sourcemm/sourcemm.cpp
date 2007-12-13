@@ -126,7 +126,29 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
 }
 
-bool StartupMetamod(CreateInterfaceFn engineFactory)
+void DoInitialPluginLoads()
+{
+	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
+	const char *mmBaseDir = g_Engine.icvar->GetCommandLineValue("mm_basedir");
+
+	if (!pluginFile) 
+	{
+		pluginFile = GetPluginsFile();
+	}
+	if (!mmBaseDir)
+	{
+		mmBaseDir = GetMetamodBaseDir();
+	}
+
+	char full_path[260];
+
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
+	LoadPluginsFromFile(full_path);
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), mmBaseDir);
+	LookForVDFs(full_path);
+}
+
+bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 {
 	g_Engine.engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
 
@@ -180,25 +202,11 @@ bool StartupMetamod(CreateInterfaceFn engineFactory)
 		LogMessage("[META] Failed to find filesystem interface, .vdf files will not be parsed.");
 	}
 
-	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
-	const char *mmBaseDir = g_Engine.icvar->GetCommandLineValue("mm_basedir");
-	if (!pluginFile) 
+	if (!bWaitForGameInit)
 	{
-		pluginFile = GetPluginsFile();
+		DoInitialPluginLoads();
+		bInFirstLevel = true;
 	}
-	if (!mmBaseDir)
-	{
-		mmBaseDir = GetMetamodBaseDir();
-	}
-
-	char full_path[260];
-
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
-	LoadPluginsFromFile(full_path);
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), mmBaseDir);
-	LookForVDFs(full_path);
-
-	bInFirstLevel = true;
 
 	return true;
 }
@@ -210,7 +218,7 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 	g_Engine.physicsFactory = physicsFactory;
 	g_Engine.pGlobals = pGlobals;
 
-	StartupMetamod(engineFactory);
+	StartupMetamod(engineFactory, false);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
@@ -274,7 +282,7 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 
 	InitMainStates();
 
-	if (!StartupMetamod(ifaceFactory))
+	if (!StartupMetamod(ifaceFactory, true))
 	{
 		return false;
 	}
@@ -288,12 +296,17 @@ bool GameInit_handler()
 {
 	if (bGameInit)
 	{
-		return true;
+		RETURN_META_VALUE(MRES_IGNORED, true);
 	}
 
 	if (g_SmmAPI.VSPEnabled() && !g_VspListener.IsRootLoadMethod())
 	{
 		g_SmmAPI.LoadAsVSP();
+	}
+
+	if (g_VspListener.IsRootLoadMethod())
+	{
+		DoInitialPluginLoads();
 	}
 
 	bGameInit = true;

@@ -14,6 +14,7 @@
 #include "CPlugin.h"
 #include "sh_string.h"
 #include "sh_list.h"
+#include "vsp_listener.h"
 
 /**
  * @brief Console Command Implementations
@@ -130,6 +131,12 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	int args = e->Cmd_Argc();
 
+	if (g_VspListener.IsRootLoadMethod() && !bGameInit)
+	{
+		CONMSG("WARNING: You must change the map to activate Metamod:Source.\n");
+		return;
+	}
+
 	if (args >= 2)
 	{
 		const char *command = e->Cmd_Argv(1);
@@ -145,6 +152,14 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "version") == 0) {
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
+			if (g_VspListener.IsRootLoadMethod())
+			{
+				CONMSG("Load Method: Valve Server Plugin\n");
+			}
+			else
+			{
+				CONMSG("Load Method: GameDLL (gameinfo.txt)\n");
+			}
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 			CONMSG("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
@@ -690,8 +705,8 @@ void ClientCommand_handler(edict_t *client)
 			{
 				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
 				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-				CLIENT_CONMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-				CLIENT_CONMSG(client, "  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
+				CLIENT_CONMSG(client, "  Core: David \"BAILOPAN\" Anderson\n");
+				CLIENT_CONMSG(client, "  Core: Scott \"Damaged Soul\" Ehlert\n");
 				CLIENT_CONMSG(client, "For more information, see the official website\n");
 				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
 
