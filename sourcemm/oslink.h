@@ -56,7 +56,7 @@
 #endif
 
 #if defined __linux__
-	extern int errno;
+	#include <errno.h>
 	int GetLastError();
 #endif
 
