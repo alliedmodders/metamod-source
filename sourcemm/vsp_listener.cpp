@@ -110,7 +110,7 @@ void VSPListener::Unload()
 {
 	if (g_bIsTryingToUnload)
 	{
-		Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.");
+		Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
 		return;
 	}
 	if (IsRootLoadMethod())
