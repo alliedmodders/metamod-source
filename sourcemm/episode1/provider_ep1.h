@@ -52,7 +52,7 @@ public:
 	virtual void DisplayError(const char *fmt, ...);
 	virtual void DisplayWarning(const char *fmt, ...);
 	virtual int TryServerGameDLL(const char *iface);
-	virtual void Notify_DLLInit_Pre(void *gamedll,
+	virtual void Notify_DLLInit_Pre(
 		CreateInterfaceFn engineFactory, 
 		CreateInterfaceFn serverFactory);
 	void Notify_DLLShutdown_Pre();
@@ -71,6 +71,7 @@ public:
 	virtual int FindUserMessage(const char *name, int *size=NULL);
 	virtual const char *GetUserMessage(int index, int *size=NULL);
 	virtual int DetermineSourceEngine(const char *game);
+	virtual bool IsAlternatelyLoaded(/* =0 */);
 };
 
 extern IVEngineServer *engine;

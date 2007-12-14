@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDK)\public;$(HL2SDK)\public\dlls;$(HL2SDK)\public\engine;$(HL2SDK)\public\tier0;$(HL2SDK)\public\tier1;$(HL2SDK)\public\vstdlib;$(HL2SDK)\tier1"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier1.lib tier0.lib vstdlib.lib"
+				AdditionalDependencies="&quot;$(HL2SDK)\lib\public\tier1.lib&quot; &quot;$(HL2SDK)\lib\public\tier0.lib&quot; &quot;$(HL2SDK)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmt.lib"
@@ -127,7 +127,7 @@
 				Optimization="3"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDK)\public;$(HL2SDK)\public\dlls;$(HL2SDK)\public\engine;$(HL2SDK)\public\tier0;$(HL2SDK)\public\tier1;$(HL2SDK)\public\vstdlib;$(HL2SDK)\tier1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="1"
@@ -150,7 +150,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib tier1.lib vstdlib.lib"
+				AdditionalDependencies="&quot;$(HL2SDK)\lib\public\tier1.lib&quot; &quot;$(HL2SDK)\lib\public\tier0.lib&quot; &quot;$(HL2SDK)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmtd.lib"
@@ -335,7 +335,6 @@
 				RelativePath="..\..\..\sourcehook\sourcehook_hookmangen.cpp"
 				>
 			</File>
-
 		</Filter>
 	</Files>
 	<Globals>

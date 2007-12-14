@@ -26,6 +26,7 @@
  * Version: $Id$
  */
 
+#include "../metamod_oslink.h"
 #include <sourcehook.h>
 #include "convar_smm.h"
 #include <eiface.h>
@@ -80,11 +81,10 @@ void BaseProvider::ConsolePrint(const char *str)
 	}
 }
 
-void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
+void BaseProvider::Notify_DLLInit_Pre(
 									  CreateInterfaceFn engineFactory, 
 									  CreateInterfaceFn serverFactory)
 {
-	server = (IServerGameDLL *)gamedll;
 	engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
 	if (!engine)
 	{
@@ -347,6 +347,11 @@ IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(const char *iface)
 {
 	g_VspListener.SetLoadable(true);
 	return &g_VspListener;
+}
+
+bool BaseProvider::IsAlternatelyLoaded(/* =0 */)
+{
+	return false;
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

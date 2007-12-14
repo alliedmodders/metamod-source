@@ -78,6 +78,16 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 		else if (strcmp(command, "version") == 0)
 		{
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
+
+			if (g_Metamod.IsLoadedAsGameDLL())
+			{
+				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
+			}
+			else
+			{
+				CONMSG("Loaded As: Valve Server Plugin\n");
+			}
+
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 			CONMSG("SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());

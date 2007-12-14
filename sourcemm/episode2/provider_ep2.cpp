@@ -376,7 +376,7 @@ public:
 public:
 	unsigned int GetArgCount()
 	{
-		return m_cmd->ArgC();
+		return m_cmd->ArgC() - 1;
 	}
 
 	const char *GetArg(unsigned int num)
@@ -406,6 +406,8 @@ void ClientCommand(edict_t *pEdict, const CCommand &_cmd)
 	{
 		Command_ClientMeta(pEdict, &cmd);
 	}
+
+	RETURN_META(MRES_SUPERCEDE);
 }
 
 bool vcmp(const void *_addr1, const void *_addr2, size_t len)

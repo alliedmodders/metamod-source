@@ -25,6 +25,7 @@
  * Version: $Id$
  */
 
+#include "../metamod_oslink.h"
 #include "vsp_listener.h"
 #include "svn_version.h"
 #include "metamod.h"
