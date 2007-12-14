@@ -14,6 +14,8 @@
  - Added API for getting the VSP-simulation interface upon late loading.
  - Added OnUnlinkConCommandBase to IMetamodListner to notify when Metamod:Source
    is about to remove a concommand or convar.
+ - Added the ability for Metamod:Source to load as a VSP instead of through 
+   gameinfo.txt.
  - The output of the "meta list" command has been reformatted in order to allow
    more space for plugins' name, version, and author fields.
 

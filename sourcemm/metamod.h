@@ -93,14 +93,24 @@ public:
 	size_t Format(char *buffer, size_t maxlength, const char *format, ...);
 	size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap);
 public:
+	bool IsLoadedAsGameDLL();
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks);
+	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version);
+	bool IsAlternateLoadComplete();
 };
 
+bool DetectGameInformation();
 void LogMessage(const char *msg, ...);
 int LoadPluginsFromFile(const char *_file);
+void InitializeForLoad();
+void InitializeGlobals(CreateInterfaceFn engineFactory, 
+					   CreateInterfaceFn physicsFactory,
+					   CreateInterfaceFn filesystemFactory,
+					   CGlobalVars *pGlobals);
+void UnloadMetamod();
 
 extern MetamodSource g_Metamod;
 extern SourceHook::Impl::CSourceHookImpl g_SourceHook;

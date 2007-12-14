@@ -25,6 +25,7 @@
  * Version: $Id$
  */
 
+#include "metamod_oslink.h"
 #if defined _DEBUG
 #define DEBUG2
 #undef _DEBUG
@@ -210,6 +211,11 @@ CPluginManager::CPlugin *CPluginManager::FindById(PluginId id)
 
 void CPluginManager::SetAllLoaded()
 {
+	if (m_AllLoaded)
+	{
+		return;
+	}
+
 	m_AllLoaded = true;
 	PluginIter i;
 

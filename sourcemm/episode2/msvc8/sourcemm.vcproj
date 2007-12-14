@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(HL2SDKOB)\lib\public\tier0.lib $(HL2SDKOB)\lib\public\tier1.lib $(HL2SDKOB)\lib\public\tier2.lib $(HL2SDKOB)\lib\public\vstdlib.lib"
+				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier2.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmt.lib"
@@ -150,7 +150,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(HL2SDKOB)\lib\public\tier0.lib $(HL2SDKOB)\lib\public\tier1.lib $(HL2SDKOB)\lib\public\tier2.lib $(HL2SDKOB)\lib\public\vstdlib.lib"
+				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier2.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmtd.lib"

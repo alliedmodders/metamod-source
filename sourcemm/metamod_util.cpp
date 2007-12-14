@@ -221,7 +221,10 @@ bool UTIL_PathCmp(const char *path1, const char *path2)
 		}
 
 		/* If we're at a different non-alphanumeric, the next character MUST match */
-		if (!isalpha(path1[pos1]) && (path1[pos1] != path2[pos2]))
+		if ((((unsigned)path1[pos1] & 0x80) && path1[pos1] != path2[pos2])
+			||
+			!isalpha(path1[pos1]) && (path1[pos1] != path2[pos2])
+			)
 		{
 			return false;
 		}

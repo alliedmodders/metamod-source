@@ -30,6 +30,7 @@
 #define DEBUG2
 #undef _DEBUG
 #endif
+#include "../metamod_oslink.h"
 #include <sourcehook.h>
 #include <convar.h>
 #include <eiface.h>
@@ -82,11 +83,9 @@ void BaseProvider::ConsolePrint(const char *str)
 	ConMsg("%s", str);
 }
 
-void BaseProvider::Notify_DLLInit_Pre(void *gamedll,
-									  CreateInterfaceFn engineFactory, 
+void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, 
 									  CreateInterfaceFn serverFactory)
 {
-	server = (IServerGameDLL *)gamedll;
 	engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
 	if (!engine)
 	{
@@ -361,6 +360,11 @@ IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(const char *iface)
 {
 	g_VspListener.SetLoadable(true);
 	return &g_VspListener;
+}
+
+bool BaseProvider::IsAlternatelyLoaded()
+{
+	return g_VspListener.IsRootLoadMethod();
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

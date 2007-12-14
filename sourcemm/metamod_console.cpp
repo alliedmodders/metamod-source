@@ -25,6 +25,7 @@
  * Version: $Id$
  */
 
+#include "metamod_oslink.h"
 #if defined _DEBUG
 #define DEBUG2
 #undef _DEBUG
@@ -53,6 +54,12 @@ using namespace SourceHook;
 bool Command_Meta(IMetamodSourceCommandInfo *info)
 {
 	unsigned int args = info->GetArgCount();
+
+	if (provider->IsAlternatelyLoaded() && !g_Metamod.IsAlternateLoadComplete())
+	{
+		CONMSG("You must change the map to activate Metamod:Source.\n");
+		return true;
+	}
 
 	if (args >= 1)
 	{

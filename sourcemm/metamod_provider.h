@@ -186,9 +186,7 @@ namespace SourceMM
 		/**
 		 * @brief Notifies the provider that the DLLInit pre-hook is almost done.
 		 */
-		virtual void Notify_DLLInit_Pre(void *gamedll,
-			CreateInterfaceFn engineFactory, 
-			CreateInterfaceFn serverFactory) =0;
+		virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) =0;
 
 		virtual void Notify_DLLShutdown_Pre() =0;
 
@@ -291,6 +289,14 @@ namespace SourceMM
 		 * @return				SOURCE_ENGINE constant.
 		 */
 		virtual int DetermineSourceEngine(const char *game) =0;
+
+		/**
+		 * @brief Returns if the provider has loaded itself through an 
+		 * alternate means (that is, not through gameinfo.txt.
+		 *
+		 * @return				True if loaded, false otherwise.
+		 */
+		virtual bool IsAlternatelyLoaded() =0;
 	};
 };
 

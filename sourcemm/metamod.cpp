@@ -25,6 +25,7 @@
  * Version: $Id$
  */
 
+#include "metamod_oslink.h"
 #if defined _DEBUG
 #define DEBUG2
 #undef _DEBUG
@@ -36,7 +37,6 @@
 #include "metamod_plugins.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
-#include "metamod_oslink.h"
 #if defined DEBUG2
 #undef DEBUG2
 #define _DEBUG
@@ -99,6 +99,7 @@ ISourceHook *g_SHPtr = &g_SourceHook;
 PluginId g_PLID = Pl_Console;
 META_RES last_meta_res;
 IServerPluginCallbacks *vsp_callbacks = NULL;
+bool were_plugins_loaded = false;
 
 MetamodSource g_Metamod;
 
@@ -137,7 +138,7 @@ void ClearGamedllList();
 	}
 
 /* Initialize everything here */
-void InitMainStates()
+void InitializeForLoad()
 {
 	char full_path[PATH_SIZE] = {0};
 	GetFileOfAddress((void *)gamedll_info.factory, full_path, sizeof(full_path));
@@ -188,6 +189,31 @@ void InitMainStates()
 	SH_ADD_MANUALHOOK_STATICFUNC(SGD_DLLShutdown, server, Handler_DLLShutdown, false);
 }
 
+bool DetectGameInformation()
+{
+	char mm_path[PATH_SIZE];
+	char game_path[PATH_SIZE];
+
+	/* Get path to SourceMM DLL */
+	if (!GetFileOfAddress((void *)InitializeForLoad, mm_path, sizeof(mm_path)))
+	{
+		return false;
+	}
+
+	metamod_path.assign(mm_path);
+
+	/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
+	const char *game_dir = provider->GetCommandLineValue("-game", "hl2");
+
+	/* Get absolute path */
+	abspath(game_path, game_dir);
+	mod_path.assign(game_path);
+
+	engine_build = provider->DetermineSourceEngine(game_dir);;
+
+	return true;
+}
+
 /* This is where the magic happens */
 SMM_API void *CreateInterface(const char *iface, int *ret)
 {
@@ -221,30 +247,21 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return vsp_callbacks;
 	}
 
+	if (provider->IsAlternatelyLoaded())
+	{
+		IFACE_MACRO(gamedll_info.factory, GameDLL);
+	}
+
 	if (!parsed_game_info)
 	{
 		parsed_game_info = true;
 		const char *game_dir = NULL;
-		char game_path[PATH_SIZE];
-		char mm_path[PATH_SIZE];
 
-		/* Get path to SourceMM DLL */
-		if (!GetFileOfAddress((void *)CreateInterface, mm_path, sizeof(mm_path)))
+		if (!DetectGameInformation())
 		{
 			provider->DisplayError("GetFileOfAddress() failed! Metamod cannot load.\n");
 			return NULL;
 		}
-
-		metamod_path.assign(mm_path);
-
-		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
-		game_dir = provider->GetCommandLineValue("-game", "hl2");
-
-		engine_build = provider->DetermineSourceEngine(game_dir);;
-
-		/* Get absolute path */
-		abspath(game_path, game_dir);
-		mod_path.assign(game_path);
 
 		char temp_path[PATH_SIZE];
 
@@ -331,7 +348,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 				}
 
 				/* If not path to SourceMM... */
-				if (!UTIL_PathCmp(mm_path, temp_path))
+				if (!UTIL_PathCmp(metamod_path.c_str(), temp_path))
 				{
 					FILE *temp_fp = fopen(temp_path, "rb");
 					if (!temp_fp)
@@ -413,7 +430,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			if (is_gamedll_loaded)
 			{
 				ClearGamedllList();
-				InitMainStates();
+				InitializeForLoad();
 			}
 			else
 			{
@@ -603,6 +620,11 @@ int LoadPluginsFromFile(const char *_file)
 
 void InitializeVSP()
 {
+	if (provider->IsAlternatelyLoaded())
+	{
+		return;
+	}
+
 	size_t len;
 	char engine_file[PATH_SIZE];
 	char engine_path[PATH_SIZE];
@@ -675,29 +697,8 @@ void LogMessage(const char *msg, ...)
 	}
 }
 
-bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+void DoInitialPluginLoads()
 {
-	engine_factory = engineFactory;
-	filesystem_factory = filesystemFactory;
-	physics_factory = physicsFactory;
-	gpGlobals = pGlobals;
-
-	provider->Notify_DLLInit_Pre(server, engineFactory, gamedll_info.factory);
-
-	metamod_version = provider->CreateConVar("metamod_version", 
-		SOURCEMM_VERSION, 
-		"Metamod:Source Version",
-		ConVarFlag_Notify|ConVarFlag_Replicated|ConVarFlag_SpOnly);
-	
-	mm_pluginsfile = provider->CreateConVar("mm_pluginsfile", 
-#if defined WIN32 || defined _WIN32
-		"addons\\metamod\\metaplugins.ini", 
-#else
-		"addons/metamod/metaplugins.ini",
-#endif
-		"Metamod:Source Plugins File",
-		ConVarFlag_SpOnly);
-
 	const char *pluginFile = provider->GetCommandLineValue("mm_pluginsfile", NULL);
 	if (!pluginFile) 
 	{
@@ -712,8 +713,47 @@ bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsF
 	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), pluginFile);
 
 	LoadPluginsFromFile(full_path);
+}
 
-	in_first_level = true;
+void StartupMetamod(bool bWaitForGameInit)
+{
+	metamod_version = provider->CreateConVar("metamod_version", 
+		SOURCEMM_VERSION, 
+		"Metamod:Source Version",
+		ConVarFlag_Notify|ConVarFlag_Replicated|ConVarFlag_SpOnly);
+
+	mm_pluginsfile = provider->CreateConVar("mm_pluginsfile", 
+#if defined WIN32 || defined _WIN32
+		"addons\\metamod\\metaplugins.ini", 
+#else
+		"addons/metamod/metaplugins.ini",
+#endif
+		"Metamod:Source Plugins File",
+		ConVarFlag_SpOnly);
+
+	if (!bWaitForGameInit)
+	{
+		DoInitialPluginLoads();
+		in_first_level = true;
+	}
+}
+
+void InitializeGlobals(CreateInterfaceFn engineFactory, 
+					   CreateInterfaceFn physicsFactory,
+					   CreateInterfaceFn filesystemFactory,
+					   CGlobalVars *pGlobals)
+{
+	engine_factory = engineFactory;
+	physics_factory = physicsFactory;
+	filesystem_factory = filesystemFactory;
+	gpGlobals = pGlobals;
+	provider->Notify_DLLInit_Pre(engineFactory, gamedll_info.factory);
+}
+
+bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+{
+	InitializeGlobals(engineFactory, physicsFactory, filesystemFactory, pGlobals);
+	StartupMetamod(false);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
@@ -730,6 +770,13 @@ bool Handler_GameInit()
 		InitializeVSP();
 	}
 
+	if (provider->IsAlternatelyLoaded() && !were_plugins_loaded)
+	{
+		DoInitialPluginLoads();
+		g_PluginMngr.SetAllLoaded();
+		were_plugins_loaded = true;
+	}
+
 	is_game_init = true;
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
@@ -741,14 +788,17 @@ bool Handler_DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn phy
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-void Handler_DLLShutdown()
+void UnloadMetamod()
 {
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
 	provider->Notify_DLLShutdown_Pre();
 
-	SH_CALL(server, &IServerGameDLL::DLLShutdown)();
+	if (is_gamedll_loaded)
+	{
+		SH_CALL(server, &IServerGameDLL::DLLShutdown)();
+	}
 
 	g_SourceHook.CompleteShutdown();
 
@@ -757,12 +807,24 @@ void Handler_DLLShutdown()
 		dlclose(gamedll_info.lib);
 		is_gamedll_loaded = false;
 	}
+}
 
+void Handler_DLLShutdown()
+{
+	UnloadMetamod();
 	RETURN_META(MRES_SUPERCEDE);
 }
 
 void Handler_LevelShutdown(void)
 {
+	if (provider->IsAlternatelyLoaded() && !were_plugins_loaded)
+	{
+		g_PluginMngr.SetAllLoaded();
+		DoInitialPluginLoads();
+		were_plugins_loaded = true;
+		in_first_level = true;
+	}
+
 	if (!in_first_level)
 	{
 		char full_path[255];
@@ -1269,4 +1331,20 @@ size_t MetamodSource::Format(char *buffer, size_t maxlength, const char *format,
 size_t MetamodSource::FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap)
 {
 	return UTIL_FormatArgs(buffer, maxlength, format, ap);
+}
+
+bool MetamodSource::IsLoadedAsGameDLL()
+{
+	return is_gamedll_loaded;
+}
+
+void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version)
+{
+	gamedll_info.factory = serverFactory;
+	gamedll_version = version;
+}
+
+bool MetamodSource::IsAlternateLoadComplete()
+{
+	return were_plugins_loaded;
 }
