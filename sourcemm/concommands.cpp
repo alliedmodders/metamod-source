@@ -131,7 +131,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	int args = e->Cmd_Argc();
 
-	if (g_VspListener.IsRootLoadMethod() && !bGameInit)
+	if (g_VspListener.IsRootLoadMethod() && !g_bLevelChanged)
 	{
 		CONMSG("WARNING: You must change the map to activate Metamod:Source.\n");
 		return;

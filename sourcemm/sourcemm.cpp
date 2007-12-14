@@ -65,6 +65,7 @@ const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 IFileSystem *baseFs = NULL;
+bool g_bLevelChanged = false;
 
 
 void ClearGamedllList();
@@ -935,6 +936,8 @@ void LevelShutdown_handler(void)
 	{
 		bInFirstLevel = false;
 	}
+
+	g_bLevelChanged = true;
 
 	ITER_EVENT(OnLevelShutdown, ());
 

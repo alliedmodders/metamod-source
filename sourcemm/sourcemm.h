@@ -117,6 +117,7 @@ extern PluginId g_PLID;
 extern int g_GameDllVersion;
 
 extern bool bGameInit;
+extern bool g_bLevelChanged;
 
 void UnloadMetamod(bool shutting_down);
 
