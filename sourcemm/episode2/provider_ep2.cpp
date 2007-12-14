@@ -405,9 +405,10 @@ void ClientCommand(edict_t *pEdict, const CCommand &_cmd)
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
 		Command_ClientMeta(pEdict, &cmd);
+		RETURN_META(MRES_SUPERCEDE);
 	}
 
-	RETURN_META(MRES_SUPERCEDE);
+	RETURN_META(MRES_IGNORED);
 }
 
 bool vcmp(const void *_addr1, const void *_addr2, size_t len)
