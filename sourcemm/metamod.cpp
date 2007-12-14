@@ -255,7 +255,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	if (!parsed_game_info)
 	{
 		parsed_game_info = true;
-		const char *game_dir = NULL;
 
 		if (!DetectGameInformation())
 		{
