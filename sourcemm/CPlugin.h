@@ -50,6 +50,13 @@ namespace SourceMM
 		SourceHook::String alias;
 		SourceHook::String value;
 	};
+
+	struct CPluginEventHandler
+	{
+		bool got_vsp;
+		IMetamodListener *event;
+	};
+
 	/**
 	 * @brief Implements Plugin Manager API
 	 */
@@ -72,7 +79,7 @@ namespace SourceMM
 			HINSTANCE m_Lib;
 			SourceHook::List<ConCommandBase *> m_Cvars;
 			SourceHook::List<ConCommandBase *> m_Cmds;
-			SourceHook::List<IMetamodListener *> m_Events;
+			SourceHook::List<CPluginEventHandler> m_Events;
 		};
 	public:
 		CPluginManager();
@@ -123,6 +130,8 @@ namespace SourceMM
 		//Internal iterators
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
+
+		void SetVSPAsLoaded();
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);

@@ -73,14 +73,14 @@ void ClearGamedllList();
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	int mret = 0; \
 	void *val = NULL; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			mret = IFACE_FAILED; \
 			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
 				if (ret) *ret = mret; \
@@ -92,12 +92,12 @@ void ClearGamedllList();
 
 #define ITER_EVENT(evn, args) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			api->evn args; \
 		} \
 	}
@@ -308,6 +308,7 @@ bool GameInit_handler()
 	if (g_VspListener.IsRootLoadMethod())
 	{
 		DoInitialPluginLoads();
+		//gaben
 	}
 
 	bGameInit = true;

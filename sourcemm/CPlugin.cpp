@@ -12,6 +12,7 @@
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"
+#include "vsp_listener.h"
 
 /** 
  * @brief Implements functions from CPlugin.h
@@ -22,14 +23,14 @@ using namespace SourceMM;
 
 #define ITER_PLEVENT(evn, plid) \
 	CPluginManager::CPlugin *_Xpl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		_Xpl = (*iter); \
 		if (_Xpl->m_Id == plid) \
 			continue; \
 		for (event=_Xpl->m_Events.begin(); event!=_Xpl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			api->evn(plid); \
 		} \
 	}
@@ -178,6 +179,38 @@ void CPluginManager::SetAllLoaded()
 			//Min version is now 5, so we ignore this check
 			//if ( (*i)->m_API->GetApiVersion() >= 004 )
 			(*i)->m_API->AllPluginsLoaded();
+		}
+	}
+}
+
+void CPluginManager::SetVSPAsLoaded()
+{
+	PluginIter i;
+	CPlugin *pPlugin;
+	SourceHook::List<CPluginEventHandler>::iterator event;
+
+	for (i = m_Plugins.begin(); i != m_Plugins.end(); i++)
+	{
+		pPlugin = (*i);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 10 (v1:5, SourceMM 1.4) */
+		if (pPlugin->m_API->GetApiVersion() < 10)
+		{
+			continue;
+		}
+		for (event = pPlugin->m_Events.begin();
+			 event != pPlugin->m_Events.end();
+			 event++)
+		{
+			if (!(*event).got_vsp)
+			{
+				continue;
+			}
+			(*event).got_vsp = true;
+			(*event).event->OnVSPListening(&g_VspListener);
 		}
 	}
 }
@@ -372,6 +405,21 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 								//Removing this code as the min version is now 5
 								//if (pl->m_API->GetApiVersion() >= 4)
 								pl->m_API->AllPluginsLoaded();
+							}
+							if (g_VspListener.IsRootLoadMethod())
+							{
+								SourceHook::List<CPluginEventHandler>::iterator event;
+								for (event = pl->m_Events.begin();
+									 event != pl->m_Events.end(); 
+									 event++)
+								{
+									if ((*event).got_vsp)
+									{
+										continue;
+									}
+									(*event).got_vsp = true;
+									(*event).event->OnVSPListening(&g_VspListener);
+								}
 							}
 						} else {
 							pl->m_Status = Pl_Refused;

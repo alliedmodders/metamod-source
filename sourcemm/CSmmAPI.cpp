@@ -141,8 +141,12 @@ void CSmmAPI::ConPrintf(const char *fmt, ...)
 void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
 {
 	CPluginManager::CPlugin *pl = g_PluginMngr.FindByAPI(plugin);
+	CPluginEventHandler cpeh;
 
-	pl->m_Events.push_back(pListener);
+	cpeh.event = pListener;
+	cpeh.got_vsp = false;
+
+	pl->m_Events.push_back(cpeh);
 }
 
 void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
@@ -174,7 +178,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 	}
 
 	CPluginManager::CPlugin *pl;
-	SourceHook::List<IMetamodListener *>::iterator event;
+	SourceHook::List<CPluginEventHandler>::iterator event;
 	IMetamodListener *api;
 	int ret = 0;
 	void *val = NULL;
@@ -184,7 +188,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 		pl = (*iter);
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++)
 		{
-			api = (*event);
+			api = (*event).event;
 			ret = IFACE_FAILED;
 			if ( (val=api->OnMetamodQuery(iface, &ret)) != NULL )
 			{
