@@ -205,7 +205,7 @@ void CPluginManager::SetVSPAsLoaded()
 			 event != pPlugin->m_Events.end();
 			 event++)
 		{
-			if (!(*event).got_vsp)
+			if ((*event).got_vsp)
 			{
 				continue;
 			}
@@ -406,7 +406,8 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 								//if (pl->m_API->GetApiVersion() >= 4)
 								pl->m_API->AllPluginsLoaded();
 							}
-							if (g_VspListener.IsRootLoadMethod())
+							if (g_VspListener.IsRootLoadMethod()
+								|| (g_VspListener.IsLoaded() && g_SmmAPI.VSPEnabled()))
 							{
 								SourceHook::List<CPluginEventHandler>::iterator event;
 								for (event = pl->m_Events.begin();
