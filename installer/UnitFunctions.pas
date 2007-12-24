@@ -10,6 +10,8 @@ function GetAllFiles(Mask: String; Attr: Integer; Recursive: Boolean; ShowDirs: 
 // ftp
 function GetAllDirs: TStringList;
 
+function GetModName(const Path: String): String;
+
 implementation
 
 uses UnitfrmMain;
@@ -120,6 +122,20 @@ begin
 
   Result := eList;
 end;  }
+
+function GetModName(const Path: String): String;
+var i: integer;
+begin
+  Result := '';
+  for i := Length(Path) -1 downto 1 do begin
+    if (Path[i] = '\') or (Path[i] = '/') then begin
+      Result := Copy(Path, i +1, Length(Path) -i);
+      break;
+    end;
+  end;
+  if (Copy(Result, Length(Result), 1) = '\') or (Copy(Result, Length(Result), 1) = '/') then
+    Result := Copy(Result, 1, Length(Result) -1);
+end;
 
 end.
 

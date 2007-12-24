@@ -1,7 +1,8 @@
-In this folder should be server.dll and server_i486.so.
+Every MM:S library should be located in this directory.
 
-How you prepare a release:
-1) Copy the latest MM:S dlls and hl2launch.exe into this folder
-2) Run Attach.exe
-3) Test MMS_Installer.exe once (should work but nobody wants bug releases, especially not in the installer)
-4) If everything worked fine, release it, otherwise pm me (Basic-Master)
+How to prepare a release:
+1) Copy the latest MM:S dlls into this folder
+2) Append .source to the Source binaries and .orangebox to the OrangeBox binaries
+3) Run Attach.exe
+4) Test MMS_Installer.exe once (recommended)
+5) Release it or e-Mail me if you find a bug
