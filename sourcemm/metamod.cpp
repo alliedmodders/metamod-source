@@ -1473,7 +1473,7 @@ void LookForVDFs(const char *dir)
 		{
 			continue;
 		}
-		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
+		g_Metamod.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
 		ProcessVDF(path);
 	}
 
