@@ -406,8 +406,7 @@ label CreateAgain;
 label UploadAgain;
       
 var eStr: TStringList;
-    i: integer;
-    CopyConfig, eFound: Boolean;
+    CopyConfig: Boolean;
 begin
   frmMain.cmdCancel.Show;
   frmMain.cmdNext.Hide;
@@ -418,6 +417,7 @@ begin
   frmMain.ggeItem.MaxValue := 3;
   frmMain.ggeItem.Progress := 0;
 
+  StartTime := Now;
   { Unpack }
   AddStatus('Unpacking files...', clBlack);
   if not Unpack(Source) then begin
@@ -434,7 +434,7 @@ begin
   frmMain.ggeItem.Progress := 0;
 
   AddStatus('Creating directories...', clBlack);
-  if not eFound then begin
+  try
     FTPMakeDir('addons');
     frmMain.IdFTP.ChangeDir('addons');
     frmMain.ggeItem.Progress := 1;
@@ -444,12 +444,11 @@ begin
     FTPMakeDir('bin');
     frmMain.ggeItem.Progress := 3;
     AddDone;
-  end
-  else
+  except
     AddSkipped;
+  end;
   { Create/Edit VDF Plugin }
   CopyConfig := True;
-  eFound := False;
   
   frmMain.ggeAll.Progress := 3;
   frmMain.ggeItem.Progress := 0;
@@ -457,7 +456,7 @@ begin
   AddStatus('Creating VDF Plugin...', clBlack);
   eStr := TStringList.Create;
   try
-    frmMain.IdFTP.ChangeDir('addons');
+    frmMain.IdFTP.ChangeDirUp;
     frmMain.ggeItem.Progress := 1;
     DownloadFile('metamod.vdf', ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
     eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
@@ -465,7 +464,6 @@ begin
     if (((Pos('server.dll', eStr.Text) <> 0) and (OS = osWindows)) or ((Pos('server_i486.so', eStr.Text) <> 0) and (OS = osLinux))) then begin
       AddSkipped;
       
-      eFound := True;
       case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
         mrNo: CopyConfig := False;
         mrCancel: begin
@@ -489,7 +487,6 @@ begin
     eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
     UploadFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf', 'metamod.vdf');
     frmMain.ggeItem.Progress := 3;
-    AddDone;
   end;
   { Upload metaplugins.ini }
   frmMain.ggeAll.Progress := 4;
@@ -500,7 +497,6 @@ begin
     eStr.Clear;
     eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
     UploadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
-    DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini'));
   end
   else
     AddSkipped;
@@ -509,6 +505,7 @@ begin
   { Upload server.dll / server_i486.so }
   frmMain.tmrSpeed.Enabled := True;
   frmMain.ggeItem.Progress := 0;
+  frmMain.IdFTP.ChangeDir('metamod');
   frmMain.IdFTP.ChangeDir('bin');
   if OS = osWindows then begin
     AddStatus('Uploading server.dll...', clBlack);
@@ -524,6 +521,8 @@ begin
   AddStatus('Removing temporary files...', clBlack);
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server.dll'));
   DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'server_i486.so'));
+  DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'metamod.vdf'));
+  DeleteFile(PChar(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini'));
   AddDone;
   { End }
   frmMain.IdFTP.Disconnect;
