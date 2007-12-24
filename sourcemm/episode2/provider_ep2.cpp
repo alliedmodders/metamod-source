@@ -43,6 +43,7 @@
 #include "console.h"
 #include "metamod_console.h"
 #include "vsp_listener.h"
+#include <filesystem.h>
 #if defined DEBUG2
 #undef DEBUG2
 #define _DEBUG
@@ -74,6 +75,7 @@ VSPListener g_VspListener;
 BaseProvider g_Ep1Provider;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 List<ConCommandBase *> conbases_unreg;
+IFileSystem *baseFs = NULL;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
@@ -104,6 +106,13 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		== NULL)
 	{
 		gameclients = (IServerGameClients *)(serverFactory("ServerGameClients004", NULL));
+	}
+
+	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
+	if (baseFs == NULL)
+	{
+		::LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
+		return;
 	}
 
 	RegisterConCommandBase(&meta_local_cmd);
@@ -152,6 +161,11 @@ const char *BaseProvider::GetConVarString(ConVar *convar)
 	}
 
 	return convar->GetString();
+}
+
+void BaseProvider::SetConVarString(ConVar *convar, const char *str)
+{
+	convar->SetValue(str);
 }
 
 bool BaseProvider::IsConCommandBaseACommand(ConCommandBase *pCommand)
@@ -365,6 +379,68 @@ IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(const char *iface)
 bool BaseProvider::IsAlternatelyLoaded()
 {
 	return g_VspListener.IsRootLoadMethod();
+}
+
+bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len)
+{
+	if (baseFs == NULL)
+	{
+		return false;
+	}
+
+	KeyValues *pValues;
+	const char *plugin_file, *p_alias;
+
+	pValues = new KeyValues("Metamod Plugin");
+
+	if (!pValues->LoadFromFile(baseFs, file))
+	{
+		pValues->deleteThis();
+		return false;
+	}
+
+	if ((plugin_file = pValues->GetString("file", NULL)) == NULL)
+	{
+		pValues->deleteThis();
+		return false;
+	}
+
+	if ((p_alias = pValues->GetString("alias", NULL)) != NULL)
+	{
+		UTIL_Format(alias, alias_len, "%s", p_alias);
+	}
+	else
+	{
+		UTIL_Format(alias, alias_len, "");
+	}
+
+	/* Attempt to find a file extension */
+	if (UTIL_GetExtension(plugin_file) == NULL)
+	{
+		g_pMetamod->PathFormat(path, 
+			path_len, 
+			"%s/%s%s", 
+			g_pMetamod->GetBaseDir(), 
+			plugin_file, 
+#if defined WIN32 || defined _WIN32
+			".dll"
+#else
+			"_i486.so"
+#endif
+			);
+	}
+	else
+	{
+		g_pMetamod->PathFormat(path,
+			path_len,
+			"%s/%s", 
+			g_pMetamod->GetBaseDir(),
+			plugin_file);
+	}
+
+	pValues->deleteThis();
+
+	return true;
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

@@ -64,6 +64,7 @@ void Handler_LevelShutdown();
 bool Handler_LevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
 bool Handler_GameInit();
 void InitializeVSP();
+void LookForVDFs(const char *dir);
 
 struct game_dll_t
 {
@@ -88,6 +89,7 @@ bool vsp_loaded = false;
 game_dll_t gamedll_info;
 ConVar *metamod_version = NULL;
 ConVar *mm_pluginsfile = NULL;
+ConVar *mm_basedir = NULL;
 IServerGameDLL *server = NULL;
 CreateInterfaceFn engine_factory = NULL;
 CreateInterfaceFn physics_factory = NULL;
@@ -102,6 +104,7 @@ IServerPluginCallbacks *vsp_callbacks = NULL;
 bool were_plugins_loaded = false;
 
 MetamodSource g_Metamod;
+SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
 void ClearGamedllList();
 
@@ -699,6 +702,7 @@ void LogMessage(const char *msg, ...)
 void DoInitialPluginLoads()
 {
 	const char *pluginFile = provider->GetCommandLineValue("mm_pluginsfile", NULL);
+	const char *mmBaseDir = provider->GetCommandLineValue("mm_basedir", NULL);
 	if (!pluginFile) 
 	{
 		pluginFile = provider->GetConVarString(mm_pluginsfile);
@@ -707,19 +711,40 @@ void DoInitialPluginLoads()
 			pluginFile = "addons/metamod/metaplugins.ini";
 		}
 	}
+	if (!mmBaseDir)
+	{
+		mmBaseDir = provider->GetConVarString(mm_basedir);
+		if (mmBaseDir == NULL)
+		{
+			mmBaseDir = "addons/metamod";
+		}
+	}
 
 	char full_path[260];
-	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), pluginFile);
 
+	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), pluginFile);
 	LoadPluginsFromFile(full_path);
+
+	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), mmBaseDir);
+	LookForVDFs(full_path);
 }
 
-void StartupMetamod(bool bWaitForGameInit)
+void StartupMetamod(bool is_vsp_load)
 {
+	char buffer[255];
+
+	UTIL_Format(buffer,
+		sizeof(buffer),
+		"%s%s",
+		SOURCEMM_VERSION,
+		is_vsp_load ? "V" : "");
+
 	metamod_version = provider->CreateConVar("metamod_version", 
 		SOURCEMM_VERSION, 
 		"Metamod:Source Version",
 		ConVarFlag_Notify|ConVarFlag_Replicated|ConVarFlag_SpOnly);
+
+	provider->SetConVarString(metamod_version, buffer);
 
 	mm_pluginsfile = provider->CreateConVar("mm_pluginsfile", 
 #if defined WIN32 || defined _WIN32
@@ -730,7 +755,16 @@ void StartupMetamod(bool bWaitForGameInit)
 		"Metamod:Source Plugins File",
 		ConVarFlag_SpOnly);
 
-	if (!bWaitForGameInit)
+	mm_basedir = provider->CreateConVar("mm_basedir",
+#if defined __linux__
+		"addons/metamod",
+#else
+		"addons\\metamod",
+#endif
+		"Metamod:Source Base Folder",
+		ConVarFlag_SpOnly);
+
+	if (!is_vsp_load)
 	{
 		DoInitialPluginLoads();
 		in_first_level = true;
@@ -827,13 +861,20 @@ void Handler_LevelShutdown(void)
 	if (!in_first_level)
 	{
 		char full_path[255];
+
 		g_Metamod.PathFormat(full_path, 
 			sizeof(full_path), 
 			"%s/%s", 
 			mod_path.c_str(),
 			provider->GetConVarString(mm_pluginsfile));
-
 		LoadPluginsFromFile(full_path);
+
+		g_Metamod.PathFormat(full_path,
+			sizeof(full_path),
+			"%s/%s",
+			mod_path.c_str(),
+			provider->GetConVarString(mm_basedir));
+		LookForVDFs(full_path);
 	}
 	else
 	{
@@ -1346,4 +1387,96 @@ void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version)
 bool MetamodSource::IsAlternateLoadComplete()
 {
 	return were_plugins_loaded;
+}
+
+void ProcessVDF(const char *path)
+{
+	PluginId id;
+	bool already;
+	char alias[24], file[255], error[255];
+
+	if (!provider->ProcessVDF(path, file, sizeof(file), alias, sizeof(alias)))
+	{
+		return;
+	}
+
+	if (alias[0] != '\0')
+	{
+		g_PluginMngr.SetAlias(alias, file);
+	}
+
+	id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
+	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+	{
+		LogMessage("[META] Failed to load plugin %s: %s", file, error);
+	}
+}
+
+void LookForVDFs(const char *dir)
+{
+	char path[MAX_PATH];
+
+#if defined _MSC_VER
+	HANDLE hFind;
+	WIN32_FIND_DATA fd;
+	char error[255];
+
+	g_Metamod.PathFormat(path, sizeof(path), "%s\\*.*", dir);
+	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
+	{
+		DWORD dw = GetLastError();
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			error,
+			sizeof(error),
+			NULL);
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
+		return;
+	}
+
+	do
+	{
+		if (strcmp(fd.cFileName, ".") == 0
+			|| strcmp(fd.cFileName, "..") == 0)
+		{
+			continue;
+		}
+		if (strstr(fd.cFileName, ".vdf") == NULL)
+		{
+			continue;
+		}
+		g_Metamod.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
+		ProcessVDF(path);
+	} while (FindNextFile(hFind, &fd));
+
+	FindClose(hFind);
+#else
+	DIR *pDir;
+	struct dirent *pEnt;
+
+	if ((pDir = opendir(dir)) == NULL)
+	{
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
+		return;
+	}
+
+	while ((pEnt = readdir(pDir)) != NULL)
+	{
+		if (strcmp(pEnt->d_name, ".") == 0
+			|| strcmp(pEnt->d_name, "..") == 0)
+		{
+			continue;
+		}
+		if (strstr(pEnt->d_name, ".vdf") == NULL)
+		{
+			continue;
+		}
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
+		ProcessVDF(path);
+	}
+
+	closedir(pDir);
+#endif
 }

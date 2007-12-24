@@ -68,6 +68,7 @@ public:
 		const char *help,
 		int flags);
 	virtual const char *GetConVarString(ConVar *convar);
+	virtual void SetConVarString(ConVar *convar, const char *str);
 	virtual const char *GetGameDescription();
 	virtual IConCommandBaseAccessor *GetConCommandBaseAccessor();
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
@@ -78,6 +79,7 @@ public:
 	virtual const char *GetUserMessage(int index, int *size=NULL);
 	virtual int DetermineSourceEngine(const char *game);
 	virtual bool IsAlternatelyLoaded();
+	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
 };
 
 extern IVEngineServer *engine;

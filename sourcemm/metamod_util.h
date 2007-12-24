@@ -95,4 +95,6 @@ bool UTIL_Relatize(char buffer[],
 				   const char *relTo,
 				   const char *relFrom);
 
+void LogMessage(const char *msg, ...);
+
 #endif //_INCLUDE_UTIL_H

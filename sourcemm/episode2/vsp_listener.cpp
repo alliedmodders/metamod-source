@@ -218,6 +218,7 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 
 		InitializeForLoad();
 		InitializeGlobals(interfaceFactory, interfaceFactory, interfaceFactory, pGlobals);
+		StartupMetamod(true);
 		
 		const ConCommandBase *pBase = icvar->GetCommands();
 		while (pBase != NULL)
@@ -240,7 +241,10 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 	m_bLoaded = true;
 	SetLoadable(false);
 
-	g_Metamod.NotifyVSPListening(this);
+	if (!m_bIsRootLoadMethod)
+	{
+		g_Metamod.NotifyVSPListening(this);
+	}
 
 	return true;
 }

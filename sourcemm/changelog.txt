@@ -8,6 +8,9 @@
      instance pointer rather than a callclass pointer.
  - Metamod:Source has now received a large internal rewrite to improve coding 
    standards and to separate internal logic from engine specifics.
+ - Added ability to load from a VDF file instead of gameinfo.txt.
+ - Added ability to load MM:S plugins from VDF files.
+ - Added mm_basedir cvar to specify Metamod's base folder.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
  - Added API for detecting the engine version.

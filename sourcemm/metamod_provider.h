@@ -220,6 +220,14 @@ namespace SourceMM
 		virtual const char *GetConVarString(ConVar *convar) =0;
 
 		/**
+		 * @brief Sets a ConVar string.
+		 *
+		 * @param convar			ConVar pointer.
+		 * @param str				String pointer.
+		 */
+		virtual void SetConVarString(ConVar *convar, const char *str) =0;
+
+		/**
 		 * @brief Retrieves the game description.
 		 *
 		 * @return					Game description.
@@ -297,12 +305,19 @@ namespace SourceMM
 		 * @return				True if loaded, false otherwise.
 		 */
 		virtual bool IsAlternatelyLoaded() =0;
+
+		/**
+		 * @brief Processes a VDF plugin file.
+		 *
+		 */
+		virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len) =0;
 	};
 };
 
 extern PluginId g_PLID;
 extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceMM::IMetamodSourceProvider *provider;
+extern SourceMM::ISmmAPI *g_pMetamod;
 
 #endif //_INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 

@@ -385,6 +385,11 @@ namespace SourceMM
 		 * loading plugin should use ISmmAPI::GetVSPInfo() before relying on 
 		 * this callback.
 		 *
+		 * This callback is never called if Metamod:Source is in VSP mode.  
+		 * If in VSP mode, a VSP instance is automatically and always available 
+		 * via ISmmAPI::GetVSPInfo(), which should be called anyway (to handle 
+		 * late loading cases).
+		 *
 		 * @param iface			Interface pointer.  If NULL, then the VSP 
 		 * 						listening construct failed to initialize and 
 		 * 						is not available.

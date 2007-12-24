@@ -110,6 +110,7 @@ void InitializeGlobals(CreateInterfaceFn engineFactory,
 					   CreateInterfaceFn physicsFactory,
 					   CreateInterfaceFn filesystemFactory,
 					   CGlobalVars *pGlobals);
+void StartupMetamod(bool is_vsp_load);
 void UnloadMetamod();
 
 extern MetamodSource g_Metamod;
