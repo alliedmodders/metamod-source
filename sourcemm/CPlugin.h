@@ -132,6 +132,8 @@ namespace SourceMM
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
 
 		void SetVSPAsLoaded();
+		unsigned int GetPluginCount();
+		const char *CPluginManager::GetStatusText(CPlugin *pl);
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);

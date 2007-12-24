@@ -154,11 +154,11 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
 			if (g_VspListener.IsRootLoadMethod())
 			{
-				CONMSG("Load Method: Valve Server Plugin\n");
+				CONMSG("Loaded As: Valve Server Plugin\n");
 			}
 			else
 			{
-				CONMSG("Load Method: GameDLL (gameinfo.txt)\n");
+				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
 			}
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
@@ -208,58 +208,64 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 			return;
 		} else if (strcmp(command, "list") == 0) {
-			SourceMM::CPluginManager::CPlugin *pl;
+			size_t len;
 			PluginIter i;
-			const char *status="";
-			const char *version=NULL;
-			const char *name=NULL;
-			const char *author=NULL;
+			char buffer[255];
+			ISmmPlugin *plapi;
+			const char *plname;
+			SourceMM::CPluginManager::CPlugin *pl;
+			unsigned int plnum = g_PluginMngr.GetPluginCount();
 
-			CONMSG("-Id- %-20.19s  %-10.9s  %-20.19s %-8.7s\n", "Name", "Version", "Author", "Status");
+#define IS_STR_FILLED(var) (var != NULL && var[0] != '\0')
+
+			if (!plnum)
+			{
+				CONMSG("No plugins loaded.\n");
+				return;
+			}
+			else
+			{
+				CONMSG("Listing %d plugin%s:\n", plnum, (plnum > 1) ? "s" : "");
+			}
+
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
 				if (!pl)
+				{
 					break;
-				if (pl->m_Status == Pl_Paused)
-				{
-					status = "PAUSE";
-				} else if (pl->m_Status == Pl_Running) {
-					if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
-						status = "RUN";
-					else
-						status = "STOPPED";
-				} else if (pl->m_Status == Pl_Refused) {
-					status = "FAIL";
-				} else if (pl->m_Status == Pl_Error) {
-					status = "ERROR";
-				} else if (pl->m_Status == Pl_NotFound) {
-					status = "NOFILE";
 				}
 
-				if (pl->m_API)
+				len = 0;
+
+				if (pl->m_Status != Pl_Running)
 				{
-					version = pl->m_API->GetVersion();
-					author = pl->m_API->GetAuthor();
-					name = pl->m_API->GetName();
-				} else {
-					version = "-";
-					author = "-";
-					name = "-";
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d] <%s>", pl->m_Id, g_PluginMngr.GetStatusText(pl));
+				}
+				else
+				{
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", pl->m_Id);
 				}
 
-				if (!version)
-					version = "-";
-				if (!author)
-					author = "-";
-				if (!name)
-					name = pl->m_File.c_str();
+				if ((plapi = pl->m_API))
+				{
+					plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+					len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
 
+					if (IS_STR_FILLED(plapi->GetVersion()))
+					{
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+					}
+					if (IS_STR_FILLED(plapi->GetAuthor()))
+					{
+						UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
+					}
+				}
 
-				CONMSG("[%02d] %-20.19s  %-10.9s  %-20.19s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("%s\n", buffer);
 			}
 
-			//CONMSG("\n");
+#undef IS_STR_FILLED
 
 			return;
 		} else if (strcmp(command, "cmds") == 0) {

@@ -173,6 +173,13 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
 			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
 		}
+
+		/* Ho ho ho... if we get here, set a new cvar version. */
+		extern ConVar metamod_version;
+		char buffer[255];
+
+		UTIL_Format(buffer, sizeof(buffer), "%sV", metamod_version.GetString());
+		metamod_version.SetValue(buffer);
 	}
 
 	m_Loaded = true;

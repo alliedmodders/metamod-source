@@ -665,3 +665,34 @@ void CPluginManager::UnregAllConCmds(CPlugin *pl)
 
 	pl->m_Cmds.clear();
 }
+
+const char *CPluginManager::GetStatusText(CPlugin *pl)
+{
+	switch (pl->m_Status)
+	{
+	case Pl_NotFound:
+		return "NOFILE";
+	case Pl_Error:
+		return "ERROR";
+	case Pl_Refused:
+		return "FAILED";
+	case Pl_Paused:
+		return "PAUSED";
+	case Pl_Running:
+		{
+			if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
+			{
+				return "STOPPED";
+			} else {
+				return "RUNNING";
+			}
+		}
+	default:
+		return "-";
+	}
+}
+
+unsigned int CPluginManager::GetPluginCount()
+{
+	return (unsigned int)m_Plugins.size();
+}
