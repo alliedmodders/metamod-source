@@ -265,8 +265,6 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 				CONMSG("%s\n", buffer);
 			}
 
-#undef IS_STR_FILLED
-
 			return;
 		} else if (strcmp(command, "cmds") == 0) {
 			if (args >= 3)
@@ -727,42 +725,46 @@ void ClientCommand_handler(edict_t *client)
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "list") == 0) {
 				SourceMM::CPluginManager::CPlugin *pl;
-				Pl_Status st;
+				ISmmPlugin *plapi;
+				const char *plname;
 				PluginIter i;
-				const char *version = NULL;
-				const char *name = NULL;
-				const char *author = NULL;
-				const char *status = NULL;
+				char buffer[256];
+				int len = 0;
+				int plnum = 0;
 
-				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-20.19s  %6s\n", "Name", "Version", "Author", "Status");
-
-				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
+				for (i = g_PluginMngr._begin(); i != g_PluginMngr._end(); i++, len=0)
 				{
 					pl = (*i);
-					if (!pl)
-						break;
-					
-					st = pl->m_Status;
-
-					/* Only show plugins that are running or paused */
-					if (pl->m_API && (st == Pl_Running || st == Pl_Paused))
+					if (pl && pl->m_Status == Pl_Running)
 					{
-						version = pl->m_API->GetVersion();
-						author = pl->m_API->GetAuthor();
-						name = pl->m_API->GetName();
-
-						if (st == Pl_Running && pl->m_API->QueryRunning(NULL, 0))
+						plapi = pl->m_API;
+						if (!plapi || !plapi->QueryRunning(NULL, 0))
 						{
-							status = "RUN";
-						} else {
-							status = "PAUSE";
+							continue;
+						}
+						plnum++;
+
+						len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", plnum);
+
+						plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
+
+						if (IS_STR_FILLED(plapi->GetVersion()))
+						{
+							len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+						}
+						if (IS_STR_FILLED(plapi->GetAuthor()))
+						{
+							UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
 						}
 
-						if (!version || !author || !name)
-							break;
-
-						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-20.19s  %6s\n", pl->m_Id, name, version, author, status);
+						CLIENT_CONMSG(client, "%s\n", buffer);
 					}
+				}
+
+				if (!plnum)
+				{
+					CLIENT_CONMSG(client, "No active plugins loaded.\n");
 				}
 
 				RETURN_META(MRES_SUPERCEDE);
