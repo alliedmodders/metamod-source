@@ -133,7 +133,7 @@ namespace SourceMM
 
 		void SetVSPAsLoaded();
 		unsigned int GetPluginCount();
-		const char *CPluginManager::GetStatusText(CPlugin *pl);
+		const char *GetStatusText(CPlugin *pl);
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
