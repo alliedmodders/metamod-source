@@ -222,5 +222,11 @@ bool TestRecall(std::string &error)
 
 	CHECK_COND(a == 0xDEADFC, "Part 5.1");
 
+	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost_Func2, true);
+	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, Handler2_Func2, false);
+	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, Handler1_Func22, false);
+	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost1_Func22, true);
+	SH_REMOVE_HOOK_STATICFUNC(Test, Func2, ptr, HandlerPost2_Func22, true);
+
 	return true;
 }

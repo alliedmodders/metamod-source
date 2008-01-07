@@ -159,5 +159,7 @@ bool TestRef(std::string &error)
 		new State_Result(12),
 		NULL), "Part 4");
 
+	SH_REMOVE_HOOK_MEMFUNC(CHello, Func, &hello, &hook, &CHook::Func, false);
+
    	return true;
 }
