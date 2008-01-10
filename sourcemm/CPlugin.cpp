@@ -368,7 +368,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		if (!pl->m_Lib)
 		{
 			if (error)
-				UTIL_Format(error, maxlen, "%s", dlerror());
+				UTIL_Format(error, maxlen, "[%d]", GetLastError());
 			pl->m_Status = Pl_Error;
 		} else {
 			CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
