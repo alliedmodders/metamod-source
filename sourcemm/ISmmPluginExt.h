@@ -28,6 +28,8 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 #define _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 
+#include <stddef.h>
+
 /**
  * @file ISmmPluginExt.h 	Definitions for extended plugin exposure syntax.
  * @brief Provides an alternate method for loading plugins, without needing to 
