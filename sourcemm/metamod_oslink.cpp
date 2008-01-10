@@ -27,19 +27,31 @@
 
 #include "metamod_oslink.h"
 #include <malloc.h>
+#include <stdio.h>
 #ifdef __linux
 #include <errno.h>
-#include <stdio.h>
 #endif
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 const char *dlerror()
 {
 	static char buf[1024];
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, GetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
-		(LPTSTR) &buf, 0, NULL);
+	DWORD num;
+
+	num = GetLastError();
+	
+	if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, 
+			num,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+			buf, 
+			sizeof(buf), 
+			NULL)
+		== 0)
+	{
+		_snprintf(buf, sizeof(buf), "unknown error %x", num);
+	}
+
 	return buf;
 }
 #endif
