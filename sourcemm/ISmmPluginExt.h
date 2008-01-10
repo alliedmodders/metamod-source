@@ -28,6 +28,12 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 #define _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 
+/**
+ * @file ISmmPluginExt.h 	Definitions for extended plugin exposure syntax.
+ * @brief Provides an alternate method for loading plugins, without needing to 
+ * 		  include the default headers and all their Half-Life baggage.
+ */
+
 #define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
 #define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
 #define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
@@ -39,15 +45,54 @@
 namespace SourceMM
 {
 	class ISmmPlugin;
+	class ISmmAPI;
+
+	/**
+	 * @brief Used to uniquely identify plugins.
+	 */
+	typedef int PluginId;
+
+	#define METAMOD_FAIL_API_V1			7				/**< Minimum API version to detect for V1 */
+	#define METAMOD_FAIL_API_V2			14				/**< Minimum API version to detect for V2 */
+
+	/**
+	 * Use this to instantiate a plugin that will always fail.
+	 * This class definition works against major API versions 1 and 2.
+	 */
+	class ISmmFailPlugin
+	{
+	public:
+		/**
+		 * @brief You must return METAMOD_FAIL_API_V1 or METAMOD_FAIL_API_V2 here, 
+		 * depending on which Metamod:Source version you detected.
+		 */
+		virtual int GetApiVersion() = 0;
+
+		/**
+		 * @brief Do not change.
+		 */
+		virtual ~ISmmFailPlugin()
+		{
+		}
+
+		/**
+		 * @brief Return false here -- fill in the error buffer appropriately.
+		 *
+		 * Do not ever return true.  If you do, MM:S will crash because the class layout is 
+		 * incomplete against ISmmPlugin.
+		 * 
+		 * @param id			Ignore.
+		 * @param ismm			Ignore.
+		 * @param error			Error buffer (must be filled).
+		 * @param maxlength		Maximum size of error buffer.
+		 * @param late			Ignore.
+		 * @return				Must return false.
+		 */
+		virtual bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlength, bool late) =0;
+	};
 }
 
 typedef SourceMM::ISmmPlugin METAMOD_PLUGIN;
-
-/**
- * @file ISmmPluginExt.h 	Definitions for extended plugin exposure syntax.
- * @brief Provides an alternate method for loading plugins, without needing to 
- * 		  include the default headers and all their Half-Life baggage.
- */
 
 /**
  * @brief Contains version information.

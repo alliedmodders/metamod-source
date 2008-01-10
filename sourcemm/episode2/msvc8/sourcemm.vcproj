@@ -227,6 +227,10 @@
 				RelativePath="..\..\ISmmPlugin.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\ISmmPluginExt.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Metamod"

@@ -33,13 +33,10 @@
  * @file IPluginManager.h
  */
 
+#include <ISmmPluginExt.h>
+
 namespace SourceMM
 {
-	/**
-	 * @brief Used to uniquel identify plugins.
-	 */
-	typedef int PluginId;
-
 	/**
 	 * @brief Load sources
 	 */
