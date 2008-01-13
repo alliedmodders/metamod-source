@@ -465,10 +465,7 @@ begin
     frmMain.ggeItem.Progress := 2;
     if (((Pos('server.dll', eStr.Text) <> 0) and (OS = osWindows)) or ((Pos('server_i486.so', eStr.Text) <> 0) and (OS = osLinux))) then begin
       case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
-        mrNo: begin
-          AddSkipped;
-          CopyConfig := False;
-        end;
+        mrNo: CopyConfig := False;
         mrCancel: begin
           Application.Terminate;
           eStr.Free;
@@ -481,6 +478,7 @@ begin
   end;
   { Create and Upload plugin here }
   frmMain.ggeItem.Progress := 2;
+  eStr.Clear;
   eStr.Add('"Plugin"');
   eStr.Add('{');
   if (OS = osWindows) then
@@ -514,8 +512,8 @@ begin
     eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
     UploadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
   end
-  else begin
-    DownloadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
+  else if (frmMain.IdFTP.Size('metaplugins.ini') <> -1) then begin
+    DownloadFile('metaplugins.ini', ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
     eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
     CommentFound := False;
     for i := 0 to eStr.Count -1 do begin
@@ -542,7 +540,6 @@ begin
       // end
       eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
       UploadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
-      AddDone;
     end;
   end;
   frmMain.ggeAll.Progress := 5;
