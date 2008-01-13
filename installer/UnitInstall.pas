@@ -406,7 +406,8 @@ label CreateAgain;
 label UploadAgain;
       
 var eStr: TStringList;
-    CopyConfig: Boolean;
+    CopyConfig, CommentFound: Boolean;
+    i: Integer;
 begin
   frmMain.cmdCancel.Show;
   frmMain.cmdNext.Hide;
@@ -457,6 +458,8 @@ begin
   eStr := TStringList.Create;
   try
     frmMain.IdFTP.ChangeDirUp;
+    frmMain.IdFTP.ChangeDirUp;
+    
     frmMain.ggeItem.Progress := 1;
     DownloadFile('metamod.vdf', ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
     eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
@@ -472,9 +475,7 @@ begin
           exit;
         end;
       end;
-    end
-    else
-      raise Exception.Create('Create config now!');
+    end;
   except
     frmMain.ggeItem.Progress := 2;
     eStr.Add('"Plugin"');
@@ -493,19 +494,60 @@ begin
   frmMain.ggeItem.MaxValue := 1;
   frmMain.ggeItem.Progress := 0;
   AddStatus('Uploading metaplugins.ini...', clBlack);
-  if CopyConfig then begin
+  frmMain.IdFTP.ChangeDir('metamod');
+  if (CopyConfig) then begin
     eStr.Clear;
+    // see http://svn.alliedmods.net/viewvc.cgi/metamodsource/orangebox/addons/metamod/metaplugins.ini?revision=1099&root=Packages
+    eStr.Add(';List one plugin per line.  Each line should contain the path to the plugin''s binary.');
+    eStr.Add(';Any line starting with a '';'' character is a comment line, and is ignored.');
+    eStr.Add(';');
+    eStr.Add(';You do not need to include the _i486.so or .dll part of the file name.  Example:');
+    eStr.Add('; addons/sourcemod/bin/sourcemod_mm');
+    eStr.Add(';You may also put an alias in front of the file, for example:');
+    eStr.Add('; sm addons/sourcemod/bin/sourcemod_mm');
+    eStr.Add(';Will allow you to use "meta load sm" from the console.');
+    eStr.Add(';');
+    eStr.Add(';********* LIST PLUGINS BELOW ***********');
+    // end
     eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
     UploadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
   end
-  else
-    AddSkipped;
+  else begin
+    DownloadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
+    eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
+    CommentFound := False;
+    for i := 0 to eStr.Count -1 do begin
+      if (Pos(';', eStr[i]) = 1) then begin
+        CommentFound := True;
+        break;
+      end;
+    end;
+    
+    if (CommentFound) then
+      AddSkipped
+    else begin
+      // see http://svn.alliedmods.net/viewvc.cgi/metamodsource/orangebox/addons/metamod/metaplugins.ini?revision=1099&root=Packages
+      eStr.Insert(0, ';List one plugin per line.  Each line should contain the path to the plugin''s binary.');
+      eStr.Insert(1, ';Any line starting with a '';'' character is a comment line, and is ignored.');
+      eStr.Insert(2, ';');
+      eStr.Insert(3, ';You do not need to include the _i486.so or .dll part of the file name.  Example:');
+      eStr.Insert(4, '; addons/sourcemod/bin/sourcemod_mm');
+      eStr.Insert(5, ';You may also put an alias in front of the file, for example:');
+      eStr.Insert(6, '; sm addons/sourcemod/bin/sourcemod_mm');
+      eStr.Insert(7, ';Will allow you to use "meta load sm" from the console.');
+      eStr.Insert(8, ';');
+      eStr.Insert(9, ';********* LIST PLUGINS BELOW ***********');
+      // end
+      eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini');
+      UploadFile(ExtractFilePath(ParamStr(0)) + 'metaplugins.ini', 'metaplugins.ini');
+      AddDone;
+    end;
+  end;
   frmMain.ggeAll.Progress := 5;
   frmMain.ggeItem.Progress := 1;
   { Upload server.dll / server_i486.so }
   frmMain.tmrSpeed.Enabled := True;
   frmMain.ggeItem.Progress := 0;
-  frmMain.IdFTP.ChangeDir('metamod');
   frmMain.IdFTP.ChangeDir('bin');
   if OS = osWindows then begin
     AddStatus('Uploading server.dll...', clBlack);
