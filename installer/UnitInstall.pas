@@ -448,12 +448,12 @@ begin
   except
     AddSkipped;
   end;
-  { Create/Edit VDF Plugin }
+  { Check VDF Plugin }
   CopyConfig := True;
   
   frmMain.ggeAll.Progress := 3;
   frmMain.ggeItem.Progress := 0;
-
+  
   AddStatus('Creating VDF Plugin...', clBlack);
   eStr := TStringList.Create;
   try
@@ -464,10 +464,11 @@ begin
     eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
     frmMain.ggeItem.Progress := 2;
     if (((Pos('server.dll', eStr.Text) <> 0) and (OS = osWindows)) or ((Pos('server_i486.so', eStr.Text) <> 0) and (OS = osLinux))) then begin
-      AddSkipped;
-      
       case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
-        mrNo: CopyConfig := False;
+        mrNo: begin
+          AddSkipped;
+          CopyConfig := False;
+        end;
         mrCancel: begin
           Application.Terminate;
           eStr.Free;
@@ -476,18 +477,20 @@ begin
       end;
     end;
   except
-    frmMain.ggeItem.Progress := 2;
-    eStr.Add('"Plugin"');
-    eStr.Add('{');
-    if (OS = osWindows) then
-      eStr.Add('    "file"      "..\' + ModDir + '\addons\metamod\bin\server.dll"')
-    else
-      eStr.Add('    "file"      "../' + ModDir + '/addons/metamod/bin/server_i486.so"');
-    eStr.Add('}');
-    eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
-    UploadFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf', 'metamod.vdf');
-    frmMain.ggeItem.Progress := 3;
+    // bacon
   end;
+  { Create and Upload plugin here }
+  frmMain.ggeItem.Progress := 2;
+  eStr.Add('"Plugin"');
+  eStr.Add('{');
+  if (OS = osWindows) then
+    eStr.Add('    "file"      "..\' + ModDir + '\addons\metamod\bin\server.dll"')
+  else
+    eStr.Add('    "file"      "../' + ModDir + '/addons/metamod/bin/server_i486.so"');
+  eStr.Add('}');
+  eStr.SaveToFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
+  UploadFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf', 'metamod.vdf');
+  frmMain.ggeItem.Progress := 3;
   { Upload metaplugins.ini }
   frmMain.ggeAll.Progress := 4;
   frmMain.ggeItem.MaxValue := 1;
