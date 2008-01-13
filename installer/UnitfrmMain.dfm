@@ -10407,7 +10407,7 @@ object frmMain: TfrmMain
         Lines.Strings = (
           'The zlib/libpng License'
           ''
-          'Copyright (c) 2006, AlliedModders'
+          'Copyright (c) 2006-2008, AlliedModders'
           ''
           
             'This software is provided '#39'as-is'#39', without any express or implie' +

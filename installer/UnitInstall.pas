@@ -458,7 +458,6 @@ begin
   eStr := TStringList.Create;
   try
     frmMain.IdFTP.ChangeDirUp;
-    frmMain.IdFTP.ChangeDirUp;
     
     frmMain.ggeItem.Progress := 1;
     DownloadFile('metamod.vdf', ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
