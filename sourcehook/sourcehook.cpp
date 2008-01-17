@@ -782,7 +782,7 @@ namespace SourceHook
 		
 		// But: we have to return false in the post phase of pre recalls (ie. a pre hook made a recall).
 		if (m_HLIStack.front().recall == HookLoopInfo::Recall_Pre &&
-			static_cast<CIface*>(m_HLIStack.front().pCurIface)->m_PostHooks.RQFlagGet())
+			static_cast<CIface*>(m_HLIStack.front().pCurIface)->m_PreHooks.RelFlagGet())
 		{
 			return false;
 		}
@@ -1020,6 +1020,8 @@ namespace SourceHook
 	}
 	void CSourceHookImpl::CHookList::ReleaseIter(IIter *pIter)
 	{
+		m_RelFlag = true;
+
 		CIter *pIter2 = static_cast<CIter*>(pIter);
 
 		// Unlink from m_UsedIters
@@ -1029,7 +1031,7 @@ namespace SourceHook
 		if (pIter2->m_pPrev)
 			pIter2->m_pPrev->m_pNext = pIter2->m_pNext;
 		if (pIter2 == m_UsedIters)
-			m_UsedIters = NULL;
+			m_UsedIters = m_UsedIters->m_pNext;
 
 		// Link to m_FreeIters
 
