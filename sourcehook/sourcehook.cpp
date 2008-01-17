@@ -752,11 +752,6 @@ namespace SourceHook
 
 	bool CSourceHookImpl::ShouldContinue()
 	{
-		// If recall is true, we shall not continue either.
-		// This is because, if it's true and ShouldContinue is called, it suggests that the
-		// actual recall is done and that we are back in the original handler which shall return
-		// immediately.
-
 		// Post-recalls:
 		//  The second element on the stack has recall set to Recall_Post1.
 		//  This means that we want to skip this part and the original function calling thing, so
@@ -778,7 +773,21 @@ namespace SourceHook
 				return m_HLIStack.front().shouldContinue;
 			}
 		}
-		return m_HLIStack.front().shouldContinue && !m_HLIStack.front().recall;
+
+		// 16.01.2008: We used to return false for recalls here.
+		// This caused the hook funcs to think that the whole iface has been destroyed
+		// (the original purpose of shouldcontinue was to notify the hookfuncs that everything has been
+		// invalidated by RemoveHook) so they did not release their iterator. -> Leaks
+		// Now, GetIter sets the iterator to END so it still gets released but the hooks don't continue.
+		
+		// But: we have to return false in the post phase of pre recalls (ie. a pre hook made a recall).
+		if (m_HLIStack.front().recall == HookLoopInfo::Recall_Pre &&
+			static_cast<CIface*>(m_HLIStack.front().pCurIface)->m_PostHooks.RQFlagGet())
+		{
+			return false;
+		}
+
+		return m_HLIStack.front().shouldContinue;
 	}
 
 	void CSourceHookImpl::DoRecall()
@@ -994,6 +1003,9 @@ namespace SourceHook
 			ret->Set(m_UsedIters);		// m_UsedIters is the last returned and not released iterator
 			ret->Next();				// Use next instead of directly incrementing its m_Iter:
 										// skips paused plugins
+
+			// Set the last iterator to END!
+			m_UsedIters->GoToEnd();
 		}
 
 		ret->m_pNext = m_UsedIters;
@@ -1048,6 +1060,11 @@ namespace SourceHook
 		SkipPaused();
 	}
 
+	void CSourceHookImpl::CHookList::CIter::GoToEnd()
+	{
+		m_Iter = m_pList->m_List.end();
+	}
+
 	bool CSourceHookImpl::CHookList::CIter::End()
 	{
 		if (!m_pList)
@@ -1056,7 +1073,7 @@ namespace SourceHook
 	}
 	void CSourceHookImpl::CHookList::CIter::Next()
 	{
-		if (!m_pList)
+		if (!m_pList || m_Iter == m_pList->m_List.end())
 			return;
 		++m_Iter;
 		SkipPaused();

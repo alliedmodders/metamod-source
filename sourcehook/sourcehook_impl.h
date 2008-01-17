@@ -257,6 +257,7 @@ namespace SourceHook
 				virtual ~CIter();
 
 				void GoToBegin();
+				void GoToEnd();
 				void Set(CIter *pOther);
 
 				bool End();
