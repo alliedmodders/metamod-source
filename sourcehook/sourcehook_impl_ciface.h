@@ -31,6 +31,7 @@ namespace SourceHook
 
 			// *** Interface ***
 			inline CIface(void *ptr);
+			inline ~CIface();
 			inline bool operator==(const Descriptor &other);
 			inline void *GetPtr() const;
 			inline List<CHook> &GetPreHookList();
@@ -43,6 +44,20 @@ namespace SourceHook
 		inline CIface::CIface(void *ptr)
 			: m_Ptr(ptr)
 		{
+		}
+
+		inline CIface::~CIface()
+		{
+			// Before getting deleted, delete all remaining hook handlers
+			for (List<CHook>::iterator iter = m_PreHooks.begin(); iter != m_PreHooks.end(); ++iter)
+			{
+				iter->GetHandler()->DeleteThis();
+			}
+
+			for (List<CHook>::iterator iter = m_PostHooks.begin(); iter != m_PostHooks.end(); ++iter)
+			{
+				iter->GetHandler()->DeleteThis();
+			}
 		}
 
 		inline bool CIface::operator==(const Descriptor &other)
