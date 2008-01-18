@@ -1047,6 +1047,7 @@ namespace
 
 		// Test for high vtable indices
 		Hello *pHello = new Hello;
+		CAutoPtrDestruction<Hello> apdHello(pHello);
 		SourceHook::CProtoInfoBuilder helloPi(SourceHook::ProtoInfo::CallConv_ThisCall);
 		SourceHook::HookManagerPubFunc helloHM_4 = g_HMAGPtr->MakeHookMan(helloPi, 0, 4);
 		SourceHook::HookManagerPubFunc helloHM_79 = g_HMAGPtr->MakeHookMan(helloPi, 0, 79);
