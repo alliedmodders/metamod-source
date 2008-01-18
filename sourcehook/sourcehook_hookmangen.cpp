@@ -74,12 +74,12 @@ namespace SourceHook
 			m_PubFunc.clear();
 			if (m_BuiltPI_Params)
 			{
-				delete m_BuiltPI_Params;
+				delete [] m_BuiltPI_Params;
 				m_BuiltPI_Params = NULL;
 			}
 			if (m_BuiltPI_Params2)
 			{
-				delete m_BuiltPI_Params2;
+				delete [] m_BuiltPI_Params2;
 				m_BuiltPI_Params2 = NULL;
 			}
 		}
