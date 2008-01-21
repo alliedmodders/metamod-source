@@ -185,9 +185,9 @@ begin
     end
     else
       eStr.Free;
-    // check for orangebox directory
+    // check for orangebox directory (!! OrangeBox Check !!)
     Source := True;
-    if (AnsiSameText(trvDirectories.Selected.Text, 'tf')) then begin
+    if (AnsiSameText(trvDirectories.Selected.Text, 'tf')) or (Pos('orangebox', LowerCase(ePath)) <> 0) then begin
       case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
         mrYes: Source := False;
         mrNo: Source := True;
@@ -221,11 +221,11 @@ begin
     if frbDedicatedServer.Checked then begin
       Source := True;
       ePath := trvMods.Selected.Text;
-      if ePath = 'Counter-Strike:Source' then
+      if (ePath = 'Counter-Strike:Source') then
         ePath := trvMods.Selected.Parent.Text + '\source dedicated server\cstrike'
-      else if ePath = 'Day of Defeat:Source' then
+      else if (ePath = 'Day of Defeat:Source') then
         ePath := trvMods.Selected.Parent.Text + '\source dedicated server\dod'
-      else if ePath = 'Half-Life 2 Deathmatch' then
+      else if (ePath = 'Half-Life 2 Deathmatch') then
         ePath := trvMods.Selected.Parent.Text + '\source dedicated server\hl2mp'
       else begin
         { get games }
@@ -318,9 +318,7 @@ begin
     end;
     { Custom mod below }
   end
-  else if jplWizard.ActivePage <> jspInstallMethod then
-    jplWizard.NextPage
-  else begin
+  else if (jplWizard.ActivePage = jspInstallMethod) then begin
     if frbDedicatedServer.Checked then begin    // Dedicated Server
       eRegistry := TRegistry.Create(KEY_READ);
       try
@@ -438,23 +436,16 @@ begin
       { Custom mod }
       if frmSelectModPath.ShowModal = mrOk then begin
         ePath := frmSelectModPath.trvDirectory.SelectedFolder.PathName;
-        { check if this is an orangebox game }
-        Source := True;
-        if (AnsiSameText(ExtractFileName(ePath), 'tf')) then begin
-          case MessageBox(Handle, 'It looks like your server is using the OrangeBox engine. Would you like to install the appropriate binaries for it?', PChar(Application.Title), MB_ICONQUESTION + MB_YESNOCANCEL) of
-            mrYes: Source := False;
-            mrNo: Source := True;
-            mrCancel: exit;
-          end;
-        end;
         { install now }
         jspInstallProgress.Show;
-        InstallCustom(IncludeTrailingPathDelimiter(ePath), osWindows, Source);
+        InstallCustom(IncludeTrailingPathDelimiter(ePath), osWindows, not frmSelectModPath.chkUsesOrangebox.Checked);
       end;
     end
     else if frbFTP.Checked then // FTP
       jspFTP.Show;
-  end;
+  end
+  else
+    jplWizard.NextPage
 end;
 
 procedure TfrmMain.CheckNext(Sender: TObject);

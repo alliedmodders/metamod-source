@@ -263,8 +263,8 @@ begin
   CopyConfig := True;
   AddStatus('Creating directories...', clBlack);
   if DirectoryExists(ePath + 'addons\metamod\bin') then begin
-    case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
-      mrNo: CopyConfig := False;
+    case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to upgrade, No to reinstall, or Cancel to abort the installation.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
+      mrYes: CopyConfig := False;
       mrCancel: begin
         Application.Terminate;
         exit;
@@ -464,8 +464,8 @@ begin
     eStr.LoadFromFile(ExtractFilePath(ParamStr(0)) + 'metamod.vdf');
     frmMain.ggeItem.Progress := 2;
     if (((Pos('server.dll', eStr.Text) <> 0) and (OS = osWindows)) or ((Pos('server_i486.so', eStr.Text) <> 0) and (OS = osLinux))) then begin
-      case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to continue, No to Upgrade, or Cancel to abort the install.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
-        mrNo: CopyConfig := False;
+      case MessageBox(frmMain.Handle, 'A Metamod:Source installation was already detected. If you choose to reinstall, your configuration files will be erased. Click Yes to upgrade, No to reinstall, or Cancel to abort the installation.', PChar(frmMain.Caption), MB_ICONQUESTION + MB_YESNOCANCEL) of
+        mrYes: CopyConfig := False;
         mrCancel: begin
           Application.Terminate;
           eStr.Free;
@@ -526,6 +526,11 @@ begin
     if (CommentFound) then
       AddSkipped
     else begin
+      // delete empty lines first
+      for i := eStr.Count -1 downto 0 do begin
+        if (Trim(eStr[i]) = '') then
+          eStr.Delete(i);
+      end;
       // see http://svn.alliedmods.net/viewvc.cgi/metamodsource/orangebox/addons/metamod/metaplugins.ini?revision=1099&root=Packages
       eStr.Insert(0, ';List one plugin per line.  Each line should contain the path to the plugin''s binary.');
       eStr.Insert(1, ';Any line starting with a '';'' character is a comment line, and is ignored.');
