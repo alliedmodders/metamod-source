@@ -1,4 +1,4 @@
-2007/??/?? 1.6.0:
+2008/01/23 1.6.0:
  - Added new version of SourceHook with the following changes:
    - Added API for hooking functions on a virtual table to all instances.
    - SH_ADD_HOOK macros now return non-zero hook IDs.  Additionally,
