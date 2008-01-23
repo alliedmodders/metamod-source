@@ -6,6 +6,7 @@
    - Added SH_REMOVE_HOOK_ID to remove hooks by ID.
    - CallClasses have been deprecated.  The SH_CALL macro can now take a class
      instance pointer rather than a callclass pointer.
+   - Can now generate dynamic, arbitrary hooks at runtime (see hookmangen).
  - Metamod:Source has now received a large internal rewrite to improve coding 
    standards and to separate internal logic from engine specifics.
  - Added ability to load from a VDF file instead of gameinfo.txt.
