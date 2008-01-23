@@ -3,6 +3,7 @@
  - Added new plugin loading mechanism via .vdf files in the metamod folder.
  - Changed "meta list" output to look similar to Metamod:Source 1.6.
  - Plugins which need a VSP pointer can now receive it on late load.
+ - Fixed a small memory leak when using recalls (RETURN_META_NEWPARAMS).
  - Fixed a rare memory corruption bug in the CVector class.
 
 2007/06/26 1.4.2:
