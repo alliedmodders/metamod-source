@@ -1,4 +1,4 @@
-2007/12/24 1.4.3:
+2008/01/23 1.4.3:
  - Metamod:Source can now be loaded via a .vdf instead of gameinfo.txt.
  - Added new plugin loading mechanism via .vdf files in the metamod folder.
  - Changed "meta list" output to look similar to Metamod:Source 1.6.
