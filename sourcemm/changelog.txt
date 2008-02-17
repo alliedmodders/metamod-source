@@ -1,4 +1,6 @@
-2008/01/23 1.6.0:
+2008/02/18 1.6.0:
+ - Added ability to load from a VDF file instead of gameinfo.txt.
+ - Added ability to load MM:S plugins from VDF files.
  - Added new version of SourceHook with the following changes:
    - Added API for hooking functions on a virtual table to all instances.
    - SH_ADD_HOOK macros now return non-zero hook IDs.  Additionally,
@@ -9,8 +11,6 @@
    - Can now generate dynamic, arbitrary hooks at runtime (see hookmangen).
  - Metamod:Source has now received a large internal rewrite to improve coding 
    standards and to separate internal logic from engine specifics.
- - Added ability to load from a VDF file instead of gameinfo.txt.
- - Added ability to load MM:S plugins from VDF files.
  - Added mm_basedir cvar to specify Metamod's base folder.
  - Added API for getting highest supported IServerPluginCallbacks interface
    version.
@@ -22,6 +22,8 @@
    gameinfo.txt.
  - The output of the "meta list" command has been reformatted in order to allow
    more space for plugins' name, version, and author fields.
+ - Sample/Stub plugins have improved building mechanism and code, and will 
+   compile against both MM:S 1.6 for OrangeBox and MM:S 1.4 for Episode 1.
 
 2007/06/26 1.4.2:
  - Fixed a bug where unloading all plugins could crash if one plugin had child
