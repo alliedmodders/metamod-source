@@ -84,7 +84,6 @@ stub_mm: $(OBJ_LINUX)
 default: all
 
 clean:
-	rm -rf Release/*.o
-	rm -rf Release/$(BINARY)
-	rm -rf Debug/*.o
-	rm -rf Debug/$(BINARY)
+	rm -rf $(BIN_DIR)/*.o
+	rm -rf $(BIN_DIR)/$(BINARY)
+
