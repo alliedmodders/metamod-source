@@ -21,7 +21,7 @@ OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp me
 
 LINK = $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
-INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
+INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/game/server -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
           -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook
 
 ifeq "$(DEBUG)" "true"

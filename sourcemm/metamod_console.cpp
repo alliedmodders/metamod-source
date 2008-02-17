@@ -26,19 +26,11 @@
  */
 
 #include "metamod_oslink.h"
-#if defined _DEBUG
-#define DEBUG2
-#undef _DEBUG
-#endif
 #include <ctype.h>
 #include "metamod.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "metamod_plugins.h"
-#if defined DEBUG2
-#undef DEBUG2
-#define _DEBUG
-#endif
 
 using namespace SourceMM;
 using namespace SourceHook;

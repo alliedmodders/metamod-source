@@ -26,10 +26,6 @@
  * Version: $Id$
  */
 
-#if defined _DEBUG
-#define DEBUG2
-#undef _DEBUG
-#endif
 #include "../metamod_oslink.h"
 #include <sourcehook.h>
 #include <convar.h>
@@ -44,10 +40,6 @@
 #include "metamod_console.h"
 #include "vsp_listener.h"
 #include <filesystem.h>
-#if defined DEBUG2
-#undef DEBUG2
-#define _DEBUG
-#endif
 
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);

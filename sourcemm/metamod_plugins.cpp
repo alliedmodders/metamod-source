@@ -26,17 +26,9 @@
  */
 
 #include "metamod_oslink.h"
-#if defined _DEBUG
-#define DEBUG2
-#undef _DEBUG
-#endif
 #include "metamod.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"
-#if defined DEBUG2
-#undef DEBUG2
-#define _DEBUG
-#endif
 
 /** 
  * @brief Implements functions from CPlugin.h

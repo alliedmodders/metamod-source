@@ -25,22 +25,14 @@
  * Version: $Id$
  */
 
-#if defined _DEBUG
-#define DEBUG2
-#undef _DEBUG
-#endif
 #include "../metamod_oslink.h"
+#include "metamod.h"
 #include <sourcehook.h>
 #include <convar.h>
 #include <eiface.h>
 #include "iplayerinfo.h"
-#if defined DEBUG2
-#undef DEBUG2
-#define _DEBUG
-#endif
 #include "vsp_listener.h"
 #include "svn_version.h"
-#include "metamod.h"
 #include "provider_ep2.h"
 
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);

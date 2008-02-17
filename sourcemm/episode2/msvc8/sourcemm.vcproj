@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDKOB)\public;$(HL2SDKOB)\public\dlls;$(HL2SDKOB)\public\engine;$(HL2SDKOB)\public\tier0;$(HL2SDKOB)\public\tier1;$(HL2SDKOB)\public\vstdlib;$(HL2SDKOB)\tier1"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;&quot;$(HL2SDKOB)\public&quot;;&quot;$(HL2SDKOB)\public\engine&quot;;&quot;$(HL2SDKOB)\public\game\server&quot;;&quot;$(HL2SDKOB)\public\tier0&quot;;&quot;$(HL2SDKOB)\public\tier1&quot;;&quot;$(HL2SDKOB)\public\vstdlib&quot;;&quot;$(HL2SDKOB)\tier1&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier2.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
+				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmt.lib"
@@ -127,7 +127,7 @@
 				Optimization="3"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDKOB)\public;$(HL2SDKOB)\public\dlls;$(HL2SDKOB)\public\engine;$(HL2SDKOB)\public\tier0;$(HL2SDKOB)\public\tier1;$(HL2SDKOB)\public\vstdlib;$(HL2SDKOB)\tier1"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;&quot;$(HL2SDKOB)\public&quot;;&quot;$(HL2SDKOB)\public\engine&quot;;&quot;$(HL2SDKOB)\public\game\server&quot;;&quot;$(HL2SDKOB)\public\tier0&quot;;&quot;$(HL2SDKOB)\public\tier1&quot;;&quot;$(HL2SDKOB)\public\vstdlib&quot;;&quot;$(HL2SDKOB)\tier1&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="1"
@@ -150,7 +150,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier2.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
+				AdditionalDependencies="&quot;$(HL2SDKOB)\lib\public\tier0.lib&quot; &quot;$(HL2SDKOB)\lib\public\tier1.lib&quot; &quot;$(HL2SDKOB)\lib\public\vstdlib.lib&quot;"
 				OutputFile="$(OutDir)/server.dll"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmtd.lib"
