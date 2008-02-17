@@ -23,6 +23,10 @@
 #include <sh_vector.h>
 #include "engine_wrappers.h"
 
+#if defined WIN32 && !defined snprintf
+#define snprintf _snprintf
+#endif
+
 class StubPlugin : public ISmmPlugin, public IMetamodListener
 {
 public:
@@ -53,9 +57,9 @@ public: //hooks
 		const char *pszAddress,
 		char *reject,
 		int maxrejectlen);
-#if defined ORANGEBOX_BUILD
+#if defined ENGINE_ORANGEBOX
 	void Hook_ClientCommand(edict_t *pEntity, const CCommand &args);
-#else
+#elif defined ENGINE_ORIGINAL
 	void Hook_ClientCommand(edict_t *pEntity);
 #endif
 public:
@@ -68,7 +72,9 @@ public:
 	const char *GetDate();
 	const char *GetLogTag();
 private:
-	SourceHook::CVector<int> m_hooks;
+#if defined ENGINE_ORIGINAL
+	SourceHook::CallClass<IVEngineServer> *m_EngineCC;
+#endif
 };
 
 extern StubPlugin g_StubPlugin;
