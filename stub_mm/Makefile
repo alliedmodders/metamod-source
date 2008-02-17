@@ -39,6 +39,7 @@ ifeq "$(ENGINE)" "orangebox"
 	SRCDS = $(SRCDS_BASE)/orangebox
 endif
 
+LINK += $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so
 
 INCLUDE += -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 \
 	-I$(HL2PUB)/tier1 -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(METAMOD) \
