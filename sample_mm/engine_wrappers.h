@@ -58,12 +58,15 @@ public:
 	}
 };
 
+#define CVAR_INTERFACE_VERSION				VENGINE_CVAR_INTERFACE_VERSION
 #define ENGINE_CALL(func) SH_CALL(m_EngineCC, func)
 
 #elif defined ENGINE_ORANGEBOX
 
 #define ENGINE_CALL(func) SH_CALL(engine, func)
+#define MM_Format g_SMAPI->Format
 
 #endif
 
 #endif //_INCLUDE_SOURCE_ENGINE_WRAPPERS_
+

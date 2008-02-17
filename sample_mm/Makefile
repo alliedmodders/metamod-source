@@ -35,7 +35,7 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2PUB = $(HL2SDK_OB)/public
 	CFLAGS += -DENGINE_ORANGEBOX
 	METAMOD = $(SOURCEMM16)
-	INCLUDE += -I$(HL2SDK)/game/server
+	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 endif
 

@@ -44,6 +44,7 @@ IServerPluginHelpers *helpers = NULL;
 IGameEventManager2 *gameevents = NULL;
 IServerPluginCallbacks *vsp_callbacks = NULL;
 IPlayerInfoManager *playerinfomanager = NULL;
+ICvar *icvar = NULL;
 
 ConVar sample_cvar("sample_cvar", "42", 0);
 
@@ -68,6 +69,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_CURRENT(GetEngineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE_CURRENT(GetEngineFactory, gameevents, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
 	GET_V_IFACE_CURRENT(GetEngineFactory, helpers, IServerPluginHelpers, INTERFACEVERSION_ISERVERPLUGINHELPERS);
+	GET_V_IFACE_CURRENT(GetEngineFactory, icvar, ICvar, CVAR_INTERFACE_VERSION);
 	GET_V_IFACE_ANY(GetServerFactory, server, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE_ANY(GetServerFactory, gameclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 	GET_V_IFACE_ANY(GetServerFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
@@ -102,7 +104,7 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	ENGINE_CALL(&IVEngineServer::LogPrint)("All hooks started!\n");
 
 #if defined ENGINE_ORANGEBOX
-	g_pCVar = ICvar;
+	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
 #elif defined ENGINE_ORIGINAL
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
