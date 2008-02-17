@@ -27,20 +27,21 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 {
 	PLUGIN_SAVEVARS();
 
+	/* Make sure we build on MM:S 1.4 */
 #if defined METAMOD_PLAPI_VERSION
 	GET_V_IFACE_ANY(GetServerFactory, server, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 #else
 	GET_V_IFACE_ANY(serverFactory, server, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 #endif
 
-	SH_ADD_HOOK(IServerGameDLL, ServerActivate, server, SH_STATIC(Hook_ServerActivate), true);
+	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, server, Hook_ServerActivate, true);
 
 	return true;
 }
 
 bool StubPlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK(IServerGameDLL, ServerActivate, server, SH_STATIC(Hook_ServerActivate), true);
+	SH_REMOVE_HOOK_STATICFUNC(IServerGameDLL, ServerActivate, server, Hook_ServerActivate, true);
 
 	return true;
 }

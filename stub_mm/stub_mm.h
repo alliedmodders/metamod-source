@@ -19,6 +19,10 @@
 
 #include <ISmmPlugin.h>
 
+#if defined WIN32 && !defined snprintf
+#define snprintf _snprintf
+#endif
+
 class StubPlugin : public ISmmPlugin
 {
 public:
