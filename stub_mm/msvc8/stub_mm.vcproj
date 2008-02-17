@@ -376,6 +376,7 @@
 				AdditionalDependencies="$(HL2SDK)\lib\public\tier0.lib $(HL2SDK)\lib\public\vstdlib.lib $(HL2SDK)\lib\public\tier2.lib $(HL2SDK)\lib\public\tier1.lib"
 				OutputFile="$(OutDir)\stub_mm.dll"
 				LinkIncremental="2"
+				IgnoreDefaultLibraryNames="LIBCMT"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
