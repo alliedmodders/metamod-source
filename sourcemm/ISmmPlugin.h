@@ -1,4 +1,4 @@
-/**
+/*
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
@@ -29,8 +29,9 @@
 #define _INCLUDE_ISMM_PLUGIN_H
 
 /**
- * @brief Plugin API interface
- * @file ISmmPlugin.h
+ * @brief Plugin API interface.
+ * @file ISmmPlugin.h These are callbacks that plugins can implement without hooks.
+ * The pure-virtual ISmmPlugin callbacks must be implemented for the load to load.
  */
 
 #include <interface.h>
@@ -421,6 +422,15 @@ using namespace SourceMM;
 #define PL_EXPOSURE		CreateInterface
 #define PL_EXPOSURE_C	"CreateInterface"
 
+/**
+ * @brief Exposes the plugin to the MM:S loader.
+ *
+ * @param name		Deprecated - should be a variable name (like name).
+ * @param var		Name of the variable that contains the singleton.
+ *					This macro automatically takes the address of it, so 
+ * 					you should not pass a pointer to your plugin's 
+ *					singleton.
+ */
 #define PLUGIN_EXPOSE(name, var) \
 	ISmmAPI *g_SMAPI = NULL; \
 	ISmmPlugin *g_PLAPI = NULL; \
@@ -433,12 +443,20 @@ using namespace SourceMM;
 		return NULL; \
 	}
 
+
+/**
+ * @brief This should be in one of your header files, if you wish 
+ * to use values like g_SHPtr in other files.
+ */
 #define PLUGIN_GLOBALVARS()	\
 	extern SourceHook::ISourceHook *g_SHPtr; \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
 	extern PluginId g_PLID; 
 
+/**
+ * @brief This should be the first line in your Load callback.
+ */
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
 	g_SHPtr = static_cast<SourceHook::ISourceHook *>(ismm->MetaFactory(MMIFACE_SOURCEHOOK, NULL, NULL)); \

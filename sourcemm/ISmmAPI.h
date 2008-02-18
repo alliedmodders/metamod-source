@@ -1,4 +1,4 @@
-/**
+/*
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
@@ -29,7 +29,7 @@
 #define _INCLUDE_ISMM_API_H
 
 /**
- * @brief External API interface
+ * @brief Core API calls that are provided to plugins.
  * @file ISmmAPI.h
  */
 
@@ -57,6 +57,9 @@ namespace SourceMM
 	class ISmmPlugin;
 	class IMetamodListener;
 
+	/**
+	 * The core API that Metamod:Source provides to plugins.
+	 */
 	class ISmmAPI
 	{
 	public:
@@ -196,6 +199,7 @@ namespace SourceMM
 		 * @param maxlength		Maximum length of iface buffer.  Must be at least 
 		 * 						strlen(iface)+4 chars.
 		 * @return				The newly incremented iface version number.
+		 * @deprecated			Use InterfaceSearch() or VInterfaceMatch instead.
 		 */
 		virtual int FormatIface(char iface[], unsigned int maxlength) =0;
 
@@ -324,6 +328,7 @@ namespace SourceMM
 		 * @return				Highest interface version of IServerPluginCallbacks.
 		 *						Returns 0 if SourceMM's VSP listener isn't 
 		 *						currently enabled.
+		 * @deprecated			Use GetVSPInfo() instead.
 		 */
 		virtual int GetVSPVersion() =0;
 
@@ -343,7 +348,7 @@ namespace SourceMM
 		 * This is useful for late-loading plugins which need to decide whether 
 		 * to add a listener or not (or need to get the pointer at all).
 		 *
-		 * @param				Optional pointer to store the VSP version.
+		 * @param pVersion		Optional pointer to store the VSP version.
 		 * @return				IServerPluginCallbacks pointer, or NULL if an
 		 * 						IMetamodListener event has yet to occur for 
 		 * 						EnableVSPListener().
@@ -366,21 +371,21 @@ namespace SourceMM
 						  const char *format,
 						  ...) =0;
 
-	/**
-	 * @brief Formats a string.  This is a platform safe wrapper around 
-	 * vsnprintf/_vsnprintf.
-	 *
-	 * @param buffer		Buffer to write to.
-	 * @param maxlength		Maximum length of the buffer.
-	 * @param format		Format specifiers.
-	 * @param ap			Format argument list.
-	 * @return				Number of bytes actually written, not including the 
-	 *						null terminator.
-	 */
-	virtual size_t FormatArgs(char *buffer,
-							  size_t maxlength,
-							  const char *format,
-							  va_list ap) =0;
+		/**
+		 * @brief Formats a string.  This is a platform safe wrapper around 
+		 * vsnprintf/_vsnprintf.
+		 *
+		 * @param buffer		Buffer to write to.
+		 * @param maxlength		Maximum length of the buffer.
+		 * @param format		Format specifiers.
+		 * @param ap			Format argument list.
+		 * @return				Number of bytes actually written, not including the 
+		 *						null terminator.
+		 */
+		virtual size_t FormatArgs(char *buffer,
+								  size_t maxlength,
+								  const char *format,
+								  va_list ap) =0;
 	};
 }
 

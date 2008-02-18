@@ -1,4 +1,4 @@
-/**
+/*
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
@@ -60,6 +60,9 @@ namespace SourceMM
 		Pl_Running=0,
 	};
 
+	/**
+	 * @brief Programmatic management of the "loaded plugin" list.
+	 */
 	class ISmmPluginManager
 	{
 	public:
@@ -68,51 +71,50 @@ namespace SourceMM
 		 *  then the plugin is considered to be "hot" - it might refuse its own load later!
 		 *  Also, a hot plugin might not have an error message.
 		 *
-		 * @param file String containing file name
-		 * @param source Specifies who loaded the plugin
-		 * @param status Status of the plugin 
-		 * @param ismm Pointer to Smm API
-		 * @param error String buffer for error messages
-		 * @param maxlen Maximum length of buffer
-		 * @return Id of plugin
+		 * @param file 		String containing file name.
+		 * @param source 	Specifies who loaded the plugin.
+		 * @param already 	Whether or not the plugin was already loaded.
+		 * @param error 	String buffer for error messages.
+		 * @param maxlen 	Maximum length of buffer.
+		 * @return 			Id of plugin.
 		 */
 		virtual PluginId Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen) =0;
 
 		/**
-		 * @brief Unloads a plugin
+		 * @brief Unloads a plugin.
 		 *
-		 * @param id Id of plugin
-		 * @param error String buffer for error messages
-		 * @param maxlen Maximum length of buffer
-		 * @return True on success, false otherwise
+		 * @param id 		Id of plugin
+		 * @param force		True to forcefully unload, false to let plugin opt-out.
+		 * @param error 	String buffer for error messages
+		 * @param maxlen 	Maximum length of buffer
+		 * @return 			True on success, false otherwise
 		 */
 		virtual bool Unload(PluginId id, bool force, char *error, size_t maxlen) =0;
 	
 		/**
 		 * @brief Pauses a plugin
 		 *
-		 * @param id Id of plugin
-		 * @param error String buffer for error messages
-		 * @param maxlen Maximum length of buffer
-		 * @return True on success, false otherwise
+		 * @param id 		Id of plugin
+		 * @param error 	String buffer for error messages
+		 * @param maxlen 	Maximum length of buffer
+		 * @return 			True on success, false otherwise
 		 */
 		virtual bool Pause(PluginId id, char *error, size_t maxlen) =0;
 	
 		/**
 		 * @brief Unpauses a plugin
 		 *
-		 * @param id Id of plugin
-		 * @param force If true, forces the plugin to unload
-		 * @param error String buffer for error messages
-		 * @param maxlen Maximum length of buffer
-		 * @return True on success, false otherwise
+		 * @param id 		Id of plugin
+		 * @param error 	String buffer for error messages
+		 * @param maxlen 	Maximum length of buffer
+		 * @return 			True on success, false otherwise
 		 */
 		virtual bool Unpause(PluginId id, char *error, size_t maxlen) =0;
 	
 		/**
 		 * @brief Unloads all plugins forcefully
 		 * 
-		 * @return True on success, false otherwise
+		 * @return 			True on success, false otherwise
 		 */
 		virtual bool UnloadAll() =0;
 	
@@ -132,7 +134,7 @@ namespace SourceMM
 		 *
 		 * @param id		Id of plugin
 		 * @param error		Message buffer
-		 * @param maxlen	Size of error buffer
+		 * @param maxlength	Size of error buffer
 		 * @return			Status value
 		 */
 		virtual bool QueryRunning(PluginId id, char *error, size_t maxlength) =0;

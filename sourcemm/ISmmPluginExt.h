@@ -1,4 +1,4 @@
-/**
+/*
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
@@ -31,9 +31,10 @@
 #include <stddef.h>
 
 /**
- * @file ISmmPluginExt.h 	Definitions for extended plugin exposure syntax.
- * @brief Provides an alternate method for loading plugins, without needing to 
- * 		  include the default headers and all their Half-Life baggage.
+ * @file ISmmPluginExt.h Provides an alternate method for loading plugins, 
+ * without needing to include the default headers and all their Half-Life baggage.
+ *
+ * @brief Definitions for extended plugin loading.
  */
 
 #define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
