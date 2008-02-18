@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDK)\public;$(HL2SDK)\public\dlls;$(HL2SDK)\public\engine;$(HL2SDK)\public\tier0;$(HL2SDK)\public\tier1;$(HL2SDK)\public\vstdlib;$(HL2SDK)\tier1"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;&quot;$(HL2SDK)\public&quot;;&quot;$(HL2SDK)\public\dlls&quot;;&quot;$(HL2SDK)\public\engine&quot;;&quot;$(HL2SDK)\public\tier0&quot;;&quot;$(HL2SDK)\public\tier1&quot;;&quot;$(HL2SDK)\public\vstdlib&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -127,7 +127,7 @@
 				Optimization="3"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;$(HL2SDK)\public;$(HL2SDK)\public\dlls;$(HL2SDK)\public\engine;$(HL2SDK)\public\tier0;$(HL2SDK)\public\tier1;$(HL2SDK)\public\vstdlib;$(HL2SDK)\tier1"
+				AdditionalIncludeDirectories="..\..;..\..\..;..\..\..\sourcehook;&quot;$(HL2SDK)\public&quot;;&quot;$(HL2SDK)\public\dlls&quot;;&quot;$(HL2SDK)\public\engine&quot;;&quot;$(HL2SDK)\public\tier0&quot;;&quot;$(HL2SDK)\public\tier1&quot;;&quot;$(HL2SDK)\public\vstdlib&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="1"

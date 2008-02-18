@@ -7,24 +7,18 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug - Orange Box|Win32 = Debug - Orange Box|Win32
 		Debug - Original|Win32 = Debug - Original|Win32
-		Debug|Win32 = Debug|Win32
 		Release - Orange Box|Win32 = Release - Orange Box|Win32
 		Release - Original|Win32 = Release - Original|Win32
-		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug - Orange Box|Win32.ActiveCfg = Debug - Orange Box|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug - Orange Box|Win32.Build.0 = Debug - Orange Box|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug - Original|Win32.ActiveCfg = Debug - Original|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug - Original|Win32.Build.0 = Debug - Original|Win32
-		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Debug|Win32.Build.0 = Debug|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release - Orange Box|Win32.ActiveCfg = Release - Orange Box|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release - Orange Box|Win32.Build.0 = Release - Orange Box|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release - Original|Win32.ActiveCfg = Release - Original|Win32
 		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release - Original|Win32.Build.0 = Release - Original|Win32
-		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release|Win32.ActiveCfg = Release|Win32
-		{E62E5876-E1E2-41A0-85CA-1B41B9DA55F9}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
