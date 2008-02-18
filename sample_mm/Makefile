@@ -4,7 +4,7 @@
 #Edit these paths for your own setup.
 HL2SDK_ORIG = ../../hl2sdk
 HL2SDK_OB = ../../hl2sdk-ob
-SOURCEMM14 = ../../sourcemm-1.4.3
+SOURCEMM14 = ../../sourcemm-1.4
 SOURCEMM16 = ..
 SRCDS_BASE = ~/srcds
 
