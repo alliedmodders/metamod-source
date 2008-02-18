@@ -63,7 +63,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
 			CONMSG("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 			CONMSG("For more information, see the official website\n");
-			CONMSG("http://www.sourcemm.net/\n");
+			CONMSG("http://www.metamodsource.net/\n");
 			
 			return true;
 		}
@@ -83,7 +83,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 			CONMSG("SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
-			CONMSG("http://www.sourcemm.net/\n");
+			CONMSG("http://www.metamodsource.net/\n");
 
 			return true;
 		}
@@ -680,7 +680,7 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 				CLIENT_CONMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
 				CLIENT_CONMSG(client, "  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 				CLIENT_CONMSG(client, "For more information, see the official website\n");
-				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
 
 				return true;
 			}
@@ -690,7 +690,7 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
 				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
-				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
 
 				return true;
 			}
