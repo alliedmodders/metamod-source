@@ -41,6 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(SOURCEMM14)&quot;;&quot;$(SOURCEMM14)\sourcemm&quot;;&quot;$(SOURCEMM14)\sourcehook&quot;;&quot;$(HL2SDK)\public&quot;;&quot;$(HL2SDK)\public\dlls&quot;;&quot;$(HL2SDK)\public\engine&quot;;&quot;$(HL2SDK)\public\tier0&quot;;&quot;$(HL2SDK)\public\tier1&quot;;&quot;$(HL2SDK)\public\vstdlib&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;STUB_MM_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib"
+				AdditionalDependencies="&quot;$(HL2SDK)\lib\public\tier0.lib&quot;"
 				ShowProgress="0"
 				OutputFile="$(OutDir)/stub_mm.dll"
 				LinkIncremental="2"
@@ -123,6 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(SOURCEMM14)&quot;;&quot;$(SOURCEMM14)\sourcemm&quot;;&quot;$(SOURCEMM14)\sourcehook&quot;;&quot;$(HL2SDK)\public&quot;;&quot;$(HL2SDK)\public\dlls&quot;;&quot;$(HL2SDK)\public\engine&quot;;&quot;$(HL2SDK)\public\tier0&quot;;&quot;$(HL2SDK)\public\tier1&quot;;&quot;$(HL2SDK)\public\vstdlib&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;STUB_MM_EXPORTS"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="false"
@@ -142,7 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="tier0.lib"
+				AdditionalDependencies="&quot;$(HL2SDK)\lib\public\tier0.lib&quot;"
 				OutputFile="$(OutDir)/stub_mm.dll"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="libc.lib;libcd.lib;libcmtd.lib"
