@@ -35,8 +35,12 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2PUB = $(HL2SDK_OB)/public
 	CFLAGS += -DENGINE_ORANGEBOX
 	METAMOD = $(SOURCEMM16)
-	INCLUDE += -I$(HL2SDK)/game/server
+	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
+endif
+ifeq "$(ENGINE)" ""
+	echo "You must supply ENGINE=orangebox or ENGINE=original"
+	false
 endif
 
 LINK += $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so

@@ -38,6 +38,10 @@ ifeq "$(ENGINE)" "orangebox"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 endif
+ifeq "$(ENGINE)" ""
+	echo "You must supply ENGINE=orangebox or ENGINE=original"
+	false
+endif
 
 LINK += $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so
 

@@ -166,7 +166,7 @@ void StubPlugin::Hook_ClientCommand(edict_t *pEntity)
 	CCommand args;
 #endif
 
-	if (!pEntity || !pEntity->IsFree())
+	if (!pEntity || pEntity->IsFree())
 	{
 		return;
 	}
