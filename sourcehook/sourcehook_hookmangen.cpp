@@ -1047,7 +1047,7 @@ namespace SourceHook
 			// jump back to loop begin
 			tmppos2 = IA32_Jump_Imm32(&m_HookFunc, 0);
 			m_HookFunc.end_count(loop_begin_counter);
-			m_HookFunc.rewrite(tmppos2, static_cast<jit_int32_t>(-loop_begin_counter));
+			m_HookFunc.rewrite(tmppos2, -static_cast<jit_int32_t>(loop_begin_counter));
 
 			m_HookFunc.end_count(counter);
 			m_HookFunc.rewrite(tmppos, static_cast<jit_int32_t>(counter));
