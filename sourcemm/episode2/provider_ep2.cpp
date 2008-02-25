@@ -45,6 +45,12 @@
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
 struct UsrMsgInfo
 {
+	UsrMsgInfo()
+	{
+	}
+	UsrMsgInfo(int s, const char *t) : size(s), name(t)
+	{
+	}
 	int size;
 	String name;
 };
@@ -71,6 +77,22 @@ IFileSystem *baseFs = NULL;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
+
+bool AssumeUserMessages()
+{
+	int q, size;
+	char buffer[256];
+
+	q = 0;
+
+	while (server->GetUserMessageInfo(q, buffer, sizeof(buffer), size))
+	{
+		usermsgs_list.push_back(UsrMsgInfo(size, buffer));
+		q++;
+	}
+
+	return true;
+}
 
 void BaseProvider::ConsolePrint(const char *str)
 {
@@ -110,7 +132,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	RegisterConCommandBase(&meta_local_cmd);
 	conbases_unreg.push_back(&meta_local_cmd);
 
-	usermsgs_extracted = CacheUserMessages();
+	if ((usermsgs_extracted = CacheUserMessages()) == false)
+	{
+		usermsgs_extracted = AssumeUserMessages();
+	}
 
 	if (gameclients)
 	{
@@ -609,6 +634,10 @@ bool CacheUserMessages()
 			if (handle != NULL)
 			{
 				void *addr = dlsym(handle, "usermessages");
+				if (addr == NULL)
+				{
+					return false;
+				}
 				dict = (UserMsgDict *)*(void **)addr;
 				dlclose(handle);
 			}
