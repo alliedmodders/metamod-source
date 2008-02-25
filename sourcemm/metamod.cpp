@@ -734,7 +734,7 @@ void StartupMetamod(bool is_vsp_load)
 	metamod_version = provider->CreateConVar("metamod_version", 
 		SOURCEMM_VERSION, 
 		"Metamod:Source Version",
-		ConVarFlag_Notify|ConVarFlag_Replicated|ConVarFlag_SpOnly);
+		ConVarFlag_Notify|ConVarFlag_SpOnly);
 
 	provider->SetConVarString(metamod_version, buffer);
 
