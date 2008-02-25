@@ -1,3 +1,9 @@
+2008/02/25 1.6.1:
+ - Fixed crash bug against mods compiled with GCC-4.2 -fvisibility=hidden
+ - API wrappers for GetUserMessageInfo() now have failsafe fallbacks 
+   since the OrangeBox SDK fixed an older SDK's crash bug.
+ - Removed FCVAR_REPLICATED from MM:S ConVars.
+
 2008/02/18 1.6.0:
  - Added ability to load from a VDF file instead of gameinfo.txt.
  - Added ability to load MM:S plugins from VDF files.
