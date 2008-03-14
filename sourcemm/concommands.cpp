@@ -116,7 +116,7 @@ void SMConVarAccessor::UnregisterGameDLLCommands()
 	}
 }
 
-ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
+ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
 #if defined WIN32 || defined _WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
 ConVar mm_basedir("mm_basedir", "addons\\metamod", FCVAR_SPONLY, "Metamod:Source base folder");
