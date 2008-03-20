@@ -46,7 +46,7 @@ endif
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 
 $(BIN_DIR)/%.o: %.cpp
-	$(CPP) $(INCLUDE) -m32 $(CFLAGS) -o $@ -c $<
+	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
 
 all:
 	mkdir -p $(BIN_DIR)
