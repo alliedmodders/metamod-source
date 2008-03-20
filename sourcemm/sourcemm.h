@@ -74,11 +74,12 @@ struct GameDllInfo
 /** @brief Stores information about the HL2 Engine pointers */
 struct EngineInfo
 {
-	EngineInfo() : loaded(false), 
+	EngineInfo() : loaded(false), original(false),
 		engineFactory(NULL), physicsFactory(NULL), fileSystemFactory(NULL),
 		pGlobals(NULL), icvar(NULL), engine(NULL)
 	{ };
 	bool loaded;
+	bool original;
 	CreateInterfaceFn engineFactory;
 	CreateInterfaceFn physicsFactory;
 	CreateInterfaceFn fileSystemFactory;

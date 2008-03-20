@@ -46,6 +46,7 @@ void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
 bool GameInit_handler();
 void LookForVDFs(const char *dir);
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
 
 GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
 EngineInfo g_Engine;
@@ -166,6 +167,9 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	}
 
 	g_Engine.loaded = true;
+
+	/* The Ship is the only game known at this time that uses the pre-Episode One engine */
+	g_Engine.original = strcmp(CommandLine()->ParmValue("-game", "hl2"), "ship") == 0;
 
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
@@ -625,14 +629,24 @@ void DLLShutdown_handler()
 void LoadFromVDF(const char *file)
 {
 	PluginId id;
-	bool already;
+	bool already, kvfileLoaded;
 	KeyValues *pValues;
 	const char *plugin_file, *alias;
 	char full_path[256], error[256];
 	
 	pValues = new KeyValues("Metamod Plugin");
 
-	if (!pValues->LoadFromFile(baseFs, file))
+	if (g_Engine.original)
+	{
+		/* The Ship must use a special version of this function */
+		kvfileLoaded = KVLoadFromFile(pValues, baseFs, file);
+	}
+	else
+	{
+		kvfileLoaded = pValues->LoadFromFile(baseFs, file);
+	}
+
+	if (!kvfileLoaded)
 	{
 		pValues->deleteThis();
 		return;
@@ -749,6 +763,36 @@ void LookForVDFs(const char *dir)
 
 	closedir(pDir);
 #endif
+}
+
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID)
+{
+	Assert(filesystem);
+#ifdef _MSC_VER
+	Assert(_heapchk() == _HEAPOK);
+#endif
+
+	FileHandle_t f = filesystem->Open(resourceName, "rb", pathID);
+	if (!f)
+		return false;
+
+	// load file into a null-terminated buffer
+	int fileSize = filesystem->Size(f);
+	char *buffer = (char *)MemAllocScratch(fileSize + 1);
+	
+	Assert(buffer);
+	
+	filesystem->Read(buffer, fileSize, f); // read into local buffer
+
+	buffer[fileSize] = 0; // null terminate file as EOF
+
+	filesystem->Close( f );	// close file after reading
+
+	bool retOK = kv->LoadFromBuffer( resourceName, buffer, filesystem );
+
+	MemFreeScratch();
+
+	return retOK;
 }
 
 int LoadPluginsFromFile(const char *_file)
