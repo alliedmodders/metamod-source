@@ -370,10 +370,6 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 	{
 		newflags |= FCVAR_NOTIFY;
 	}
-	if (flags & ConVarFlag_Replicated)
-	{
-		newflags |= FCVAR_REPLICATED;
-	}
 	if (flags & ConVarFlag_SpOnly)
 	{
 		newflags |= FCVAR_SPONLY;

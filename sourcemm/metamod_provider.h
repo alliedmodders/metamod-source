@@ -32,10 +32,9 @@ namespace SourceMM
 {
 	enum
 	{
-		ConVarFlag_None,
-		ConVarFlag_Notify,
-		ConVarFlag_Replicated,
-		ConVarFlag_SpOnly
+		ConVarFlag_None = 0,
+		ConVarFlag_Notify = 1,
+		ConVarFlag_SpOnly = 2,
 	};
 
 	enum ProvidedHooks
