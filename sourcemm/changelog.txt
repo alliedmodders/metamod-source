@@ -1,3 +1,8 @@
+2008/??/?? 1.4.4:
+ - Fixed a bug where loading plugins using VDF files caused Metamod:Source
+   to crash on The Ship.
+ - Removed FCVAR_REPLICATED from MM:S convars.
+
 2008/01/23 1.4.3:
  - Metamod:Source can now be loaded via a .vdf instead of gameinfo.txt.
  - Added new plugin loading mechanism via .vdf files in the metamod folder.
