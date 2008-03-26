@@ -1,6 +1,6 @@
 /* ======== SourceHook ========
 * vim: set ts=4 :
-* Copyright (C) 2004-2007 AlliedModders LLC.  All rights reserved.
+* Copyright (C) 2004-2008 AlliedModders LLC.  All rights reserved.
 * No warranties of any kind
 *
 * License: zlib/libpng

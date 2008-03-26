@@ -3,7 +3,7 @@
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2007 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2008 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
