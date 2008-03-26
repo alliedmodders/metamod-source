@@ -1,4 +1,4 @@
-#(C)2004-2007 SourceMM Development Team
+#(C)2004-2008 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson and Pavol Marko
 
 OPT_FLAGS = -O3 -funroll-loops -s -pipe
