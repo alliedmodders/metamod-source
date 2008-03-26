@@ -1,6 +1,9 @@
 2008/??/?? 1.4.4:
  - Fixed a bug where loading plugins using VDF files caused Metamod:Source
    to crash on The Ship.
+ - Fixed a bug where VDF files were opened by MM:S even if the .vdf extension
+   was not at the very end of the filename. For example, "plugin.vdf.disabled"
+   would have been opened in previous versions.
  - Removed FCVAR_REPLICATED from MM:S convars.
 
 2008/01/23 1.4.3:
