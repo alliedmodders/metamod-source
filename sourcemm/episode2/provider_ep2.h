@@ -56,7 +56,7 @@ public:
 	virtual void ConsolePrint(const char *msg);
 	virtual bool IsRemotePrintingAvailable();
 	virtual void ClientConsolePrint(edict_t *client, const char *msg);
-	virtual IServerPluginCallbacks *GetVSPCallbacks(const char *iface);
+	virtual IServerPluginCallbacks *GetVSPCallbacks(int version);
 	virtual void DisplayError(const char *fmt, ...);
 	virtual void DisplayWarning(const char *fmt, ...);
 	virtual int TryServerGameDLL(const char *iface);

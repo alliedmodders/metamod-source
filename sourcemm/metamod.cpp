@@ -227,16 +227,26 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 
 	if (strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
 	{
-		vsp_callbacks = provider->GetVSPCallbacks(iface);
-
-		if (vsp_callbacks != NULL && vsp_version == 0)
+		if (vsp_callbacks != NULL && atoi(&iface[22]) != vsp_version)
 		{
-			vsp_version = atoi(&iface[22]);
+			if (ret != NULL)
+			{
+				*ret = IFACE_FAILED;
+			}
+			return NULL;
 		}
+
+		vsp_version = atoi(&iface[22]);
+		vsp_callbacks = provider->GetVSPCallbacks(vsp_version);
 
 		if (ret)
 		{
 			*ret = (vsp_callbacks != NULL) ? IFACE_OK : IFACE_FAILED;
+		}
+
+		if (vsp_callbacks == NULL)
+		{
+			vsp_version = 0;
 		}
 
 		return vsp_callbacks;

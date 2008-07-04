@@ -383,8 +383,13 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 	return pVar;
 }
 
-IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(const char *iface)
+IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(int version)
 {
+	if (version > 2)
+	{
+		return NULL;
+	}
+
 	g_VspListener.SetLoadable(true);
 	return &g_VspListener;
 }

@@ -151,7 +151,7 @@ namespace SourceMM
 		 * @param iface				Interface version
 		 * @return					IServerPluginCallbacks pointer.
 		 */
-		virtual IServerPluginCallbacks *GetVSPCallbacks(const char *iface) =0;
+		virtual IServerPluginCallbacks *GetVSPCallbacks(int version) =0;
 
 		/**
 		 * @brief Halts the server with a fatal error message.
