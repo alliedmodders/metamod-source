@@ -3,7 +3,7 @@
    was not at the very end of the filename. For example, "plugin.vdf.disabled"
    would have been opened in previous versions.
  - Removed FCVAR_REPLICATED from MM:S convars. The following message will no
-   longer appear in client consoles: ConVarRef metamod_version doesn’t point to
+   longer appear in client consoles: ConVarRef metamod_version doesn't point to
    an existing ConVar.
 
 2008/02/25 1.6.1:
