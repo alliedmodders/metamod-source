@@ -1417,12 +1417,12 @@ void ProcessVDF(const char *path)
 void LookForVDFs(const char *dir)
 {
 	char path[MAX_PATH];
+	int extidx;
 
 #if defined _MSC_VER
 	HANDLE hFind;
 	WIN32_FIND_DATA fd;
 	char error[255];
-	int extidx;
 
 	g_Metamod.PathFormat(path, sizeof(path), "%s\\*.*", dir);
 	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
@@ -1473,8 +1473,8 @@ void LookForVDFs(const char *dir)
 		{
 			continue;
 		}
-		extidx = strlen(fd.cFileName) - 4;
-		if (extidx < 0 || stricmp(&fd.cFileName[extidx], ".vdf"))
+		extidx = strlen(pEnt->d_name) - 4;
+		if (extidx < 0 || stricmp(&pEnt->d_name[extidx], ".vdf"))
 		{
 			continue;
 		}
