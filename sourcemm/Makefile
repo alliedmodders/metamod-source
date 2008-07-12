@@ -14,12 +14,12 @@ CPP = gcc-4.1
 BINARY = server_i486.so
 
 HL2PUB = $(HL2SDK)/public
-HL2LIB = $(HL2SDK)/linux_sdk
+HL2LIB = $(HL2SDK)/lib/linux
 
 OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp metamod_plugins.cpp \
 	sourcehook.cpp sourcehook_hookmangen.cpp episode2/console.cpp episode2/provider_ep2.cpp episode2/vsp_listener.cpp
 
-LINK = $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
+LINK = $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/game/server -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
           -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook

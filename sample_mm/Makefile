@@ -25,6 +25,7 @@ INCLUDE = -I. -I..
 ifeq "$(ENGINE)" "original"
 	HL2SDK = $(HL2SDK_ORIG)
 	HL2PUB = $(HL2SDK_ORIG)/public
+	HL2LIB = $(HL2SDK_ORIG)/linux_sdk
 	CFLAGS += -DENGINE_ORIGINAL
 	METAMOD = $(SOURCEMM14)
 	INCLUDE += -I$(HL2SDK)/public/dlls
@@ -33,6 +34,7 @@ endif
 ifeq "$(ENGINE)" "orangebox"
 	HL2SDK = $(HL2SDK_OB)
 	HL2PUB = $(HL2SDK_OB)/public
+	HL2LIB = $(HL2SDK_OB)/lib/linux
 	CFLAGS += -DENGINE_ORANGEBOX
 	METAMOD = $(SOURCEMM16)
 	INCLUDE += -I$(HL2SDK)/public/game/server
@@ -43,7 +45,7 @@ ifeq "$(ENGINE)" ""
 	false
 endif
 
-LINK += $(HL2SDK)/linux_sdk/tier1_i486.a vstdlib_i486.so tier0_i486.so
+LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so
 
 INCLUDE += -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 \
 	-I$(HL2PUB)/tier1 -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(METAMOD) \
