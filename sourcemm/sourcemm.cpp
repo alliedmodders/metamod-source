@@ -706,7 +706,7 @@ void LookForVDFs(const char *dir)
 	WIN32_FIND_DATA fd;
 	char error[255];
 
-	g_Metamod.PathFormat(path, sizeof(path), "%s\\*.*", dir);
+	g_SmmAPI.PathFormat(path, sizeof(path), "%s\\*.*", dir);
 	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
 	{
 		DWORD dw = GetLastError();
@@ -733,8 +733,8 @@ void LookForVDFs(const char *dir)
 		{
 			continue;
 		}
-		g_Metamod.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
-		ProcessVDF(path);
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
+		LoadFromVDF(path);
 	} while (FindNextFile(hFind, &fd));
 
 	FindClose(hFind);
@@ -760,8 +760,8 @@ void LookForVDFs(const char *dir)
 		{
 			continue;
 		}
-		g_Metamod.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
-		ProcessVDF(path);
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
+		LoadFromVDF(path);
 	}
 
 	closedir(pDir);
