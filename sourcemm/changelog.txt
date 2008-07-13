@@ -1,4 +1,6 @@
 2008/??/?? 1.4.4:
+ - Fixed a bug where loading plugins built for MM:S 1.3 or older (API ver <= 9)
+   would cause a crash.
  - Fixed a bug where loading plugins using VDF files caused Metamod:Source
    to crash on The Ship.
  - Fixed a bug where VDF files were opened by MM:S even if the .vdf extension

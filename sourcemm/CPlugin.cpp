@@ -414,7 +414,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 									 event != pl->m_Events.end(); 
 									 event++)
 								{
-									if ((*event).got_vsp)
+									if (pl->m_API->GetApiVersion() < 10 || (*event).got_vsp)
 									{
 										continue;
 									}
