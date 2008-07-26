@@ -1,10 +1,10 @@
-2008/??/?? 1.6.2:
+2008/07/26 1.6.2:
  - Fixed a bug where VDF files were opened by MM:S even if the .vdf extension
    was not at the very end of the filename. For example, "plugin.vdf.disabled"
-   would have been opened in previous versions.
+   would have been opened in previous versions.  (bug 1534)
  - Removed FCVAR_REPLICATED from MM:S convars. The following message will no
    longer appear in client consoles: ConVarRef metamod_version doesn't point to
-   an existing ConVar.
+   an existing ConVar. (bug 1480)
 
 2008/02/25 1.6.1:
  - Fixed crash bug against mods compiled with GCC-4.2 -fvisibility=hidden
