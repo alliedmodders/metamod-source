@@ -225,22 +225,6 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 #define ENGINEW32_OFFS	38
 #define IA32_CALL		0xE8
 
-bool vcmp(const void *_addr1, const void *_addr2, size_t len)
-{
-	unsigned char *addr1 = (unsigned char *)_addr1;
-	unsigned char *addr2 = (unsigned char *)_addr2;
-
-	for (size_t i=0; i<len; i++)
-	{
-		if (addr2[i] == '*')
-			continue;
-		if (addr1[i] != addr2[i])
-			return false;
-	}
-
-	return true;
-}
-
 //Thanks to fysh for the idea of extracting info from "echo" and for
 // having the original offsets at hand!
 bool CSmmAPI::CacheCmds()
@@ -260,20 +244,20 @@ bool CSmmAPI::CacheCmds()
 			callback = ((ConCommand *)pBase)->GetCallback();
 			ptr = (unsigned char *)callback;
 		#ifdef OS_LINUX
-			if (vcmp(ptr, ENGINE486_SIG, SIGLEN))
+			if (UTIL_VerifySignature(ptr, ENGINE486_SIG, SIGLEN))
 			{
 				offs = ENGINE486_OFFS;
 			}
-			else if (vcmp(ptr, ENGINE686_SIG, SIGLEN))
+			else if (UTIL_VerifySignature(ptr, ENGINE686_SIG, SIGLEN))
 			{
 				offs = ENGINE686_OFFS;
 			}
-			else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN))
+			else if (UTIL_VerifySignature(ptr, ENGINEAMD_SIG, SIGLEN))
 			{
 				offs = ENGINEAMD_OFFS;
 			}
 		#elif defined OS_WIN32 // Only one Windows engine binary so far...
-			if (vcmp(ptr, ENGINEW32_SIG, SIGLEN))
+			if (UTIL_VerifySignature(ptr, ENGINEW32_SIG, SIGLEN))
 			{
 				offs = ENGINEW32_OFFS;
 			}
@@ -541,45 +525,22 @@ int CSmmAPI::GetGameDLLVersion()
 /* :TODO: Make this prettier */
 bool CSmmAPI::CacheUserMessages()
 {
-	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
-	SourceHook::GetFuncInfo(&IServerGameDLL::GetUserMessageInfo, info);
-
-	/* Get address of original GetUserMessageInfo() */
-	char *vfunc = reinterpret_cast<char *>(g_GameDllPatch->GetOrigFunc(info.vtbloffs, info.vtblindex));
-
-	/* If we can't get original function, that means there's no hook */
-	if (vfunc == NULL)
-	{
-		/* Get virtual function address 'manually' then */
-		char *adjustedptr = reinterpret_cast<char *>(g_GameDll.pGameDLL) + info.thisptroffs + info.vtbloffs;
-		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
-
-		vfunc = vtable[info.vtblindex];
-	}
-
-	/* Oh dear, we have a relative jump on our hands
-	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
-	 */
-	if (*vfunc == '\xE9')
-	{
-		/* Get address from displacement...
-		 *
-		 * Add 5 because it's relative to next instruction:
-		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
-		 */
-		vfunc = vfunc + *reinterpret_cast<int *>(vfunc + 1) + 5;
-	}
-
 	UserMsgDict *dict = NULL;
+	char *vfunc = UTIL_GetOrigFunction(&IServerGameDLL::GetUserMessageInfo, g_GameDll.pGameDLL, g_GameDllPatch);
 
-	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
+	if (!vfunc)
+	{
+		return false;
+	}
+
+	if (UTIL_VerifySignature(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
 	{
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
 
 		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	} else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
+	} else if (UTIL_VerifySignature(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
 	#ifdef OS_WIN32
 		/* If we get here, the code is possibly inlined like in Dystopia */
 
@@ -596,7 +557,7 @@ bool CSmmAPI::CacheUserMessages()
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
 	#endif
 	#ifdef OS_WIN32
-	} else if (vcmp(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) {
+	} else if (UTIL_VerifySignature(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) {
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
 

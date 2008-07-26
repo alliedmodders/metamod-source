@@ -198,6 +198,11 @@ protected:
 
 	// ConVars in this executable use this 'global' to access values.
 	static IConCommandBaseAccessor	*s_pAccessor;
+public:
+	inline void	SetRegistered(bool registered)
+	{
+		m_bRegistered = registered;
+	}
 };
 
 //-----------------------------------------------------------------------------
@@ -242,7 +247,7 @@ private:
 	FnCommandCompletionCallback	m_fnCompletionCallback;
 	bool						m_bHasCompletionCallback;
 public:
-	FnCommandCallback			GetCallback() { return m_fnCommandCallback; }
+	inline FnCommandCallback	GetCallback() { return m_fnCommandCallback; }
 };
 
 //-----------------------------------------------------------------------------

@@ -16,33 +16,22 @@
  * @file concommands.h
  */
 
-#include <interface.h>
-#include <eiface.h>
-#include "sourcemm.h"
 #include "convar_smm.h"
+#include "sourcemm.h"
 #include "sh_list.h"
 
 class SMConVarAccessor : public IConCommandBaseAccessor
 {
 	SourceHook::List<ConCommandBase*> m_RegisteredCommands;
+	ConCommandBase **m_TopConCommandBase;
 public:
+	SMConVarAccessor();
 	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
 	bool Register(ConCommandBase *pCommand);
 	void MarkCommandsAsGameDLL();
+	bool InitConCommandBaseList();
 	void Unregister(ConCommandBase *pCommand);
-	void UnregisterGameDLLCommands();
 	void UnloadMetamodCommands();
-};
-
-class CAlwaysRegisterableCommand : public ConCommandBase
-{
-	ICvar *m_pICvar;
-public:
-	CAlwaysRegisterableCommand();
-	bool IsRegistered( void ) const;
-	// If already registered, removes us
-	// Then it registers us again
-	void BringToFront();
 };
 
 void ClientCommand_handler(edict_t *client);

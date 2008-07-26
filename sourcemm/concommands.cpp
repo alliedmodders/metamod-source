@@ -9,6 +9,7 @@
  */
 
 #include <ctype.h>
+#include "convar_smm.h"
 #include "CSmmAPI.h"
 #include "concommands.h"
 #include "CPlugin.h"
@@ -21,20 +22,25 @@
  * @file concommands.cpp
  */
 
-CAlwaysRegisterableCommand g_EternalCommand;
 SMConVarAccessor g_SMConVarAccessor;
+
+SMConVarAccessor::SMConVarAccessor()
+{
+	m_TopConCommandBase = NULL;
+}
 
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
-	// Add the FCVAR_GAMEDLL flag 
-	// => No crash on exit!
-	// UPDATE: Do _not_ add the FCVAR_GAMEDLL flag here, as it
-	// causes the command to be unusable on listenservers until you load a map
-	// We will set the FCVAR_GAMEDLL flag on all commands we have registered once we are being unloaded
-	//pCommand->AddFlags(FCVAR_GAMEDLL);
+	/* Add the FCVAR_GAMEDLL flag 
+	 * => No crash on exit!
+	 * UPDATE: Do _not_ add the FCVAR_GAMEDLL flag here, as it
+	 * causes the command to be unusable on listen servers until you load a map
+	 * We will set the FCVAR_GAMEDLL flag on all commands we have registered once we are being unloaded
+	 */
+	// pCommand->AddFlags(FCVAR_GAMEDLL);
 	m_RegisteredCommands.push_back(pCommand);
 
-	pCommand->SetNext( NULL );
+	pCommand->SetNext(NULL);
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
 	return true;
@@ -42,8 +48,8 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 
 bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 {
-	//simple, don't mark as part of sourcemm!
-	pCommand->SetNext( NULL );
+	/* Simple, don't mark as part of sourcemm! */
+	pCommand->SetNext(NULL);
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
 	return true;
@@ -60,64 +66,47 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 
 void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 {
-	ICvar *cv = g_Engine.icvar;
-	ConCommandBase *ptr = cv->GetCommands();
+	ConCommandBase *pCur = NULL;
+	ConCommandBase *pPrev = NULL;
 
-	if (ptr == pCommand)
+	if (!pCommand || !pCommand->IsRegistered())
 	{
-		//first in list
-		g_EternalCommand.BringToFront();
-		g_EternalCommand.SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
-	} else {
-		//find us and unregister us
-		ConCommandBase *pPrev = NULL;
-		while (ptr)
-		{
-			if (ptr == pCommand)
-				break;
-			pPrev = ptr;
-			ptr = const_cast<ConCommandBase *>(ptr->GetNext());
-		}
-		if (pPrev && ptr == pCommand)
+		return;
+	}
+
+	pCur = g_Engine.icvar->GetCommands();
+	pCommand->SetRegistered(false);
+
+	if (!m_TopConCommandBase || !pCur)
+	{
+		return;
+	}
+
+	if (pCur == pCommand)
+	{
+		*m_TopConCommandBase = const_cast<ConCommandBase *>(pCommand->GetNext());
+		pCommand->SetNext(NULL);
+		return;
+	}
+	
+	pPrev = pCur;
+	pCur = const_cast<ConCommandBase *>(pCur->GetNext());
+
+	while (pCur)
+	{
+		if (pCur == pCommand)
 		{
 			pPrev->SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
+			pCommand->SetNext(NULL);
 		}
-	}
-}
 
-void SMConVarAccessor::UnregisterGameDLLCommands()
-{
-	ConCommandBase *begin = g_Engine.icvar->GetCommands();
-	ConCommandBase *iter = begin;
-	ConCommandBase *prev = NULL;
-	while (iter)
-	{
-		// watch out for the ETERNAL COMMAND!
-		if (iter != &g_EternalCommand && iter->IsBitSet(FCVAR_GAMEDLL))
-		{
-			// Remove it!
-			if (iter == begin)
-			{
-				g_EternalCommand.BringToFront();
-				iter = const_cast<ConCommandBase*>(iter->GetNext());
-				g_EternalCommand.SetNext(iter);
-				prev = &g_EternalCommand;
-				continue;
-			}
-			else
-			{
-				iter = const_cast<ConCommandBase*>(iter->GetNext());
-				prev->SetNext(iter);
-				continue;
-			}
-		}
-		prev = iter;
-		iter = const_cast<ConCommandBase*>(iter->GetNext());
+		pPrev = pCur;
+		pCur = const_cast<ConCommandBase *>(pCur->GetNext());
 	}
 }
 
 ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
-#if defined WIN32 || defined _WIN32
+#ifdef OS_WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
 ConVar mm_basedir("mm_basedir", "addons\\metamod", FCVAR_SPONLY, "Metamod:Source base folder");
 #else
@@ -646,53 +635,6 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	CONMSG("  version      - Version information\n");
 }
 
-CAlwaysRegisterableCommand::CAlwaysRegisterableCommand()
-{
-	Create("", NULL, FCVAR_UNREGISTERED|FCVAR_GAMEDLL);
-	m_pICvar = NULL;
-}
-
-bool CAlwaysRegisterableCommand::IsRegistered( void ) const
-{
-	return false;
-}
-
-void CAlwaysRegisterableCommand::BringToFront()
-{
-	if (!m_pICvar)
-		m_pICvar = g_Engine.icvar;
-
-	// First, let's try to find us!
-	ConCommandBase *pPtr = m_pICvar->GetCommands();
-
-	if (pPtr == this)
-	{
-		// We are already at the beginning; Nothing to do
-		return;
-	}
-
-	while (pPtr)
-	{
-		if (pPtr == this && pPtr->IsCommand() && stricmp(GetName(), pPtr->GetName()) == 0)
-			break;
-		ConCommandBase *pPrev = NULL;
-		while (pPtr)
-		{
-			if (pPtr == this)
-				break;
-			pPrev = pPtr;
-			pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-		}
-		if (pPrev && pPtr == this)
-		{
-			pPrev->SetNext(m_pNext);		// Remove us from the list
-		}
-		// Now, register us
-		SetNext(NULL);
-		m_pICvar->RegisterConCommandBase(this);
-	}
-}
-
 void ClientCommand_handler(edict_t *client)
 {
 	IVEngineServer *e = g_Engine.engine;
@@ -799,4 +741,63 @@ const char *GetPluginsFile()
 const char *GetMetamodBaseDir()
 {
 	return mm_basedir.GetString();
+}
+
+/* Signature for ICvar::GetCommands() in vstdlib for Win32 and Linux.
+ *
+ * 20226EE0 A1 50 5C 5A 20   mov         eax,dword ptr ds:[205A5C50h] <-- What we want
+ * 20226EE5 C3               ret              
+ */
+#define CMDLIST_SIG "\xA1\x2A\x2A\x2A\x2A\xC3"
+#define CMDLIST_SIGLEN 6
+
+/* Linux symbol name of ConCommandBase list in vstdlib */
+#define CMDLIST_SYMBOL "_ZN14ConCommandBase18s_pConCommandBasesE"
+
+/* This function retrieves the address of the var that holds the top of the ConCommandBase list.
+ * Having this allows us to change the beginning of this list with ease.
+ *
+ * This craziness eliminates the need for the eternal command/cvar used previously which
+ * could have caused a crash as a result of registering commands/cvars more than once.
+ */
+bool SMConVarAccessor::InitConCommandBaseList()
+{
+	char *vfunc = UTIL_GetOrigFunction(&ICvar::GetCommands, g_Engine.icvar, g_CvarPatch);
+
+	if (!vfunc)
+	{
+		return false;
+	}
+
+#ifdef OS_WIN32
+	if (UTIL_VerifySignature(vfunc, CMDLIST_SIG, CMDLIST_SIGLEN))
+	{
+		/* Skip past 0xA1 and get addr of ConCommandBase list var */
+		m_TopConCommandBase = *reinterpret_cast<ConCommandBase ***>(vfunc + 1);
+		return true;
+	}
+#elif defined OS_LINUX
+	/* Try dlsym first */
+	char path[PATH_SIZE];
+	if (GetFileOfAddress((void *)g_Engine.icvar, path, sizeof(path)))
+	{
+		void *handle = dlopen(path, RTLD_NOW);
+		if (handle)
+		{
+			m_TopConCommandBase = reinterpret_cast<ConCommandBase **>(dlsym(handle, CMDLIST_SYMBOL));
+			dlclose(handle);
+			return true;
+		}
+	}
+
+	/* If dlsym failed, then verify signature of function */
+	if (!m_TopConCommandBase && UTIL_VerifySignature(vfunc, CMDLIST_SIG, CMDLIST_SIGLEN))
+	{
+		/* Skip past 0xA1 and get addr of ConCommandBase list var */
+		m_TopConCommandBase = *reinterpret_cast<ConCommandBase ***>(vfunc + 1);
+		return true;
+	}
+#endif
+
+	return false;
 }

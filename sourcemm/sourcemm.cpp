@@ -61,6 +61,7 @@ bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
+SourceHook::CallClass<ICvar> *g_CvarPatch;
 int g_GameDllVersion = 0;
 const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
@@ -174,6 +175,7 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
 	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
+	g_CvarPatch = SH_GET_CALLCLASS(g_Engine.icvar);
 
 	if (g_GameDll.pGameClients)
 	{
@@ -195,8 +197,8 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	if (!g_SmmAPI.CacheUserMessages())
 	{
 		/* Don't know of a mod that has stripped out user messages completely, 
-		* but perhaps should do something different here?
-		*/
+		 * but perhaps should do something different here?
+		 */
 		LogMessage("[META] Warning: Failed to get list of user messages.");
 		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
 	}
@@ -205,6 +207,13 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	if (baseFs == NULL)
 	{
 		LogMessage("[META] Failed to find filesystem interface, .vdf files will not be parsed.");
+	}
+
+	if (!g_SMConVarAccessor.InitConCommandBaseList())
+	{
+		/* This is very unlikely considering it's old engine */
+		LogMessage("[META] Warning: Failed to find ConCommandBase list!");
+		LogMessage("[META] Warning: ConVars and ConCommands cannot be unregistered properly! Please file a bug report.");
 	}
 
 	if (!bWaitForGameInit)
@@ -603,13 +612,15 @@ void UnloadMetamod(bool shutting_down)
 	{
 		/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
 		g_SMConVarAccessor.MarkCommandsAsGameDLL();
-		g_SMConVarAccessor.UnregisterGameDLLCommands();
+		g_Engine.icvar->UnlinkVariables(FCVAR_GAMEDLL);
 
 		SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
 	}
 
 	SH_RELEASE_CALLCLASS(g_GameDllPatch);
+	SH_RELEASE_CALLCLASS(g_CvarPatch);
 	g_GameDllPatch = NULL;
+	g_CvarPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
 
