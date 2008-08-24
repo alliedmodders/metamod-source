@@ -1,9 +1,0 @@
-[PRODUCT]
-major = 1
-minor = 6
-revision = 0
-
-[sourcemm]
-folder = sourcemm
-in = svn_version.tpl
-out = svn_version.h
