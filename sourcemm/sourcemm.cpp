@@ -826,21 +826,22 @@ int LoadPluginsFromFile(const char *_file)
 	char buffer[255], error[255], full_path[255];
 	const char *ptr, *ext, *file;
 	size_t length;
-	while (!feof(fp))
+	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
 	{
-		buffer[0] = '\0';
-		fgets(buffer, sizeof(buffer), fp);
-		length = strlen(buffer);
-		if (!length)
-			continue;
-		if (buffer[length-1] == '\n')
-			buffer[--length] = '\0';
-
 		UTIL_TrimLeft(buffer);
 		UTIL_TrimRight(buffer);
 
-		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+		length = strlen(buffer);
+		if (!length)
+		{
 			continue;
+		}
+
+		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+		{
+			continue;
+		}
+
 		file = buffer;
 		if (buffer[0] == '"')
 		{
@@ -856,7 +857,9 @@ int LoadPluginsFromFile(const char *_file)
 				}
 				cptr++;
 			}
-		} else {
+		}
+		else
+		{
 			char *cptr = buffer;
 			while (*cptr)
 			{
@@ -864,7 +867,9 @@ int LoadPluginsFromFile(const char *_file)
 				{
 					char *optr = cptr;
 					while (*cptr && isspace(*cptr))
+					{
 						cptr++;
+					}
 					*optr = '\0';
 					UTIL_TrimRight(cptr);
 					if (*cptr && isalpha(*cptr))
@@ -889,13 +894,21 @@ int LoadPluginsFromFile(const char *_file)
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			} else {
-				if (already)
-					skipped++;
-				else
-					total++;
 			}
-		} else {
+			else
+			{
+				if (already)
+				{
+					skipped++;
+				}
+				else
+				{
+					total++;
+				}
+			}
+		}
+		else
+		{
 			/* Attempt to find a file extension */
 			ptr = UTIL_GetExtension(file);
 			/* Add an extension if there's none there */
@@ -906,7 +919,9 @@ int LoadPluginsFromFile(const char *_file)
 #else
 				ext = "_i486.so";
 #endif
-			} else {
+			}
+			else
+			{
 				ext = "";
 			}
 			/* Format the new path */
@@ -915,11 +930,17 @@ int LoadPluginsFromFile(const char *_file)
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			} else {
+			}
+			else
+			{
 				if (already)
+				{
 					skipped++;
+				}
 				else
+				{
 					total++;
+				}
 			}
 		}
 	}
@@ -928,12 +949,15 @@ int LoadPluginsFromFile(const char *_file)
 	if (skipped)
 	{
 		LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
-	} else {
+	}
+	else
+	{
 		LogMessage("[META] Loaded %d plugins from file.", total);
 	}
-	
+
 	return total;
 }
+
 
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real engineFactory.
