@@ -1,4 +1,4 @@
-#(C)2004-2007 SourceMM Development Team
+#(C)2004-2008 SourceMM Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
 HL2SDK = ../../hl2sdk
@@ -34,7 +34,10 @@ endif
 
 GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
 
-CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse
+CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
+		-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
+		-Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Wno-uninitialized -Werror -fPIC \
+		-fno-exceptions -fno-rtti -msse -m32
 
 ifeq "$(GCC_VERSION)" "4"
 	CFLAGS += $(GCC4_FLAGS)
@@ -55,7 +58,7 @@ all:
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 sourcemm: $(OBJ_LINUX)
-	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
+	$(CPP) $(INCLUDE) -m32 $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
 
 debug:	
 	$(MAKE) all DEBUG=true

@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -9,31 +9,38 @@
  */
 
 #include <ctype.h>
+#include "convar_smm.h"
 #include "CSmmAPI.h"
 #include "concommands.h"
 #include "CPlugin.h"
 #include "sh_string.h"
 #include "sh_list.h"
+#include "vsp_listener.h"
 
 /**
  * @brief Console Command Implementations
  * @file concommands.cpp
  */
 
-CAlwaysRegisterableCommand g_EternalCommand;
 SMConVarAccessor g_SMConVarAccessor;
+
+SMConVarAccessor::SMConVarAccessor()
+{
+	m_TopConCommandBase = NULL;
+}
 
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
-	// Add the FCVAR_GAMEDLL flag 
-	// => No crash on exit!
-	// UPDATE: Do _not_ add the FCVAR_GAMEDLL flag here, as it
-	// causes the command to be unusable on listenservers until you load a map
-	// We will set the FCVAR_GAMEDLL flag on all commands we have registered once we are being unloaded
-	//pCommand->AddFlags(FCVAR_GAMEDLL);
+	/* Add the FCVAR_GAMEDLL flag 
+	 * => No crash on exit!
+	 * UPDATE: Do _not_ add the FCVAR_GAMEDLL flag here, as it
+	 * causes the command to be unusable on listen servers until you load a map
+	 * We will set the FCVAR_GAMEDLL flag on all commands we have registered once we are being unloaded
+	 */
+	// pCommand->AddFlags(FCVAR_GAMEDLL);
 	m_RegisteredCommands.push_back(pCommand);
 
-	pCommand->SetNext( NULL );
+	pCommand->SetNext(NULL);
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
 	return true;
@@ -41,8 +48,8 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 
 bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 {
-	//simple, don't mark as part of sourcemm!
-	pCommand->SetNext( NULL );
+	/* Simple, don't mark as part of sourcemm! */
+	pCommand->SetNext(NULL);
 	g_Engine.icvar->RegisterConCommandBase(pCommand);
 
 	return true;
@@ -59,67 +66,52 @@ void SMConVarAccessor::MarkCommandsAsGameDLL()
 
 void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 {
-	ICvar *cv = g_Engine.icvar;
-	ConCommandBase *ptr = cv->GetCommands();
+	ConCommandBase *pCur = NULL;
+	ConCommandBase *pPrev = NULL;
 
-	if (ptr == pCommand)
+	if (!pCommand || !pCommand->IsRegistered())
 	{
-		//first in list
-		g_EternalCommand.BringToFront();
-		g_EternalCommand.SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
-	} else {
-		//find us and unregister us
-		ConCommandBase *pPrev = NULL;
-		while (ptr)
-		{
-			if (ptr == pCommand)
-				break;
-			pPrev = ptr;
-			ptr = const_cast<ConCommandBase *>(ptr->GetNext());
-		}
-		if (pPrev && ptr == pCommand)
+		return;
+	}
+
+	pCur = g_Engine.icvar->GetCommands();
+	pCommand->SetRegistered(false);
+
+	if (!m_TopConCommandBase || !pCur)
+	{
+		return;
+	}
+
+	if (pCur == pCommand)
+	{
+		*m_TopConCommandBase = const_cast<ConCommandBase *>(pCommand->GetNext());
+		pCommand->SetNext(NULL);
+		return;
+	}
+	
+	pPrev = pCur;
+	pCur = const_cast<ConCommandBase *>(pCur->GetNext());
+
+	while (pCur)
+	{
+		if (pCur == pCommand)
 		{
 			pPrev->SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
+			pCommand->SetNext(NULL);
 		}
+
+		pPrev = pCur;
+		pCur = const_cast<ConCommandBase *>(pCur->GetNext());
 	}
 }
 
-void SMConVarAccessor::UnregisterGameDLLCommands()
-{
-	ConCommandBase *begin = g_Engine.icvar->GetCommands();
-	ConCommandBase *iter = begin;
-	ConCommandBase *prev = NULL;
-	while (iter)
-	{
-		// watch out for the ETERNAL COMMAND!
-		if (iter != &g_EternalCommand && iter->IsBitSet(FCVAR_GAMEDLL))
-		{
-			// Remove it!
-			if (iter == begin)
-			{
-				g_EternalCommand.BringToFront();
-				iter = const_cast<ConCommandBase*>(iter->GetNext());
-				g_EternalCommand.SetNext(iter);
-				prev = &g_EternalCommand;
-				continue;
-			}
-			else
-			{
-				iter = const_cast<ConCommandBase*>(iter->GetNext());
-				prev->SetNext(iter);
-				continue;
-			}
-		}
-		prev = iter;
-		iter = const_cast<ConCommandBase*>(iter->GetNext());
-	}
-}
-
-ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_REPLICATED | FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
-#if defined WIN32 || defined _WIN32
+ConVar metamod_version("metamod_version", SOURCEMM_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
+#ifdef OS_WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
+ConVar mm_basedir("mm_basedir", "addons\\metamod", FCVAR_SPONLY, "Metamod:Source base folder");
 #else
 ConVar mm_pluginsfile("mm_pluginsfile", "addons/metamod/metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
+ConVar mm_basedir("mm_basedir", "addons/metamod", FCVAR_SPONLY, "Metamod:Source base folder");
 #endif
 
 CON_COMMAND(meta, "Metamod:Source Menu")
@@ -127,6 +119,12 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	IVEngineServer *e = g_Engine.engine;
 
 	int args = e->Cmd_Argc();
+
+	if (g_VspListener.IsRootLoadMethod() && !g_bLevelChanged)
+	{
+		CONMSG("WARNING: You must change the map to activate Metamod:Source.\n");
+		return;
+	}
 
 	if (args >= 2)
 	{
@@ -138,15 +136,23 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
 			CONMSG("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
 			CONMSG("For more information, see the official website\n");
-			CONMSG("http://www.sourcemm.net/\n");
+			CONMSG("http://www.metamodsource.net/\n");
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
+			if (g_VspListener.IsRootLoadMethod())
+			{
+				CONMSG("Loaded As: Valve Server Plugin\n");
+			}
+			else
+			{
+				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
+			}
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 			CONMSG("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-			CONMSG("http://www.sourcemm.net/\n");
+			CONMSG("http://www.metamodsource.net/\n");
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
@@ -191,58 +197,62 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 			return;
 		} else if (strcmp(command, "list") == 0) {
-			SourceMM::CPluginManager::CPlugin *pl;
+			size_t len;
 			PluginIter i;
-			const char *status="";
-			const char *version=NULL;
-			const char *name=NULL;
-			const char *author=NULL;
+			char buffer[255];
+			ISmmPlugin *plapi;
+			const char *plname;
+			SourceMM::CPluginManager::CPlugin *pl;
+			unsigned int plnum = g_PluginMngr.GetPluginCount();
 
-			CONMSG("-Id- %-20.19s  %-10.9s  %-20.19s %-8.7s\n", "Name", "Version", "Author", "Status");
+#define IS_STR_FILLED(var) (var != NULL && var[0] != '\0')
+
+			if (!plnum)
+			{
+				CONMSG("No plugins loaded.\n");
+				return;
+			}
+			else
+			{
+				CONMSG("Listing %d plugin%s:\n", plnum, (plnum > 1) ? "s" : "");
+			}
+
 			for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
 			{
 				pl = (*i);
 				if (!pl)
+				{
 					break;
-				if (pl->m_Status == Pl_Paused)
-				{
-					status = "PAUSE";
-				} else if (pl->m_Status == Pl_Running) {
-					if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
-						status = "RUN";
-					else
-						status = "STOPPED";
-				} else if (pl->m_Status == Pl_Refused) {
-					status = "FAIL";
-				} else if (pl->m_Status == Pl_Error) {
-					status = "ERROR";
-				} else if (pl->m_Status == Pl_NotFound) {
-					status = "NOFILE";
 				}
 
-				if (pl->m_API)
+				len = 0;
+
+				if (pl->m_Status != Pl_Running)
 				{
-					version = pl->m_API->GetVersion();
-					author = pl->m_API->GetAuthor();
-					name = pl->m_API->GetName();
-				} else {
-					version = "-";
-					author = "-";
-					name = "-";
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d] <%s>", pl->m_Id, g_PluginMngr.GetStatusText(pl));
+				}
+				else
+				{
+					len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", pl->m_Id);
 				}
 
-				if (!version)
-					version = "-";
-				if (!author)
-					author = "-";
-				if (!name)
-					name = pl->m_File.c_str();
+				if ((plapi = pl->m_API))
+				{
+					plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+					len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
 
+					if (IS_STR_FILLED(plapi->GetVersion()))
+					{
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+					}
+					if (IS_STR_FILLED(plapi->GetAuthor()))
+					{
+						UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
+					}
+				}
 
-				CONMSG("[%02d] %-20.19s  %-10.9s  %-20.19s %-8.7s\n", pl->m_Id, name, version, author, status);
+				CONMSG("%s\n", buffer);
 			}
-
-			//CONMSG("\n");
 
 			return;
 		} else if (strcmp(command, "cmds") == 0) {
@@ -625,53 +635,6 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	CONMSG("  version      - Version information\n");
 }
 
-CAlwaysRegisterableCommand::CAlwaysRegisterableCommand()
-{
-	Create("", NULL, FCVAR_UNREGISTERED|FCVAR_GAMEDLL);
-	m_pICvar = NULL;
-}
-
-bool CAlwaysRegisterableCommand::IsRegistered( void ) const
-{
-	return false;
-}
-
-void CAlwaysRegisterableCommand::BringToFront()
-{
-	if (!m_pICvar)
-		m_pICvar = g_Engine.icvar;
-
-	// First, let's try to find us!
-	ConCommandBase *pPtr = m_pICvar->GetCommands();
-
-	if (pPtr == this)
-	{
-		// We are already at the beginning; Nothing to do
-		return;
-	}
-
-	while (pPtr)
-	{
-		if (pPtr == this && pPtr->IsCommand() && stricmp(GetName(), pPtr->GetName()) == 0)
-			break;
-		ConCommandBase *pPrev = NULL;
-		while (pPtr)
-		{
-			if (pPtr == this)
-				break;
-			pPrev = pPtr;
-			pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-		}
-		if (pPrev && pPtr == this)
-		{
-			pPrev->SetNext(m_pNext);		// Remove us from the list
-		}
-		// Now, register us
-		SetNext(NULL);
-		m_pICvar->RegisterConCommandBase(this);
-	}
-}
-
 void ClientCommand_handler(edict_t *client)
 {
 	IVEngineServer *e = g_Engine.engine;
@@ -688,10 +651,10 @@ void ClientCommand_handler(edict_t *client)
 			{
 				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
 				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-				CLIENT_CONMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-				CLIENT_CONMSG(client, "  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
+				CLIENT_CONMSG(client, "  Core: David \"BAILOPAN\" Anderson\n");
+				CLIENT_CONMSG(client, "  Core: Scott \"Damaged Soul\" Ehlert\n");
 				CLIENT_CONMSG(client, "For more information, see the official website\n");
-				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "version") == 0) {
@@ -699,47 +662,51 @@ void ClientCommand_handler(edict_t *client)
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
 				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-				CLIENT_CONMSG(client, "http://www.sourcemm.net/\n");
+				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "list") == 0) {
 				SourceMM::CPluginManager::CPlugin *pl;
-				Pl_Status st;
+				ISmmPlugin *plapi;
+				const char *plname;
 				PluginIter i;
-				const char *version = NULL;
-				const char *name = NULL;
-				const char *author = NULL;
-				const char *status = NULL;
+				char buffer[256];
+				int len = 0;
+				int plnum = 0;
 
-				CLIENT_CONMSG(client, "-Id- %-20.19s  %-10.9s  %-20.19s  %6s\n", "Name", "Version", "Author", "Status");
-
-				for (i=g_PluginMngr._begin(); i!=g_PluginMngr._end(); i++)
+				for (i = g_PluginMngr._begin(); i != g_PluginMngr._end(); i++, len=0)
 				{
 					pl = (*i);
-					if (!pl)
-						break;
-					
-					st = pl->m_Status;
-
-					/* Only show plugins that are running or paused */
-					if (pl->m_API && (st == Pl_Running || st == Pl_Paused))
+					if (pl && pl->m_Status == Pl_Running)
 					{
-						version = pl->m_API->GetVersion();
-						author = pl->m_API->GetAuthor();
-						name = pl->m_API->GetName();
-
-						if (st == Pl_Running && pl->m_API->QueryRunning(NULL, 0))
+						plapi = pl->m_API;
+						if (!plapi || !plapi->QueryRunning(NULL, 0))
 						{
-							status = "RUN";
-						} else {
-							status = "PAUSE";
+							continue;
+						}
+						plnum++;
+
+						len += UTIL_Format(buffer, sizeof(buffer), "  [%02d]", plnum);
+
+						plname = IS_STR_FILLED(plapi->GetName()) ? plapi->GetName() : pl->m_File.c_str();
+						len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " %s", plname);
+
+						if (IS_STR_FILLED(plapi->GetVersion()))
+						{
+							len += UTIL_Format(&buffer[len], sizeof(buffer)-len, " (%s)", plapi->GetVersion());
+						}
+						if (IS_STR_FILLED(plapi->GetAuthor()))
+						{
+							UTIL_Format(&buffer[len], sizeof(buffer)-len, " by %s", plapi->GetAuthor());
 						}
 
-						if (!version || !author || !name)
-							break;
-
-						CLIENT_CONMSG(client, "[%02d] %-20.19s  %-10.9s  %-20.19s  %6s\n", pl->m_Id, name, version, author, status);
+						CLIENT_CONMSG(client, "%s\n", buffer);
 					}
+				}
+
+				if (!plnum)
+				{
+					CLIENT_CONMSG(client, "No active plugins loaded.\n");
 				}
 
 				RETURN_META(MRES_SUPERCEDE);
@@ -758,7 +725,79 @@ void ClientCommand_handler(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
+void SMConVarAccessor::UnloadMetamodCommands()
+{
+	Unregister(&metamod_version);
+	Unregister(&mm_pluginsfile);
+	Unregister(&mm_basedir);
+	Unregister(&meta_command);
+}
+
 const char *GetPluginsFile()
 {
 	return mm_pluginsfile.GetString();
+}
+
+const char *GetMetamodBaseDir()
+{
+	return mm_basedir.GetString();
+}
+
+/* Signature for ICvar::GetCommands() in vstdlib for Win32 and Linux.
+ *
+ * 20226EE0 A1 50 5C 5A 20   mov         eax,dword ptr ds:[205A5C50h] <-- What we want
+ * 20226EE5 C3               ret              
+ */
+#define CMDLIST_SIG "\xA1\x2A\x2A\x2A\x2A\xC3"
+#define CMDLIST_SIGLEN 6
+
+/* Linux symbol name of ConCommandBase list in vstdlib */
+#define CMDLIST_SYMBOL "_ZN14ConCommandBase18s_pConCommandBasesE"
+
+/* This function retrieves the address of the var that holds the top of the ConCommandBase list.
+ * Having this allows us to change the beginning of this list with ease.
+ *
+ * This craziness eliminates the need for the eternal command/cvar used previously which
+ * could have caused a crash as a result of registering commands/cvars more than once.
+ */
+bool SMConVarAccessor::InitConCommandBaseList()
+{
+	char *vfunc = UTIL_GetOrigFunction(&ICvar::GetCommands, g_Engine.icvar, g_CvarPatch);
+
+	if (!vfunc)
+	{
+		return false;
+	}
+
+#ifdef OS_WIN32
+	if (UTIL_VerifySignature(vfunc, CMDLIST_SIG, CMDLIST_SIGLEN))
+	{
+		/* Skip past 0xA1 and get addr of ConCommandBase list var */
+		m_TopConCommandBase = *reinterpret_cast<ConCommandBase ***>(vfunc + 1);
+		return true;
+	}
+#elif defined OS_LINUX
+	/* Try dlsym first */
+	char path[PATH_SIZE];
+	if (GetFileOfAddress((void *)g_Engine.icvar, path, sizeof(path)))
+	{
+		void *handle = dlopen(path, RTLD_NOW);
+		if (handle)
+		{
+			m_TopConCommandBase = reinterpret_cast<ConCommandBase **>(dlsym(handle, CMDLIST_SYMBOL));
+			dlclose(handle);
+			return true;
+		}
+	}
+
+	/* If dlsym failed, then verify signature of function */
+	if (!m_TopConCommandBase && UTIL_VerifySignature(vfunc, CMDLIST_SIG, CMDLIST_SIGLEN))
+	{
+		/* Skip past 0xA1 and get addr of ConCommandBase list var */
+		m_TopConCommandBase = *reinterpret_cast<ConCommandBase ***>(vfunc + 1);
+		return true;
+	}
+#endif
+
+	return false;
 }

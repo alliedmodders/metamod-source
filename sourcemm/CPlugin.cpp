@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -12,6 +12,7 @@
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"
+#include "vsp_listener.h"
 
 /** 
  * @brief Implements functions from CPlugin.h
@@ -22,14 +23,14 @@ using namespace SourceMM;
 
 #define ITER_PLEVENT(evn, plid) \
 	CPluginManager::CPlugin *_Xpl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		_Xpl = (*iter); \
 		if (_Xpl->m_Id == plid) \
 			continue; \
 		for (event=_Xpl->m_Events.begin(); event!=_Xpl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			api->evn(plid); \
 		} \
 	}
@@ -178,6 +179,38 @@ void CPluginManager::SetAllLoaded()
 			//Min version is now 5, so we ignore this check
 			//if ( (*i)->m_API->GetApiVersion() >= 004 )
 			(*i)->m_API->AllPluginsLoaded();
+		}
+	}
+}
+
+void CPluginManager::SetVSPAsLoaded()
+{
+	PluginIter i;
+	CPlugin *pPlugin;
+	SourceHook::List<CPluginEventHandler>::iterator event;
+
+	for (i = m_Plugins.begin(); i != m_Plugins.end(); i++)
+	{
+		pPlugin = (*i);
+		if (pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 10 (v1:5, SourceMM 1.4) */
+		if (pPlugin->m_API->GetApiVersion() < 10)
+		{
+			continue;
+		}
+		for (event = pPlugin->m_Events.begin();
+			 event != pPlugin->m_Events.end();
+			 event++)
+		{
+			if ((*event).got_vsp)
+			{
+				continue;
+			}
+			(*event).got_vsp = true;
+			(*event).event->OnVSPListening(&g_VspListener);
 		}
 	}
 }
@@ -335,7 +368,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 		if (!pl->m_Lib)
 		{
 			if (error)
-				UTIL_Format(error, maxlen, "%s", dlerror());
+				UTIL_Format(error, maxlen, "[%d]", GetLastError());
 			pl->m_Status = Pl_Error;
 		} else {
 			CreateInterfaceFn pfn = (CreateInterfaceFn)(dlsym(pl->m_Lib, PL_EXPOSURE_C));
@@ -372,6 +405,22 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 								//Removing this code as the min version is now 5
 								//if (pl->m_API->GetApiVersion() >= 4)
 								pl->m_API->AllPluginsLoaded();
+							}
+							if (g_VspListener.IsRootLoadMethod()
+								|| (g_VspListener.IsLoaded() && g_SmmAPI.VSPEnabled()))
+							{
+								SourceHook::List<CPluginEventHandler>::iterator event;
+								for (event = pl->m_Events.begin();
+									 event != pl->m_Events.end(); 
+									 event++)
+								{
+									if (pl->m_API->GetApiVersion() < 10 || (*event).got_vsp)
+									{
+										continue;
+									}
+									(*event).got_vsp = true;
+									(*event).event->OnVSPListening(&g_VspListener);
+								}
 							}
 						} else {
 							pl->m_Status = Pl_Refused;
@@ -496,22 +545,16 @@ bool CPluginManager::UnloadAll()
 {
 	PluginIter i;
 
-	SourceHook::List<SourceMM::CPluginManager::CPlugin *> remqueue;
-
-	for (i=m_Plugins.begin(); i!=m_Plugins.end(); i++)
-		remqueue.push_back( (*i) );
-
 	char error[128];
 	bool status = true;
 
-	for (i=remqueue.begin(); i!=remqueue.end(); i++)
+	while ((i = m_Plugins.begin()) != m_Plugins.end())
 	{
 		if ( !_Unload( (*i), true, error, sizeof(error)) )
+		{
 			status = false;
+		}
 	}
-
-	m_Plugins.clear();
-	remqueue.clear();
 
 	return status;
 }
@@ -621,4 +664,35 @@ void CPluginManager::UnregAllConCmds(CPlugin *pl)
 		g_SMConVarAccessor.Unregister( (*i) );
 
 	pl->m_Cmds.clear();
+}
+
+const char *CPluginManager::GetStatusText(CPlugin *pl)
+{
+	switch (pl->m_Status)
+	{
+	case Pl_NotFound:
+		return "NOFILE";
+	case Pl_Error:
+		return "ERROR";
+	case Pl_Refused:
+		return "FAILED";
+	case Pl_Paused:
+		return "PAUSED";
+	case Pl_Running:
+		{
+			if (pl->m_API && pl->m_API->QueryRunning(NULL, 0))
+			{
+				return "STOPPED";
+			} else {
+				return "RUNNING";
+			}
+		}
+	default:
+		return "-";
+	}
+}
+
+unsigned int CPluginManager::GetPluginCount()
+{
+	return (unsigned int)m_Plugins.size();
 }

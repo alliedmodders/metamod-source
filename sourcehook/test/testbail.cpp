@@ -109,6 +109,10 @@ bool TestBail(std::string &error)
 		new State_EatYams_Return(6),
 		NULL), "Part 6");
 
+	SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
+
+	UntestBail2();
+
 	delete g_Gabgab;
 
 	return true;

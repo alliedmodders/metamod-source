@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -19,6 +19,8 @@
 #include "CPlugin.h"
 #include "util.h"
 #include "vsp_listener.h"
+#include "iplayerinfo.h"
+#include <filesystem.h>
 
 using namespace SourceMM;
 
@@ -43,6 +45,8 @@ void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
 bool GameInit_handler();
+void LookForVDFs(const char *dir);
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
 
 GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
 EngineInfo g_Engine;
@@ -57,24 +61,28 @@ bool gParsedGameInfo = false;
 bool bGameInit = false;
 SourceHook::List<GameDllInfo *> gamedll_list;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
+SourceHook::CallClass<ICvar> *g_CvarPatch;
 int g_GameDllVersion = 0;
 const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
+IFileSystem *baseFs = NULL;
+bool g_bLevelChanged = false;
+
 
 void ClearGamedllList();
 
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	int mret = 0; \
 	void *val = NULL; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			mret = IFACE_FAILED; \
 			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
 				if (ret) *ret = mret; \
@@ -86,12 +94,12 @@ void ClearGamedllList();
 
 #define ITER_EVENT(evn, args) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	SourceHook::List<CPluginEventHandler>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
-			api = (*event); \
+			api = (*event).event; \
 			api->evn args; \
 		} \
 	}
@@ -119,25 +127,34 @@ void InitMainStates()
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
-
-	if (g_GameDll.pGameClients)
-	{
-		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
-	} else {
-		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
-		LogMessage("[META] Warning: Could not find IServerGameClients!");
-		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
-	}
 }
 
-bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+void DoInitialPluginLoads()
 {
-	g_Engine.engineFactory = engineFactory;
-	g_Engine.fileSystemFactory = filesystemFactory;
-	g_Engine.physicsFactory = physicsFactory;
-	g_Engine.pGlobals = pGlobals;
+	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
+	const char *mmBaseDir = g_Engine.icvar->GetCommandLineValue("mm_basedir");
 
+	if (!pluginFile) 
+	{
+		pluginFile = GetPluginsFile();
+	}
+	if (!mmBaseDir)
+	{
+		mmBaseDir = GetMetamodBaseDir();
+	}
+
+	char full_path[260];
+
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
+	LoadPluginsFromFile(full_path);
+	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), mmBaseDir);
+	LookForVDFs(full_path);
+}
+
+bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
+{
 	g_Engine.engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
+
 	if (!g_Engine.engine)
 	{
 		Error("Could not find IVEngineServer! Metamod cannot load.");
@@ -152,10 +169,24 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 
 	g_Engine.loaded = true;
 
-	/* Initialize our console hooks */
+	/* The Ship is the only game known at this time that uses the pre-Episode One engine */
+	g_Engine.original = strcmp(CommandLine()->ParmValue("-game", "hl2"), "ship") == 0;
+
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
 
 	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
+	g_CvarPatch = SH_GET_CALLCLASS(g_Engine.icvar);
+
+	if (g_GameDll.pGameClients)
+	{
+		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, g_GameDll.pGameClients, ClientCommand_handler, false);
+	}
+	else
+	{
+		/* If IServerGameClients isn't found, this really isn't a fatal error so... */
+		LogMessage("[META] Warning: Could not find IServerGameClients!");
+		LogMessage("[META] Warning: The 'meta' command will not be available to clients.");
+	}
 
 	if (!g_SmmAPI.CacheCmds())
 	{
@@ -172,32 +203,125 @@ bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, 
 		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
 	}
 
-	const char *pluginFile = g_Engine.icvar->GetCommandLineValue("mm_pluginsfile");
-	if (!pluginFile) 
+	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
+	if (baseFs == NULL)
 	{
-		pluginFile = GetPluginsFile();
+		LogMessage("[META] Failed to find filesystem interface, .vdf files will not be parsed.");
 	}
 
-	char full_path[260];
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
+	if (!g_SMConVarAccessor.InitConCommandBaseList())
+	{
+		/* This is very unlikely considering it's old engine */
+		LogMessage("[META] Warning: Failed to find ConCommandBase list!");
+		LogMessage("[META] Warning: ConVars and ConCommands cannot be unregistered properly! Please file a bug report.");
+	}
 
-	LoadPluginsFromFile(full_path);
+	if (!bWaitForGameInit)
+	{
+		DoInitialPluginLoads();
+		bInFirstLevel = true;
+	}
 
-	bInFirstLevel = true;
+	return true;
+}
+
+bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+{
+	g_Engine.engineFactory = engineFactory;
+	g_Engine.fileSystemFactory = filesystemFactory;
+	g_Engine.physicsFactory = physicsFactory;
+	g_Engine.pGlobals = pGlobals;
+
+	StartupMetamod(engineFactory, false);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory)
+{
+	g_Engine.engineFactory = ifaceFactory;
+	g_Engine.fileSystemFactory = ifaceFactory;
+	g_Engine.physicsFactory = ifaceFactory;
+
+	IPlayerInfoManager *playerInfoManager = (IPlayerInfoManager *)serverFactory("PlayerInfoManager002", NULL);
+	if (playerInfoManager == NULL)
+	{
+		Error("Metamod:Source requires gameinfo.txt modification to load on this game.");
+		return false;
+	}
+
+	g_Engine.pGlobals = playerInfoManager->GetGlobalVars();
+
+	/* Now find the server */
+	g_GameDll.factory = serverFactory;
+	g_GameDll.lib = NULL;
+
+	char gamedll_iface[] = "ServerGameDLL000";
+	for (unsigned int i = 3; i <= 50; i++)
+	{
+		gamedll_iface[15] = '0' + i;
+		g_GameDll.pGameDLL = (IServerGameDLL *)serverFactory(gamedll_iface, NULL);
+		if (g_GameDll.pGameDLL != NULL)
+		{
+			g_GameDllVersion = i;
+			break;
+		}
+	}
+
+	if (g_GameDll.pGameDLL == NULL)
+	{
+		Error("Metamod:Source requires gameinfo.txt modification to load on this game.");
+		return false;
+	}
+
+	char gameclients_iface[] = "ServerGameClients000";
+	for (unsigned int i = 3; i <= 4; i++)
+	{
+		gameclients_iface[19] = '0' + i;
+		g_GameDll.pGameClients = (IServerGameClients *)serverFactory(gameclients_iface, NULL);
+		if (g_GameDll.pGameClients != NULL)
+		{
+			break;
+		}
+	}
+
+	char smm_path[PATH_SIZE];
+	const char *game_dir;
+	GetFileOfAddress((void *)AlternatelyLoadMetamod, smm_path, sizeof(smm_path));
+	g_SmmPath.assign(smm_path);
+
+	game_dir = CommandLine()->ParmValue("-game", "hl2");
+	abspath(smm_path, game_dir);
+	g_ModPath.assign(smm_path);
+
+	InitMainStates();
+
+	if (!StartupMetamod(ifaceFactory, true))
+	{
+		return false;
+	}
+
+	g_PluginMngr.SetAllLoaded();
+
+	return true;
 }
 
 bool GameInit_handler()
 {
 	if (bGameInit)
 	{
-		return true;
+		RETURN_META_VALUE(MRES_IGNORED, true);
 	}
 
-	if (g_SmmAPI.VSPEnabled())
+	if (g_SmmAPI.VSPEnabled() && !g_VspListener.IsRootLoadMethod())
 	{
 		g_SmmAPI.LoadAsVSP();
+	}
+
+	if (g_VspListener.IsRootLoadMethod())
+	{
+		DoInitialPluginLoads();
+		//gaben
 	}
 
 	bGameInit = true;
@@ -217,7 +341,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
 	if (strcmp(iface, PLAPI_NAME) == 0)
 	{
-		Warning("Do not try loading Metamod:Source as a SourceMM or Valve server plugin.\n");
+		Warning("Do not try loading Metamod:Source as a Metamod:Source plugin");
 
 		if (ret)
 		{
@@ -238,6 +362,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			*ret = IFACE_OK;
 		}
 		return &g_VspListener;
+	}
+
+	/* If we're a VSP, bypass this by default */
+	if (g_VspListener.IsRootLoadMethod())
+	{
+		IFACE_MACRO(g_GameDll.factory, GameDLL);
 	}
 
 	if (!gParsedGameInfo)
@@ -373,7 +503,6 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 					pInfo->lib = gamedll;
 					pInfo->loaded = true;
 					pInfo->pGameDLL = NULL;
-					pInfo->pGameClients = (IServerGameClients *)((fn)(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
 					gamedll_list.push_back(pInfo);
 					break;
 				}
@@ -446,6 +575,15 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		}
 	}
 
+	/* We use this interface for responding to the meta client command */
+	if (strncmp(iface, "ServerGameClients", 17) == 0)
+	{
+		void *ptr = (g_GameDll.factory)(iface, ret);
+		g_GameDll.pGameClients = static_cast<IServerGameClients *>(ptr);
+
+		return ptr;
+	}
+
 	/* If we got here, there's definitely a GameDLL */
 	IFACE_MACRO(g_GameDll.factory, GameDLL);
 }
@@ -465,27 +603,210 @@ void ClearGamedllList()
 	gamedll_list.clear();
 }
 
-void DLLShutdown_handler()
+void UnloadMetamod(bool shutting_down)
 {
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
-	/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
-	g_SMConVarAccessor.MarkCommandsAsGameDLL();
-	g_SMConVarAccessor.UnregisterGameDLLCommands();
+	if (shutting_down)
+	{
+		/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
+		g_SMConVarAccessor.MarkCommandsAsGameDLL();
+		g_Engine.icvar->UnlinkVariables(FCVAR_GAMEDLL);
 
-	SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
+		SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
+	}
 
 	SH_RELEASE_CALLCLASS(g_GameDllPatch);
+	SH_RELEASE_CALLCLASS(g_CvarPatch);
 	g_GameDllPatch = NULL;
+	g_CvarPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
 
 	if (g_GameDll.lib && g_GameDll.loaded)
+	{
 		dlclose(g_GameDll.lib);
+	}
 	memset(&g_GameDll, 0, sizeof(GameDllInfo));
+}
 
+void DLLShutdown_handler()
+{
+	UnloadMetamod(true);
 	RETURN_META(MRES_SUPERCEDE);
+}
+
+void LoadFromVDF(const char *file)
+{
+	PluginId id;
+	bool already, kvfileLoaded;
+	KeyValues *pValues;
+	const char *plugin_file, *alias;
+	char full_path[256], error[256];
+	
+	pValues = new KeyValues("Metamod Plugin");
+
+	if (g_Engine.original)
+	{
+		/* The Ship must use a special version of this function */
+		kvfileLoaded = KVLoadFromFile(pValues, baseFs, file);
+	}
+	else
+	{
+		kvfileLoaded = pValues->LoadFromFile(baseFs, file);
+	}
+
+	if (!kvfileLoaded)
+	{
+		pValues->deleteThis();
+		return;
+	}
+
+	if ((plugin_file = pValues->GetString("file", NULL)) == NULL)
+	{
+		pValues->deleteThis();
+		return;
+	}
+
+	if ((alias = pValues->GetString("alias", NULL)) != NULL)
+	{
+		g_PluginMngr.SetAlias(alias, plugin_file);
+	}
+
+	/* Attempt to find a file extension */
+	if (UTIL_GetExtension(plugin_file) == NULL)
+	{
+		g_SmmAPI.PathFormat(full_path, 
+			sizeof(full_path), 
+			"%s/%s%s", 
+			g_ModPath.c_str(), 
+			plugin_file, 
+#if defined WIN32 || defined _WIN32
+			".dll"
+#else
+			"_i486.so"
+#endif
+			);
+	}
+	else
+	{
+		g_SmmAPI.PathFormat(full_path,
+			sizeof(full_path),
+			"%s/%s", 
+			g_ModPath.c_str(),
+			plugin_file);
+	}
+
+	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
+	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+	{
+		LogMessage("[META] Failed to load plugin %s: %s", plugin_file, error);
+	}
+
+	pValues->deleteThis();
+}
+
+void LookForVDFs(const char *dir)
+{
+	char path[MAX_PATH];
+	int extidx;
+
+#if defined _MSC_VER
+	HANDLE hFind;
+	WIN32_FIND_DATA fd;
+	char error[255];
+
+	g_SmmAPI.PathFormat(path, sizeof(path), "%s\\*.*", dir);
+	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
+	{
+		DWORD dw = GetLastError();
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			error,
+			sizeof(error),
+			NULL);
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
+		return;
+	}
+
+	do
+	{
+		if (strcmp(fd.cFileName, ".") == 0
+			|| strcmp(fd.cFileName, "..") == 0)
+		{
+			continue;
+		}
+		extidx = strlen(fd.cFileName) - 4;
+		if (extidx < 0 || stricmp(&fd.cFileName[extidx], ".vdf"))
+		{
+			continue;
+		}
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
+		LoadFromVDF(path);
+	} while (FindNextFile(hFind, &fd));
+
+	FindClose(hFind);
+#else
+	DIR *pDir;
+	struct dirent *pEnt;
+
+	if ((pDir = opendir(dir)) == NULL)
+	{
+		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
+		return;
+	}
+
+	while ((pEnt = readdir(pDir)) != NULL)
+	{
+		if (strcmp(pEnt->d_name, ".") == 0
+			|| strcmp(pEnt->d_name, "..") == 0)
+		{
+			continue;
+		}
+		extidx = strlen(pEnt->d_name) - 4;
+		if (extidx < 0 || stricmp(&pEnt->d_name[extidx], ".vdf"))
+		{
+			continue;
+		}
+		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
+		LoadFromVDF(path);
+	}
+
+	closedir(pDir);
+#endif
+}
+
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID)
+{
+	Assert(filesystem);
+#ifdef _MSC_VER
+	Assert(_heapchk() == _HEAPOK);
+#endif
+
+	FileHandle_t f = filesystem->Open(resourceName, "rb", pathID);
+	if (!f)
+		return false;
+
+	// load file into a null-terminated buffer
+	int fileSize = filesystem->Size(f);
+	char *buffer = (char *)MemAllocScratch(fileSize + 1);
+	
+	Assert(buffer);
+	
+	filesystem->Read(buffer, fileSize, f); // read into local buffer
+
+	buffer[fileSize] = 0; // null terminate file as EOF
+
+	filesystem->Close( f );	// close file after reading
+
+	bool retOK = kv->LoadFromBuffer( resourceName, buffer, filesystem );
+
+	MemFreeScratch();
+
+	return retOK;
 }
 
 int LoadPluginsFromFile(const char *_file)
@@ -505,21 +826,22 @@ int LoadPluginsFromFile(const char *_file)
 	char buffer[255], error[255], full_path[255];
 	const char *ptr, *ext, *file;
 	size_t length;
-	while (!feof(fp))
+	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
 	{
-		buffer[0] = '\0';
-		fgets(buffer, sizeof(buffer), fp);
-		length = strlen(buffer);
-		if (!length)
-			continue;
-		if (buffer[length-1] == '\n')
-			buffer[--length] = '\0';
-
 		UTIL_TrimLeft(buffer);
 		UTIL_TrimRight(buffer);
 
-		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+		length = strlen(buffer);
+		if (!length)
+		{
 			continue;
+		}
+
+		if (buffer[0] == '\0' || buffer[0] == ';' || strncmp(buffer, "//", 2) == 0)
+		{
+			continue;
+		}
+
 		file = buffer;
 		if (buffer[0] == '"')
 		{
@@ -535,7 +857,9 @@ int LoadPluginsFromFile(const char *_file)
 				}
 				cptr++;
 			}
-		} else {
+		}
+		else
+		{
 			char *cptr = buffer;
 			while (*cptr)
 			{
@@ -543,7 +867,9 @@ int LoadPluginsFromFile(const char *_file)
 				{
 					char *optr = cptr;
 					while (*cptr && isspace(*cptr))
+					{
 						cptr++;
+					}
 					*optr = '\0';
 					UTIL_TrimRight(cptr);
 					if (*cptr && isalpha(*cptr))
@@ -568,13 +894,21 @@ int LoadPluginsFromFile(const char *_file)
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			} else {
-				if (already)
-					skipped++;
-				else
-					total++;
 			}
-		} else {
+			else
+			{
+				if (already)
+				{
+					skipped++;
+				}
+				else
+				{
+					total++;
+				}
+			}
+		}
+		else
+		{
 			/* Attempt to find a file extension */
 			ptr = UTIL_GetExtension(file);
 			/* Add an extension if there's none there */
@@ -585,7 +919,9 @@ int LoadPluginsFromFile(const char *_file)
 #else
 				ext = "_i486.so";
 #endif
-			} else {
+			}
+			else
+			{
 				ext = "";
 			}
 			/* Format the new path */
@@ -594,11 +930,17 @@ int LoadPluginsFromFile(const char *_file)
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
 				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			} else {
+			}
+			else
+			{
 				if (already)
+				{
 					skipped++;
+				}
 				else
+				{
 					total++;
+				}
 			}
 		}
 	}
@@ -607,12 +949,15 @@ int LoadPluginsFromFile(const char *_file)
 	if (skipped)
 	{
 		LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
-	} else {
+	}
+	else
+	{
 		LogMessage("[META] Loaded %d plugins from file.", total);
 	}
-	
+
 	return total;
 }
+
 
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real engineFactory.
@@ -663,12 +1008,19 @@ void LevelShutdown_handler(void)
 	if (!bInFirstLevel)
 	{
 		char full_path[255];
-		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
 		LoadPluginsFromFile(full_path);
-	} else {
+
+		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetMetamodBaseDir());
+		LookForVDFs(full_path);
+	}
+	else
+	{
 		bInFirstLevel = false;
 	}
+
+	g_bLevelChanged = true;
 
 	ITER_EVENT(OnLevelShutdown, ());
 

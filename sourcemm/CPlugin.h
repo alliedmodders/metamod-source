@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2007 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -50,6 +50,13 @@ namespace SourceMM
 		SourceHook::String alias;
 		SourceHook::String value;
 	};
+
+	struct CPluginEventHandler
+	{
+		bool got_vsp;
+		IMetamodListener *event;
+	};
+
 	/**
 	 * @brief Implements Plugin Manager API
 	 */
@@ -72,7 +79,7 @@ namespace SourceMM
 			HINSTANCE m_Lib;
 			SourceHook::List<ConCommandBase *> m_Cvars;
 			SourceHook::List<ConCommandBase *> m_Cmds;
-			SourceHook::List<IMetamodListener *> m_Events;
+			SourceHook::List<CPluginEventHandler> m_Events;
 		};
 	public:
 		CPluginManager();
@@ -123,6 +130,10 @@ namespace SourceMM
 		//Internal iterators
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _begin();
 		SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator _end();
+
+		void SetVSPAsLoaded();
+		unsigned int GetPluginCount();
+		const char *GetStatusText(CPlugin *pl);
 	private:
 		//These are identical internal functions for the wrappers above.
 		CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);

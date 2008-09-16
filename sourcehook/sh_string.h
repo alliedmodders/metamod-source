@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
-* Copyright (C) 2004-2007 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -143,6 +143,30 @@ public:
 			return npos;
 		int i = 0;
 		for (i=index; i<len; i++)
+		{
+			if (v[i] == c)
+			{
+				return i;
+			}
+		}
+
+		return npos;
+	}
+
+	int find_last_of(const char c, int index = npos) const
+	{
+		int len = static_cast<int>(size());
+		if (len < 1)
+			return npos;
+		if (index >= len || index < npos)
+			return npos;
+		int i;
+		if (index == npos)
+			i = len - 1;
+		else
+			i = index;
+
+		for (; i>=0; i--)
 		{
 			if (v[i] == c)
 			{

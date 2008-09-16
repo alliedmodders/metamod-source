@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -141,8 +141,12 @@ void CSmmAPI::ConPrintf(const char *fmt, ...)
 void CSmmAPI::AddListener(ISmmPlugin *plugin, IMetamodListener *pListener)
 {
 	CPluginManager::CPlugin *pl = g_PluginMngr.FindByAPI(plugin);
+	CPluginEventHandler cpeh;
 
-	pl->m_Events.push_back(pListener);
+	cpeh.event = pListener;
+	cpeh.got_vsp = false;
+
+	pl->m_Events.push_back(cpeh);
 }
 
 void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
@@ -174,7 +178,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 	}
 
 	CPluginManager::CPlugin *pl;
-	SourceHook::List<IMetamodListener *>::iterator event;
+	SourceHook::List<CPluginEventHandler>::iterator event;
 	IMetamodListener *api;
 	int ret = 0;
 	void *val = NULL;
@@ -184,7 +188,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 		pl = (*iter);
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++)
 		{
-			api = (*event);
+			api = (*event).event;
 			ret = IFACE_FAILED;
 			if ( (val=api->OnMetamodQuery(iface, &ret)) != NULL )
 			{
@@ -221,22 +225,6 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 #define ENGINEW32_OFFS	38
 #define IA32_CALL		0xE8
 
-bool vcmp(const void *_addr1, const void *_addr2, size_t len)
-{
-	unsigned char *addr1 = (unsigned char *)_addr1;
-	unsigned char *addr2 = (unsigned char *)_addr2;
-
-	for (size_t i=0; i<len; i++)
-	{
-		if (addr2[i] == '*')
-			continue;
-		if (addr1[i] != addr2[i])
-			return false;
-	}
-
-	return true;
-}
-
 //Thanks to fysh for the idea of extracting info from "echo" and for
 // having the original offsets at hand!
 bool CSmmAPI::CacheCmds()
@@ -256,20 +244,20 @@ bool CSmmAPI::CacheCmds()
 			callback = ((ConCommand *)pBase)->GetCallback();
 			ptr = (unsigned char *)callback;
 		#ifdef OS_LINUX
-			if (vcmp(ptr, ENGINE486_SIG, SIGLEN))
+			if (UTIL_VerifySignature(ptr, ENGINE486_SIG, SIGLEN))
 			{
 				offs = ENGINE486_OFFS;
 			}
-			else if (vcmp(ptr, ENGINE686_SIG, SIGLEN))
+			else if (UTIL_VerifySignature(ptr, ENGINE686_SIG, SIGLEN))
 			{
 				offs = ENGINE686_OFFS;
 			}
-			else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN))
+			else if (UTIL_VerifySignature(ptr, ENGINEAMD_SIG, SIGLEN))
 			{
 				offs = ENGINEAMD_OFFS;
 			}
 		#elif defined OS_WIN32 // Only one Windows engine binary so far...
-			if (vcmp(ptr, ENGINEW32_SIG, SIGLEN))
+			if (UTIL_VerifySignature(ptr, ENGINEW32_SIG, SIGLEN))
 			{
 				offs = ENGINEW32_OFFS;
 			}
@@ -454,16 +442,40 @@ void CSmmAPI::ClientConPrintf(edict_t *client, const char *fmt, ...)
 
 void CSmmAPI::LoadAsVSP()
 {
-	char command[350];
+	size_t len;
+	char engine_file[PATH_SIZE];
+	char rel_path[PATH_SIZE * 2];
+
+	GetFileOfAddress(g_Engine.engine, engine_file, sizeof(engine_file));
+
+	/* Chop off the "engine" file part */
+	len = strlen(engine_file);
+	for (size_t i = len - 1; i >= 0 && i < len; i--)
+	{
+		if (engine_file[i] == '/'
+			|| engine_file[i] == '\\')
+		{
+			engine_file[i] = '\0';
+			break;
+		}
+	}
+
+	const char *usepath = g_SmmPath.c_str();
+	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_file, g_SmmPath.c_str()))
+	{
+		usepath = rel_path;
+	}
+	
+	char command[PATH_SIZE * 2];
 	g_VspListener.SetLoadable(true);
-	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", g_SmmPath.c_str());
+	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", usepath);
 	g_Engine.engine->ServerCommand(command);
 }
 
 void CSmmAPI::EnableVSPListener()
 {
 	/* If GameInit already passed and we're not already enabled or loaded, go ahead and LoadAsVSP load */
-	if (bGameInit && !m_VSP && !g_VspListener.IsLoaded())
+	if (bGameInit && !m_VSP && !g_VspListener.IsLoaded() && !g_VspListener.IsRootLoadMethod())
 	{
 		LoadAsVSP();
 	}
@@ -492,6 +504,11 @@ int CSmmAPI::GetGameDLLVersion()
 	#define MSGCLASS2_SIGLEN	16
 	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
 	#define MSGCLASS2_OFFS		11
+
+	/* Windows frame pointer sig */
+	#define MSGCLASS3_SIGLEN	18
+	#define MSGCLASS3_SIG		"\x55\x8B\xEC\x51\x89\x2A\x2A\x8B\x2A\x2A\x50\x8B\x0D\x2A\x2A\x2A\x2A\xE8"
+	#define MSGCLASS3_OFFS		13
 #elif defined OS_LINUX
 	/* No frame pointer sig */
 	#define MSGCLASS_SIGLEN		14
@@ -508,45 +525,22 @@ int CSmmAPI::GetGameDLLVersion()
 /* :TODO: Make this prettier */
 bool CSmmAPI::CacheUserMessages()
 {
-	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
-	SourceHook::GetFuncInfo(&IServerGameDLL::GetUserMessageInfo, info);
-
-	/* Get address of original GetUserMessageInfo() */
-	char *vfunc = reinterpret_cast<char *>(g_GameDllPatch->GetOrigFunc(info.vtbloffs, info.vtblindex));
-
-	/* If we can't get original function, that means there's no hook */
-	if (vfunc == NULL)
-	{
-		/* Get virtual function address 'manually' then */
-		char *adjustedptr = reinterpret_cast<char *>(g_GameDll.pGameDLL) + info.thisptroffs + info.vtbloffs;
-		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
-
-		vfunc = vtable[info.vtblindex];
-	}
-
-	/* Oh dear, we have a relative jump on our hands
-	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
-	 */
-	if (*vfunc == '\xE9')
-	{
-		/* Get address from displacement...
-		 *
-		 * Add 5 because it's relative to next instruction:
-		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
-		 */
-		vfunc = vfunc + *reinterpret_cast<int *>(vfunc + 1) + 5;
-	}
-
 	UserMsgDict *dict = NULL;
+	char *vfunc = UTIL_GetOrigFunction(&IServerGameDLL::GetUserMessageInfo, g_GameDll.pGameDLL, g_GameDllPatch);
 
-	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
+	if (!vfunc)
+	{
+		return false;
+	}
+
+	if (UTIL_VerifySignature(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
 	{
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
 
 		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	} else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
+	} else if (UTIL_VerifySignature(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
 	#ifdef OS_WIN32
 		/* If we get here, the code is possibly inlined like in Dystopia */
 
@@ -558,6 +552,14 @@ bool CSmmAPI::CacheUserMessages()
 	#elif defined OS_LINUX
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
+
+		/* Get address of CUserMessages::m_UserMessages */
+		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
+	#endif
+	#ifdef OS_WIN32
+	} else if (UTIL_VerifySignature(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) {
+		/* Get address of CUserMessages instance */
+		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
 
 		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);

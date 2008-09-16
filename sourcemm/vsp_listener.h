@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -39,9 +39,11 @@ public:
 public:
 	bool IsLoaded();
 	void SetLoadable(bool loadable);
+	bool IsRootLoadMethod();
 private:
 	bool m_Loaded;
 	bool m_Loadable;
+	bool m_bIsRootLoadMethod;
 };
 
 extern VSPListener g_VspListener;

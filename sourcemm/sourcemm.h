@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -74,11 +74,12 @@ struct GameDllInfo
 /** @brief Stores information about the HL2 Engine pointers */
 struct EngineInfo
 {
-	EngineInfo() : loaded(false), 
+	EngineInfo() : loaded(false), original(false),
 		engineFactory(NULL), physicsFactory(NULL), fileSystemFactory(NULL),
 		pGlobals(NULL), icvar(NULL), engine(NULL)
 	{ };
 	bool loaded;
+	bool original;
 	CreateInterfaceFn engineFactory;
 	CreateInterfaceFn physicsFactory;
 	CreateInterfaceFn fileSystemFactory;
@@ -86,6 +87,8 @@ struct EngineInfo
 	ICvar *icvar;
 	IVEngineServer *engine;
 };
+
+bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory);
 
 /** @brief Global variable for GameDLL info */
 extern GameDllInfo g_GameDll;
@@ -115,8 +118,14 @@ extern PluginId g_PLID;
 extern int g_GameDllVersion;
 
 extern bool bGameInit;
+extern bool g_bLevelChanged;
+
+void UnloadMetamod(bool shutting_down);
 
 /** @brief Global CallClass for IServerGameDLL */
 extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
+
+/** @brief Global CallClass for ICvar */
+extern SourceHook::CallClass<ICvar> *g_CvarPatch;
 
 #endif //_INCLUDE_SOURCEMM_H

@@ -195,6 +195,14 @@ bool TestRefRet(std::string &error)
 			&hook.m_Var),							// override ret was hook.m_Var
 		new State_Func2_Ret(&hook.m_Var),			// really returned hook.m_Var
 		NULL), "Part 7");
+
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func2, &test, &hook, &CHook::Func2_Post1, true);
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func2, &test, &hook, &CHook::Func2_Pre1, false);
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func1, &test, &hook, &CHook::Func1_Pre1, false);
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func1, &test, &hook, &CHook::Func1_Post1, true);
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func1, &test, &hook, &CHook::Func1_Pre2, false);
+	SH_REMOVE_HOOK_MEMFUNC(Test, Func1, &test, &hook, &CHook::Func1_Post2, true);
 	
    	return true;
 }
+

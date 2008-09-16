@@ -10407,7 +10407,7 @@ object frmMain: TfrmMain
         Lines.Strings = (
           'The zlib/libpng License'
           ''
-          'Copyright (c) 2006, AlliedModders'
+          'Copyright (c) 2006-2008, AlliedModders'
           ''
           
             'This software is provided '#39'as-is'#39', without any express or implie' +
@@ -10838,12 +10838,12 @@ object frmMain: TfrmMain
         Height = 13
         Caption = '2. Connect to server and select the mod directory:'
       end
-      object lblStep4: TLabel
+      object lblStep5: TLabel
         Left = 44
-        Top = 296
+        Top = 338
         Width = 64
         Height = 13
-        Caption = '4. Click Next.'
+        Caption = '5. Click Next.'
       end
       object lblStep3: TLabel
         Left = 44
@@ -10851,6 +10851,13 @@ object frmMain: TfrmMain
         Width = 223
         Height = 13
         Caption = '3. Select the operating system of your server:'
+      end
+      object lblStep4: TLabel
+        Left = 44
+        Top = 296
+        Width = 125
+        Height = 13
+        Caption = '4. Select the engine type:'
       end
       object pnlHeader3: TPanel
         Left = 0
@@ -11130,7 +11137,7 @@ object frmMain: TfrmMain
           TabStop = True
         end
         object optLinux: TFlatRadioButton
-          Left = 173
+          Left = 183
           Top = 3
           Width = 82
           Height = 14
@@ -11138,12 +11145,46 @@ object frmMain: TfrmMain
           TabOrder = 1
         end
         object FlatRadioButton1: TFlatRadioButton
-          Left = 353
+          Left = 319
           Top = 3
           Width = 82
           Height = 14
           Caption = 'Linux (64-bit)'
           Enabled = False
+          TabOrder = 2
+        end
+      end
+      object pnlEngineType: TPanel
+        Left = 44
+        Top = 312
+        Width = 441
+        Height = 21
+        BevelOuter = bvLowered
+        TabOrder = 5
+        object optAutoDetect: TFlatRadioButton
+          Left = 1
+          Top = 3
+          Width = 154
+          Height = 14
+          Caption = 'Auto-Detect (recommended)'
+          Checked = True
+          TabOrder = 0
+          TabStop = True
+        end
+        object optSource: TFlatRadioButton
+          Left = 183
+          Top = 3
+          Width = 96
+          Height = 15
+          Caption = 'Source'#8482' Engine'
+          TabOrder = 1
+        end
+        object optOrangeBox: TFlatRadioButton
+          Left = 319
+          Top = 3
+          Width = 118
+          Height = 15
+          Caption = 'OrangeBox'#8482' Engine'
           TabOrder = 2
         end
       end
@@ -11404,8 +11445,8 @@ object frmMain: TfrmMain
     end
   end
   object ilImages: TImageList
-    Left = 154
-    Top = 324
+    Left = 334
+    Top = 8
     Bitmap = {
       494C010102000400040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
@@ -11555,23 +11596,23 @@ object frmMain: TfrmMain
     OnWork = IdFTPWork
     ProxySettings.ProxyType = fpcmNone
     ProxySettings.Port = 0
-    Left = 274
-    Top = 324
+    Left = 454
+    Top = 8
   end
   object IdAntiFreeze: TIdAntiFreeze
     IdleTimeOut = 150
-    Left = 244
-    Top = 324
+    Left = 424
+    Top = 8
   end
   object tmrSpeed: TTimer
     Enabled = False
     OnTimer = tmrSpeedTimer
-    Left = 214
-    Top = 324
+    Left = 394
+    Top = 8
   end
   object IdLogFile: TIdLogFile
     LogTime = False
-    Left = 184
-    Top = 324
+    Left = 364
+    Top = 8
   end
 end

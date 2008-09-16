@@ -1,5 +1,5 @@
 /* ======== SourceMM ======== 
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -56,7 +56,7 @@
 #endif
 
 #if defined __linux__
-	extern int errno;
+	#include <errno.h>
 	int GetLastError();
 #endif
 

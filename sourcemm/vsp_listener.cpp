@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2007 Metamod:Source Development Team
+ * Copyright (C) 2004-2008 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -10,15 +10,31 @@
 
 #include "vsp_listener.h"
 #include "CPlugin.h"
+#include "concommands.h"
+
+SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 
 using namespace SourceMM;
 
 VSPListener g_VspListener;
+ConCommand *g_plugin_unload = NULL;
+bool g_bIsTryingToUnload;
+
+void InterceptPluginUnloads()
+{
+	g_bIsTryingToUnload = true;
+}
+
+void InterceptPluginUnloads_Post()
+{
+	g_bIsTryingToUnload = false;
+}
 
 VSPListener::VSPListener()
 {
 	m_Loaded = false;
 	m_Loadable = false;
+	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::ClientActive(edict_t *pEntity)
@@ -92,6 +108,25 @@ void VSPListener::ServerActivate(edict_t *pEdictList, int edictCount, int client
 
 void VSPListener::Unload()
 {
+	if (g_bIsTryingToUnload)
+	{
+		Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
+		return;
+	}
+	if (IsRootLoadMethod())
+	{
+		if (g_plugin_unload != NULL)
+		{
+			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
+			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
+			g_plugin_unload = NULL;
+		}
+		g_SMConVarAccessor.UnloadMetamodCommands();
+		UnloadMetamod(false);
+	}
+	m_Loadable = true;
+	m_Loaded = false;
+	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::SetLoadable(bool set)
@@ -99,53 +134,60 @@ void VSPListener::SetLoadable(bool set)
 	m_Loadable = set;
 }
 
+bool VSPListener::IsRootLoadMethod()
+{
+	return m_bIsRootLoadMethod;
+}
+
 bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
 {
-	if (!g_GameDll.loaded)
-	{
-		Error("Metamod:Source is not a Valve Server Plugin\n");
-
-		return false;
-	}
-
-	if (!m_Loadable)
-	{
-		Warning("Do not manually load Metamod:Source as a Valve Server Plugin\n");
-
-		return false;
-	}
-
 	if (m_Loaded)
 	{
 		return false;
 	}
 
+	if (!m_Loadable && !g_GameDll.loaded)
+	{
+		/* New loading mechanism, do a bunch o' stuff! */
+		m_bIsRootLoadMethod = true;
+		m_Loaded = true;
+		SetLoadable(false);
+		if (!AlternatelyLoadMetamod(interfaceFactory, gameServerFactory))
+		{
+			return false;
+		}
+
+		ConCommandBase *pBase = g_Engine.icvar->GetCommands();
+		while (pBase != NULL)
+		{
+			if (pBase->IsCommand() && strcmp(pBase->GetName(), "plugin_unload") == 0)
+			{
+				g_plugin_unload = (ConCommand *)pBase;
+				break;
+			}
+			pBase = const_cast<ConCommandBase *>(pBase->GetNext());
+		}
+
+		if (g_plugin_unload != NULL)
+		{
+			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
+			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
+		}
+
+		/* Ho ho ho... if we get here, set a new cvar version. */
+		extern ConVar metamod_version;
+		char buffer[255];
+
+		UTIL_Format(buffer, sizeof(buffer), "%sV", metamod_version.GetString());
+		metamod_version.SetValue(buffer);
+	}
+
 	m_Loaded = true;
 	SetLoadable(false);
 
-	PluginIter iter;
-	CPluginManager::CPlugin *pPlugin;
-	SourceHook::List<IMetamodListener *>::iterator event;
-	IMetamodListener *pML;
-	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
+	if (!m_bIsRootLoadMethod)
 	{
-		pPlugin = (*iter);
-		if (pPlugin->m_Status < Pl_Paused)
-		{
-			continue;
-		}
-		/* Only valid for plugins >= 10 (v1:5, SourceMM 1.4) */
-		if (pPlugin->m_API->GetApiVersion() < 10)
-		{
-			continue;
-		}
-		for (event=pPlugin->m_Events.begin();
-			event!=pPlugin->m_Events.end();
-			event++)
-		{
-			pML = (*event);
-			pML->OnVSPListening(this);
-		}
+		g_PluginMngr.SetVSPAsLoaded();
 	}
 
 	return true;

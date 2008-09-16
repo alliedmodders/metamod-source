@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2007 Metamod:Source Development Team
+* Copyright (C) 2004-2008 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -257,6 +257,7 @@ namespace SourceHook
 				virtual ~CIter();
 
 				void GoToBegin();
+				void GoToEnd();
 				void Set(CIter *pOther);
 
 				bool End();
@@ -276,6 +277,7 @@ namespace SourceHook
 			// For recalls
 			bool m_Recall;
 			bool m_RQFlag;
+			bool m_RelFlag;
 
 			void SetRecallState();	// Sets the list into a state where the next returned
 									// iterator (from GetIter) will be a copy of the last
@@ -283,8 +285,9 @@ namespace SourceHook
 									// The hook resets this state automatically on:
 									// GetIter, ReleaseIter
 
-			void RQFlagReset() { m_RQFlag = false; }
+			void RQFlagReset() { m_RQFlag = false; m_RelFlag = false; }
 			bool RQFlagGet() { return m_RQFlag; }
+			bool RelFlagGet() { return m_RelFlag; }
 			CHookList();
 			CHookList(const CHookList &other);
 			virtual ~CHookList();

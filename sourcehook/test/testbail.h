@@ -28,6 +28,7 @@ namespace N_TestBail
 	extern IGaben *g_Gabgab;
 
 	bool TestBail2(std::string &error);
+	void UntestBail2();
 }
 
 using namespace N_TestBail;

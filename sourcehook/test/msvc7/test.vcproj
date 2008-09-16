@@ -289,6 +289,9 @@
 			<File
 				RelativePath="..\testref.cpp">
 			</File>
+			<File
+				RelativePath="..\testrefret.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
