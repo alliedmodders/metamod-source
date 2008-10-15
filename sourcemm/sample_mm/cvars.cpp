@@ -8,6 +8,7 @@
  * ============================
  */
 
+#include <stdio.h>
 #include "SamplePlugin.h"
 #include "cvars.h"
 

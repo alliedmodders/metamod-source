@@ -13,11 +13,11 @@
  * @file oslink.cpp
  */
 
+#include <stdio.h>
 #include "oslink.h"
 #ifdef __linux
 #include <errno.h>
 #endif
-#include <stdio.h>
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 const char *dlerror()
