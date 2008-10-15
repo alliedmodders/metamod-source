@@ -15,12 +15,12 @@
 // http://www.angelcode.com/dev/callconv/callconv.html
 // http://www.arl.wustl.edu/~lockwood/class/cs306/books/artofasm/Chapter_6/CH06-1.html
 
+#include <stdio.h>
 #include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
 #include "sourcehook_hookmangen_x86.h"
 #include "sh_memory.h"
 #include <stdarg.h>							// we might need the address of vsnprintf
-#include <stdio.h>
 
 #if SH_COMP == SH_COMP_MSVC
 # define GCC_ONLY(x)

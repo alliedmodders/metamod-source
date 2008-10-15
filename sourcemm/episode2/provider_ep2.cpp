@@ -26,6 +26,7 @@
  * Version: $Id$
  */
 
+#include <stdio.h>
 #include "../metamod_oslink.h"
 #include <sourcehook.h>
 #include <convar.h>
