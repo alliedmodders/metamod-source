@@ -213,16 +213,7 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 		InitializeGlobals(interfaceFactory, interfaceFactory, interfaceFactory, pGlobals);
 		StartupMetamod(true);
 		
-		const ConCommandBase *pBase = icvar->GetCommands();
-		while (pBase != NULL)
-		{
-			if (pBase->IsCommand() && strcmp(pBase->GetName(), "plugin_unload") == 0)
-			{
-				g_plugin_unload = (ConCommand *)pBase;
-				break;
-			}
-			pBase = pBase->GetNext();
-		}
+		g_plugin_unload = icvar->FindCommand("plugin_unload");
 
 		if (g_plugin_unload != NULL)
 		{
