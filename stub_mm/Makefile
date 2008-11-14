@@ -4,8 +4,8 @@
 #Edit these paths for your own setup.
 HL2SDK_ORIG = ../../hl2sdk
 HL2SDK_OB = ../../hl2sdk-ob
-SOURCEMM14 = ../../sourcemm-1.4
-SOURCEMM16 = ..
+SOURCEMM14 = ../core-1.4
+SOURCEMM16 = ../core
 SRCDS_BASE = ~/srcds
 
 #Edit these below for other projects.
@@ -49,7 +49,7 @@ LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so
 
 INCLUDE += -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 \
 	-I$(HL2PUB)/tier1 -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(METAMOD) \
-	-I$(METAMOD)/sourcehook -I$(METAMOD)/sourcemm
+	-I$(METAMOD)/sourcehook
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug.$(ENGINE)
