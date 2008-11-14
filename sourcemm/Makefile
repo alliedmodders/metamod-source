@@ -1,79 +1,111 @@
-#(C)2004-2008 Metamod:Source Development Team
+# (C)2004-2008 SourceMod Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-HL2SDK = ../../hl2sdk-ob
-SMM_ROOT = ..
-SRCDS = ~/srcds/orangebox
+SRCDS_BASE = ~/srcds
+MMS_ROOT = ..
+HL2SDK_OB = ../../hl2sdk-ob
+HL2SDK_L4D = ../../hl2sdk-l4d
 
+#####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
-
-OPT_FLAGS = -O2 -funroll-loops -s -pipe
-GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
-DEBUG_FLAGS = -g -ggdb3
-CPP = gcc-4.1
-BINARY = server_i486.so
-
-HL2PUB = $(HL2SDK)/public
-HL2LIB = $(HL2SDK)/lib/linux
+#####################################
 
 OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp metamod_plugins.cpp \
-	sourcehook.cpp sourcehook_hookmangen.cpp episode2/console.cpp episode2/provider_ep2.cpp episode2/vsp_listener.cpp
+	sourcehook.cpp sourcehook_hookmangen.cpp episode2/console.cpp episode2/provider_ep2.cpp \
+	episode2/vsp_listener.cpp
 
-LINK = $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
+##############################################
+### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
+##############################################
 
-INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/game/server -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
-          -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I$(SMM_ROOT) -I$(SMM_ROOT)/sourcehook
+C_OPT_FLAGS = -DNDEBUG -O3 -funroll-loops -pipe -fno-strict-aliasing
+C_DEBUG_FLAGS = -D_DEBUG -DDEBUG -g -ggdb3
+C_GCC4_FLAGS = -fvisibility=hidden
+CPP_GCC4_FLAGS = -fvisibility-inlines-hidden
+CPP = gcc-4.1
+
+override ENGSET = false
+ifeq "$(ENGINE)" "orangebox"
+	HL2SDK = $(HL2SDK_OB)
+	HL2PUB = $(HL2SDK_OB)/public
+	HL2LIB = $(HL2SDK_OB)/lib/linux
+	INCLUDE += -I$(HL2SDK_OB)/public/game/server
+	SRCDS = $(SRCDS_BASE)/orangebox
+	BINARY = metamodsource.2.so
+	override ENGSET = true
+endif
+ifeq "$(ENGINE)" "left4dead"
+	HL2SDK = $(HL2SDK_L4D)
+	HL2PUB = $(HL2SDK_L4D)/public
+	HL2LIB = $(HL2SDK_L4D)/lib/linux
+	INCLUDE += -I$(HL2SDK_L4D)/public/game/server
+	SRCDS = $(SRCDS_BASE)/l4d_demo
+	BINARY = metamodsource.3.so
+	override ENGSET = true
+endif
+
+LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
+
+	
+INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
+	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I$(MMS_ROOT) -I$(MMS_ROOT)/sourcehook \
+
+CFLAGS += -D_LINUX -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
+	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
+	-Dstrcmpi=strcasecmp -Wall -Werror -Wno-uninitialized -mfpmath=sse -msse -DHAVE_STDINT_H -m32
+CPPFLAGS += -Wno-non-virtual-dtor -fno-exceptions -fno-rtti
+
+################################################
+### DO NOT EDIT BELOW HERE FOR MOST PROJECTS ###
+################################################
 
 ifeq "$(DEBUG)" "true"
-	BIN_DIR = Debug
-	CFLAGS = $(DEBUG_FLAGS)
+	BIN_DIR = Debug.$(ENGINE)
+	CFLAGS += $(C_DEBUG_FLAGS)
 else
-	BIN_DIR = Release
-	CFLAGS = $(OPT_FLAGS)
+	BIN_DIR = Release.$(ENGINE)
+	CFLAGS += $(C_OPT_FLAGS)
 endif
 
 GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
-
-CFLAGS += -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
-	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
-	-Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions -fno-rtti -msse \
-	-fno-strict-aliasing -Wno-uninitialized -m32
-
 ifeq "$(GCC_VERSION)" "4"
-	CFLAGS += $(GCC4_FLAGS)
+	CFLAGS += $(C_GCC4_FLAGS)
+	CPPFLAGS += $(CPP_GCC4_FLAGS)
 endif
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
+OBJ_LINUX := $(OBJ_LINUX:%.c=$(BIN_DIR)/%.o)
 
 $(BIN_DIR)/%.o: %.cpp
+	$(CPP) $(INCLUDE) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
+$(BIN_DIR)/%.o: %.c
 	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
 
-all:
+all: check
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(BIN_DIR)/episode2
-	rm -f vstdlib_i486.so
-	rm -f tier0_i486.so
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
-	ln -sf $(SMM_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
-	ln -sf $(SMM_ROOT)/sourcehook/sourcehook_hookmangen.cpp sourcehook_hookmangen.cpp
-	$(MAKE) -f Makefile sourcemm
-	rm -rf $(BINARY)
-	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
+	ln -sf $(MMS_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
+	ln -sf $(MMS_ROOT)/sourcehook/sourcehook_hookmangen.cpp sourcehook_hookmangen.cpp
+	$(MAKE) -f Makefile metamod
 
-sourcemm: $(OBJ_LINUX)
-	$(CPP) $(INCLUDE) -m32 $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
+check:
+	if [ "$(ENGSET)" == "false" ]; then \
+		echo "You must supply ENGINE=left4dead or ENGINE=orangebox"; \
+		exit 1; \
+	fi
 
-debug:	
+metamod: check $(OBJ_LINUX)
+	$(CPP) $(INCLUDE) $(OBJ_LINUX) $(LINK) -m32 -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
+
+debug:
 	$(MAKE) -f Makefile all DEBUG=true
 
 default: all
 
-clean:
-	rm -rf Release/episode2/*.o
-	rm -rf Release/*.o
-	rm -rf Release/$(BINARY)
-	rm -rf Debug/episode2/*.o
-	rm -rf Debug/*.o
-	rm -rf Debug/$(BINARY)
-
+clean: check
+	rm -rf $(BIN_DIR)/*.o
+	rm -rf $(BIN_DIR)/episode2/*.o
+	rm -rf $(BIN_DIR)/$(BINARY)
