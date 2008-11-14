@@ -2,7 +2,6 @@
 # Makefile written by David "BAILOPAN" Anderson
 
 SRCDS_BASE = ~/srcds
-MMS_ROOT = ..
 HL2SDK_OB = ../../hl2sdk-ob
 HL2SDK_L4D = ../../hl2sdk-l4d
 
@@ -10,9 +9,16 @@ HL2SDK_L4D = ../../hl2sdk-l4d
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-OBJECTS = metamod.cpp metamod_util.cpp metamod_console.cpp metamod_oslink.cpp metamod_plugins.cpp \
-	sourcehook.cpp sourcehook_hookmangen.cpp episode2/console.cpp episode2/provider_ep2.cpp \
-	episode2/vsp_listener.cpp
+OBJECTS = metamod.cpp 				\
+		  metamod_util.cpp 			\
+		  metamod_console.cpp 		\
+		  metamod_oslink.cpp 		\
+		  metamod_plugins.cpp 		\
+		  sourcehook/sourcehook.cpp \
+		  sourcehook/sourcehook_hookmangen.cpp \
+		  provider/console.cpp 		\
+		  provider/provider_ep2.cpp \
+		  provider/vsp_listener.cpp
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
@@ -48,7 +54,7 @@ LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
 	
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
-	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I$(MMS_ROOT) -I$(MMS_ROOT)/sourcehook \
+	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -Isourcehook \
 
 CFLAGS += -D_LINUX -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
 	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
@@ -84,11 +90,10 @@ $(BIN_DIR)/%.o: %.c
 
 all: check
 	mkdir -p $(BIN_DIR)
-	mkdir -p $(BIN_DIR)/episode2
+	mkdir -p $(BIN_DIR)/provider
+	mkdir -p $(BIN_DIR)/sourcehook
 	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
-	ln -sf $(MMS_ROOT)/sourcehook/sourcehook.cpp sourcehook.cpp
-	ln -sf $(MMS_ROOT)/sourcehook/sourcehook_hookmangen.cpp sourcehook_hookmangen.cpp
 	$(MAKE) -f Makefile metamod
 
 check:
@@ -107,5 +112,7 @@ default: all
 
 clean: check
 	rm -rf $(BIN_DIR)/*.o
-	rm -rf $(BIN_DIR)/episode2/*.o
+	rm -rf $(BIN_DIR)/sourcehook/*.o
+	rm -rf $(BIN_DIR)/provider/*.o
 	rm -rf $(BIN_DIR)/$(BINARY)
+
