@@ -50,14 +50,40 @@ SH_DECL_MANUALHOOK6(SGD_LevelInit, 0, 0, 0, bool, const char *, const char *, co
 SH_DECL_MANUALHOOK0_void(SGD_LevelShutdown, 0, 0, 0);
 SH_DECL_MANUALHOOK0_void(SGD_DLLShutdown, 0, 0, 0);
 
-bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
-bool Handler_DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
-void Handler_DLLShutdown();
-void Handler_LevelShutdown();
-bool Handler_LevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
-bool Handler_GameInit();
-void InitializeVSP();
-void LookForVDFs(const char *dir);
+static bool
+Handler_DLLInit(CreateInterfaceFn engineFactory,
+				CreateInterfaceFn physicsFactory,
+				CreateInterfaceFn filesystemFactory,
+				CGlobalVars *pGlobals);
+
+static bool
+Handler_DLLInit_Post(CreateInterfaceFn engineFactory,
+					 CreateInterfaceFn physicsFactory,
+					 CreateInterfaceFn filesystemFactory,
+					 CGlobalVars *pGlobals);
+
+static void
+Handler_DLLShutdown();
+
+static void
+Handler_LevelShutdown();
+
+static bool
+Handler_LevelInit(char const *pMapName,
+				  char const *pMapEntities,
+				  char const *pOldLevel,
+				  char const *pLandmarkName,
+				  bool loadGame,
+				  bool background);
+
+static bool
+Handler_GameInit();
+
+static void
+InitializeVSP();
+
+static void
+LookForVDFs(const char *dir);
 
 struct game_dll_t
 {
@@ -65,41 +91,42 @@ struct game_dll_t
 	CreateInterfaceFn factory;
 };
 
-String mod_path;
-String metamod_path;
-String full_bin_path;
-bool parsed_game_info = false;
-int vsp_version = 0;
-int gamedll_version = 0;
-int engine_build = SOURCE_ENGINE_UNKNOWN;
-List<game_dll_t *> gamedll_list;
-bool is_gamedll_loaded = false;
-bool in_first_level = true;
-bool is_game_init = false;
-bool vsp_load_attempted = false;
-bool vsp_load_requested = false;
-bool vsp_loaded = false;
-game_dll_t gamedll_info;
-ConVar *metamod_version = NULL;
-ConVar *mm_pluginsfile = NULL;
-ConVar *mm_basedir = NULL;
-IServerGameDLL *server = NULL;
-CreateInterfaceFn engine_factory = NULL;
-CreateInterfaceFn physics_factory = NULL;
-CreateInterfaceFn filesystem_factory = NULL;
-CGlobalVars *gpGlobals = NULL;
-CSourceHookImpl g_SourceHook;
-CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
-ISourceHook *g_SHPtr = &g_SourceHook;
-PluginId g_PLID = Pl_Console;
-META_RES last_meta_res;
-IServerPluginCallbacks *vsp_callbacks = NULL;
-bool were_plugins_loaded = false;
+static String mod_path;
+static String metamod_path;
+static String full_bin_path;
+static bool parsed_game_info = false;
+static int vsp_version = 0;
+static int gamedll_version = 0;
+static int engine_build = SOURCE_ENGINE_UNKNOWN;
+static List<game_dll_t *> gamedll_list;
+static bool is_gamedll_loaded = false;
+static bool in_first_level = true;
+static bool is_game_init = false;
+static bool vsp_load_requested = false;
+static bool vsp_loaded = false;
+static game_dll_t gamedll_info;
+static ConVar *metamod_version = NULL;
+static ConVar *mm_pluginsfile = NULL;
+static ConVar *mm_basedir = NULL;
+static IServerGameDLL *server = NULL;
+static CreateInterfaceFn engine_factory = NULL;
+static CreateInterfaceFn physics_factory = NULL;
+static CreateInterfaceFn filesystem_factory = NULL;
+static CGlobalVars *gpGlobals = NULL;
+static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
+static META_RES last_meta_res;
+static IServerPluginCallbacks *vsp_callbacks = NULL;
+static bool were_plugins_loaded = false;
+static bool g_bIsVspBridged = false;
 
 MetamodSource g_Metamod;
+PluginId g_PLID = Pl_Console;
+CSourceHookImpl g_SourceHook;
+ISourceHook *g_SHPtr = &g_SourceHook;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
-void ClearGamedllList();
+static void
+ClearGamedllList();
 
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
@@ -133,8 +160,15 @@ void ClearGamedllList();
 		} \
 	}
 
+void
+mm_SetVspInfo(IServerPluginCallbacks *ispc, unsigned int version)
+{
+	vsp_version = version;
+}
+
 /* Initialize everything here */
-void InitializeForLoad()
+void
+mm_InitializeForLoad()
 {
 	char full_path[PATH_SIZE] = {0};
 	GetFileOfAddress((void *)gamedll_info.factory, full_path, sizeof(full_path));
@@ -185,13 +219,14 @@ void InitializeForLoad()
 	SH_ADD_MANUALHOOK_STATICFUNC(SGD_DLLShutdown, server, Handler_DLLShutdown, false);
 }
 
-bool DetectGameInformation()
+bool
+mm_DetectGameInformation()
 {
 	char mm_path[PATH_SIZE];
 	char game_path[PATH_SIZE];
 
 	/* Get path to SourceMM DLL */
-	if (!GetFileOfAddress((void *)InitializeForLoad, mm_path, sizeof(mm_path)))
+	if (!GetFileOfAddress((void *)mm_InitializeForLoad, mm_path, sizeof(mm_path)))
 	{
 		return false;
 	}
@@ -211,7 +246,8 @@ bool DetectGameInformation()
 }
 
 /* This is where the magic happens */
-SMM_API void *CreateInterface(const char *iface, int *ret)
+SMM_API void *
+CreateInterface(const char *iface, int *ret)
 {
 	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
 	if (strcmp(iface, METAMOD_PLAPI_NAME) == 0)
@@ -226,14 +262,12 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		return NULL;
 	}
 
-	if (strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
+	if (!g_bIsVspBridged && strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
 	{
 		if (vsp_callbacks != NULL && atoi(&iface[22]) != vsp_version)
 		{
 			if (ret != NULL)
-			{
 				*ret = IFACE_FAILED;
-			}
 			return NULL;
 		}
 
@@ -241,19 +275,15 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 		vsp_callbacks = provider->GetVSPCallbacks(vsp_version);
 
 		if (ret)
-		{
 			*ret = (vsp_callbacks != NULL) ? IFACE_OK : IFACE_FAILED;
-		}
 
 		if (vsp_callbacks == NULL)
-		{
 			vsp_version = 0;
-		}
 
 		return vsp_callbacks;
 	}
 
-	if (provider->IsAlternatelyLoaded())
+	if (g_bIsVspBridged)
 	{
 		IFACE_MACRO(gamedll_info.factory, GameDLL);
 	}
@@ -262,7 +292,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	{
 		parsed_game_info = true;
 
-		if (!DetectGameInformation())
+		if (!mm_DetectGameInformation())
 		{
 			provider->DisplayError("GetFileOfAddress() failed! Metamod cannot load.\n");
 			return NULL;
@@ -435,7 +465,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 			if (is_gamedll_loaded)
 			{
 				ClearGamedllList();
-				InitializeForLoad();
+				mm_InitializeForLoad();
 			}
 			else
 			{
@@ -459,7 +489,8 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	IFACE_MACRO(gamedll_info.factory, GameDLL);
 }
 
-void ClearGamedllList()
+static void
+ClearGamedllList()
 {
 	List<game_dll_t *>::iterator iter;
 
@@ -474,7 +505,8 @@ void ClearGamedllList()
 	gamedll_list.clear();
 }
 
-int LoadPluginsFromFile(const char *_file)
+int
+mm_LoadPluginsFromFile(const char *_file)
 {
 	FILE *fp;
 	int total = 0, skipped=0;
@@ -625,10 +657,8 @@ int LoadPluginsFromFile(const char *_file)
 
 void InitializeVSP()
 {
-	if (provider->IsAlternatelyLoaded())
-	{
+	if (g_bIsVspBridged)
 		return;
-	}
 
 	size_t len;
 	char engine_file[PATH_SIZE];
@@ -663,7 +693,8 @@ void InitializeVSP()
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real engineFactory.
  */
-void *EngineFactory(const char *iface, int *ret)
+static void *
+EngineFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(engine_factory, Engine);
 }
@@ -671,7 +702,8 @@ void *EngineFactory(const char *iface, int *ret)
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real physicsFactory.
  */
-void *PhysicsFactory(const char *iface, int *ret)
+static void *
+PhysicsFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(physics_factory, Physics);
 }
@@ -679,12 +711,14 @@ void *PhysicsFactory(const char *iface, int *ret)
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real fileSystemFactory.
  */
-void *FileSystemFactory(const char *iface, int *ret)
+static void *
+FileSystemFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(filesystem_factory, FileSystem);
 }
 
-void LogMessage(const char *msg, ...)
+void
+mm_LogMessage(const char *msg, ...)
 {
 	va_list ap;
 	static char buffer[2048];
@@ -702,7 +736,8 @@ void LogMessage(const char *msg, ...)
 	}
 }
 
-void DoInitialPluginLoads()
+static void
+DoInitialPluginLoads()
 {
 	const char *pluginFile = provider->GetCommandLineValue("mm_pluginsfile", NULL);
 	const char *mmBaseDir = provider->GetCommandLineValue("mm_basedir", NULL);
@@ -726,13 +761,14 @@ void DoInitialPluginLoads()
 	char full_path[260];
 
 	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), pluginFile);
-	LoadPluginsFromFile(full_path);
+	mm_LoadPluginsFromFile(full_path);
 
 	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), mmBaseDir);
 	LookForVDFs(full_path);
 }
 
-void StartupMetamod(bool is_vsp_load)
+void
+mm_StartupMetamod(bool is_vsp_load)
 {
 	char buffer[255];
 
@@ -766,6 +802,8 @@ void StartupMetamod(bool is_vsp_load)
 #endif
 		"Metamod:Source Base Folder",
 		ConVarFlag_SpOnly);
+	
+	g_bIsVspBridged = true;
 
 	if (!is_vsp_load)
 	{
@@ -774,10 +812,11 @@ void StartupMetamod(bool is_vsp_load)
 	}
 }
 
-void InitializeGlobals(CreateInterfaceFn engineFactory, 
-					   CreateInterfaceFn physicsFactory,
-					   CreateInterfaceFn filesystemFactory,
-					   CGlobalVars *pGlobals)
+void
+mm_InitializeGlobals(CreateInterfaceFn engineFactory, 
+					 CreateInterfaceFn physicsFactory,
+					 CreateInterfaceFn filesystemFactory,
+					 CGlobalVars *pGlobals)
 {
 	engine_factory = engineFactory;
 	physics_factory = physicsFactory;
@@ -786,27 +825,28 @@ void InitializeGlobals(CreateInterfaceFn engineFactory,
 	provider->Notify_DLLInit_Pre(engineFactory, gamedll_info.factory);
 }
 
-bool Handler_DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+static bool
+Handler_DLLInit(CreateInterfaceFn engineFactory,
+				CreateInterfaceFn physicsFactory,
+				CreateInterfaceFn filesystemFactory,
+				CGlobalVars *pGlobals)
 {
-	InitializeGlobals(engineFactory, physicsFactory, filesystemFactory, pGlobals);
-	StartupMetamod(false);
+	mm_InitializeGlobals(engineFactory, physicsFactory, filesystemFactory, pGlobals);
+	mm_StartupMetamod(false);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-bool Handler_GameInit()
+static bool
+Handler_GameInit()
 {
 	if (is_game_init)
-	{
 		return true;
-	}
 
 	if (vsp_load_requested)
-	{
 		InitializeVSP();
-	}
 
-	if (provider->IsAlternatelyLoaded() && !were_plugins_loaded)
+	if (g_bIsVspBridged && !were_plugins_loaded)
 	{
 		DoInitialPluginLoads();
 		g_PluginMngr.SetAllLoaded();
@@ -818,13 +858,18 @@ bool Handler_GameInit()
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-bool Handler_DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+static bool
+Handler_DLLInit_Post(CreateInterfaceFn engineFactory,
+					 CreateInterfaceFn physicsFactory,
+					 CreateInterfaceFn filesystemFactory,
+					 CGlobalVars *pGlobals)
 {
 	g_PluginMngr.SetAllLoaded();
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-void UnloadMetamod()
+void
+mm_UnloadMetamod()
 {
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
@@ -845,15 +890,17 @@ void UnloadMetamod()
 	}
 }
 
-void Handler_DLLShutdown()
+static void
+Handler_DLLShutdown()
 {
-	UnloadMetamod();
+	mm_UnloadMetamod();
 	RETURN_META(MRES_SUPERCEDE);
 }
 
-void Handler_LevelShutdown(void)
+static void
+Handler_LevelShutdown(void)
 {
-	if (provider->IsAlternatelyLoaded() && !were_plugins_loaded)
+	if (g_bIsVspBridged && !were_plugins_loaded)
 	{
 		g_PluginMngr.SetAllLoaded();
 		DoInitialPluginLoads();
@@ -870,7 +917,7 @@ void Handler_LevelShutdown(void)
 			"%s/%s", 
 			mod_path.c_str(),
 			provider->GetConVarString(mm_pluginsfile));
-		LoadPluginsFromFile(full_path);
+		mm_LoadPluginsFromFile(full_path);
 
 		g_Metamod.PathFormat(full_path,
 			sizeof(full_path),
@@ -889,7 +936,13 @@ void Handler_LevelShutdown(void)
 	RETURN_META(MRES_IGNORED);
 }
 
-bool Handler_LevelInit(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
+static bool
+Handler_LevelInit(char const *pMapName,
+				  char const *pMapEntities,
+				  char const *pOldLevel,
+				  char const *pLandmarkName,
+				  bool loadGame,
+				  bool background)
 {
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 
@@ -911,40 +964,28 @@ void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 CreateInterfaceFn MetamodSource::GetEngineFactory(bool syn/* =true */)
 {
 	if (syn)
-	{
 		return EngineFactory;
-	}
-
 	return engine_factory;
 }
 
 CreateInterfaceFn MetamodSource::GetPhysicsFactory(bool syn/* =true */)
 {
 	if (syn)
-	{
 		return PhysicsFactory;
-	}
-
 	return physics_factory;
 }
 
 CreateInterfaceFn MetamodSource::GetFileSystemFactory(bool syn/* =true */)
 {
 	if (syn)
-	{
 		return FileSystemFactory;
-	}
-
 	return filesystem_factory;
 }
 
 CreateInterfaceFn MetamodSource::GetServerFactory(bool syn/* =true */)
 {
 	if (syn)
-	{
 		return CreateInterface;
-	}
-
 	return gamedll_info.factory;
 }
 
@@ -1145,9 +1186,7 @@ void MetamodSource::ClientConPrintf(edict_t *client, const char *fmt, ...)
 void MetamodSource::EnableVSPListener()
 {
 	if (is_game_init && !vsp_load_requested && !vsp_loaded)
-	{
 		InitializeVSP();
-	}
 
 	vsp_load_requested = true;
 }
@@ -1387,12 +1426,8 @@ void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version)
 	gamedll_version = version;
 }
 
-bool MetamodSource::IsAlternateLoadComplete()
-{
-	return were_plugins_loaded;
-}
-
-void ProcessVDF(const char *path)
+static void
+ProcessVDF(const char *path)
 {
 	PluginId id;
 	bool already;
@@ -1415,7 +1450,8 @@ void ProcessVDF(const char *path)
 	}
 }
 
-void LookForVDFs(const char *dir)
+static void
+LookForVDFs(const char *dir)
 {
 	char path[MAX_PATH];
 	int extidx;
@@ -1486,3 +1522,16 @@ void LookForVDFs(const char *dir)
 	closedir(pDir);
 #endif
 }
+
+bool
+mm_IsVspBridged()
+{
+	return g_bIsVspBridged;
+}
+
+bool
+mm_IsVspLoadComplete()
+{
+	return were_plugins_loaded;
+}
+

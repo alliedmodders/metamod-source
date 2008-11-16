@@ -99,19 +99,39 @@ public:
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks);
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version);
-	bool IsAlternateLoadComplete();
 };
 
-bool DetectGameInformation();
-void LogMessage(const char *msg, ...);
-int LoadPluginsFromFile(const char *_file);
-void InitializeForLoad();
-void InitializeGlobals(CreateInterfaceFn engineFactory, 
-					   CreateInterfaceFn physicsFactory,
-					   CreateInterfaceFn filesystemFactory,
-					   CGlobalVars *pGlobals);
-void StartupMetamod(bool is_vsp_load);
-void UnloadMetamod();
+bool
+mm_DetectGameInformation();
+
+void
+mm_LogMessage(const char *msg, ...);
+
+int
+mm_LoadPluginsFromFile(const char *_file);
+
+void
+mm_InitializeForLoad();
+
+void
+mm_InitializeGlobals(CreateInterfaceFn engineFactory, 
+					 CreateInterfaceFn physicsFactory,
+					 CreateInterfaceFn filesystemFactory,
+					 CGlobalVars *pGlobals);
+void
+mm_StartupMetamod(bool is_vsp_load);
+
+void
+mm_UnloadMetamod();
+
+void
+mm_SetVspInfo(IServerPluginCallbacks *ispc, unsigned int version);
+
+bool
+mm_IsVspBridged();
+
+bool
+mm_IsVspLoadComplete();
 
 extern MetamodSource g_Metamod;
 extern SourceHook::Impl::CSourceHookImpl g_SourceHook;

@@ -298,14 +298,6 @@ namespace SourceMM
 		virtual int DetermineSourceEngine(const char *game) =0;
 
 		/**
-		 * @brief Returns if the provider has loaded itself through an 
-		 * alternate means (that is, not through gameinfo.txt.
-		 *
-		 * @return				True if loaded, false otherwise.
-		 */
-		virtual bool IsAlternatelyLoaded() =0;
-
-		/**
 		 * @brief Processes a VDF plugin file.
 		 *
 		 */

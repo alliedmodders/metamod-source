@@ -36,28 +36,12 @@
 #include "svn_version.h"
 #include "provider_ep2.h"
 
-SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
-
 using namespace SourceMM;
-
-ConCommand *g_plugin_unload = NULL;
-bool g_bIsTryingToUnload;
-
-void InterceptPluginUnloads(const CCommand &args)
-{
-	g_bIsTryingToUnload = true;
-}
-
-void InterceptPluginUnloads_Post(const CCommand &args)
-{
-	g_bIsTryingToUnload = false;
-}
 
 VSPListener::VSPListener()
 {
 	m_bLoaded = false;
 	m_bLoadable = false;
-	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::ClientActive(edict_t *pEntity)
@@ -131,6 +115,7 @@ void VSPListener::ServerActivate(edict_t *pEdictList, int edictCount, int client
 
 void VSPListener::Unload()
 {
+	#if 0
 	if (g_bIsTryingToUnload)
 	{
 		Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
@@ -146,9 +131,9 @@ void VSPListener::Unload()
 		}
 		UnloadMetamod();
 	}
+	#endif
 	m_bLoaded = false;
 	m_bLoadable = true;
-	m_bIsRootLoadMethod = false;
 }
 
 void VSPListener::SetLoadable(bool set)
@@ -158,77 +143,10 @@ void VSPListener::SetLoadable(bool set)
 
 bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
 {
-	if (!g_Metamod.IsLoadedAsGameDLL())
-	{
-		CGlobalVars *pGlobals;
-		IPlayerInfoManager *playerInfoManager;
-
-		playerInfoManager = (IPlayerInfoManager *)gameServerFactory("PlayerInfoManager002", NULL);
-		if (playerInfoManager == NULL)
-		{
-			Msg("Metamod:Source requires gameinfo.txt modification to load on this game.\n");
-			return false;
-		}
-
-		pGlobals = playerInfoManager->GetGlobalVars();
-
-		char gamedll_iface[] = "ServerGameDLL000";
-		for (unsigned int i = 5; i <= 50; i++)
-		{
-			gamedll_iface[15] = '0' + i;
-			if ((server = (IServerGameDLL *)gameServerFactory(gamedll_iface, NULL)) != NULL)
-			{
-				g_Metamod.SetGameDLLInfo(gameServerFactory, i);
-				break;
-			}
-		}
-
-		if (server == NULL)
-		{
-			Msg("Metamod:Source could not load (GameDLL version not compatible).\n");
-			return false;
-		}
-
-		char gameclients_iface[] = "ServerGameClients000";
-		for (unsigned int i = 3; i <= 4; i++)
-		{
-			gameclients_iface[19] = '0' + i;
-			if ((gameclients = (IServerGameClients *)gameServerFactory(gameclients_iface, NULL)) == NULL)
-			{
-				break;
-			}
-		}
-
-		if (!DetectGameInformation())
-		{
-			Msg("Metamod:Source failed to detect game paths; cannot load.\n");
-			return false;
-		}
-
-		m_bIsRootLoadMethod = true;
-		m_bLoaded = true;
-		SetLoadable(false);
-
-		InitializeForLoad();
-		InitializeGlobals(interfaceFactory, interfaceFactory, interfaceFactory, pGlobals);
-		StartupMetamod(true);
-		
-		g_plugin_unload = icvar->FindCommand("plugin_unload");
-
-		if (g_plugin_unload != NULL)
-		{
-			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
-			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
-		}
-	}
-
 	m_bLoaded = true;
 	SetLoadable(false);
 
-	if (!m_bIsRootLoadMethod)
-	{
-		g_Metamod.NotifyVSPListening(this);
-	}
+	g_Metamod.NotifyVSPListening(this);
 
 	return true;
 }
@@ -237,7 +155,3 @@ void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *p
 {
 }
 
-bool VSPListener::IsRootLoadMethod()
-{
-	return m_bIsRootLoadMethod;
-}

@@ -366,10 +366,10 @@ namespace SourceMM
 		 * @return				Number of bytes actually written, not including 
 		 * 						the null terminator.
 		 */
-	virtual size_t Format(char *buffer, 
-						  size_t maxlength,
-						  const char *format,
-						  ...) =0;
+		virtual size_t Format(char *buffer, 
+						  	  size_t maxlength,
+						  	  const char *format,
+						  	  ...) =0;
 
 		/**
 		 * @brief Formats a string.  This is a platform safe wrapper around 

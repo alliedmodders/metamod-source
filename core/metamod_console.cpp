@@ -48,7 +48,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 {
 	unsigned int args = info->GetArgCount();
 
-	if (provider->IsAlternatelyLoaded() && !g_Metamod.IsAlternateLoadComplete())
+	if (mm_IsVspBridged() && !mm_IsVspLoadComplete())
 	{
 		CONMSG("You must change the map to activate Metamod:Source.\n");
 		return true;
@@ -151,7 +151,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				g_Metamod.GetBaseDir(), 
 				g_Metamod.GetPluginsFile());
 
-			LoadPluginsFromFile(full_path);
+			mm_LoadPluginsFromFile(full_path);
 
 			return true;
 		}

@@ -63,12 +63,10 @@ public:
 	virtual void OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue );
 public:
 	bool IsLoaded();
-	bool IsRootLoadMethod();
 	void SetLoadable(bool loadable);
 private:
 	bool m_bLoaded;
 	bool m_bLoadable;
-	bool m_bIsRootLoadMethod;
 };
 
 #endif //_INCLUDE_METAMOD_SOURCE_VSP_LISTENER_H_

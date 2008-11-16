@@ -395,11 +395,6 @@ IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(int version)
 	return &g_VspListener;
 }
 
-bool BaseProvider::IsAlternatelyLoaded()
-{
-	return g_VspListener.IsRootLoadMethod();
-}
-
 bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len)
 {
 	if (baseFs == NULL)
