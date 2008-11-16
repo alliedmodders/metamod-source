@@ -37,7 +37,7 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2LIB = $(HL2SDK_OB)/lib/linux
 	INCLUDE += -I$(HL2SDK_OB)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
-	BINARY = metamodsource.2.so
+	BINARY = metamod.2.ep2.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
@@ -46,7 +46,7 @@ ifeq "$(ENGINE)" "left4dead"
 	HL2LIB = $(HL2SDK_L4D)/lib/linux
 	INCLUDE += -I$(HL2SDK_L4D)/public/game/server
 	SRCDS = $(SRCDS_BASE)/l4d_demo
-	BINARY = metamodsource.3.so
+	BINARY = metamod2.l4d.so
 	override ENGSET = true
 endif
 
