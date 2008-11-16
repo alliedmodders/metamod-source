@@ -41,6 +41,7 @@
 #include "metamod_console.h"
 #include "vsp_listener.h"
 #include <filesystem.h>
+#include "metamod.h"
 
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
@@ -64,17 +65,18 @@ void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
 void _ServerCommand();
 /* Variables */
-bool usermsgs_extracted = false;
-CVector<UsrMsgInfo> usermsgs_list;
+static bool usermsgs_extracted = false;
+static CVector<UsrMsgInfo> usermsgs_list;
+static VSPListener g_VspListener;
+static BaseProvider g_Ep1Provider;
+static List<ConCommandBase *> conbases_unreg;
+
 ICvar *icvar = NULL;
-ISmmAPI *metamod_api = NULL;
+IFileSystem *baseFs = NULL;
+IServerGameDLL *server = NULL;
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
-VSPListener g_VspListener;
-BaseProvider g_Ep1Provider;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
-List<ConCommandBase *> conbases_unreg;
-IFileSystem *baseFs = NULL;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
@@ -126,7 +128,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
 	if (baseFs == NULL)
 	{
-		::LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
+		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 		return;
 	}
 

@@ -516,7 +516,7 @@ mm_LoadPluginsFromFile(const char *_file)
 	fp = fopen(_file, "rt");
 	if (!fp)
 	{
-		LogMessage("[META] Could not open plugins file %s\n", _file);
+		mm_LogMessage("[META] Could not open plugins file %s\n", _file);
 		return -1;
 	}
 
@@ -590,18 +590,14 @@ mm_LoadPluginsFromFile(const char *_file)
 			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
-				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
+				mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
 			}
 			else
 			{
 				if (already)
-				{
 					skipped++;
-				}
 				else
-				{
 					total++;
-				}
 			}
 		}
 		else
@@ -626,31 +622,23 @@ mm_LoadPluginsFromFile(const char *_file)
 			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 			{
-				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
+				mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
 			}
 			else
 			{
 				if (already)
-				{
 					skipped++;
-				}
 				else
-				{
 					total++;
-				}
 			}
 		}
 	}
 	fclose(fp);
 
 	if (skipped)
-	{
-		LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
-	}
+		mm_LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
 	else
-	{
-		LogMessage("[META] Loaded %d plugins from file.", total);
-	}
+		mm_LogMessage("[META] Loaded %d plugins from file.", total);
 	
 	return total;
 }
@@ -958,7 +946,7 @@ void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), msg, ap);
 	va_end(ap);
 
-	LogMessage("[%s] %s", pl->GetLogTag(), buffer);
+	mm_LogMessage("[%s] %s", pl->GetLogTag(), buffer);
 }
 
 CreateInterfaceFn MetamodSource::GetEngineFactory(bool syn/* =true */)
@@ -1434,20 +1422,14 @@ ProcessVDF(const char *path)
 	char alias[24], file[255], error[255];
 
 	if (!provider->ProcessVDF(path, file, sizeof(file), alias, sizeof(alias)))
-	{
 		return;
-	}
 
 	if (alias[0] != '\0')
-	{
 		g_PluginMngr.SetAlias(alias, file);
-	}
 
 	id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
 	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
-	{
-		LogMessage("[META] Failed to load plugin %s: %s", file, error);
-	}
+		mm_LogMessage("[META] Failed to load plugin %s: %s", file, error);
 }
 
 static void
@@ -1472,7 +1454,7 @@ LookForVDFs(const char *dir)
 			error,
 			sizeof(error),
 			NULL);
-		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
+		mm_LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
 		return;
 	}
 
@@ -1499,7 +1481,7 @@ LookForVDFs(const char *dir)
 
 	if ((pDir = opendir(dir)) == NULL)
 	{
-		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
+		mm_LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
 		return;
 	}
 
