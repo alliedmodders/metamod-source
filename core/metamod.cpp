@@ -34,6 +34,7 @@
 #include "metamod_plugins.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
+#include "provider/provider_ep2.h"
 
 using namespace SourceMM;
 using namespace SourceHook;
@@ -108,7 +109,6 @@ static game_dll_t gamedll_info;
 static ConVar *metamod_version = NULL;
 static ConVar *mm_pluginsfile = NULL;
 static ConVar *mm_basedir = NULL;
-static IServerGameDLL *server = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
