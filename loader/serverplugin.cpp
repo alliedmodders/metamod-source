@@ -244,6 +244,10 @@ void *mm_GetVspCallbacks(unsigned int version)
 	if (mm_vsp_callbacks.IsLoaded())
 		return NULL;
 
+	/* Only support versions 1 or 2 right now */
+	if (version > 2)
+		return NULL;
+
 	mm_vsp_callbacks.PrepForLoad(version);
 
 	return &mm_vsp_callbacks;
