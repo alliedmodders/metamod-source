@@ -61,7 +61,6 @@ all:
 	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
 	$(MAKE) sourcemm
 	rm -rf $(BINARY)
-	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 sourcemm: $(OBJ_LINUX)
 	$(CPP) $(INCLUDE) -m32 $(CFLAGS) $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
