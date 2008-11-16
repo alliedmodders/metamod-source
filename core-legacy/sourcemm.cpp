@@ -68,7 +68,7 @@ const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 const char GAMEINFO_PATH[] = "|gameinfo_path|";
 IFileSystem *baseFs = NULL;
 bool g_bLevelChanged = false;
-
+IServerPluginCallbacks *g_pRealVspCallbacks = &g_VspListener;
 
 void ClearGamedllList();
 
@@ -309,20 +309,13 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 bool GameInit_handler()
 {
 	if (bGameInit)
-	{
 		RETURN_META_VALUE(MRES_IGNORED, true);
-	}
 
-	if (g_SmmAPI.VSPEnabled() && !g_VspListener.IsRootLoadMethod())
-	{
+	if (g_SmmAPI.VSPEnabled() && !g_bIsBridgedAsVsp)
 		g_SmmAPI.LoadAsVSP();
-	}
 
-	if (g_VspListener.IsRootLoadMethod())
-	{
+	if (g_bIsBridgedAsVsp)
 		DoInitialPluginLoads();
-		//gaben
-	}
 
 	bGameInit = true;
 
@@ -354,8 +347,9 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	/* We check these separately because we can't reply
 	 * unless our interface version really matches.
 	 */
-	if ((strcmp(iface, VSPIFACE_002) == 0)
-		|| strcmp(iface, VSPIFACE_001) == 0)
+	if (!g_bIsBridgedAsVsp &&
+		(strcmp(iface, VSPIFACE_002) == 0 ||
+		 strcmp(iface, VSPIFACE_001) == 0))
 	{
 		if (ret)
 		{
@@ -365,7 +359,7 @@ SMM_API void *CreateInterface(const char *iface, int *ret)
 	}
 
 	/* If we're a VSP, bypass this by default */
-	if (g_VspListener.IsRootLoadMethod())
+	if (g_bIsBridgedAsVsp)
 	{
 		IFACE_MACRO(g_GameDll.factory, GameDLL);
 	}

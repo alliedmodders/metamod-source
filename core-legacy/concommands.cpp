@@ -120,7 +120,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	int args = e->Cmd_Argc();
 
-	if (g_VspListener.IsRootLoadMethod() && !g_bLevelChanged)
+	if (g_bIsBridgedAsVsp && !g_bLevelChanged)
 	{
 		CONMSG("WARNING: You must change the map to activate Metamod:Source.\n");
 		return;
@@ -141,7 +141,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "version") == 0) {
 			CONMSG("Metamod:Source version %s\n", SOURCEMM_VERSION);
-			if (g_VspListener.IsRootLoadMethod())
+			if (g_bIsBridgedAsVsp)
 			{
 				CONMSG("Loaded As: Valve Server Plugin\n");
 			}

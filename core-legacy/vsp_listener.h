@@ -39,13 +39,12 @@ public:
 public:
 	bool IsLoaded();
 	void SetLoadable(bool loadable);
-	bool IsRootLoadMethod();
 private:
 	bool m_Loaded;
 	bool m_Loadable;
-	bool m_bIsRootLoadMethod;
 };
 
 extern VSPListener g_VspListener;
 
 #endif //_INCLUDE_SOURCEMM_VSPLISTENER_H_
+

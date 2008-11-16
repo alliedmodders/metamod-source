@@ -10,7 +10,7 @@ OPT_FLAGS = -O2 -funroll-loops -s -pipe
 GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-4.1
-BINARY = server_i486.so
+BINARY = metamod.1.ep1.so
 
 HL2PUB = $(HL2SDK)/public
 HL2LIB = $(HL2SDK)/linux_sdk
@@ -22,12 +22,13 @@ OBJECTS = oslink.cpp 		\
           sourcemm.cpp 		\
 		  CPlugin.cpp 		\
 		  vsp_listener.cpp	\
+		  vsp_bridge.cpp	\
 		  sourcehook/sourcehook.cpp
 
 LINK = $(HL2LIB)/tier1_i486.a  vstdlib_i486.so tier0_i486.so -static-libgcc
 
 INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 \
-          -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I. -Isourcehook
+          -I$(HL2PUB)/vstdlib -I$(HL2SDK)/tier1 -I. -Isourcehook -I../loader
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug

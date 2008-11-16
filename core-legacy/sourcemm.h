@@ -90,6 +90,9 @@ struct EngineInfo
 
 bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory);
 
+extern IServerPluginCallbacks *g_pRealVspCallbacks;
+extern bool g_bIsBridgedAsVsp;
+
 /** @brief Global variable for GameDLL info */
 extern GameDllInfo g_GameDll;
 

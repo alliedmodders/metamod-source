@@ -210,7 +210,7 @@ void CPluginManager::SetVSPAsLoaded()
 				continue;
 			}
 			(*event).got_vsp = true;
-			(*event).event->OnVSPListening(&g_VspListener);
+			(*event).event->OnVSPListening(g_pRealVspCallbacks);
 		}
 	}
 }
@@ -406,8 +406,8 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 								//if (pl->m_API->GetApiVersion() >= 4)
 								pl->m_API->AllPluginsLoaded();
 							}
-							if (g_VspListener.IsRootLoadMethod()
-								|| (g_VspListener.IsLoaded() && g_SmmAPI.VSPEnabled()))
+							if (g_bIsBridgedAsVsp ||
+								(g_VspListener.IsLoaded() && g_SmmAPI.VSPEnabled()))
 							{
 								SourceHook::List<CPluginEventHandler>::iterator event;
 								for (event = pl->m_Events.begin();
@@ -415,11 +415,9 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 									 event++)
 								{
 									if (pl->m_API->GetApiVersion() < 10 || (*event).got_vsp)
-									{
 										continue;
-									}
 									(*event).got_vsp = true;
-									(*event).event->OnVSPListening(&g_VspListener);
+									(*event).event->OnVSPListening(g_pRealVspCallbacks);
 								}
 							}
 						} else {
