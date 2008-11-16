@@ -15,7 +15,7 @@ struct vsp_bridge_info
 class IVspBridge
 {
 public:
-	virtual bool Load(const vsp_bridge_info *info) = 0;
+	virtual bool Load(const vsp_bridge_info *info, char *buffer, size_t maxlength) = 0;
 	virtual void Unload() = 0;
 	virtual const char *GetDescription() = 0;
 };

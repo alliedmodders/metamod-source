@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include <stddef.h>
 #include "loader.h"
@@ -133,7 +134,7 @@ public:
 		if (get_bridge == NULL)
 		{
 			mm_UnloadMetamodLibrary();
-			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback.");
+			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback.", backend);
 			return false;
 		}
 
@@ -146,9 +147,11 @@ public:
 		info.vsp_callbacks = (IServerPluginCallbacks*)this;
 		info.vsp_version = vsp_version;
 
-		if (!bridge->Load(&info))
+		strcpy(error, "Unknown error");
+		if (!bridge->Load(&info, error, sizeof(error)))
 		{
 			mm_UnloadMetamodLibrary();
+			mm_LogFatal("Unknown error loading Metamod for engine %d: %s", backend, error);	
 			return false;
 		}
 
