@@ -96,6 +96,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
 
+#if 0
 			int engine = g_Metamod.GetSourceEngineBuild();
 			if (engine == SOURCE_ENGINE_ORIGINAL)
 			{
@@ -109,6 +110,13 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			{
 				CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
 			}
+#endif
+
+#if SOURCE_ENGINE == SE_ORANGEBOX
+			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
+#else
+			CONMSG("  Engine: Left 4 Dead (2008)\n");
+#endif
 
 			// Display user messages
 			int messages = g_Metamod.GetUserMessageCount();
