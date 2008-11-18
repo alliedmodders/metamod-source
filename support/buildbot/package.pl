@@ -31,8 +31,8 @@ chdir(Build::PathFormat('../../OUTPUT'));
 
 my ($version);
 
-$version = Build::ProductVersion(Build::PathFormat('../../product.version'));
-$version .= '-hg' . Build::HgRevNum('../..');
+$version = Build::ProductVersion(Build::PathFormat('../product.version'));
+$version .= '-hg' . Build::HgRevNum('..');
 
 my ($filename);
 $filename = 'mmsource-' . $version;
