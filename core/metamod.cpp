@@ -763,11 +763,11 @@ mm_StartupMetamod(bool is_vsp_load)
 	UTIL_Format(buffer,
 		sizeof(buffer),
 		"%s%s",
-		SOURCEMM_VERSION,
+		SVN_FULL_VERSION,
 		is_vsp_load ? "V" : "");
 
 	metamod_version = provider->CreateConVar("metamod_version", 
-		SOURCEMM_VERSION, 
+		SVN_FULL_VERSION, 
 		"Metamod:Source Version",
 		ConVarFlag_Notify|ConVarFlag_SpOnly);
 

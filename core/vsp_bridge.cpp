@@ -96,7 +96,7 @@ public:
 
 	virtual const char *GetDescription()
 	{
-		return "Metamod:Source " SOURCEMM_VERSION;
+		return "Metamod:Source " SVN_FULL_VERSION;
 	}
 };
 

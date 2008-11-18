@@ -33,7 +33,7 @@
 #include <eiface.h>
 #include "iplayerinfo.h"
 #include "vsp_listener.h"
-#include "svn_version.h"
+#include "version.h"
 #include "provider_ep2.h"
 
 using namespace SourceMM;
@@ -80,7 +80,7 @@ void VSPListener::GameFrame(bool simulating)
 
 const char *VSPListener::GetPluginDescription()
 {
-	return "Metamod:Source Interface v" SVN_FILE_VERSION_STRING;
+	return "Metamod:Source Interface " SVN_FULL_VERSION;
 }
 
 bool VSPListener::IsLoaded()

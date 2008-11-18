@@ -3,7 +3,13 @@ major = 1
 minor = 7
 revision = 0
 
-[sourcemm]
-folder = sourcemm
-in = svn_version.tpl
-out = svn_version.h
+[core]
+folder = core
+in = version.tpl
+out = version.h
+
+[core-legacy]
+folder = core-legacy
+in = version.tpl
+out = version.h
+

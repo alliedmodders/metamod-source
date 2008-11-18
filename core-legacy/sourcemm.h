@@ -25,7 +25,7 @@
 #include "CPlugin.h"
 #include "oslink.h"
 #include "util.h"
-#include "svn_version.h"
+#include "version.h"
 
 /**
  * Versioning

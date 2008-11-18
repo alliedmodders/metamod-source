@@ -58,7 +58,7 @@ void VSPListener::GameFrame(bool simulating)
 
 const char *VSPListener::GetPluginDescription()
 {
-	return "Metamod:Source Interface v" SOURCEMM_VERSION;
+	return "Metamod:Source Interface " SVN_FULL_VERSION;
 }
 
 bool VSPListener::IsLoaded()
