@@ -74,7 +74,7 @@ sub BuildWindows
 	chdir("$srcdir\\msvc9");
 
 	$param = "Release";
-	if ($build eq "Orange Box")
+	if ($build eq "OrangeBox")
 	{
 		$param = "Release - Orange Box";
 	}
