@@ -67,7 +67,7 @@ sub Build
 
 sub BuildWindows
 {
-	my ($srcdir, $vcproj, $build, $binary) = (@));
+	my ($srcdir, $vcproj, $build, $binary) = (@_);
 	my ($dir, $file, $param, $vcbuilder, $cmd);
 
 	$dir = getcwd();
