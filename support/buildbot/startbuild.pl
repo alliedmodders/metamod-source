@@ -90,13 +90,13 @@ sub BuildWindows
 	system($cmd);
 	CheckFailure();
 
-	$file = "msvc9\\$param\\$binary";
+	$file = "$param\\$binary";
 
 	die "Output library not found: $file\n" if (!-f $file);
 
 	chdir($dir);
 
-	push(@LIBRARIES, "$srcdir\\$file");
+	push(@LIBRARIES, "$srcdir\\msvc9\\$file");
 }
 
 sub BuildLinux
