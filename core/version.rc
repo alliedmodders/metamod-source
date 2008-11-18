@@ -50,7 +50,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright (c) 2004-2008, Metamod: Source Development Team"
             VALUE "OriginalFilename", "metamod.2.crab.dll"
             VALUE "ProductName", "Metamod:Source"
-            VALUE "ProductVersion", SVN_PRODUCT_VERSION
+            VALUE "ProductVersion", SVN_FULL_VERSION
         END
     END
     BLOCK "VarFileInfo"
