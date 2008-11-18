@@ -71,7 +71,7 @@ sub BuildWindows
 	my ($dir, $file, $param, $vcbuilder, $cmd);
 
 	$dir = getcwd();
-	chdir($srcdir);
+	chdir("$srcdir\\msvc9");
 
 	$param = "Release";
 	if ($build eq "Orange Box")
@@ -90,7 +90,7 @@ sub BuildWindows
 	system($cmd);
 	CheckFailure();
 
-	$file = "$param\\$binary";
+	$file = "msvc9\\$param\\$binary";
 
 	die "Output library not found: $file\n" if (!-f $file);
 
