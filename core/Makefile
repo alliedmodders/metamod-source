@@ -36,6 +36,7 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2SDK = $(HL2SDK_OB)
 	HL2PUB = $(HL2SDK_OB)/public
 	HL2LIB = $(HL2SDK_OB)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=3
 	INCLUDE += -I$(HL2SDK_OB)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2.so
@@ -45,15 +46,17 @@ ifeq "$(ENGINE)" "left4dead"
 	HL2SDK = $(HL2SDK_L4D)
 	HL2PUB = $(HL2SDK_L4D)/public
 	HL2LIB = $(HL2SDK_L4D)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=4
 	INCLUDE += -I$(HL2SDK_L4D)/public/game/server
 	SRCDS = $(SRCDS_BASE)/l4d_demo
-	BINARY = metamod2.l4d.so
+	BINARY = metamod.2.l4d.so
 	override ENGSET = true
 endif
 
+CFLAGS += -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=4
+
 LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
-	
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
 	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -Isourcehook -I../loader
 

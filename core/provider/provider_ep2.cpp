@@ -360,7 +360,11 @@ const char *BaseProvider::GetGameDescription()
 
 int BaseProvider::DetermineSourceEngine(const char *game)
 {
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+	return SOURCE_ENGINE_LEFT4DEAD;
+#else
 	return SOURCE_ENGINE_ORANGEBOX;
+#endif
 }
 
 ConVar *BaseProvider::CreateConVar(const char *name,

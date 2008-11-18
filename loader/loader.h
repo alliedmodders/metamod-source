@@ -8,8 +8,6 @@
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #define PLATFORM_MAX_PATH	MAX_PATH
-typedef INTPTR intptr_t;
-typedef UINTPTR uintptr_t;
 #define SH_COMP				SH_COMP_MSVC
 #elif defined __linux__
 #include <dlfcn.h>
