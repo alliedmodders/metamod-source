@@ -46,10 +46,10 @@ BEGIN
             VALUE "Comments", "Metamod: Source"
             VALUE "FileDescription", "Metamod: Source"
             VALUE "FileVersion", SVN_FILE_VERSION_STRING
-            VALUE "InternalName", "sourcemm"
+            VALUE "InternalName", "mmsource"
             VALUE "LegalCopyright", "Copyright (c) 2004-2008, Metamod: Source Development Team"
-            VALUE "OriginalFilename", "server.dll"
-            VALUE "ProductName", "Metamod: Source"
+            VALUE "OriginalFilename", "metamod.2.crab.dll"
+            VALUE "ProductName", "Metamod:Source"
             VALUE "ProductVersion", SVN_PRODUCT_VERSION
         END
     END

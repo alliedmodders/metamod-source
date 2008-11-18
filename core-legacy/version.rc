@@ -7,7 +7,7 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "winres.h"
-#include "svn_version.h"
+#include "version.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -46,10 +46,10 @@ BEGIN
             VALUE "Comments", "Metamod: Source"
             VALUE "FileDescription", "Metamod: Source"
             VALUE "FileVersion", SVN_FILE_VERSION_STRING
-            VALUE "InternalName", "sourcemm"
+            VALUE "InternalName", "mmsource"
             VALUE "LegalCopyright", "Copyright (c) 2004-2008, Metamod: Source Development Team"
-            VALUE "OriginalFilename", "server.dll"
-            VALUE "ProductName", "Metamod: Source"
+            VALUE "OriginalFilename", "metamod.1.ep1.dll"
+            VALUE "ProductName", "Metamod:Source"
             VALUE "ProductVersion", SVN_PRODUCT_VERSION
         END
     END
