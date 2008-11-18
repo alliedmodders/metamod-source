@@ -48,7 +48,7 @@ ifeq "$(ENGINE)" "left4dead"
 	HL2LIB = $(HL2SDK_L4D)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=4
 	INCLUDE += -I$(HL2SDK_L4D)/public/game/server
-	SRCDS = $(SRCDS_BASE)/l4d_demo
+	SRCDS = $(SRCDS_BASE)/l4d
 	BINARY = metamod.2.l4d.so
 	override ENGSET = true
 endif
