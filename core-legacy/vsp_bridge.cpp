@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "sourcemm.h"
+#include "concommands.h"
 #include <loader_bridge.h>
 
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
@@ -63,6 +64,19 @@ class VspBridge : public IVspBridge
 
 	virtual void Unload()
 	{
+		if (g_bIsTryingToUnload)
+		{
+			Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
+			return;
+		}
+		if (g_plugin_unload != NULL)
+		{
+			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
+			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
+			g_plugin_unload = NULL;
+		}
+		g_SMConVarAccessor.UnloadMetamodCommands();
+		UnloadMetamod(false);
 	}
 
 	virtual const char *GetDescription()

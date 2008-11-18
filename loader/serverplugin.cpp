@@ -162,6 +162,7 @@ public:
 		if (bridge == NULL)
 			return;
 		bridge->Unload();
+		mm_UnloadMetamodLibrary();
 	}
 	virtual void Pause()
 	{
