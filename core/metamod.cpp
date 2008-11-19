@@ -1436,6 +1436,7 @@ static void
 LookForVDFs(const char *dir)
 {
 	char path[MAX_PATH];
+	char relpath[MAX_PATH * 2];
 
 #if defined _MSC_VER
 	HANDLE hFind;
@@ -1463,7 +1464,8 @@ LookForVDFs(const char *dir)
 	do
 	{
 		g_Metamod.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
-		ProcessVDF(path);
+		UTIL_Relatize(relpath, sizeof(relpath), mod_path.c_str(), path);
+		ProcessVDF(relpath);
 	} while (FindNextFile(hFind, &fd));
 
 	FindClose(hFind);
@@ -1491,7 +1493,8 @@ LookForVDFs(const char *dir)
 			continue;
 		}
 		g_Metamod.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
-		ProcessVDF(path);
+		UTIL_Relatize(relpath, sizeof(relpath), mod_path.c_str(), path);
+		ProcessVDF(relpath);
 	}
 
 	closedir(pDir);
