@@ -1436,17 +1436,19 @@ static void
 LookForVDFs(const char *dir)
 {
 	char path[MAX_PATH];
-	int extidx;
 
 #if defined _MSC_VER
 	HANDLE hFind;
 	WIN32_FIND_DATA fd;
 	char error[255];
 
-	g_Metamod.PathFormat(path, sizeof(path), "%s\\*.*", dir);
+	g_Metamod.PathFormat(path, sizeof(path), "%s\\*.vdf", dir);
 	if ((hFind = FindFirstFile(path, &fd)) == INVALID_HANDLE_VALUE)
 	{
 		DWORD dw = GetLastError();
+		if (dw == ERROR_FILE_NOT_FOUND)
+			return;
+
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
 			dw,
@@ -1460,16 +1462,6 @@ LookForVDFs(const char *dir)
 
 	do
 	{
-		if (strcmp(fd.cFileName, ".") == 0
-			|| strcmp(fd.cFileName, "..") == 0)
-		{
-			continue;
-		}
-		extidx = strlen(fd.cFileName) - 4;
-		if (extidx < 0 || stricmp(&fd.cFileName[extidx], ".vdf"))
-		{
-			continue;
-		}
 		g_Metamod.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
 		ProcessVDF(path);
 	} while (FindNextFile(hFind, &fd));
@@ -1478,6 +1470,7 @@ LookForVDFs(const char *dir)
 #else
 	DIR *pDir;
 	struct dirent *pEnt;
+	int extidx;
 
 	if ((pDir = opendir(dir)) == NULL)
 	{
