@@ -52,22 +52,6 @@ static const char *backend_names[3] =
 #define LIBRARY_MINEXT	".so"
 #endif
 
-#if defined _WIN32
-void
-mm_GetPlatformError(char *buffer, size_t maxlength)
-{
-	DWORD dw = GetLastError();
-	FormatMessageA(
-		FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		dw,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPSTR)buffer,
-		maxlength,
-		NULL);
-}
-#endif
-
 bool
 mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 {

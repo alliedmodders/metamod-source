@@ -11,6 +11,8 @@
 #include "gamedll.h"
 #include "valve_commandline.h"
 
+#undef GetCommandLine
+
 class IServerGameDLL;
 typedef ICommandLine *(*GetCommandLine)();
 

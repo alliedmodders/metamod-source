@@ -7,6 +7,23 @@
 #include "loader.h"
 #include "utility.h"
 
+#if defined _WIN32
+static void
+mm_GetPlatformError(char *buffer, size_t maxlength)
+{
+	DWORD dw = GetLastError();
+	FormatMessageA(
+		FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPSTR)buffer,
+		maxlength,
+		NULL);
+}
+#endif
+
+
 size_t
 mm_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
 {
@@ -238,7 +255,7 @@ mm_LoadLibrary(const char *path, char *buffer, size_t maxlength)
 	void *lib;
 
 #if defined _WIN32
-	lib = LoadLibrary(path);
+	lib = (void*)LoadLibrary(path);
 
 	if (lib == NULL)
 	{
@@ -262,7 +279,7 @@ void *
 mm_GetLibAddress(void *lib, const char *name)
 {
 #if defined _WIN32
-	return GetProcAddress(lib, name);
+	return GetProcAddress((HMODULE)lib, name);
 #elif defined __linux__
 	return dlsym(lib, name);
 #endif
@@ -272,7 +289,7 @@ void
 mm_UnloadLibrary(void *lib)
 {
 #if defined _WIN32
-	FreeLibrary(lib);
+	FreeLibrary((HMODULE)lib);
 #else
 	dlclose(lib);
 #endif
