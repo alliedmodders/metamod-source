@@ -20,11 +20,12 @@
 #include <eiface.h>
 
 extern IVEngineServer *engine;
+extern CGlobalVars *gpGlobals;
 
 /**
  * For non-OrangeBox builds, we have to make wrappers.
  */
-#if defined ENGINE_ORIGINAL
+#if SOURCE_ENGINE == SE_EPISODEONE
 
 /**
  * MM:S 1.4.x needs older API calls.
@@ -33,6 +34,7 @@ extern IVEngineServer *engine;
 #define GetEngineFactory engineFactory
 #define GetServerFactory serverFactory
 #define MM_Format snprintf
+#define	GetCGlobals	pGlobals
 #else
 #error "Metamod:Source 1.6 is not supported on the old engine."
 #endif
@@ -59,12 +61,43 @@ public:
 };
 
 #define CVAR_INTERFACE_VERSION				VENGINE_CVAR_INTERFACE_VERSION
-#define ENGINE_CALL(func) SH_CALL(m_EngineCC, func)
+#define ENGINE_CALL(func)					SH_CALL(m_EngineCC, func)
 
-#elif defined ENGINE_ORANGEBOX
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 
-#define ENGINE_CALL(func) SH_CALL(engine, func)
-#define MM_Format g_SMAPI->Format
+#define ENGINE_CALL(func)					SH_CALL(engine, func)
+#define MM_Format							g_SMAPI->Format
+
+#endif
+
+/**
+ * Left 4 Dead engine removed these from IVEngineServer.
+ */
+#if SOURCE_ENGINE >= SE_LEFT4DEAD
+
+inline int IndexOfEdict(const edict_t *pEdict)
+{
+	return (int)(pEdict - gpGlobals->baseEdict);
+}
+inline edict_t *PEntityOfEntIndex(int iEntIndex)
+{
+	if (iEntIndex >= 0 && iEntIndex < gpGlobals->maxEntities)
+	{
+		return (edict_t *)(gpGlobals->baseEdict + iEntIndex);
+	}
+	return NULL;
+}
+
+#else
+
+inline int IndexOfEdict(const edict_t *pEdict)
+{
+	return engine->IndexOfEdict(pEdict);
+}
+inline edict_t *PEntityOfEntIndex(int iEntIndex)
+{
+	return engine->PEntityOfEntIndex(iEntIndex);
+}
 
 #endif
 

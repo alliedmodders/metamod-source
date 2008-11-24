@@ -29,14 +29,14 @@ SH_DECL_HOOK1_void(IServerGameClients, ClientSettingsChanged, SH_NOATTRIB, 0, ed
 SH_DECL_HOOK5(IServerGameClients, ClientConnect, SH_NOATTRIB, 0, bool, edict_t *, const char*, const char *, char *, int);
 SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, 0, bool, IGameEvent *, bool);
 
-#if defined ENGINE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, NetworkIDValidated, SH_NOATTRIB, 0, const char *, const char *);
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
-#elif defined ENGINE_ORIGINAL
+#else
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 #endif
 
-StubPlugin g_StubPlugin;
+SamplePlugin g_SamplePlugin;
 IServerGameDLL *server = NULL;
 IServerGameClients *gameclients = NULL;
 IVEngineServer *engine = NULL;
@@ -45,6 +45,7 @@ IGameEventManager2 *gameevents = NULL;
 IServerPluginCallbacks *vsp_callbacks = NULL;
 IPlayerInfoManager *playerinfomanager = NULL;
 ICvar *icvar = NULL;
+CGlobalVars *gpGlobals = NULL;
 
 ConVar sample_cvar("sample_cvar", "42", 0);
 
@@ -61,8 +62,8 @@ public:
 	}
 } s_BaseAccessor;
 
-PLUGIN_EXPOSE(StubPlugin, g_StubPlugin);
-bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
+PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
+bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	PLUGIN_SAVEVARS();
 
@@ -73,6 +74,8 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 	GET_V_IFACE_ANY(GetServerFactory, server, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE_ANY(GetServerFactory, gameclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 	GET_V_IFACE_ANY(GetServerFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
+
+	gpGlobals = ismm->GetCGlobals();
 
 	META_LOG(g_PLAPI, "Starting plugin.");
 
@@ -85,84 +88,84 @@ bool StubPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bo
 		ismm->EnableVSPListener();
 	}
 
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &StubPlugin::Hook_LevelInit, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &StubPlugin::Hook_ServerActivate, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &StubPlugin::Hook_GameFrame, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &StubPlugin::Hook_LevelShutdown, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &StubPlugin::Hook_ClientActive, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &StubPlugin::Hook_ClientDisconnect, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &StubPlugin::Hook_ClientPutInServer, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &StubPlugin::Hook_SetCommandClient, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &StubPlugin::Hook_ClientSettingsChanged, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &StubPlugin::Hook_ClientConnect, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &StubPlugin::Hook_ClientCommand, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &SamplePlugin::Hook_LevelInit, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &SamplePlugin::Hook_ServerActivate, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &SamplePlugin::Hook_GameFrame, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &SamplePlugin::Hook_LevelShutdown, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &SamplePlugin::Hook_ClientActive, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &SamplePlugin::Hook_ClientDisconnect, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &SamplePlugin::Hook_ClientPutInServer, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &SamplePlugin::Hook_SetCommandClient, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &SamplePlugin::Hook_ClientSettingsChanged, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
 
-#if defined ENGINE_ORIGINAL
+#if SOURCE_ENGINE == SE_EPISODEONE
 	m_EngineCC = SH_GET_CALLCLASS(engine);
 #endif
 
 	ENGINE_CALL(&IVEngineServer::LogPrint)("All hooks started!\n");
 
-#if defined ENGINE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
-#elif defined ENGINE_ORIGINAL
+#else
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
 #endif
 
 	return true;
 }
 
-bool StubPlugin::Unload(char *error, size_t maxlen)
+bool SamplePlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &StubPlugin::Hook_LevelInit, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &StubPlugin::Hook_ServerActivate, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &StubPlugin::Hook_GameFrame, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &StubPlugin::Hook_LevelShutdown, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &StubPlugin::Hook_ClientActive, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &StubPlugin::Hook_ClientDisconnect, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &StubPlugin::Hook_ClientPutInServer, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &StubPlugin::Hook_SetCommandClient, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &StubPlugin::Hook_ClientSettingsChanged, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &StubPlugin::Hook_ClientConnect, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &StubPlugin::Hook_ClientCommand, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &SamplePlugin::Hook_LevelInit, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &SamplePlugin::Hook_ServerActivate, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &SamplePlugin::Hook_GameFrame, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &SamplePlugin::Hook_LevelShutdown, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &SamplePlugin::Hook_ClientActive, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &SamplePlugin::Hook_ClientDisconnect, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &SamplePlugin::Hook_ClientPutInServer, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &SamplePlugin::Hook_SetCommandClient, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &SamplePlugin::Hook_ClientSettingsChanged, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
 
-#if defined ENGINE_ORIGINAL
+#if SOURCE_ENGINE == SE_EPISODEONE
 	SH_RELEASE_CALLCLASS(m_EngineCC);
 #endif
 
 	return true;
 }
 
-void StubPlugin::OnVSPListening(IServerPluginCallbacks *iface)
+void SamplePlugin::OnVSPListening(IServerPluginCallbacks *iface)
 {
 	vsp_callbacks = iface;
 }
 
-void StubPlugin::Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
+void SamplePlugin::Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
 {
 	META_LOG(g_PLAPI, "ServerActivate() called: edictCount = %d, clientMax = %d", edictCount, clientMax);
 }
 
-void StubPlugin::AllPluginsLoaded()
+void SamplePlugin::AllPluginsLoaded()
 {
 	/* This is where we'd do stuff that relies on the mod or other plugins 
 	 * being initialized (for example, cvars added and events registered).
 	 */
 }
 
-void StubPlugin::Hook_ClientActive(edict_t *pEntity, bool bLoadGame)
+void SamplePlugin::Hook_ClientActive(edict_t *pEntity, bool bLoadGame)
 {
-	META_LOG(g_PLAPI, "Hook_ClientActive(%d, %d)", engine->IndexOfEdict(pEntity), bLoadGame);
+	META_LOG(g_PLAPI, "Hook_ClientActive(%d, %d)", IndexOfEdict(pEntity), bLoadGame);
 }
 
-#if defined ENGINE_ORANGEBOX
-void StubPlugin::Hook_ClientCommand(edict_t *pEntity, const CCommand &args)
-#elif defined ENGINE_ORIGINAL
-void StubPlugin::Hook_ClientCommand(edict_t *pEntity)
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+void SamplePlugin::Hook_ClientCommand(edict_t *pEntity, const CCommand &args)
+#else
+void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 #endif
 {
-#if defined ENGINE_ORIGINAL
+#if SOURCE_ENGINE == SE_EPISODEONE
 	CCommand args;
 #endif
 
@@ -235,13 +238,13 @@ void StubPlugin::Hook_ClientCommand(edict_t *pEntity)
 	}
 }
 
-void StubPlugin::Hook_ClientSettingsChanged(edict_t *pEdict)
+void SamplePlugin::Hook_ClientSettingsChanged(edict_t *pEdict)
 {
 	if (playerinfomanager)
 	{
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo(pEdict);
 
-		const char *name = engine->GetClientConVarValue(engine->IndexOfEdict(pEdict), "name");
+		const char *name = engine->GetClientConVarValue(IndexOfEdict(pEdict), "name");
 
 		if (playerinfo != NULL
 			&& name != NULL
@@ -256,18 +259,18 @@ void StubPlugin::Hook_ClientSettingsChanged(edict_t *pEdict)
 	}
 }
 
-bool StubPlugin::Hook_ClientConnect(edict_t *pEntity,
+bool SamplePlugin::Hook_ClientConnect(edict_t *pEntity,
 									const char *pszName,
 									const char *pszAddress,
 									char *reject,
 									int maxrejectlen)
 {
-	META_LOG(g_PLAPI, "Hook_ClientConnect(%d, \"%s\", \"%s\")", engine->IndexOfEdict(pEntity), pszName, pszAddress);
+	META_LOG(g_PLAPI, "Hook_ClientConnect(%d, \"%s\", \"%s\")", IndexOfEdict(pEntity), pszName, pszAddress);
 
 	return true;
 }
 
-void StubPlugin::Hook_ClientPutInServer(edict_t *pEntity, char const *playername)
+void SamplePlugin::Hook_ClientPutInServer(edict_t *pEntity, char const *playername)
 {
 	KeyValues *kv = new KeyValues( "msg" );
 	kv->SetString( "title", "Hello" );
@@ -279,12 +282,12 @@ void StubPlugin::Hook_ClientPutInServer(edict_t *pEntity, char const *playername
 	kv->deleteThis();
 }
 
-void StubPlugin::Hook_ClientDisconnect(edict_t *pEntity)
+void SamplePlugin::Hook_ClientDisconnect(edict_t *pEntity)
 {
-	META_LOG(g_PLAPI, "Hook_ClientDisconnect(%d)", engine->IndexOfEdict(pEntity));
+	META_LOG(g_PLAPI, "Hook_ClientDisconnect(%d)", IndexOfEdict(pEntity));
 }
 
-void StubPlugin::Hook_GameFrame(bool simulating)
+void SamplePlugin::Hook_GameFrame(bool simulating)
 {
 	/**
 	 * simulating:
@@ -294,7 +297,7 @@ void StubPlugin::Hook_GameFrame(bool simulating)
 	 */
 }
 
-bool StubPlugin::Hook_LevelInit(const char *pMapName,
+bool SamplePlugin::Hook_LevelInit(const char *pMapName,
 								char const *pMapEntities,
 								char const *pOldLevel,
 								char const *pLandmarkName,
@@ -306,62 +309,62 @@ bool StubPlugin::Hook_LevelInit(const char *pMapName,
 	return true;
 }
 
-void StubPlugin::Hook_LevelShutdown()
+void SamplePlugin::Hook_LevelShutdown()
 {
 	META_LOG(g_PLAPI, "Hook_LevelShutdown()");
 }
 
-void StubPlugin::Hook_SetCommandClient(int index)
+void SamplePlugin::Hook_SetCommandClient(int index)
 {
 	META_LOG(g_PLAPI, "Hook_SetCommandClient(%d)", index);
 }
 
-bool StubPlugin::Pause(char *error, size_t maxlen)
+bool SamplePlugin::Pause(char *error, size_t maxlen)
 {
 	return true;
 }
 
-bool StubPlugin::Unpause(char *error, size_t maxlen)
+bool SamplePlugin::Unpause(char *error, size_t maxlen)
 {
 	return true;
 }
 
-const char *StubPlugin::GetLicense()
+const char *SamplePlugin::GetLicense()
 {
 	return "Public Domain";
 }
 
-const char *StubPlugin::GetVersion()
+const char *SamplePlugin::GetVersion()
 {
 	return "1.0.0.0";
 }
 
-const char *StubPlugin::GetDate()
+const char *SamplePlugin::GetDate()
 {
 	return __DATE__;
 }
 
-const char *StubPlugin::GetLogTag()
+const char *SamplePlugin::GetLogTag()
 {
 	return "SAMPLE";
 }
 
-const char *StubPlugin::GetAuthor()
+const char *SamplePlugin::GetAuthor()
 {
 	return "AlliedModders LLC";
 }
 
-const char *StubPlugin::GetDescription()
+const char *SamplePlugin::GetDescription()
 {
 	return "Sample basic plugin";
 }
 
-const char *StubPlugin::GetName()
+const char *SamplePlugin::GetName()
 {
 	return "Sample Plugin";
 }
 
-const char *StubPlugin::GetURL()
+const char *SamplePlugin::GetURL()
 {
 	return "http://www.sourcemm.net/";
 }

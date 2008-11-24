@@ -27,7 +27,7 @@
 #define snprintf _snprintf
 #endif
 
-class StubPlugin : public ISmmPlugin, public IMetamodListener
+class SamplePlugin : public ISmmPlugin, public IMetamodListener
 {
 public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
@@ -57,9 +57,9 @@ public: //hooks
 		const char *pszAddress,
 		char *reject,
 		int maxrejectlen);
-#if defined ENGINE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 	void Hook_ClientCommand(edict_t *pEntity, const CCommand &args);
-#elif defined ENGINE_ORIGINAL
+#else
 	void Hook_ClientCommand(edict_t *pEntity);
 #endif
 public:
@@ -72,12 +72,12 @@ public:
 	const char *GetDate();
 	const char *GetLogTag();
 private:
-#if defined ENGINE_ORIGINAL
+#if SOURCE_ENGINE == SE_EPISODEONE
 	SourceHook::CallClass<IVEngineServer> *m_EngineCC;
 #endif
 };
 
-extern StubPlugin g_StubPlugin;
+extern SamplePlugin g_SamplePlugin;
 
 PLUGIN_GLOBALVARS();
 
