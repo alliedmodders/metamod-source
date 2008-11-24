@@ -434,7 +434,7 @@ mm_PrepForGameLoad()
 void *
 mm_GameDllRequest(const char *name, int *ret)
 {
-	if (gamedll_lib != NULL)
+	if (gamedll_lib != NULL && gamedll_bridge == NULL)
 	{
 		return gamedll_qvi(name, ret);
 	}
