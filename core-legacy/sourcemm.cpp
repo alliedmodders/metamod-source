@@ -45,7 +45,8 @@ bool LevelInit_handler(char const *pMapName,
 					   bool loadGame,
 					   bool background);
 bool GameInit_handler();
-void LookForVDFs(const char *dir);
+int LoadPlugins(const char *filepath, const char *vdfpath)
+int LoadVDFPluginsFromDir(const char *dir, int &skipped)
 bool KVLoadFromFile(KeyValues *kv,
 					IBaseFileSystem *filesystem,
 					const char *resourceName,

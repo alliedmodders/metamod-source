@@ -66,8 +66,11 @@ Handler_GameInit();
 static void
 InitializeVSP();
 
-static void
-LookForVDFs(const char *dir);
+static int
+LoadPluginsFromFile(const char *filepath, int &skipped);
+
+static int
+LoadVDFPluginsFromDir(const char *dir, int &skipped);
 
 struct game_dll_t
 {
