@@ -146,12 +146,16 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 	m_bLoaded = true;
 	SetLoadable(false);
 
-	g_Metamod.NotifyVSPListening(this);
+	g_Metamod.NotifyVSPListening(this, -1);
 
 	return true;
 }
 
-void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue )
+void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie,
+										   edict_t *pPlayerEntity,
+										   EQueryCvarValueStatus eStatus,
+										   const char *pCvarName,
+										   const char *pCvarValue)
 {
 }
 

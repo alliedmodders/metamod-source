@@ -138,12 +138,6 @@ SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 		} \
 	}
 
-void
-mm_SetVspInfo(IServerPluginCallbacks *ispc, unsigned int version)
-{
-	vsp_version = version;
-}
-
 /* Initialize everything here */
 void
 mm_InitializeForLoad()
@@ -1069,8 +1063,11 @@ int MetamodSource::GetSourceEngineBuild()
 	return engine_build;
 }
 
-void MetamodSource::NotifyVSPListening(IServerPluginCallbacks *callbacks)
+void MetamodSource::NotifyVSPListening(IServerPluginCallbacks *callbacks, int version)
 {
+	if (version != -1)
+		vsp_version = version;
+	
 	vsp_callbacks = callbacks;
 	ITER_EVENT(OnVSPListening, (callbacks));
 }

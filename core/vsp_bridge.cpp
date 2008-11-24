@@ -77,6 +77,7 @@ public:
 							 (CreateInterfaceFn)info->engineFactory,
 							 (CreateInterfaceFn)info->engineFactory,
 							 pGlobals);
+		g_Metamod.NotifyVSPListening(info->vsp_callbacks, info->vsp_version);
 		mm_StartupMetamod(true);
 		
 		g_plugin_unload = icvar->FindCommand("plugin_unload");

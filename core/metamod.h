@@ -97,7 +97,7 @@ public:
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
-	void NotifyVSPListening(IServerPluginCallbacks *callbacks);
+	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
 };
 
@@ -123,9 +123,6 @@ mm_StartupMetamod(bool is_vsp_load);
 
 void
 mm_UnloadMetamod();
-
-void
-mm_SetVspInfo(IServerPluginCallbacks *ispc, unsigned int version);
 
 bool
 mm_IsVspBridged();
