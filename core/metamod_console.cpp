@@ -153,14 +153,19 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 		}
 		else if (strcmp(command, "refresh") == 0)
 		{
-			char full_path[255];
-			g_Metamod.PathFormat(full_path,
-				sizeof(full_path),
+			char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
+			g_Metamod.PathFormat(filepath,
+				sizeof(filepath),
 				"%s/%s",
 				g_Metamod.GetBaseDir(), 
 				g_Metamod.GetPluginsFile());
+			g_Metamod.PathFormat(vdfpath,
+				sizeof(vdfpath),
+				"%s/%s",
+				g_Metamod.GetBaseDir(), 
+				g_Metamod.GetVDFDir());
 
-			mm_LoadPluginsFromFile(full_path);
+			mm_LoadPlugins(filepath, vdfpath);
 
 			return true;
 		}
@@ -663,7 +668,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 	CONMSG("  list         - List plugins\n");
 	CONMSG("  load         - Load a plugin\n");
 	CONMSG("  pause        - Pause a running plugin\n");
-	CONMSG("  refresh      - Reparse plugins file\n");
+	CONMSG("  refresh      - Reparse plugin files\n");
 	CONMSG("  retry        - Attempt to reload a plugin\n");
 	CONMSG("  unload       - Unload a loaded plugin\n");
 	CONMSG("  unpause      - Unpause a paused plugin\n");

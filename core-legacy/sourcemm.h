@@ -48,8 +48,8 @@ void *EngineFactory(const char *name, int *code);
 void *PhysicsFactory(const char *name, int *code);
 void *FileSystemFactory(const char *name, int *code);
 
-/** @brief Loads all plugins found in a file */
-int LoadPluginsFromFile(const char *file);
+/** @brief Loads all plugins found from the mm_pluginsfile file and from VDFs in mm_basedir */
+int LoadPlugins(const char *filepath, const char *vdfdir);
 
 /** @brief Logs a message to the standard log file */
 void LogMessage(const char *msg, ...);

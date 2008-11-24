@@ -96,6 +96,7 @@ public:
 	bool IsLoadedAsGameDLL();
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
+	const char *GetVDFDir();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
@@ -108,7 +109,7 @@ void
 mm_LogMessage(const char *msg, ...);
 
 int
-mm_LoadPluginsFromFile(const char *_file);
+mm_LoadPlugins(const char *filepath, const char *vdfpath);
 
 void
 mm_InitializeForLoad();

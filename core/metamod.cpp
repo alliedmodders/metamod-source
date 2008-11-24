@@ -235,22 +235,23 @@ CreateInterface(const char *iface, int *ret)
 	return ptr;
 }
 
-int
-mm_LoadPluginsFromFile(const char *_file)
+static int
+LoadPluginsFromFile(const char *filepath, int &skipped)
 {
 	FILE *fp;
-	int total = 0, skipped=0;
+	int total = 0;
 	PluginId id;
 	bool already;
 
-	fp = fopen(_file, "rt");
+	skipped = 0;
+
+	fp = fopen(filepath, "rt");
 	if (!fp)
 	{
-		mm_LogMessage("[META] Could not open plugins file %s\n", _file);
-		return -1;
+		return 0;
 	}
 
-	char buffer[255], error[255], full_path[255];
+	char buffer[255], error[255], full_path[PATH_SIZE];
 	const char *ptr, *ext, *file;
 	size_t length;
 	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
@@ -364,11 +365,6 @@ mm_LoadPluginsFromFile(const char *_file)
 		}
 	}
 	fclose(fp);
-
-	if (skipped)
-		mm_LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
-	else
-		mm_LogMessage("[META] Loaded %d plugins from file.", total);
 	
 	return total;
 }
@@ -476,13 +472,11 @@ DoInitialPluginLoads()
 		}
 	}
 
-	char full_path[260];
+	char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
 
-	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), pluginFile);
-	mm_LoadPluginsFromFile(full_path);
-
-	g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s", mod_path.c_str(), mmBaseDir);
-	LookForVDFs(full_path);
+	g_Metamod.PathFormat(filepath, sizeof(filepath), "%s/%s", mod_path.c_str(), pluginFile);
+	g_Metamod.PathFormat(vdfpath, sizeof(vdfpath), "%s/%s", mod_path.c_str(), mmBaseDir);
+	mm_LoadPlugins(filepath, vdfpath);
 }
 
 void
@@ -588,21 +582,19 @@ Handler_LevelShutdown(void)
 
 	if (!in_first_level)
 	{
-		char full_path[255];
+		char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
 
-		g_Metamod.PathFormat(full_path, 
-			sizeof(full_path), 
+		g_Metamod.PathFormat(filepath, 
+			sizeof(filepath), 
 			"%s/%s", 
 			mod_path.c_str(),
 			provider->GetConVarString(mm_pluginsfile));
-		mm_LoadPluginsFromFile(full_path);
-
-		g_Metamod.PathFormat(full_path,
-			sizeof(full_path),
+		g_Metamod.PathFormat(vdfpath,
+			sizeof(vdfpath),
 			"%s/%s",
 			mod_path.c_str(),
 			provider->GetConVarString(mm_basedir));
-		LookForVDFs(full_path);
+		mm_LoadPlugins(filepath, vdfpath);
 	}
 	else
 	{
@@ -977,6 +969,11 @@ const char *MetamodSource::GetPluginsFile()
 	return provider->GetConVarString(mm_pluginsfile);
 }
 
+const char *MetamodSource::GetVDFDir()
+{
+	return provider->GetConVarString(mm_basedir);
+}
+
 IConCommandBaseAccessor *MetamodSource::GetCvarBaseAccessor()
 {
 	return provider->GetConCommandBaseAccessor();
@@ -1109,29 +1106,42 @@ void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version,
 	is_gamedll_loaded = loaded;
 }
 
-static void
-ProcessVDF(const char *path)
+static bool
+ProcessVDF(const char *path, bool &skipped)
 {
 	PluginId id;
 	bool already;
 	char alias[24], file[255], error[255];
 
 	if (!provider->ProcessVDF(path, file, sizeof(file), alias, sizeof(alias)))
-		return;
+	{
+		skipped = false;
+		return false;
+	}
 
 	if (alias[0] != '\0')
 		g_PluginMngr.SetAlias(alias, file);
 
 	id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
+	skipped = already;
 	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+	{
 		mm_LogMessage("[META] Failed to load plugin %s: %s", file, error);
+		return false;
+	}
+
+	return true;
 }
 
-static void
-LookForVDFs(const char *dir)
+static int
+LoadVDFPluginsFromDir(const char *dir, int &skipped)
 {
+	bool success, skip;
+	int total = 0;
 	char path[MAX_PATH];
 	char relpath[MAX_PATH * 2];
+
+	skipped = 0;
 
 #if defined _MSC_VER
 	HANDLE hFind;
@@ -1143,7 +1153,7 @@ LookForVDFs(const char *dir)
 	{
 		DWORD dw = GetLastError();
 		if (dw == ERROR_FILE_NOT_FOUND)
-			return;
+			return 0;
 
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
@@ -1153,14 +1163,18 @@ LookForVDFs(const char *dir)
 			sizeof(error),
 			NULL);
 		mm_LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
-		return;
+		return 0;
 	}
 
 	do
 	{
 		g_Metamod.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
 		UTIL_Relatize(relpath, sizeof(relpath), mod_path.c_str(), path);
-		ProcessVDF(relpath);
+		success = ProcessVDF(relpath, skip);
+		if (skip)
+			skipped++;
+		else if (success)
+			total++;
 	} while (FindNextFile(hFind, &fd));
 
 	FindClose(hFind);
@@ -1172,7 +1186,7 @@ LookForVDFs(const char *dir)
 	if ((pDir = opendir(dir)) == NULL)
 	{
 		mm_LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
-		return;
+		return 0;
 	}
 
 	while ((pEnt = readdir(pDir)) != NULL)
@@ -1189,11 +1203,38 @@ LookForVDFs(const char *dir)
 		}
 		g_Metamod.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
 		UTIL_Relatize(relpath, sizeof(relpath), mod_path.c_str(), path);
-		ProcessVDF(relpath);
+		success = ProcessVDF(relpath, skip);
+		if (skip)
+			skipped++;
+		else if (success)
+			total++;
 	}
 
 	closedir(pDir);
 #endif
+
+	return total;
+}
+
+int
+mm_LoadPlugins(const char *filepath, const char *vdfpath)
+{
+	int total, skipped, fskipped, vskipped;
+	const char *s = "";
+
+	total = LoadPluginsFromFile(filepath, fskipped);
+	total += LoadVDFPluginsFromDir(vdfpath, vskipped);
+	skipped = fskipped + vskipped;
+
+	if (total == 0 || total > 1)
+		s = "s";
+
+	if (skipped)
+		mm_LogMessage("[META] Loaded %d plugin%s (%d already loaded)", total, s, skipped);
+	else
+		mm_LogMessage("[META] Loaded %d plugin%s.", total, s);
+
+	return total;
 }
 
 bool

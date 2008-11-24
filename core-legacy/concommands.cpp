@@ -203,10 +203,11 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 			return;
 		} else if (strcmp(command, "refresh") == 0) {
-			char full_path[255];
-			g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+			char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
+			g_SmmAPI.PathFormat(filepath, sizeof(filepath), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+			g_SmmAPI.PathFormat(vdfpath, sizeof(vdfpath), "%s/%s", g_ModPath.c_str(), GetMetamodBaseDir());
 
-			LoadPluginsFromFile(full_path);
+			LoadPlugins(filepath, vdfpath);
 
 			return;
 		} else if (strcmp(command, "list") == 0) {
@@ -641,7 +642,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 	CONMSG("  list         - List plugins\n");
 	CONMSG("  load         - Load a plugin\n");
 	CONMSG("  pause        - Pause a running plugin\n");
-	CONMSG("  refresh      - Reparse plugins file\n");
+	CONMSG("  refresh      - Reparse plugin files\n");
 	CONMSG("  retry        - Attempt to reload a plugin\n");
 	CONMSG("  unload       - Unload a loaded plugin\n");
 	CONMSG("  unpause      - Unpause a paused plugin\n");

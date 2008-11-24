@@ -118,12 +118,11 @@ void DoInitialPluginLoads()
 		mmBaseDir = GetMetamodBaseDir();
 	}
 
-	char full_path[260];
+	char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
 
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), pluginFile);
-	LoadPluginsFromFile(full_path);
-	g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), mmBaseDir);
-	LookForVDFs(full_path);
+	g_SmmAPI.PathFormat(filepath, sizeof(filepath), "%s/%s", g_ModPath.c_str(), pluginFile);
+	g_SmmAPI.PathFormat(vdfpath, sizeof(vdfpath), "%s/%s", g_ModPath.c_str(), mmBaseDir);
+	LoadPlugins(filepath, vdfpath);
 }
 
 SMM_API void *
@@ -344,7 +343,7 @@ void UnloadMetamod(bool shutting_down)
 	g_SourceHook.CompleteShutdown();
 }
 
-void LoadFromVDF(const char *file)
+bool LoadFromVDF(const char *file, bool &skipped)
 {
 	PluginId id;
 	bool already, kvfileLoaded;
@@ -367,13 +366,15 @@ void LoadFromVDF(const char *file)
 	if (!kvfileLoaded)
 	{
 		pValues->deleteThis();
-		return;
+		skipped = false;
+		return false;
 	}
 
 	if ((plugin_file = pValues->GetString("file", NULL)) == NULL)
 	{
 		pValues->deleteThis();
-		return;
+		skipped = false;
+		return false;
 	}
 
 	if ((alias = pValues->GetString("alias", NULL)) != NULL)
@@ -406,17 +407,24 @@ void LoadFromVDF(const char *file)
 	}
 
 	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
+	skipped = already;
 	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 	{
 		LogMessage("[META] Failed to load plugin %s: %s", plugin_file, error);
+		return false;
 	}
 
 	pValues->deleteThis();
+	return true;
 }
 
-void LookForVDFs(const char *dir)
+int LoadVDFPluginsFromDir(const char *dir, int &skipped)
 {
+	bool success, skip;
+	int total = 0;
 	char path[MAX_PATH];
+
+	skipped = 0;
 
 #if defined _MSC_VER
 	HANDLE hFind;
@@ -428,7 +436,7 @@ void LookForVDFs(const char *dir)
 	{
 		DWORD dw = GetLastError();
 		if (dw == ERROR_FILE_NOT_FOUND)
-			return;
+			return 0;
 
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
@@ -438,13 +446,17 @@ void LookForVDFs(const char *dir)
 			sizeof(error),
 			NULL);
 		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, error);
-		return;
+		return 0;
 	}
 
 	do
 	{
 		g_SmmAPI.PathFormat(path, sizeof(path), "%s\\%s", dir, fd.cFileName);
-		LoadFromVDF(path);
+		success = LoadFromVDF(path, skip);
+		if (skip)
+			skipped++;
+		else if (success)
+			total++;
 	} while (FindNextFile(hFind, &fd));
 
 	FindClose(hFind);
@@ -456,7 +468,7 @@ void LookForVDFs(const char *dir)
 	if ((pDir = opendir(dir)) == NULL)
 	{
 		LogMessage("[META] Could not open folder \"%s\" (%s)", dir, strerror(errno));
-		return;
+		return 0;
 	}
 
 	while ((pEnt = readdir(pDir)) != NULL)
@@ -472,11 +484,17 @@ void LookForVDFs(const char *dir)
 			continue;
 		}
 		g_SmmAPI.PathFormat(path, sizeof(path), "%s/%s", dir, pEnt->d_name);
-		LoadFromVDF(path);
+		success = LoadFromVDF(path, skip);
+		if (skip)
+			skipped++;
+		else if (success)
+			total++;
 	}
 
 	closedir(pDir);
 #endif
+
+	return total;
 }
 
 bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID)
@@ -509,21 +527,22 @@ bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *reso
 	return retOK;
 }
 
-int LoadPluginsFromFile(const char *_file)
+int LoadPluginsFromFile(const char *filepath, int &skipped)
 {
 	FILE *fp;
-	int total = 0, skipped=0;
+	int total = 0;
 	PluginId id;
 	bool already;
 
-	fp = fopen(_file, "rt");
+	skipped = 0;
+
+	fp = fopen(filepath, "rt");
 	if (!fp)
 	{
-		LogMessage("[META] Could not open plugins file %s\n", _file);
-		return -1;
+		return 0;
 	}
 
-	char buffer[255], error[255], full_path[255];
+	char buffer[255], error[255], full_path[PATH_SIZE];
 	const char *ptr, *ext, *file;
 	size_t length;
 	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
@@ -646,14 +665,25 @@ int LoadPluginsFromFile(const char *_file)
 	}
 	fclose(fp);
 
+	return total;
+}
+
+int LoadPlugins(const char *filepath, const char *vdfpath)
+{
+	int total, skipped, fskipped, vskipped;
+	const char *s = "";
+
+	total = LoadPluginsFromFile(filepath, fskipped);
+	total += LoadVDFPluginsFromDir(vdfpath, vskipped);
+	skipped = fskipped + vskipped;
+
+	if (total == 0 || total > 1)
+		s = "s";
+
 	if (skipped)
-	{
-		LogMessage("[META] Loaded %d plugins from file (%d already loaded)", total, skipped);
-	}
+		LogMessage("[META] Loaded %d plugin%s (%d already loaded)", total, s, skipped);
 	else
-	{
-		LogMessage("[META] Loaded %d plugins from file.", total);
-	}
+		LogMessage("[META] Loaded %d plugin%s.", total, s);
 
 	return total;
 }
@@ -682,13 +712,11 @@ void LevelShutdown_handler(void)
 {
 	if (!bInFirstLevel)
 	{
-		char full_path[255];
+		char filepath[PATH_SIZE], vdfpath[PATH_SIZE];
 
-		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
-		LoadPluginsFromFile(full_path);
-
-		g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s", g_ModPath.c_str(), GetMetamodBaseDir());
-		LookForVDFs(full_path);
+		g_SmmAPI.PathFormat(filepath, sizeof(filepath), "%s/%s", g_ModPath.c_str(), GetPluginsFile());
+		g_SmmAPI.PathFormat(vdfpath, sizeof(vdfpath), "%s/%s", g_ModPath.c_str(), GetMetamodBaseDir());
+		LoadPlugins(filepath, vdfpath);
 	}
 	else
 	{
