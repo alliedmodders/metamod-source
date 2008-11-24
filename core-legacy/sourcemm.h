@@ -26,6 +26,7 @@
 #include "oslink.h"
 #include "util.h"
 #include "version.h"
+#include "loader_bridge.h"
 
 /**
  * Versioning
@@ -65,7 +66,6 @@ void LogMessage(const char *msg, ...);
 struct GameDllInfo
 {
 	bool loaded;
-	HINSTANCE lib;
 	CreateInterfaceFn factory;
 	IServerGameDLL *pGameDLL;
 	IServerGameClients *pGameClients;
@@ -105,12 +105,6 @@ extern SourceHook::CSourceHookImpl g_SourceHook;
 /** @brief Mod path (important!)*/
 extern SourceHook::String g_ModPath;
 
-/** @brief Path to server binary */
-extern SourceHook::String g_BinPath;
-
-/** @brief Path to SourceMM binary */
-extern SourceHook::String g_SmmPath;
-
 /** @brief Global variable for SourceHook macros */
 extern SourceHook::ISourceHook *g_SHPtr;
 
@@ -120,7 +114,7 @@ extern PluginId g_PLID;
 /** @brief ServerGameDLL version that is currently loaded */
 extern int g_GameDllVersion;
 
-extern bool bGameInit;
+extern bool g_bGameInit;
 extern bool g_bLevelChanged;
 
 void UnloadMetamod(bool shutting_down);
@@ -128,7 +122,10 @@ void UnloadMetamod(bool shutting_down);
 /** @brief Global CallClass for IServerGameDLL */
 extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 
+void LoadAsGameDLL(const gamedll_bridge_info *info);
+
 /** @brief Global CallClass for ICvar */
 extern SourceHook::CallClass<ICvar> *g_CvarPatch;
 
 #endif //_INCLUDE_SOURCEMM_H
+

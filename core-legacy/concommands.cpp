@@ -157,10 +157,13 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
+			char bin_path[PATH_SIZE];
+			GetFileOfAddress((void*)g_GameDll.factory, bin_path, sizeof(bin_path));
+
 			CONMSG("GameDLL Information\n");
 			CONMSG("  Description: %s\n", g_GameDll.pGameDLL->GetGameDescription());
 			CONMSG("  Mod Path: %s\n", g_ModPath.c_str());
-			CONMSG("  DLL Path: %s\n", g_BinPath.c_str());
+			CONMSG("  DLL Path: %s\n", bin_path);
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
 
 			// Display user messages

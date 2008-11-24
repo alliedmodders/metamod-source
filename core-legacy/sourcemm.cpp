@@ -32,65 +32,44 @@ using namespace SourceMM;
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
 
-SH_DECL_HOOK4(IServerGameDLL, DLLInit, SH_NOATTRIB, false, bool, CreateInterfaceFn, CreateInterfaceFn, CreateInterfaceFn, CGlobalVars *);
 SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, false, bool);
 
-bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
-bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals);
 void DLLShutdown_handler();
 void LevelShutdown_handler();
-bool LevelInit_handler(char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background);
+bool LevelInit_handler(char const *pMapName,
+					   char const *pMapEntities,
+					   char const *pOldLevel,
+					   char const *pLandmarkName,
+					   bool loadGame,
+					   bool background);
 bool GameInit_handler();
 void LookForVDFs(const char *dir);
-bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
+bool KVLoadFromFile(KeyValues *kv,
+					IBaseFileSystem *filesystem,
+					const char *resourceName,
+					const char *pathID = NULL);
 
-GameDllInfo g_GameDll = {false, NULL, NULL, NULL, NULL};
+GameDllInfo g_GameDll = {false, NULL, NULL, NULL};
 EngineInfo g_Engine;
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
 SourceHook::String g_ModPath;
-SourceHook::String g_BinPath;
-SourceHook::String g_SmmPath;
 PluginId g_PLID = Pl_Console;			/* Technically, SourceMM is the "Console" plugin... :p */
-bool bInFirstLevel = true;
-bool gParsedGameInfo = false;
-bool bGameInit = false;
-SourceHook::List<GameDllInfo *> gamedll_list;
+static bool bInFirstLevel = true;
+bool g_bGameInit = false;
 SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
 SourceHook::CallClass<ICvar> *g_CvarPatch;
 int g_GameDllVersion = 0;
-const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
-const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
-const char GAMEINFO_PATH[] = "|gameinfo_path|";
+static const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
+static const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
+static const char GAMEINFO_PATH[] = "|gameinfo_path|";
 IFileSystem *baseFs = NULL;
 bool g_bLevelChanged = false;
 IServerPluginCallbacks *g_pRealVspCallbacks = &g_VspListener;
-
-void ClearGamedllList();
-
-/* Helper Macro */
-#define	IFACE_MACRO(orig,nam) \
-	CPluginManager::CPlugin *pl; \
-	SourceHook::List<CPluginEventHandler>::iterator event; \
-	IMetamodListener *api; \
-	int mret = 0; \
-	void *val = NULL; \
-	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
-		pl = (*iter); \
-		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
-			api = (*event).event; \
-			mret = IFACE_FAILED; \
-			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
-				if (ret) *ret = mret; \
-				return val; \
-			} \
-		} \
-	} \
-	return (orig)(iface, ret);
 
 #define ITER_EVENT(evn, args) \
 	CPluginManager::CPlugin *pl; \
@@ -111,18 +90,17 @@ void ClearGamedllList();
 /* Initialize everything here */
 void InitMainStates()
 {
-	char full_path[PATH_SIZE] = {0};
-	GetFileOfAddress((void *)g_GameDll.factory, full_path, sizeof(full_path));
-	g_BinPath.assign(full_path);
-
 	/* Like Metamod, reload plugins at the end of the map.
 	 * This is so plugins can hook everything on load, BUT, new plugins will be reloaded
 	 * if the server is shut down (silly, but rare case).
 	 */
 	bInFirstLevel = true;
 
-	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLInit, g_GameDll.pGameDLL, DLLInit, false);
-	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLInit, g_GameDll.pGameDLL, DLLInit_Post, true);
+	char smm_path[PATH_SIZE];
+	const char *game_dir = CommandLine()->ParmValue("-game", "hl2");
+	abspath(smm_path, game_dir);
+	g_ModPath.assign(smm_path);
+
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, g_GameDll.pGameDLL, DLLShutdown_handler, false);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
@@ -225,16 +203,20 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	return true;
 }
 
-bool DLLInit(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
+void LoadAsGameDLL(const gamedll_bridge_info *info)
 {
-	g_Engine.engineFactory = engineFactory;
-	g_Engine.fileSystemFactory = filesystemFactory;
-	g_Engine.physicsFactory = physicsFactory;
-	g_Engine.pGlobals = pGlobals;
+	g_Engine.engineFactory = (CreateInterfaceFn)info->engineFactory;
+	g_Engine.fileSystemFactory = (CreateInterfaceFn)info->fsFactory;
+	g_Engine.physicsFactory = (CreateInterfaceFn)info->physicsFactory;
+	g_Engine.pGlobals = (CGlobalVars*)info->pGlobals;
+	g_GameDll.loaded = true;
+	g_GameDll.factory = (CreateInterfaceFn)info->gsFactory;
+	g_GameDll.pGameDLL = (IServerGameDLL*)info->isgd;
+	g_GameDllVersion = info->dllVersion;
 
-	StartupMetamod(engineFactory, false);
+	InitMainStates();
 
-	RETURN_META_VALUE(MRES_IGNORED, true);
+	StartupMetamod(g_Engine.engineFactory, false);
 }
 
 bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn serverFactory)
@@ -254,7 +236,6 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 
 	/* Now find the server */
 	g_GameDll.factory = serverFactory;
-	g_GameDll.lib = NULL;
 
 	char gamedll_iface[] = "ServerGameDLL000";
 	for (unsigned int i = 3; i <= 50; i++)
@@ -285,15 +266,6 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 		}
 	}
 
-	char smm_path[PATH_SIZE];
-	const char *game_dir;
-	GetFileOfAddress((void *)AlternatelyLoadMetamod, smm_path, sizeof(smm_path));
-	g_SmmPath.assign(smm_path);
-
-	game_dir = CommandLine()->ParmValue("-game", "hl2");
-	abspath(smm_path, game_dir);
-	g_ModPath.assign(smm_path);
-
 	InitMainStates();
 
 	if (!StartupMetamod(ifaceFactory, true))
@@ -308,7 +280,7 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 
 bool GameInit_handler()
 {
-	if (bGameInit)
+	if (g_bGameInit)
 		RETURN_META_VALUE(MRES_IGNORED, true);
 
 	if (g_SmmAPI.VSPEnabled() && !g_bIsBridgedAsVsp)
@@ -317,284 +289,9 @@ bool GameInit_handler()
 	if (g_bIsBridgedAsVsp)
 		DoInitialPluginLoads();
 
-	bGameInit = true;
+	g_bGameInit = true;
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
-}
-
-bool DLLInit_Post(CreateInterfaceFn engineFactory, CreateInterfaceFn physicsFactory, CreateInterfaceFn filesystemFactory, CGlobalVars *pGlobals)
-{
-	g_PluginMngr.SetAllLoaded();
-	RETURN_META_VALUE(MRES_IGNORED, true);
-}
-
-/* This is where the magic happens */
-SMM_API void *CreateInterface(const char *iface, int *ret)
-{
-	/* Prevent loading of self as a SourceMM plugin or Valve server plugin :x */
-	if (strcmp(iface, PLAPI_NAME) == 0)
-	{
-		Warning("Do not try loading Metamod:Source as a Metamod:Source plugin");
-
-		if (ret)
-		{
-			*ret = IFACE_FAILED;
-		}
-
-		return NULL;
-	}
-
-	/* We check these separately because we can't reply
-	 * unless our interface version really matches.
-	 */
-	if (!g_bIsBridgedAsVsp &&
-		(strcmp(iface, VSPIFACE_002) == 0 ||
-		 strcmp(iface, VSPIFACE_001) == 0))
-	{
-		if (ret)
-		{
-			*ret = IFACE_OK;
-		}
-		return &g_VspListener;
-	}
-
-	/* If we're a VSP, bypass this by default */
-	if (g_bIsBridgedAsVsp)
-	{
-		IFACE_MACRO(g_GameDll.factory, GameDLL);
-	}
-
-	if (!gParsedGameInfo)
-	{
-		gParsedGameInfo = true;
-		const char *gameDir = NULL;
-		char gamePath[PATH_SIZE];
-		char smmPath[PATH_SIZE];
-
-		/* Get path to SourceMM DLL */
-		if (!GetFileOfAddress((void *)CreateInterface, smmPath, sizeof(smmPath)))
-		{
-			Error("GetFileOfAddress() failed! Metamod cannot load.\n");
-			return NULL;
-		}
-
-		g_SmmPath.assign(smmPath);
-
-		/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
-		gameDir = CommandLine()->ParmValue("-game", "hl2");
-
-		/* Get absolute path */
-		abspath(gamePath, gameDir);
-		g_ModPath.assign(gamePath);
-
-		char tempPath[PATH_SIZE];
-
-		/* Path to gameinfo.txt */
-		g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s", g_ModPath.c_str(), "gameinfo.txt");
-
-		FILE *fp = fopen(tempPath, "rt");
-
-		if (!fp)
-		{
-			Error("Unable to open gameinfo.txt!  Metamod cannot load.\n");
-			return NULL;
-		}
-
-		char buffer[255];
-		char key[128], val[128];
-		size_t len = 0;
-		bool search = false;
-		bool gamebin = false;
-		char *ptr;
-		const char *lptr;
-		char curPath[PATH_SIZE];
-
-		getcwd(curPath, PATH_SIZE);
-
-		while (!feof(fp))
-		{
-			buffer[0] = '\0';
-			fgets(buffer, sizeof(buffer), fp);
-			len = strlen(buffer);
-			if (buffer[len-1] == '\n')
-				buffer[--len] = '\0';
-			UTIL_TrimComments(buffer);
-			UTIL_TrimLeft(buffer);
-			UTIL_TrimRight(buffer);
-			if (stricmp(buffer, "SearchPaths") == 0)
-				search = true;
-			if (!search)
-				continue;
-			UTIL_KeySplit(buffer, key, sizeof(key) - 1, val, sizeof(val) - 1);
-			if (stricmp(key, "Game") == 0 || stricmp(key, "GameBin") == 0)
-			{
-				if (stricmp(key, "Game") == 0)
-					gamebin = false;
-				else
-					gamebin = true;
-
-				if (strncmp(val, GAMEINFO_PATH, sizeof(GAMEINFO_PATH) - 1) == 0)
-				{
-					ptr = &(val[sizeof(GAMEINFO_PATH) - 1]);
-					if (ptr[0] == '.')
-						ptr++;
-					lptr = g_ModPath.c_str();
-				} else {
-					ptr = val;
-					lptr = curPath;
-				}
-
-				size_t ptr_len = strlen(ptr);
-				if (ptr[ptr_len] == '/' || ptr[ptr_len] == '\\')
-					ptr[--ptr_len] = '\0';
-
-				/* No need to append "bin" if key is GameBin */
-				if (gamebin)
-				{
-					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s", lptr, ptr, SERVER_DLL);
-				} else if (!ptr[0]) {
-					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s", lptr, "bin", SERVER_DLL);
-				} else {
-					g_SmmAPI.PathFormat(tempPath, PATH_SIZE, "%s/%s/%s/%s", lptr, ptr, "bin", SERVER_DLL);
-				}
-
-				/* If not path to SourceMM... */
-				if (!UTIL_PathCmp(smmPath, tempPath))
-				{
-					FILE *fp = fopen(tempPath, "rb");
-					if (!fp)
-						continue;
-					//:TODO: Optimize this a bit!
-					SourceHook::List<GameDllInfo *>::iterator iter;
-					GameDllInfo *pCheck;
-					bool found = false;
-					for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
-					{
-						pCheck = (*iter);
-						if (GetFileOfAddress((void *)pCheck->factory, buffer, sizeof(buffer)))
-						{
-							if (UTIL_PathCmp(tempPath, buffer))
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-					if (found)
-						continue;
-					fclose(fp);
-					HINSTANCE gamedll = dlmount(tempPath);
-					if (gamedll == NULL)
-						continue;
-					CreateInterfaceFn fn = (CreateInterfaceFn)dlsym(gamedll, "CreateInterface");
-					if (fn == NULL)
-					{
-						dlclose(gamedll);
-						continue;
-					}
-					GameDllInfo *pInfo = new GameDllInfo;
-					pInfo->factory = fn;
-					pInfo->lib = gamedll;
-					pInfo->loaded = true;
-					pInfo->pGameDLL = NULL;
-					gamedll_list.push_back(pInfo);
-					break;
-				}
-			}
-		}
-		fclose(fp);
-	}
-
-	if (!g_GameDll.loaded)
-	{
-		const char *str = "ServerGameDLL";
-		size_t len = strlen(str);
-
-		if (strncmp(iface, str, len) == 0)
-		{
-			/* This is the interface we want!  Right now we support versions 3 through 8 */
-			g_GameDllVersion = atoi(&(iface[len]));
-			int sizeTooBig = 0;	//rename this to sizeWrong in the future!
-			if (g_GameDllVersion < MIN_GAMEDLL_VERSION || g_GameDllVersion > MAX_GAMEDLL_VERSION)
-			{
-				/* Maybe this will get used in the future */
-				sizeTooBig = g_GameDllVersion;
-				if (ret)
-				{
-					*ret = IFACE_FAILED;
-				}
-			}
-			SourceHook::List<GameDllInfo *>::iterator iter;
-			GameDllInfo *pInfo = NULL;
-			void *ptr;
-			for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
-			{
-				pInfo = (*iter);
-				ptr = (pInfo->factory)(iface, ret);
-				if (ptr)
-				{
-					/* This is our GameDLL. Unload the others. */
-					gamedll_list.erase(iter);
-					ClearGamedllList();
-					pInfo->pGameDLL = static_cast<IServerGameDLL *>(ptr);
-					g_GameDll = *pInfo;
-					delete pInfo;
-					break;
-				}
-			}
-			if (g_GameDll.loaded)
-			{
-				if (sizeTooBig)
-				{
-					Error("This mod version requires a SourceMM update (ServerGameDLL%03d)!\n", sizeTooBig);
-					if (ret)
-					{
-						*ret = IFACE_FAILED;
-					}
-					return NULL;
-				} else {
-					InitMainStates();
-				}
-			} else {
-				sizeTooBig = 0;
-				if (ret)
-					*ret = IFACE_FAILED;
-				return NULL;
-			}
-		} else {
-			/* wtf do we do... */
-			/* :TODO: .. something a bit more intelligent? */
-			Error("Engine requested unknown interface before GameDLL was known!\n");
-			return NULL;
-		}
-	}
-
-	/* We use this interface for responding to the meta client command */
-	if (strncmp(iface, "ServerGameClients", 17) == 0)
-	{
-		void *ptr = (g_GameDll.factory)(iface, ret);
-		g_GameDll.pGameClients = static_cast<IServerGameClients *>(ptr);
-
-		return ptr;
-	}
-
-	/* If we got here, there's definitely a GameDLL */
-	IFACE_MACRO(g_GameDll.factory, GameDLL);
-}
-
-void ClearGamedllList()
-{
-	SourceHook::List<GameDllInfo *>::iterator iter;
-
-	GameDllInfo *pInfo;
-	for (iter=gamedll_list.begin(); iter!=gamedll_list.end(); iter++)
-	{
-		pInfo = (*iter);
-		dlclose(pInfo->lib);
-		delete pInfo;
-	}
-
-	gamedll_list.clear();
 }
 
 void UnloadMetamod(bool shutting_down)
@@ -617,12 +314,6 @@ void UnloadMetamod(bool shutting_down)
 	g_CvarPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
-
-	if (g_GameDll.lib && g_GameDll.loaded)
-	{
-		dlclose(g_GameDll.lib);
-	}
-	memset(&g_GameDll, 0, sizeof(GameDllInfo));
 }
 
 void DLLShutdown_handler()
@@ -943,31 +634,6 @@ int LoadPluginsFromFile(const char *_file)
 	}
 
 	return total;
-}
-
-
-/* Wrapper function.  This is called when the GameDLL thinks it's using
- * the engine's real engineFactory.
- */
-void *EngineFactory(const char *iface, int *ret)
-{
-	IFACE_MACRO(g_Engine.engineFactory, Engine);
-}
-
-/* Wrapper function.  This is called when the GameDLL thinks it's using
- * the engine's real physicsFactory.
- */
-void *PhysicsFactory(const char *iface, int *ret)
-{
-	IFACE_MACRO(g_Engine.physicsFactory, Physics);
-}
-
-/* Wrapper function.  This is called when the GameDLL thinks it's using
- * the engine's real fileSystemFactory.
- */
-void *FileSystemFactory(const char *iface, int *ret)
-{
-	IFACE_MACRO(g_Engine.fileSystemFactory, FileSystem);
 }
 
 void LogMessage(const char *msg, ...)
