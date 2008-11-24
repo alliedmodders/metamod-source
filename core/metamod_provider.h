@@ -41,8 +41,6 @@ namespace SourceMM
 	{
 		ProvidedHook_LevelInit = 0,			/**< IServerGameDLL::LevelInit */
 		ProvidedHook_LevelShutdown = 1,		/**< IServerGameDLL::LevelShutdown */
-		ProvidedHook_DLLInit = 2,			/**< IServerGameDLL::DLLInit */
-		ProvidedHook_DLLShutdown = 3,		/**< IServerGameDLL::DLLShutdown */
 		ProvidedHook_GameInit = 4,			/**< IServerGameDLL::GameInit */
 	};
 

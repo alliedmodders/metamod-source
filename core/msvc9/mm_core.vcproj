@@ -414,6 +414,10 @@
 					RelativePath="..\vsp_bridge.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\gamedll_bridge.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Header Files"

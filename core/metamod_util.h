@@ -46,11 +46,6 @@
 const char *UTIL_GetExtension(const char *file);
 
 /**
- * @brief Removes C-style comments from string.
- */
-void UTIL_TrimComments(char *buffer);
-
-/**
  * @brief Removes whitespace characters from left side of string.
  */
 void UTIL_TrimLeft(char *buffer);
@@ -59,11 +54,6 @@ void UTIL_TrimLeft(char *buffer);
  * @brief Removes whitespace characters from right side of string.
  */
 void UTIL_TrimRight(char *buffer);
-
-/**
- * @brief Breaks a string at the first space until it reaches a non-space.
- */
-void UTIL_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t len2);
 
 /**
  * @brief Compares two file paths.

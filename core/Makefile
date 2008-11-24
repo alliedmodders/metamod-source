@@ -19,7 +19,8 @@ OBJECTS = metamod.cpp 				\
 		  provider/console.cpp 		\
 		  provider/provider_ep2.cpp \
 		  provider/vsp_listener.cpp	\
-		  vsp_bridge.cpp
+		  vsp_bridge.cpp			\
+		  gamedll_bridge.cpp
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###

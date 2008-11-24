@@ -98,7 +98,7 @@ public:
 	const char *GetPluginsFile();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks);
-	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version);
+	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
 };
 
 bool

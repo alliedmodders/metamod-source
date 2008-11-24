@@ -47,7 +47,7 @@ public:
 			gamedll_iface[15] = '0' + i;
 			if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface, NULL)) != NULL)
 			{
-				g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, i);
+				g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, i, false);
 				break;
 			}
 		}

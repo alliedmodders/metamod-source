@@ -258,14 +258,6 @@ bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInf
 	{
 		SourceHook::GetFuncInfo(&IServerGameDLL::GameInit, mfi);
 	}
-	else if (hook == ProvidedHook_DLLShutdown)
-	{
-		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfi);
-	}
-	else if (hook == ProvidedHook_DLLInit)
-	{
-		SourceHook::GetFuncInfo(&IServerGameDLL::DLLInit, mfi);
-	}
 
 	*pInfo = mfi;
 
