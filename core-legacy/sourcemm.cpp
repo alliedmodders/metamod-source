@@ -32,13 +32,11 @@ using namespace SourceMM;
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
 
-SH_DECL_HOOK0_void(IServerGameDLL, DLLShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char *, const char *, const char *, const char *, bool, bool);
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, false, bool);
 
-void DLLShutdown_handler();
 void LevelShutdown_handler();
 bool LevelInit_handler(char const *pMapName,
 					   char const *pMapEntities,
@@ -101,7 +99,6 @@ void InitMainStates()
 	abspath(smm_path, game_dir);
 	g_ModPath.assign(smm_path);
 
-	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, DLLShutdown, g_GameDll.pGameDLL, DLLShutdown_handler, false);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelShutdown, g_GameDll.pGameDLL, LevelShutdown_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, LevelInit, g_GameDll.pGameDLL, LevelInit_handler, true);
 	SH_ADD_HOOK_STATICFUNC(IServerGameDLL, GameInit, g_GameDll.pGameDLL, GameInit_handler, false);
@@ -304,8 +301,6 @@ void UnloadMetamod(bool shutting_down)
 		/* Add the FCVAR_GAMEDLL flag to our cvars so the engine removes them properly */
 		g_SMConVarAccessor.MarkCommandsAsGameDLL();
 		g_Engine.icvar->UnlinkVariables(FCVAR_GAMEDLL);
-
-		SH_CALL(g_GameDllPatch, &IServerGameDLL::DLLShutdown)();
 	}
 
 	SH_RELEASE_CALLCLASS(g_GameDllPatch);
@@ -314,12 +309,6 @@ void UnloadMetamod(bool shutting_down)
 	g_CvarPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
-}
-
-void DLLShutdown_handler()
-{
-	UnloadMetamod(true);
-	RETURN_META(MRES_SUPERCEDE);
 }
 
 void LoadFromVDF(const char *file)

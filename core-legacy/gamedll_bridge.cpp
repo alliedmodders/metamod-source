@@ -34,8 +34,17 @@ public:
 		LoadAsGameDLL(info);
 		return true;
 	}
-	virtual void DLLInit_Post()
+	virtual void DLLInit_Post(int *isgdUnload)
 	{
+		SourceHook::MemFuncInfo mfi;
+
+		mfi.isVirtual = false;
+		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfi);
+		assert(mfi.isVirtual);
+		assert(mfi.vtbloffs == 0);
+		assert(mfi.thisptroffs == 0);
+		*isgdUnload = mfi.vtblindex;
+
 		g_PluginMngr.SetAllLoaded();
 	}
 	virtual void *QueryInterface(const char *iface, int *ret)
@@ -53,6 +62,7 @@ public:
 	}
 	virtual void Unload()
 	{
+		UnloadMetamod(true);
 	}
 };
 

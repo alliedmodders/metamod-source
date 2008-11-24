@@ -35,7 +35,7 @@ class IGameDllBridge
 {
 public:
 	virtual bool DLLInit_Pre(const gamedll_bridge_info *info, char *buffer, size_t maxlength) = 0;
-	virtual void DLLInit_Post() = 0;
+	virtual void DLLInit_Post(int *isgdUnload) = 0;
 	virtual void *QueryInterface(const char *name, int *ret) = 0;
 	virtual void Unload() = 0;
 };

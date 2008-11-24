@@ -25,6 +25,7 @@ static void *gamedll_lib = NULL;
 static IServerGameDLL *gamedll_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
+static int isgd_shutdown_index = -1;
 
 #if defined _WIN32
 #define TIER0_NAME			"bin\\tier0.dll"
@@ -213,7 +214,11 @@ mm_FreeCachedLibraries()
 static void
 mm_PatchDllInit(bool patch);
 
-static void *isgd_orig_call = NULL;
+static void
+mm_PatchDllShutdown();
+
+static void *isgd_orig_init = NULL;
+static void *isgd_orig_shutdown = NULL;
 
 class VEmptyClass
 {
@@ -286,7 +291,7 @@ public:
 #if defined _WIN32
 				void *addr;
 			} u;
-			u.addr = isgd_orig_call;
+			u.addr = isgd_orig_init;
 #else
 				struct
 				{
@@ -294,7 +299,7 @@ public:
 					intptr_t adjustor;
 				} s;
 			} u;
-			u.s.addr = isgd_orig_call;
+			u.s.addr = isgd_orig_init;
 			u.s.adjustor = 0;
 #endif
 			result = (((VEmptyClass *)gamedll_iface)->*u.mfpnew)(engineFactory,
@@ -316,12 +321,46 @@ public:
 		}
 		else if (gamedll_bridge != NULL)
 		{
-			gamedll_bridge->DLLInit_Post();
+			gamedll_bridge->DLLInit_Post(&isgd_shutdown_index);
+			assert(isgd_shutdown_index != -1);
+			mm_PatchDllShutdown();
 		}
 
 		mm_PatchDllInit(false);
 
 		return result;
+	}
+
+	virtual void DLLShutdown()
+	{
+		gamedll_bridge->Unload();
+		gamedll_bridge = NULL;
+		mm_UnloadMetamodLibrary();
+
+		/* Call original function */
+		{
+			union
+			{
+				void (VEmptyClass::*mfpnew)();
+#if defined _WIN32
+				void *addr;
+			} u;
+			u.addr = isgd_orig_shutdown;
+#else
+				struct
+				{
+					void *addr;
+					intptr_t adjustor;
+				} s;
+			} u;
+			u.s.addr = isgd_orig_shutdown;
+			u.s.adjustor = 0;
+#endif
+			(((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
+		}
+
+		mm_UnloadLibrary(gamedll_lib);
+		gamedll_lib = NULL;
 	}
 };
 
@@ -349,16 +388,36 @@ mm_PatchDllInit(bool patch)
 
 	if (patch)
 	{
-		assert(isgd_orig_call == NULL);
-		isgd_orig_call = vtable_dest[mfp.vtblindex];
+		assert(isgd_orig_init == NULL);
+		isgd_orig_init = vtable_dest[mfp.vtblindex];
 		vtable_dest[mfp.vtblindex] = vtable_src[mfp.vtblindex];
 	}
 	else
 	{
-		assert(isgd_orig_call != NULL);
-		vtable_dest[mfp.vtblindex] = isgd_orig_call;
-		isgd_orig_call = NULL;
+		assert(isgd_orig_init != NULL);
+		vtable_dest[mfp.vtblindex] = isgd_orig_init;
+		isgd_orig_init = NULL;
 	}
+}
+
+static void
+mm_PatchDllShutdown()
+{
+	void **vtable_src;
+	void **vtable_dest;
+	SourceHook::MemFuncInfo mfp;
+
+	mfp.isVirtual = false;
+	SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfp);
+	assert(mfp.isVirtual);
+	assert(mfp.thisptroffs == 0);
+	assert(mfp.vtbloffs == 0);
+
+	vtable_src = (void **)*(void **)&isgd_thunk;
+	vtable_dest = (void **)*(void **)gamedll_iface;
+
+	isgd_orig_shutdown = vtable_dest[isgd_shutdown_index];
+	vtable_dest[isgd_shutdown_index] = vtable_src[mfp.vtblindex];
 }
 
 static void
