@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\gamedll_bridge.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\vsp_listener.cpp"
 				>
 			</File>
