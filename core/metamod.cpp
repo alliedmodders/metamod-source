@@ -493,11 +493,11 @@ mm_StartupMetamod(bool is_vsp_load)
 	UTIL_Format(buffer,
 		sizeof(buffer),
 		"%s%s",
-		SVN_FULL_VERSION,
+		MMS_FULL_VERSION,
 		is_vsp_load ? "V" : "");
 
 	metamod_version = provider->CreateConVar("metamod_version", 
-		SVN_FULL_VERSION, 
+		MMS_FULL_VERSION, 
 		"Metamod:Source Version",
 		ConVarFlag_Notify|ConVarFlag_SpOnly);
 
