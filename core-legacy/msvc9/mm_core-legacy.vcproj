@@ -57,6 +57,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="BINARY_NAME=\&quot;$(TargetFileName)\&quot;"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -142,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="BINARY_NAME=\&quot;$(TargetFileName)\&quot;"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -205,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\gamedll_bridge.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\oslink.cpp"
 				>
 			</File>
@@ -218,10 +224,6 @@
 			</File>
 			<File
 				RelativePath="..\vsp_bridge.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\gamedll_bridge.cpp"
 				>
 			</File>
 			<File
