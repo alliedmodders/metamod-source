@@ -13,3 +13,7 @@ folder = core-legacy
 in = version.tpl
 out = version.h
 
+[loader]
+folder = loader
+in = version.tpl
+out = version.h
