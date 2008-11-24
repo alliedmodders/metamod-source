@@ -227,8 +227,6 @@ CreateInterface(const char *iface, int *ret)
 
 		if (ptr == NULL)
 			vsp_version = 0;
-
-		return ptr;
 	}
 
 	if (ret)

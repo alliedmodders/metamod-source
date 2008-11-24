@@ -115,23 +115,6 @@ void VSPListener::ServerActivate(edict_t *pEdictList, int edictCount, int client
 
 void VSPListener::Unload()
 {
-	#if 0
-	if (g_bIsTryingToUnload)
-	{
-		Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
-		return;
-	}
-	if (IsRootLoadMethod())
-	{
-		if (g_plugin_unload != NULL)
-		{
-			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
-			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
-			g_plugin_unload = NULL;
-		}
-		UnloadMetamod();
-	}
-	#endif
 	m_bLoaded = false;
 	m_bLoadable = true;
 }
