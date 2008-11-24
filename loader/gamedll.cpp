@@ -434,9 +434,8 @@ mm_PrepForGameLoad()
 void *
 mm_GameDllRequest(const char *name, int *ret)
 {
-	if (gamedll_lib != NULL && gamedll_bridge == NULL)
+	if (gamedll_lib != NULL)
 	{
-		mm_LogFatal("Requested unknown interface before game load: %s", name);
 		return gamedll_qvi(name, ret);
 	}
 
