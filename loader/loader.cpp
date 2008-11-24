@@ -96,7 +96,7 @@ mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 			  "metamod.%s" LIBRARY_MINEXT,
 			  backend_names[backend]);
 
-	mm_library = mm_LoadLibrary(mm_path, buffer, maxlength);
+	mm_library = (HMODULE)mm_LoadLibrary(mm_path, buffer, maxlength);
 
 	return (mm_library != NULL);
 }
