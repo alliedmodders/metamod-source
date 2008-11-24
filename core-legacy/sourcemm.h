@@ -42,18 +42,10 @@
 #define	MIN_GAMEDLL_VERSION	3
 #define	MAX_GAMEDLL_VERSION	8
 
-/**
- * @brief Entry point for HL2 Engine
- */
-SMM_API void *CreateInterface(const char *name, int *code);
 
-/** @brief Wrapper to catch GameDLL calls */
+void *ServerFactory(const char *name, int *code);
 void *EngineFactory(const char *name, int *code);
-
-/** @brief Wrapper to catch GameDLL calls */
 void *PhysicsFactory(const char *name, int *code);
-
-/** @brief Wrapper to catch GameDLL calls */
 void *FileSystemFactory(const char *name, int *code);
 
 /** @brief Loads all plugins found in a file */

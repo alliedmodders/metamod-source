@@ -73,7 +73,7 @@ CreateInterfaceFn CSmmAPI::fileSystemFactory(bool syn)
 CreateInterfaceFn CSmmAPI::serverFactory(bool syn)
 {
 	if (syn)
-		return CreateInterface;
+		return ServerFactory;
 	return g_GameDll.factory;
 }
 

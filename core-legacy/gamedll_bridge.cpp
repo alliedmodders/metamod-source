@@ -74,6 +74,11 @@ GetGameDllBridge()
 	return &mm14_gamedll_bridge;
 }
 
+void *ServerFactory(const char *name, int *code)
+{
+	return mm14_gamedll_bridge.QueryInterface(name, code);
+}
+
 /* Wrapper function.  This is called when the GameDLL thinks it's using
  * the engine's real engineFactory.
  */
