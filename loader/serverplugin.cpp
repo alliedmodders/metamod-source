@@ -42,13 +42,14 @@ public:
 	}
 };
 
+IVspBridge *vsp_bridge = NULL;
+
 /**
  * The vtable must match the general layout for ISPC.  We modify the vtable
  * based on what we get back.
  */
 class ServerPlugin
 {
-	IVspBridge* bridge;
 	unsigned int vsp_version;
 	bool load_allowed;
 public:
@@ -58,39 +59,16 @@ public:
 	}
 	virtual bool Load(QueryValveInterface engineFactory, QueryValveInterface gsFactory)
 	{
-		MetamodBackend backend = MMBackend_UNKNOWN;
-
 		if (!load_allowed)
 			return false;
 
 		load_allowed = false;
 
-		/* Check for L4D */
-		if (engineFactory("VEngineServer022", NULL) != NULL &&
-			engineFactory("VEngineCvar007", NULL) != NULL)
-		{
-			backend = MMBackend_Left4Dead;
-		}
-		else if (engineFactory("VEngineServer021", NULL) != NULL)
-		{
-			/* Check for OB */
-			if (engineFactory("VEngineCvar004", NULL) != NULL &&
-				engineFactory("VModelInfoServer002", NULL) != NULL)
-			{
-				backend = MMBackend_Episode2;
-			}
-			/* Check for EP1 */
-			else if (engineFactory("VModelInfoServer001", NULL) != NULL &&
-					 (engineFactory("VEngineCvar003", NULL) != NULL ||
-					  engineFactory("VEngineCvar002", NULL) != NULL))
-			{
-				backend = MMBackend_Episode1;
-			}
-		}
+		MetamodBackend backend = mm_DetermineBackend(engineFactory);
 
 		if (backend == MMBackend_UNKNOWN)
 		{
-			mm_LogFatal("Could not detect engine version, spewing stats:");
+			mm_LogFatal("Could not detect engine version");
 			return false;
 		}
 		else if (backend >= MMBackend_Episode2)
@@ -134,11 +112,11 @@ public:
 		if (get_bridge == NULL)
 		{
 			mm_UnloadMetamodLibrary();
-			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback.", backend);
+			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback", backend);
 			return false;
 		}
 
-		bridge = get_bridge();
+		vsp_bridge = get_bridge();
 
 		vsp_bridge_info info;
 
@@ -148,8 +126,9 @@ public:
 		info.vsp_version = vsp_version;
 
 		strcpy(error, "Unknown error");
-		if (!bridge->Load(&info, error, sizeof(error)))
+		if (!vsp_bridge->Load(&info, error, sizeof(error)))
 		{
+			vsp_bridge = NULL;
 			mm_UnloadMetamodLibrary();
 			mm_LogFatal("Unknown error loading Metamod for engine %d: %s", backend, error);	
 			return false;
@@ -159,9 +138,9 @@ public:
 	}
 	virtual void Unload()
 	{
-		if (bridge == NULL)
+		if (vsp_bridge == NULL)
 			return;
-		bridge->Unload();
+		vsp_bridge->Unload();
 		mm_UnloadMetamodLibrary();
 	}
 	virtual void Pause()
@@ -172,9 +151,9 @@ public:
 	}
 	virtual const char *GetPluginDescription()
 	{
-		if (bridge == NULL)
+		if (vsp_bridge == NULL)
 			return "Metamod:Source Loader Shim";
-		return bridge->GetDescription();
+		return vsp_bridge->GetDescription();
 	}
 	virtual void LevelInit(char const *pMapName)
 	{
@@ -232,17 +211,13 @@ public:
 		vsp_version = version;
 		load_allowed = true;
 	}
-	bool IsLoaded()
-	{
-		return bridge != NULL;
-	}
 };
 
 ServerPlugin mm_vsp_callbacks;
 
 void *mm_GetVspCallbacks(unsigned int version)
 {
-	if (mm_vsp_callbacks.IsLoaded())
+	if (vsp_bridge != NULL)
 		return NULL;
 
 	/* Only support versions 1 or 2 right now */

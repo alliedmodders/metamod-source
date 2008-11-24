@@ -1,10 +1,13 @@
 #include <time.h>
-#include <stdio.h>
+#include <assert.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "loader.h"
 #include "serverplugin.h"
+#include "gamedll.h"
+#include "utility.h"
 
 static HMODULE mm_library = NULL;
 static char mm_fatal_logfile[PLATFORM_MAX_PATH] = "metamod-fatal.log";
@@ -34,56 +37,6 @@ mm_LogFatal(const char *message, ...)
 	fclose(fp);	
 }
 
-static size_t
-mm_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list params)
-{
-	size_t len = vsnprintf(buffer, maxlength, fmt, params);
-
-	if (len >= maxlength)
-	{
-		len = maxlength - 1;
-		buffer[len] = '\0';
-	}
-
-	return len;
-}
-
-static size_t
-mm_Format(char *buffer, size_t maxlength, const char *fmt, ...)
-{
-	size_t len;
-	va_list ap;
-
-	va_start(ap, fmt);
-	len = mm_FormatArgs(buffer, maxlength, fmt, ap);
-	va_end(ap);
-
-	return len;
-}
-
-static bool
-mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
-{
-#if defined _WIN32
-	MEMORY_BASIC_INFORMATION mem;
-	if (!VirtualQuery(pAddr, &mem, sizeof(mem)))
-		return false;
-	if (mem.AllocationBase == NULL)
-		return false;
-	HMODULE dll = (HMODULE)mem.AllocationBase;
-	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
-#else
-	Dl_info info;
-	if (!dladdr(pAddr, &info))
-		return false;
-	if (!info.dli_fbase || !info.dli_fname)
-		return false;
-	const char *dllpath = info.dli_fname;
-	snprintf(buffer, maxlength, "%s", dllpath);
-#endif
-	return true;
-}
-
 static const char *backend_names[3] =
 {
 	"1.ep1",
@@ -100,7 +53,7 @@ static const char *backend_names[3] =
 #endif
 
 #if defined _WIN32
-static void
+void
 mm_GetPlatformError(char *buffer, size_t maxlength)
 {
 	DWORD dw = GetLastError();
@@ -143,35 +96,16 @@ mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 			  "metamod.%s" LIBRARY_MINEXT,
 			  backend_names[backend]);
 
-#if defined _WIN32
-	mm_library = LoadLibrary(mm_path);
+	mm_library = mm_LoadLibrary(mm_path, buffer, maxlength);
 
-	if (mm_library == NULL)
-	{
-		mm_GetPlatformError(buffer, maxlength);
-		return false;
-	}
-#elif defined __linux__
-	mm_library = dlopen(mm_path, RTLD_NOW);
-
-	if (mm_library == NULL)
-	{
-		mm_Format(buffer, maxlength, "%s", dlerror());
-		return false;
-	}
-#endif
-
-	return true;
+	return (mm_library != NULL);
 }
 
 void
 mm_UnloadMetamodLibrary()
 {
-#if defined _WIN32
-	FreeLibrary(mm_library);
-#else
-	dlclose(mm_library);
-#endif
+	mm_UnloadLibrary(mm_library);
+	mm_library = NULL;
 }
 
 #if defined _WIN32
@@ -187,35 +121,63 @@ mm_UnloadMetamodLibrary()
 EXPORT void *
 CreateInterface(const char *name, int *ret)
 {
-	if (mm_library != NULL)
+	/* If we've got a VSP bridge, do nothing. */
+	if (vsp_bridge != NULL)
 	{
 		if (ret != NULL)
 			*ret = 1;
 		return NULL;
 	}
 
+	/* If we've got a gamedll bridge, forward the request. */
+	if (gamedll_bridge != NULL)
+		return gamedll_bridge->QueryInterface(name, ret);
+
+	/* Otherwise, we're probably trying to load Metamod. */
 	void *ptr;
 	if (strncmp(name, "ISERVERPLUGINCALLBACKS", 22) == 0)
-	{
 		ptr = mm_GetVspCallbacks(atoi(&name[22]));
-		if (ret != NULL)
-			*ret = ptr != NULL ? 0 : 1;
-		return ptr;
-	}
+	else
+		ptr = mm_GameDllRequest(name, ret);
 
 	if (ret != NULL)
-		*ret = 1;
+		*ret = (ptr != NULL) ? 0 : 1;
 
-	return NULL;
+	return ptr;
 }
 
-extern void *
+void *
 mm_GetProcAddress(const char *name)
 {
-#if defined _WIN32
-	return GetProcAddress(mm_library, name);
-#elif defined __linux__
-	return dlsym(mm_library, name);
-#endif
+	return mm_GetLibAddress(mm_library, name);
+}
+
+MetamodBackend
+mm_DetermineBackend(QueryValveInterface engineFactory)
+{
+	/* Check for L4D */
+	if (engineFactory("VEngineServer022", NULL) != NULL &&
+		engineFactory("VEngineCvar007", NULL) != NULL)
+	{
+		return MMBackend_Left4Dead;
+	}
+	else if (engineFactory("VEngineServer021", NULL) != NULL)
+	{
+		/* Check for OB */
+		if (engineFactory("VEngineCvar004", NULL) != NULL &&
+			engineFactory("VModelInfoServer002", NULL) != NULL)
+		{
+			return MMBackend_Episode2;
+		}
+		/* Check for EP1 */
+		else if (engineFactory("VModelInfoServer001", NULL) != NULL &&
+				 (engineFactory("VEngineCvar003", NULL) != NULL ||
+				  engineFactory("VEngineCvar002", NULL) != NULL))
+		{
+			return MMBackend_Episode1;
+		}
+	}
+
+	return MMBackend_UNKNOWN;
 }
 

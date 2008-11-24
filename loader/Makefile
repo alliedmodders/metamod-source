@@ -8,7 +8,9 @@
 BINARY = server_i486.so
 
 OBJECTS = loader.cpp			\
-		  serverplugin.cpp
+		  utility.cpp			\
+		  serverplugin.cpp		\
+		  gamedll.cpp
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
