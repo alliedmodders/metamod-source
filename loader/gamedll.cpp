@@ -256,7 +256,10 @@ public:
 					mm_UnloadMetamodLibrary();
 					mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", backend);
 				}
-				gamedll_bridge = get_bridge();
+				else
+				{
+					gamedll_bridge = get_bridge();
+				}
 			}
 		}
 
