@@ -214,6 +214,35 @@ ServerFactory(const char *iface, int *ret)
 	IFACE_MACRO(gamedll_info.factory, GameDLL);
 }
 
+SMM_API void *
+CreateInterface(const char *iface, int *ret)
+{
+	void *ptr = NULL;
+
+	if (!mm_IsVspBridged() && strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
+	{
+		if (vsp_callbacks != NULL)
+		{
+			if (ret != NULL)
+				*ret = IFACE_FAILED;
+			return NULL;
+		}
+
+		vsp_version = atoi(&iface[22]);
+		ptr = provider->GetVSPCallbacks(vsp_version);
+
+		if (ptr == NULL)
+			vsp_version = 0;
+
+		return ptr;
+	}
+
+	if (ret)
+		*ret = (ptr != NULL) ? IFACE_OK : IFACE_FAILED;
+
+	return ptr;
+}
+
 int
 mm_LoadPluginsFromFile(const char *_file)
 {
@@ -500,7 +529,7 @@ mm_StartupMetamod(bool is_vsp_load)
 		"Metamod:Source Base Folder",
 		ConVarFlag_SpOnly);
 	
-	g_bIsVspBridged = true;
+	g_bIsVspBridged = is_vsp_load;
 
 	if (!is_vsp_load)
 	{
@@ -1042,6 +1071,7 @@ int MetamodSource::GetSourceEngineBuild()
 
 void MetamodSource::NotifyVSPListening(IServerPluginCallbacks *callbacks)
 {
+	vsp_callbacks = callbacks;
 	ITER_EVENT(OnVSPListening, (callbacks));
 }
 
