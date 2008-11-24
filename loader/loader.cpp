@@ -25,7 +25,7 @@ mm_LogFatal(const char *message, ...)
 		return;
 
 	t = time(NULL);
-	strftime(header, sizeof(header), "%d/%d/%Y - %H:%M:%S", localtime(&t));
+	strftime(header, sizeof(header), "%m/%d/%Y - %H:%M:%S", localtime(&t));
 	fprintf(fp, "L %s: ", header);
 	
 	va_start(ap, message);
