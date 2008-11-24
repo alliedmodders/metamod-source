@@ -182,6 +182,14 @@
 				RelativePath="..\serverplugin.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\gamedll.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\utility.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -197,7 +205,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\utility.h"
+				>
+			</File>
+			<File
+				RelativePath="..\gamedll.h"
+				>
+			</File>
+			<File
 				RelativePath="..\serverplugin.h"
+				>
+			</File>
+			<File
+				RelativePath="..\valve_commandline.h"
 				>
 			</File>
 		</Filter>
