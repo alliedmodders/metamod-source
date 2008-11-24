@@ -166,6 +166,15 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("  DLL Path: %s\n", bin_path);
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_GameDllVersion);
 
+			if (g_Engine.original)
+			{
+				CONMSG("  Engine: Original (pre-Episode 1)\n");
+			}
+			else
+			{
+				CONMSG("  Engine: Episode 1 (2004)\n");
+			}
+
 			// Display user messages
 			if (g_SmmAPI.MsgCacheSuccessful())
 			{
