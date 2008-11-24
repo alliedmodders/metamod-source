@@ -126,6 +126,39 @@ void DoInitialPluginLoads()
 	LookForVDFs(full_path);
 }
 
+SMM_API void *
+CreateInterface(const char *iface, int *ret)
+{
+	void *ptr = NULL;
+
+	if (!g_bIsBridgedAsVsp && strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
+	{
+		if (g_VspListener.IsLoaded())
+		{
+			if (ret != NULL)
+				*ret = IFACE_FAILED;
+			return NULL;
+		}
+
+		assert(&g_VspListener == g_pRealVspCallbacks);
+
+		int vsp_version = atoi(&iface[22]);
+		if (vsp_version < 1 || vsp_version > 2)
+		{
+			if (ret != NULL)
+				*ret = IFACE_FAILED;
+			return NULL;
+		}
+
+		return g_pRealVspCallbacks;
+	}
+
+	if (ret)
+		*ret = (ptr != NULL) ? IFACE_OK : IFACE_FAILED;
+
+	return ptr;
+}
+
 bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 {
 	g_Engine.engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
