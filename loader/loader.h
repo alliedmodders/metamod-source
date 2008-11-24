@@ -7,6 +7,7 @@
 #if defined WIN32
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
+#include <direct.h>
 #define PLATFORM_MAX_PATH	MAX_PATH
 #define SH_COMP				SH_COMP_MSVC
 #define	PATH_SEP_STR		"\\"
