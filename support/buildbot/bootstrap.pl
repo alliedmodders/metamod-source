@@ -20,5 +20,5 @@ if ($^O eq "linux")
 	Build::Command("flip -u support/versionchanger.pl");
 	Build::Command("chmod +x support/versionchanger.pl");
 }
-#Build::Command(Build::PathFormat('support/versionchanger.pl') . ' --buildstring="-dev"');
+Build::Command(Build::PathFormat('support/versionchanger.pl') . ' --buildstring="-dev"');
 
