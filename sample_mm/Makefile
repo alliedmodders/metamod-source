@@ -8,8 +8,7 @@
 HL2SDK_ORIG = ../../hl2sdk
 HL2SDK_OB = ../../hl2sdk-ob
 HL2SDK_L4D = ../../hl2sdk-l4d
-SOURCEMM14 = ../core-legacy
-SOURCEMM16 = ../core
+MMSOURCE17 = ../mmsource-1.7
 SRCDS_BASE = ~/srcds
 
 #####################################
@@ -34,7 +33,7 @@ ifeq "$(ENGINE)" "original"
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/linux_sdk
 	CFLAGS += -DSOURCE_ENGINE=2
-	METAMOD = $(SOURCEMM14)
+	METAMOD = $(MMSOURCE17)/core-legacy
 	INCLUDE += -I$(HL2SDK)/public/dlls
 	SRCDS = $(SRCDS_BASE)
 	override ENGSET = true
@@ -44,7 +43,7 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=3
-	METAMOD = $(SOURCEMM16)
+	METAMOD = $(MMSOURCE17)/core
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 	override ENGSET = true
@@ -54,7 +53,7 @@ ifeq "$(ENGINE)" "left4dead"
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=4
-	METAMOD = $(SOURCEMM16)
+	METAMOD = $(MMSOURCE17)/core
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/l4d
 	override ENGSET = true

@@ -1,10 +1,11 @@
-2008/??/?? 1.7.0:
- - Metamod:Source now uses a unified package that runs on all Source Engine
-   versions to date. (TODO: Need to expand upon this.)
- - Added support for Source Engine version that runs Left 4 Dead.
+2008/11/26 1.7.0:
+ - Metamod:Source now uses a unified package that will run on all supported 
+   Source engines.  This means you do not have to download a version based on
+   which Source engine or game you use.
+ - Added support for the Source Engine version that runs Left 4 Dead.
  - The 'meta refresh' command now handles plugins loaded from VDF files.
- - Fixed amb1952: Crash when first plugin listed in metaplugins.ini had an alias
-   and was not on the first line of the file.
+ - Fixed amb1952: Crash when the first plugin listed in metaplugins.ini had an 
+   alias and was not on the first line of the file.
 
 2008/07/26 1.6.2:
  - Fixed a bug where VDF files were opened by MM:S even if the .vdf extension
