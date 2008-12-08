@@ -102,7 +102,7 @@ all: check
 	$(MAKE) -f Makefile metamod
 
 check:
-	if [ "$(ENGSET)" == "false" ]; then \
+	if [ "$(ENGSET)" = "false" ]; then \
 		echo "You must supply ENGINE=left4dead or ENGINE=orangebox"; \
 		exit 1; \
 	fi
