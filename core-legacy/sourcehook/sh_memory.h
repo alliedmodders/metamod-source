@@ -16,12 +16,12 @@
 //  Unprotect now sets to readwrite
 //  The vtable doesn't need to be executable anyway
 
-# if	/********/ defined _WIN32
+# if SH_XP == SH_XP_WINAPI
 #		include <windows.h>
 #		define SH_MEM_READ 1
 #		define SH_MEM_WRITE 2
 #		define SH_MEM_EXEC 4
-# elif /******/ defined __linux__
+# elif SH_XP == SH_XP_POSIX
 #		include <sys/mman.h>
 #		include <stdio.h>
 #		include <signal.h>
@@ -48,7 +48,7 @@ namespace SourceHook
 {
 	inline bool SetMemAccess(void *addr, size_t len, int access)
 	{
-# ifdef __linux__
+# if SH_XP == SH_XP_POSIX
 		return mprotect(SH_LALIGN(addr), len + SH_LALDIF(addr), access)==0 ? true : false;
 # else
 		DWORD tmp;
@@ -69,17 +69,25 @@ namespace SourceHook
 # endif
 	}
 
-#ifdef __linux__
+#if SH_XP == SH_XP_POSIX
 	namespace
 	{
 		bool g_BadReadCalled;
 		jmp_buf g_BadReadJmpBuf;
 
+# if SH_SYS == SH_SYS_LINUX
 		static void BadReadHandler(int sig)
 		{
 			if (g_BadReadCalled)
 				longjmp(g_BadReadJmpBuf, 1);
 		}
+# elif SH_SYS == SH_SYS_APPLE
+		static void BadReadHandler(int signal, siginfo_t* my_siginfo, void* my_context)	
+		{
+			if (g_BadReadCalled)
+				longjmp(g_BadReadJmpBuf, 1);
+		}
+# endif
 	}
 #endif
 
@@ -93,7 +101,7 @@ namespace SourceHook
 	{
 		bool ModuleInMemory(char *addr, size_t len)
 		{
-#ifdef __linux__
+#if SH_SYS == SH_SYS_LINUX
 			// On linux, first check /proc/self/maps
 			long lower = reinterpret_cast<long>(addr);
 			long upper = lower + len;
@@ -175,7 +183,29 @@ namespace SourceHook
 			signal(SIGSEGV, prevHandler);
 
 			return false;
-#else
+#elif SH_SYS == SH_SYS_APPLE
+			struct sigaction sa, osa;
+			sa.sa_sigaction = BadReadHandler;
+			sa.sa_flags = SA_SIGINFO | SA_RESTART;
+
+			g_BadReadCalled = true;
+
+			if (setjmp(g_BadReadJmpBuf))
+				return false;
+
+			if (sigaction(SIGBUS, &sa, &osa) == -1)
+				return false;
+
+			volatile const char *p = reinterpret_cast<const char *>(addr);
+			char dummy;
+
+			for (size_t i = 0; i < len; i++)
+				dummy = p[i];
+
+			g_BadReadCalled = false;
+
+            return true;
+#elif SH_SYS == SH_SYS_WINAPI
 			// On Win32, simply use IsBadReadPtr
 			return !IsBadReadPtr(addr, len);
 #endif
