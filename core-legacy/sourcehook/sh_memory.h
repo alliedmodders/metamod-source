@@ -205,7 +205,7 @@ namespace SourceHook
 			g_BadReadCalled = false;
 
 			return true;
-#elif SH_SYS == SH_SYS_WINAPI
+#elif SH_XP == SH_XP_WINAPI
 			// On Win32, simply use IsBadReadPtr
 			return !IsBadReadPtr(addr, len);
 #endif
