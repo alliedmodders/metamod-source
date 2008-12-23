@@ -12,7 +12,7 @@
 #define _INCLUDE_SMM_LIST_H
 
 #include <new>
-#include <malloc.h>
+#include <stdlib.h>
 
 namespace SourceHook
 {
