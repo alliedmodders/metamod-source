@@ -1114,7 +1114,7 @@ ProcessVDF(const char *path, bool &skipped)
 {
 	PluginId id;
 	bool already;
-	char alias[24], file[255], error[255];
+	char alias[24], file[255], full_path[255], error[255];
 
 	if (!provider->ProcessVDF(path, file, sizeof(file), alias, sizeof(alias)))
 	{
@@ -1125,7 +1125,31 @@ ProcessVDF(const char *path, bool &skipped)
 	if (alias[0] != '\0')
 		g_PluginMngr.SetAlias(alias, file);
 
-	id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
+	/* Attempt to find a file extension */
+	if (UTIL_GetExtension(file) == NULL)
+	{
+		g_pMetamod->PathFormat(full_path, 
+			sizeof(full_path), 
+			"%s/%s%s", 
+			g_pMetamod->GetBaseDir(), 
+			file, 
+#if defined WIN32 || defined _WIN32
+			".dll"
+#else
+			"_i486.so"
+#endif
+			);
+	}
+	else
+	{
+		g_pMetamod->PathFormat(full_path,
+			sizeof(full_path),
+			"%s/%s", 
+			g_pMetamod->GetBaseDir(),
+			file);
+	}
+
+	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 	skipped = already;
 	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 	{
