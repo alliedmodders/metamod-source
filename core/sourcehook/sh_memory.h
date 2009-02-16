@@ -26,6 +26,7 @@
 #		include <stdio.h>
 #		include <signal.h>
 #		include <setjmp.h>
+#		include <stdint.h>
 // http://www.die.net/doc/linux/man/man2/mprotect.2.html
 #		include <limits.h>
 #		ifndef PAGESIZE
@@ -37,8 +38,8 @@
 
 // We need to align addr down to pagesize on linux
 // We assume PAGESIZE is a power of two
-#		define SH_LALIGN(x) (void*)((intptr_t)(x) & ~(PAGESIZE-1))
-#		define SH_LALDIF(x) ((intptr_t)(x) % PAGESIZE)
+#		define SH_LALIGN(x) (void*)((uintptr_t)(x) & ~(PAGESIZE-1))
+#		define SH_LALDIF(x) ((uintptr_t)(x) % PAGESIZE)
 # else
 #		error Unsupported OS/Compiler
 # endif
