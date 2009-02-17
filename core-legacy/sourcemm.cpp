@@ -303,8 +303,6 @@ bool AlternatelyLoadMetamod(CreateInterfaceFn ifaceFactory, CreateInterfaceFn se
 		return false;
 	}
 
-	g_PluginMngr.SetAllLoaded();
-
 	return true;
 }
 
@@ -317,7 +315,10 @@ bool GameInit_handler()
 		g_SmmAPI.LoadAsVSP();
 
 	if (g_bIsBridgedAsVsp)
+	{
 		DoInitialPluginLoads();
+		g_PluginMngr.SetAllLoaded();
+	}
 
 	g_bGameInit = true;
 

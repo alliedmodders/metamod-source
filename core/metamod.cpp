@@ -577,8 +577,8 @@ Handler_LevelShutdown(void)
 {
 	if (g_bIsVspBridged && !were_plugins_loaded)
 	{
-		g_PluginMngr.SetAllLoaded();
 		DoInitialPluginLoads();
+		g_PluginMngr.SetAllLoaded();
 		were_plugins_loaded = true;
 		in_first_level = true;
 	}
