@@ -47,15 +47,18 @@ sub Build
 {
 	my ($srcdir, $vcproj, $objdir, $binary, $suffix, $platform) = (@_);
 
-	if ($^O eq "linux" && $platform ne "windows")
+	if ($^O eq "linux")
 	{
-		if ($suffix eq 'full')
+		if ($platform ne "windows")
 		{
-			$binary .= '_i486.so';
-		}
-		else
-		{
-			$binary .= '.so';
+			if ($suffix eq 'full')
+			{
+				$binary .= '_i486.so';
+			}
+			else
+			{
+				$binary .= '.so';
+			}
 		}
 		BuildLinux($srcdir, $objdir, $binary);
 	}
