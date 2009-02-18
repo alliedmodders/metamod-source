@@ -51,19 +51,27 @@ sub Build
 	{
 		if ($platform ne "windows")
 		{
-			if ($suffix eq 'full')
-			{
-				$binary .= '_i486.so';
-			}
-			else
-			{
-				$binary .= '.so';
-			}
+			return;
 		}
+		
+		if ($suffix eq 'full')
+		{
+			$binary .= '_i486.so';
+		}
+		else
+		{
+			$binary .= '.so';
+		}
+			
 		BuildLinux($srcdir, $objdir, $binary);
 	}
-	elsif ($platform ne "linux")
+	else
 	{
+		if ($platform ne "linux")
+		{
+			return;
+		}
+		
 		$binary .= '.dll';
 		BuildWindows($srcdir, $vcproj, $objdir, $binary);
 	}
