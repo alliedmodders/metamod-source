@@ -64,6 +64,7 @@ enum MetamodBackend
 	MMBackend_Episode1 = 0,
 	MMBackend_Episode2,
 	MMBackend_Left4Dead,
+	MMBackend_DarkMessiah,
 	MMBackend_UNKNOWN
 };
 
@@ -79,8 +80,11 @@ mm_UnloadMetamodLibrary();
 extern void
 mm_LogFatal(const char *message, ...);
 
+extern const char *
+mm_GetGameName();
+
 extern MetamodBackend
-mm_DetermineBackend(QueryValveInterface qvi);
+mm_DetermineBackend(QueryValveInterface qvi, const char *game_name);
 
 #endif /* _INCLUDE_METAMOD_SOURCE_LOADER_H_ */
 

@@ -341,3 +341,19 @@ bool UTIL_Relatize(char buffer[],
 
 	return true;
 }
+
+bool UTIL_VerifySignature(const void *addr, const char *sig, size_t len)
+{
+	unsigned char *addr1 = (unsigned char *) addr;
+	unsigned char *addr2 = (unsigned char *) sig;
+
+	for (size_t i = 0; i < len; i++)
+	{
+		if (addr2[i] == '*')
+			continue;
+		if (addr1[i] != addr2[i])
+			return false;
+	}
+
+	return true;
+}

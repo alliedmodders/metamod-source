@@ -33,8 +33,8 @@
 #undef _DEBUG
 #endif
 #include <interface.h>
-#include <eiface.h>
 #include "convar.h"
+#include <eiface.h>
 #include <sh_list.h>
 #if defined DEBUG2
 #undef DEBUG2
@@ -47,6 +47,14 @@ public:
 	bool RegisterConCommandBase(ConCommandBase *pCommand);
 	bool Register(ConCommandBase *pCommand);
 	void Unregister(ConCommandBase *pCommand);
+	void RemoveMetamodCommands();
+#if SOURCE_ENGINE == SE_DARKMESSIAH
+	bool InitConCommandBaseList();
+private:
+	ConCommandBase **m_TopConCommandBase;
+#endif
+private:
+	SourceHook::List<ConCommandBase *> m_RegisteredCommands;
 };
 
 extern SMConVarAccessor g_SMConVarAccessor;

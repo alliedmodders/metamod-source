@@ -48,7 +48,11 @@ void VSPListener::ClientActive(edict_t *pEntity)
 {
 }
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 PLUGIN_RESULT VSPListener::ClientCommand(edict_t *pEntity, const CCommand &cmd)
+#else
+PLUGIN_RESULT VSPListener::ClientCommand(edict_t *pEntity)
+#endif
 {
 	return PLUGIN_CONTINUE;
 }
@@ -134,6 +138,7 @@ bool VSPListener::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gam
 	return true;
 }
 
+#if SOURCE_ENGINE != SE_DARKMESSIAH
 void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie,
 										   edict_t *pPlayerEntity,
 										   EQueryCvarValueStatus eStatus,
@@ -141,4 +146,5 @@ void VSPListener::OnQueryCvarValueFinished(QueryCvarCookie_t iCookie,
 										   const char *pCvarValue)
 {
 }
+#endif
 

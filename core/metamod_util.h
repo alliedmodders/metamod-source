@@ -85,5 +85,15 @@ bool UTIL_Relatize(char buffer[],
 				   const char *relTo,
 				   const char *relFrom);
 
+/**
+ * @brief Compares memory address against a signature.
+ *
+ * @param addr			Memory address to check.
+ * @param sig			Signature used to check against memory address. Accept 0x2A as wildcard.
+ * @param len			Length of signature.
+ * @return				True if signature was verified, false otherwise.
+ */
+bool UTIL_VerifySignature(const void *addr, const char *sig, size_t len);
+
 #endif //_INCLUDE_UTIL_H
 

@@ -22,10 +22,9 @@
 extern IVEngineServer *engine;
 extern CGlobalVars *gpGlobals;
 
-/**
- * For non-OrangeBox builds, we have to make wrappers.
- */
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if SOURCE_ENGINE == SE_EPISODEONE && defined METAMOD_PLAPI_VERSION
+#error "Metamod:Source 1.6 API is not supported on the old engine."
+#endif
 
 /**
  * MM:S 1.4.x needs older API calls.
@@ -35,12 +34,15 @@ extern CGlobalVars *gpGlobals;
 #define GetServerFactory serverFactory
 #define MM_Format snprintf
 #define	GetCGlobals	pGlobals
+#define ENGINE_CALL(func) SH_CALL(m_EngineCC, func)
 #else
-#error "Metamod:Source 1.6 is not supported on the old engine."
+#define ENGINE_CALL(func) SH_CALL(engine, func)
+#define MM_Format g_SMAPI->Format
 #endif
 
+#if SOURCE_ENGINE <= SE_DARKMESSIAH
 /**
- * Wrap the CCommand class so our code looks the same for both engines.
+ * Wrap the CCommand class so our code looks the same on all engines.
  */
 class CCommand
 {
@@ -60,14 +62,7 @@ public:
 	}
 };
 
-#define CVAR_INTERFACE_VERSION				VENGINE_CVAR_INTERFACE_VERSION
-#define ENGINE_CALL(func)					SH_CALL(m_EngineCC, func)
-
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
-
-#define ENGINE_CALL(func)					SH_CALL(engine, func)
-#define MM_Format							g_SMAPI->Format
-
+#define CVAR_INTERFACE_VERSION VENGINE_CVAR_INTERFACE_VERSION
 #endif
 
 /**

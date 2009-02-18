@@ -12,11 +12,12 @@ require 'helpers.pm';
 chdir('..');
 chdir('..');
 
-#	   Folder			.vcproj				Engine			Binary				Suffix type
-Build('loader', 		'mm_loader', 		'', 			'server', 			'full');
-Build('core-legacy',	'mm_core-legacy', 	'', 			'metamod.1.ep1', 	'');
-Build('core', 			'mm_core', 			'OrangeBox', 	'metamod.2.ep2', 	'');
-Build('core', 			'mm_core', 			'Left4Dead', 	'metamod.2.l4d', 	'');
+#	   Folder			.vcproj				Engine			Binary				Suffix type		Platform
+Build('loader', 		'mm_loader', 		'', 			'server', 			'full',			'both');
+Build('core-legacy',	'mm_core-legacy', 	'', 			'metamod.1.ep1', 	'',				'both');
+Build('core', 			'mm_core', 			'OrangeBox', 	'metamod.2.ep2', 	'',				'both');
+Build('core', 			'mm_core', 			'Left4Dead', 	'metamod.2.l4d', 	'',				'both');
+Build('core',			'mm_core',			'DarkMessiah',	'metamod.2.darkm',	'',				'windows');
 
 #Structure our output folder
 mkdir('OUTPUT');
@@ -44,9 +45,9 @@ sub Copy
 
 sub Build
 {
-	my ($srcdir, $vcproj, $objdir, $binary, $suffix) = (@_);
+	my ($srcdir, $vcproj, $objdir, $binary, $suffix, $platform) = (@_);
 
-	if ($^O eq "linux")
+	if ($^O eq "linux" && $platform ne "windows")
 	{
 		if ($suffix eq 'full')
 		{
@@ -58,7 +59,7 @@ sub Build
 		}
 		BuildLinux($srcdir, $objdir, $binary);
 	}
-	else
+	elsif ($platform ne "linux")
 	{
 		$binary .= '.dll';
 		BuildWindows($srcdir, $vcproj, $objdir, $binary);
@@ -81,6 +82,10 @@ sub BuildWindows
 	elsif ($build eq "Left4Dead")
 	{
 		$param = "Release - Left 4 Dead";
+	}
+	elsif ($build eq "DarkMessiah")
+	{
+		$param = "Release - Dark Messiah";
 	}
 
 	print "Clean building $srcdir...\n";

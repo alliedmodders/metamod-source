@@ -36,17 +36,14 @@
 #include <sh_memory.h>
 #include "utility.h"
 #include "gamedll.h"
-#include "valve_commandline.h"
-
-#undef GetCommandLine
 
 class IServerGameDLL;
-typedef ICommandLine *(*GetCommandLine)();
 
 #define MAX_GAMEDLL_PATHS	10
 
 IGameDllBridge* gamedll_bridge = NULL;
 static int game_info_detected = 0;
+static const char *game_name = NULL;
 static char gamedll_paths[MAX_GAMEDLL_PATHS][PLATFORM_MAX_PATH];
 static void *gamedll_libs[MAX_GAMEDLL_PATHS];
 static unsigned int gamedll_path_count = 0;
@@ -57,24 +54,15 @@ static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
 
 #if defined _WIN32
-#define TIER0_NAME			"bin\\tier0.dll"
-#define VSTDLIB_NAME		"bin\\vstdlib.dll"
 #define SERVER_NAME			"server.dll"
 #elif defined __linux__
-#define TIER0_NAME			"bin/tier0_i486.so"
-#define VSTDLIB_NAME		"bin/vstdlib_i486.so"
 #define SERVER_NAME			"server_i486.so"
 #endif
 
 static bool
 mm_DetectGameInformation()
 {
-	void *lib;
-	char error[255];
-	GetCommandLine valve_cmdline;
 	char mm_path[PLATFORM_MAX_PATH];
-	char lib_path[PLATFORM_MAX_PATH];
-	char game_name[PLATFORM_MAX_PATH];
 	char game_path[PLATFORM_MAX_PATH];
 
 	if (game_info_detected)
@@ -82,43 +70,8 @@ mm_DetectGameInformation()
 
 	game_info_detected = -1;
 
-	if (!mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path)))
+	if ((game_name = mm_GetGameName()) == NULL)
 	{
-		mm_LogFatal("Could not find path for: " TIER0_NAME);
-		return false;
-	}
-
-	if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
-	{
-		mm_LogFatal("Could not load %s: %s", lib_path, error);
-		return false;
-	}
-
-	valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine_Tier0");
-	if (valve_cmdline == NULL)
-	{
-		/* We probably have a Ship engine. */
-		mm_UnloadLibrary(lib);
-		if (!mm_ResolvePath(VSTDLIB_NAME, lib_path, sizeof(lib_path)))
-		{
-			mm_LogFatal("Could not find path for: " VSTDLIB_NAME);
-			return false;
-		}
-
-		if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
-		{
-			mm_LogFatal("Could not load %s: %s", lib_path, error);
-			return false;
-		}
-
-		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
-	}
-
-	mm_UnloadLibrary(lib);
-
-	if (valve_cmdline == NULL)
-	{
-		mm_LogFatal("Could not locate any command line functionality");
 		return false;
 	}
 
@@ -128,10 +81,6 @@ mm_DetectGameInformation()
 		return false;
 	}
 
-	mm_Format(game_name,
-			  sizeof(game_name),
-			  "%s",
-			  valve_cmdline()->ParmValue("-game", "hl2"));
 	if (!mm_ResolvePath(game_name, game_path, sizeof(game_path)))
 	{
 		mm_LogFatal("Could not resolve path: %s", game_name);
@@ -261,7 +210,7 @@ public:
 						 QueryValveInterface fileSystemFactory, 
 						 void *pGlobals)
 	{
-		MetamodBackend backend = mm_DetermineBackend(engineFactory);
+		MetamodBackend backend = mm_DetermineBackend(engineFactory, game_name);
 
 		char error[255];
 		if (backend == MMBackend_UNKNOWN)

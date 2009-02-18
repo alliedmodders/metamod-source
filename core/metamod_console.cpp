@@ -113,10 +113,12 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			}
 #endif
 
-#if SOURCE_ENGINE == SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+			CONMSG("  Engine: Left 4 Dead (2008)\n");
+#elif SOURCE_ENGINE == SE_ORANGEBOX
 			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
 #else
-			CONMSG("  Engine: Left 4 Dead (2008)\n");
+			CONMSG("  Engine: Dark Messiah (2006)\n");
 #endif
 
 			// Display user messages

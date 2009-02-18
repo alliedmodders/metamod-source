@@ -56,13 +56,23 @@ struct UsrMsgInfo
 	int size;
 	String name;
 };
+
 /* Imports */
+#if SOURCE_ENGINE == SE_DARKMESSIAH
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
+#endif
+
 /* Functions */
 bool CacheUserMessages();
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
+#else
+void ClientCommand(edict_t *pEdict);
+void LocalCommand_Meta();
+#endif
+
 void _ServerCommand();
 /* Variables */
 static bool usermsgs_extracted = false;
@@ -79,7 +89,11 @@ IServerGameClients *gameclients = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
+#else
+SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
+#endif
 
 bool AssumeUserMessages()
 {
@@ -99,7 +113,11 @@ bool AssumeUserMessages()
 
 void BaseProvider::ConsolePrint(const char *str)
 {
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 	ConMsg("%s", str);
+#else
+	Msg("%s", str);
+#endif
 }
 
 void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, 
@@ -111,13 +129,17 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		DisplayError("Could not find IVEngineServer! Metamod cannot load.");
 		return;
 	}
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 	icvar = (ICvar *)((engineFactory)(CVAR_INTERFACE_VERSION, NULL));
+#else
+	icvar = (ICvar *)((engineFactory)(VENGINE_CVAR_INTERFACE_VERSION, NULL));
+#endif
 	if (!icvar)
 	{
 		DisplayError("Could not find ICvar! Metamod cannot load.");
 		return;
 	}
-	g_pCVar = icvar;
+
 
 	if ((gameclients = (IServerGameClients *)(serverFactory("ServerGameClients003", NULL)))
 		== NULL)
@@ -132,13 +154,25 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		return;
 	}
 
-	RegisterConCommandBase(&meta_local_cmd);
-	conbases_unreg.push_back(&meta_local_cmd);
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+	g_pCVar = icvar;
+#endif
+
+	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 	if ((usermsgs_extracted = CacheUserMessages()) == false)
 	{
 		usermsgs_extracted = AssumeUserMessages();
 	}
+
+#if SOURCE_ENGINE == SE_DARKMESSIAH
+	if (!g_SMConVarAccessor.InitConCommandBaseList())
+	{
+		/* This is very unlikely considering it's old engine */
+		mm_LogMessage("[META] Warning: Failed to find ConCommandBase list!");
+		mm_LogMessage("[META] Warning: ConVars and ConCommands cannot be unregistered properly! Please file a bug report.");
+	}
+#endif
 
 	if (gameclients)
 	{
@@ -148,14 +182,14 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void BaseProvider::Notify_DLLShutdown_Pre()
 {
-	List<ConCommandBase *>::iterator iter;
+	g_SMConVarAccessor.RemoveMetamodCommands();
 
-	for (iter = conbases_unreg.begin();
-		 iter != conbases_unreg.end();
-		 iter++)
+#if SOURCE_ENGINE == SE_DARKMESSIAH
+	if (g_Metamod.IsLoadedAsGameDLL())
 	{
-		UnregisterConCommandBase((*iter));
+		icvar->UnlinkVariables(FCVAR_GAMEDLL);
 	}
+#endif
 }
 
 bool BaseProvider::IsRemotePrintingAvailable()
@@ -204,7 +238,7 @@ const char *BaseProvider::GetCommandLineValue(const char *key, const char *defva
 {
 	if (key[0] == '-' || key[0] == '+')
 	{
-		return CommandLine_Tier0()->ParmValue(key, defval);
+		return CommandLine()->ParmValue(key, defval);
 	}
 	else if (icvar)
 	{
@@ -354,8 +388,10 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 {
 #if SOURCE_ENGINE == SE_LEFT4DEAD
 	return SOURCE_ENGINE_LEFT4DEAD;
-#else
+#elif SOURCE_ENGINE == SE_ORANGEBOX
 	return SOURCE_ENGINE_ORANGEBOX;
+#else
+	return SOURCE_ENGINE_DARKMESSIAH;
 #endif
 }
 
@@ -376,8 +412,7 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 
 	ConVar *pVar = new ConVar(name, defval, newflags, help);
 
-	RegisterConCommandBase(pVar);
-	conbases_unreg.push_back(pVar);
+	g_SMConVarAccessor.RegisterConCommandBase(pVar);
 
 	return pVar;
 }
@@ -433,6 +468,7 @@ bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, ch
 	return true;
 }
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 class GlobCommand : public IMetamodSourceCommandInfo
 {
 public:
@@ -457,17 +493,48 @@ public:
 private:
 	const CCommand *m_cmd;
 };
+#else
+class GlobCommand : public IMetamodSourceCommandInfo
+{
+public:
+	unsigned int GetArgCount()
+	{
+		return engine->Cmd_Argc() - 1;
+	}
 
+	const char *GetArg(unsigned int num)
+	{
+		return engine->Cmd_Argv(num);
+	}
+
+	const char *GetArgString()
+	{
+		return engine->Cmd_Args();
+	}
+};
+#endif
+
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand &args)
 {
 	GlobCommand cmd(&args);
+#else
+void LocalCommand_Meta()
+{
+	GlobCommand cmd;
+#endif
 	Command_Meta(&cmd);
 }
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &_cmd)
 {
 	GlobCommand cmd(&_cmd);
-
+#else
+void ClientCommand(edict_t *pEdict)
+{
+	GlobCommand cmd;
+#endif
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
 		Command_ClientMeta(pEdict, &cmd);
@@ -475,26 +542,6 @@ void ClientCommand(edict_t *pEdict, const CCommand &_cmd)
 	}
 
 	RETURN_META(MRES_IGNORED);
-}
-
-bool vcmp(const void *_addr1, const void *_addr2, size_t len)
-{
-	unsigned char *addr1 = (unsigned char *)_addr1;
-	unsigned char *addr2 = (unsigned char *)_addr2;
-
-	for (size_t i=0; i<len; i++)
-	{
-		if (addr2[i] == '*')
-		{
-			continue;
-		}
-		if (addr1[i] != addr2[i])
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -510,7 +557,7 @@ bool vcmp(const void *_addr1, const void *_addr2, size_t len)
 	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
 	#define MSGCLASS_OFFS		2
 
-	/* Dystopia Wimdows hack */
+	/* Dystopia Windows hack */
 	#define MSGCLASS2_SIGLEN	16
 	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
 	#define MSGCLASS2_OFFS		11
@@ -539,9 +586,11 @@ struct UserMessage
 
 typedef CUtlDict<UserMessage *, int> UserMsgDict;
 
-/* This is the ugliest function in all of SourceMM */
+/* This is the ugliest function in all of MM:S */
 bool CacheUserMessages()
 {
+	UserMsgDict *dict = NULL;
+
 	/* Get address of original GetUserMessageInfo() */
 	char *vfunc = (char *)SH_GET_ORIG_VFNPTR_ENTRY(server, &IServerGameDLL::GetUserMessageInfo);
 
@@ -558,9 +607,7 @@ bool CacheUserMessages()
 		vfunc += *reinterpret_cast<int *>(vfunc + 1) + 5;
 	}
 
-	CUtlDict<UserMessage *, int> *dict = NULL;
-
-	if (vcmp(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
+	if (UTIL_VerifySignature(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
 	{
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
@@ -568,7 +615,7 @@ bool CacheUserMessages()
 		/* Get address of CUserMessages::m_UserMessages */
 		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
 	} 
-	else if (vcmp(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) 
+	else if (UTIL_VerifySignature(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) 
 	{
 	#ifdef OS_WIN32
 		/* If we get here, the code is possibly inlined like in Dystopia */
@@ -587,7 +634,7 @@ bool CacheUserMessages()
 	#endif
 	#ifdef OS_WIN32
 	} 
-	else if (vcmp(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) 
+	else if (UTIL_VerifySignature(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) 
 	{
 		/* Get address of CUserMessages instance */
 		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);

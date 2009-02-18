@@ -72,7 +72,7 @@ public:
 	const char *GetDate();
 	const char *GetLogTag();
 private:
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if !defined METAMOD_PLAPI_VERSION
 	SourceHook::CallClass<IVEngineServer> *m_EngineCC;
 #endif
 };
