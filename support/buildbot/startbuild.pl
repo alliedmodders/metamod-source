@@ -49,7 +49,7 @@ sub Build
 
 	if ($^O eq "linux")
 	{
-		if ($platform ne "windows")
+		if ($platform eq "windows")
 		{
 			return;
 		}
@@ -67,7 +67,7 @@ sub Build
 	}
 	else
 	{
-		if ($platform ne "linux")
+		if ($platform eq "linux")
 		{
 			return;
 		}
