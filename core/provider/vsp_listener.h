@@ -38,6 +38,8 @@
 #define _DEBUG
 #endif
 
+
+
 class VSPListener : public IServerPluginCallbacks
 {
 public:
@@ -58,9 +60,15 @@ public:
 	virtual void SetCommandClient(int index);
 	virtual void ClientSettingsChanged(edict_t *pEdict);
 	virtual PLUGIN_RESULT ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen);
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 	virtual PLUGIN_RESULT ClientCommand(edict_t *pEntity, const CCommand &cmd);
+#else
+	virtual PLUGIN_RESULT ClientCommand(edict_t *pEntity);
+#endif
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID);
+#if SOURCE_ENGINE != SE_DARKMESSIAH
 	virtual void OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue );
+#endif
 public:
 	bool IsLoaded();
 	void SetLoadable(bool loadable);

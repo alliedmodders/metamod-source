@@ -77,6 +77,7 @@ IVspBridge *vsp_bridge = NULL;
  */
 class ServerPlugin
 {
+	const char *game_name;
 	unsigned int vsp_version;
 	bool load_allowed;
 public:
@@ -91,14 +92,19 @@ public:
 
 		load_allowed = false;
 
-		MetamodBackend backend = mm_DetermineBackend(engineFactory);
+		if ((game_name = mm_GetGameName()) == NULL)
+		{
+			return false;
+		}
+
+		MetamodBackend backend = mm_DetermineBackend(engineFactory, game_name);
 
 		if (backend == MMBackend_UNKNOWN)
 		{
 			mm_LogFatal("Could not detect engine version");
 			return false;
 		}
-		else if (backend >= MMBackend_Episode2)
+		else if (backend == MMBackend_Episode2 || backend == MMBackend_Left4Dead)
 		{
 			/* We need to insert the right type of call into this vtable */
 			void **vtable_src;

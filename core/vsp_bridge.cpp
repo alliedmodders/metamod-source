@@ -34,17 +34,29 @@
 #include <loader_bridge.h>
 #include "provider/provider_ep2.h"
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
+#else
+SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
+#endif
 
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads(const CCommand &args)
+#else
+void InterceptPluginUnloads()
+#endif
 {
 	g_bIsTryingToUnload = true;
 }
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads_Post(const CCommand &args)
+#else
+void InterceptPluginUnloads_Post()
+#endif
 {
 	g_bIsTryingToUnload = false;
 }
@@ -69,7 +81,7 @@ public:
 		pGlobals = playerInfoManager->GetGlobalVars();
 
 		char gamedll_iface[] = "ServerGameDLL000";
-		for (unsigned int i = 5; i <= 50; i++)
+		for (unsigned int i = 3; i <= 50; i++)
 		{
 			gamedll_iface[15] = '0' + i;
 			if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface, NULL)) != NULL)
@@ -107,7 +119,20 @@ public:
 		g_Metamod.NotifyVSPListening(info->vsp_callbacks, info->vsp_version);
 		mm_StartupMetamod(true);
 		
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 		g_plugin_unload = icvar->FindCommand("plugin_unload");
+#else
+		const ConCommandBase *pBase = icvar->GetCommands();
+		while (pBase != NULL)
+		{
+			if (pBase->IsCommand() && strcmp(pBase->GetName(), "plugin_unload") == 0)
+			{
+				g_plugin_unload = (ConCommand *)pBase;
+				break;
+			}
+			pBase = pBase->GetNext();
+		}
+#endif
 
 		if (g_plugin_unload != NULL)
 		{

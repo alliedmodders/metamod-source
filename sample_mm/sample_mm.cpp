@@ -100,7 +100,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
 
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if !defined METAMOD_PLAPI_VERSION
 	m_EngineCC = SH_GET_CALLCLASS(engine);
 #endif
 
@@ -130,7 +130,7 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
 
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if !defined METAMOD_PLAPI_VERSION
 	SH_RELEASE_CALLCLASS(m_EngineCC);
 #endif
 
@@ -165,7 +165,7 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity, const CCommand &args)
 void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 #endif
 {
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if SOURCE_ENGINE <= SE_DARKMESSIAH
 	CCommand args;
 #endif
 

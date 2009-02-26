@@ -1,0 +1,571 @@
+<html dir="LTR">
+
+<head>
+  <title>'MMSProjectTemplate'</title>
+  <meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+  <link id="LINKURL" rel="stylesheet" href="../../1033/NewStyles.css">
+  <symbol name='WIZARD_DIALOG_TITLE' type="text" value='MMSProjectTemplate'></symbol>
+  <symbol name='PLUGIN_TEMPLATE_NAME' type="text" value='MMSProjectTemplate'></symbol>
+  <symbol name='APP_TYPE_SUMMARY' type="text" value='//TODO: Application summary'></symbol>
+  
+  <!--Function Hooks-->
+  
+	<SYMBOL NAME='IServerGameDLL_ServerActivate' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GameInit' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GameFrame' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GameShutdown' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_LevelInit' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_LevelShutdown' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GetAllServerClasses' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GetTickInterval' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameDLL_GetGameDescription' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientActive' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientConnect' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientDisconnect' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientCommand' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientPutInServer' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientSettingsChanged' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientSetupVisibility' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ClientEarPosition' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_PostClientMessagesSent' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_ProcessUsercmds' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_NetworkIDValidated' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_GetPlayerState' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_GetPlayerLimits' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_GetReplayDelay' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_GetBugReportInfo' TYPE=checkbox VALUE=false></SYMBOL>
+	<SYMBOL NAME='IServerGameClients_SetCommandClient' TYPE=checkbox VALUE=false></SYMBOL>
+	
+</head>
+
+<body bgcolor="BUTTONFACE" topmargin="0" leftmargin="0" rightmargin="0" bottommargin="0" onload="InitDocument(document);" onkeydown="OnKey();" onkeypress="OnPress();">
+  <table class="ONE" height="100%" width="100%" border="0" cellpadding="0" cellspacing="0">
+    <col width="100%">
+    
+    <!--OPEN OF INTRODUCTORY INFORMATION TABLE-->
+    
+    <tr valign="TOP">
+      <td height="50" width="100%" colspan="2">
+        <table class="TWO" border="0" cellpadding="0" cellspacing="0">
+          <col width="12">
+          <col>
+          <col width="12">
+          <tr>
+            <td valign="TOP" width="12" style="height: 4px">
+              &nbsp;
+            </td>
+            <td valign="TOP" style="height: 4px">
+              &nbsp;
+            </td>
+            <td valign="TOP" width="12" style="height: 4px">
+              &nbsp;
+            </td>
+            <td class="IMAGE" valign="BOTTOM" width="110" rowspan="2">
+              <div class="SMALLA" id="Layer0">
+                <img class="SMALLEST" src="../../Images/MMSProjectTemplate.gif" alt="" border="0" style="left: -7px; bottom: -4px; width: 39px; height: 42px;">
+              </div>
+            </td>
+            <td valign="TOP" height="12" width="6" rowspan="2">
+              &nbsp;
+            </td>
+          </tr>
+          <tr>
+            <td valign="TOP" width="12" style="height: 59px">
+              &nbsp;
+            </td>
+            <td valign="TOP" style="height: 59px">
+              <h4 class="HEAD" id="HEAD" style="left: 46px; width: 500px; top: 3px">
+                Metamod Source Plugin Project Wizard<span style="font-size: 7pt"><br />
+                  <br />
+                  This wizard will help you configure a C++ Metamod Source plugin project.</span></h4>
+              <p class="SUBHEAD" id="SUBHEAD">
+              </p>
+            </td>
+            <td valign="TOP" width="12" style="height: 59px">
+              &nbsp;
+            </td>
+          </tr>
+          <tr>
+            <td valign="TOP" class="RULE" colspan="5" height="2">
+              <table border="0" width="100%" height="1" cellpadding="0" cellspacing="0">
+                <tr valign="TOP">
+                  <td height="1" width="100%" bgcolor="BUTTONSHADOW">
+                    <img src="../../Images/spacer.gif" height="1" width="1" alt=""></td>
+                  <td height="1" width="1" bgcolor="WINDOW">
+                    <img src="../../Images/spacer.gif" height="1" width="1" alt=""></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    
+    <!--CLOSE OF INTRODUCTORY INFORMATION TABLE-->
+    <!--OPEN OF NAVIGATION, CONTENT, AND BUTTON TABLES-->
+    
+    <tr valign="TOP">
+      <td valign="TOP" style="height: 100%">
+      
+        <!--OPEN OF CONTENT AND BUTTON TABLE-->
+        
+        <table class="ONE" border="0" cellpadding="0" cellspacing="0">
+          <col width="100%">
+          <tr valign="TOP">
+            <td height="100%">
+            
+              <!--OPEN OF CONTENT-->
+              
+              <table class="CONTENT" border="0" cellpadding="0" cellspacing="0">
+                <col width="12">
+                <col width="185">
+                <col width="12">
+                <col width="185">
+                <col width="12">
+                <col width="185">
+                <col width="12">
+                <tr>
+                  <td valign="TOP" height="12" colspan="5">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr valign="TOP">
+                  <td valign="TOP" width="12">
+                    &nbsp;
+                  </td>
+                  <td valign="TOP" colspan="3" style="width: 1px;">
+                    <span class="itemTextTop">
+                      <table>
+                        <tr>
+                          <td style="width: 232px;" align="left" valign="top">
+                            <table>
+                              
+                              <!--Author /////////////////////////////////////////////////////////////////////////////-->
+                                    
+                              <tr>
+                                <td style="width: 280px">
+                                  Author:&nbsp; <em>This is the name of the author.<br />
+                                  </em>
+                                  <input id="PLUGIN_AUTHOR" style="width: 280px" type="text" value="metamodsource.net" /></td>
+                              </tr>
+                              
+                              <!--URL ////////////////////////////////////////////////////////////////////////////////-->
+                                    
+                              <tr>
+                                <td style="width: 280px">
+                                  URL:&nbsp; <em>This is the URL to the author's web site<br />
+                                  </em>
+                                  <input id="PLUGIN_URL" style="width: 280px" type="text" value="http://www.metamodsource.net/" /></td>
+                              </tr>
+                              
+                              <!--License ////////////////////////////////////////////////////////////////////////////-->
+                                   
+                              <tr>
+                                <td style="width: 280px">
+                                  License:&nbsp; <em>This is the plugin's license.<br />
+                                  </em>
+                                  <input id="PLUGIN_LICENSE" style="width: 280px" type="text" value='Copyright © 2008' /></td>
+                              </tr>
+                              
+                              <!--Plugin Name ////////////////////////////////////////////////////////////////////////-->
+                                
+                              <tr>
+                                <td style="width: 280px">
+                                  Plugin Name:&nbsp; <em>This is the name of the plugin.<br />
+                                  </em>
+                                  <input id="PLUGIN_NAME" style="width: 280px" type="text" value="MyMetamodPlugin" /></td>
+                              </tr>
+                              
+                              <!--Plugin Description /////////////////////////////////////////////////////////////////-->
+                                
+                              <tr>
+                                <td style="width: 280px">
+                                  Plugin Description:&nbsp; <em>This is the plugin's description.<br />
+                                    <input id="PLUGIN_DESC" style="width: 280px" type="text" value="My Metamod Plugin" /></em></td>
+                              </tr>
+                              
+                              <!--Plugin DLL /////////////////////////////////////////////////////////////////////////-->
+                                
+                              <tr>
+                                <td style="width: 280px">
+                                  Plugin DLL:&nbsp; <em>This is the name of the plugin's .dll file.</em><br />
+                                  <input id="PLUGIN_DLL" style="width: 280px" type="text" value="MyMetamodPlugin.dll" /></td>
+                              </tr>
+                              
+                              <!--Plugin Class ///////////////////////////////////////////////////////////////////////-->
+                                
+                              <tr>
+                                <td style="width: 280px">
+                                  Plugin Class: &nbsp; <em>This is the name of the plugin's class.</em><br />
+                                  <input id="PLUGIN_CLASS" style="width: 280px" type="text" value="CMyMetamodPlugin" /></td>
+                              </tr>
+                              
+                            </table>
+                          </td>
+                          <td align="left" style="width: 20px;" valign="top">
+                          </td>
+                          <td style="width: 238px;" align="left" valign="top">
+                            <table>
+                              <tr>
+                                <td>
+                                  Function Hooks:&nbsp; <em>These functions will be auto generated.&nbsp;</em><br />
+                                  <div style="background: #fff; overflow: auto; height: 21.14em; border-left: 1px solid #404040; border-top: 1px solid #404040; border-bottom: 1px solid #404040; border-right: 1px solid #404040; width: 278px;">
+                                    
+                                    <!--IServerGameDLL - ServerActivate /////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_ServerActivate' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_ServerActivate' name='checkbox[]'>IServerGameDLL - ServerActivate()
+                                    </label>
+
+                                    <!--IServerGameDLL - GameInit ///////////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GameInit' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GameInit' name='checkbox[]'>IServerGameDLL - GameInit()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - GameFrame //////////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GameFrame' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GameFrame' name='checkbox[]'>IServerGameDLL - GameFrame()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - GameShutdown ///////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GameShutdown' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GameShutdown' name='checkbox[]'>IServerGameDLL - GameShutdown()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - LevelInit //////////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_LevelInit' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_LevelInit' name='checkbox[]'>IServerGameDLL - LevelInit()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - LevelShutdown //////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_LevelShutdown' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_LevelShutdown' name='checkbox[]'>IServerGameDLL - LevelShutdown()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - GetTickInterval ////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GetAllServerClasses' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GetAllServerClasses' name='checkbox[]'>IServerGameDLL - GetAllServerClasses()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - GetTickInterval ////////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GetTickInterval' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GetTickInterval' name='checkbox[]'>IServerGameDLL - GetTickInterval()
+                                    </label>
+                                    
+                                    <!--IServerGameDLL - GetGameDescription /////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameDLL_GetGameDescription' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameDLL_GetGameDescription' name='checkbox[]'>IServerGameDLL - GetGameDescription()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientActive ///////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientActive' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientActive' name='checkbox[]'>IServerGameClients - ClientActive()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientConnect //////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientConnect' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientConnect' name='checkbox[]'>IServerGameClients - ClientConnect()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientDisconnect ///////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientDisconnect' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientDisconnect' name='checkbox[]'>IServerGameClients - ClientDisconnect()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientCommand //////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientCommand' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientCommand' name='checkbox[]'>IServerGameClients - ClientCommand()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientPutInServer //////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientPutInServer' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientPutInServer' name='checkbox[]'>IServerGameClients - ClientPutInServer()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientSettingsChanged //////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientSettingsChanged' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientSettingsChanged' name='checkbox[]'>IServerGameClients - ClientSettingsChanged()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientSetupVisibility //////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientSetupVisibility' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientSetupVisibility' name='checkbox[]'>IServerGameClients - ClientSetupVisibility()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ClientEarPosition //////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ClientEarPosition' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ClientEarPosition' name='checkbox[]'>IServerGameClients - ClientEarPosition()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - PostClientMessagesSent /////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_PostClientMessagesSent' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_PostClientMessagesSent' name='checkbox[]'>IServerGameClients - PostClientMessagesSent()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - ProcessUsercmds ////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_ProcessUsercmds' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_ProcessUsercmds' name='checkbox[]'>IServerGameClients - ProcessUsercmds()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - NetworkIDValidated /////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_NetworkIDValidated' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_NetworkIDValidated' name='checkbox[]'>IServerGameClients - NetworkIDValidated()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - GetPlayerState /////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_GetPlayerState' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_GetPlayerState' name='checkbox[]'>IServerGameClients - GetPlayerState()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - GetPlayerLimits ////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_GetPlayerLimits' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_GetPlayerLimits' name='checkbox[]'>IServerGameClients - GetPlayerLimits()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - GetReplayDelay /////////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_GetReplayDelay' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_GetReplayDelay' name='checkbox[]'>IServerGameClients - GetReplayDelay()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - GetBugReportInfo ///////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_GetBugReportInfo' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_GetBugReportInfo' name='checkbox[]'>IServerGameClients - GetBugReportInfo()
+                                    </label>
+                                    
+                                    <!--IServerGameClients - SetCommandClient ///////////////////////////////////////////////////////////////////////-->
+                                    
+                                    <label for='IServerGameClients_SetCommandClient' style='padding-left: 3px; padding-right: 3px; display: block;'>
+                                      <input class="CheckBox" type='checkbox' id='IServerGameClients_SetCommandClient' name='checkbox[]'>IServerGameClients - SetCommandClient()
+                                    </label>
+                                    
+                                  </div>
+                                  <table>
+                                    <tr>
+                                      <td style="height: 22px; width: 50%;">
+                                        <input id="CHECK_ALL" style="width: 100%" type="button" value="Check All" onclick="OnCheckAll(document);" /></td>
+                                      <td style="height: 22px; width: 50%;">
+                                        <input id="UNCHECK_ALL" style="width: 100%" type="button" value="Uncheck All" onclick="OnUncheckAll(document);" /></td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </span>
+                  </td>
+                  <td valign="TOP">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="TOP" colspan="7">
+                    &nbsp;
+                  </td>
+                </tr>
+              </table>
+              <!--CLOSE OF CONTENT//-->
+            </td>
+          </tr>
+          <tr valign="BOTTOM">
+            <td height="48">
+              <!--OPEN OF BUTTON HTML//-->
+              <table height="48" border="0" cellpadding="0" cellspacing="0">
+                <col width="12">
+                <col>
+                <col width="75">
+                <col width="4">
+                <col width="75">
+                <col width="4">
+                <col width="75">
+                <col width="12">
+                <tr>
+                  <td valign="TOP" class="RULE" colspan="8" style="height: 1px">
+                    <table border="0" width="100%" height="1" cellpadding="0" cellspacing="0">
+                      <tr valign="TOP">
+                        <td height="1" width="100%" bgcolor="BUTTONSHADOW">
+                          <img src="../../Images/spacer.gif" height="1" width="1" alt=""></td>
+                        <td height="1" width="1" bgcolor="WINDOW">
+                          <img src="../../Images/spacer.gif" height="1" width="1" alt=""></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="TOP" colspan="8" style="height: 11px">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="MIDDLE" height="23" style="width: 12px">
+                    &nbsp;
+                  </td>
+                  <td valign="TOP" height="23">
+                    &nbsp;
+                  </td>
+                  <td valign="MIDDLE" height="23" width="75">
+                    <button class="BUTTONS" id="FinishBtn" accesskey="F" onclick="OnFinish(document);">
+                      <u>F</u>inish</button>
+                  </td>
+                  <td valign="MIDDLE" height="23" width="4">
+                    &nbsp;
+                  </td>
+                  <td valign="MIDDLE" height="23" width="75">
+                    <button class="BUTTONS" id="CancelBtn" accesskey="C" onclick="window.external.Finish(document, 'cancel');">
+                      <u>C</u>ancel</button>
+                  </td>
+                  <td valign="MIDDLE" height="23" width="4">
+                    &nbsp;
+                  </td>
+                  <td valign="MIDDLE" height="23" style="width: 75px">
+                    <button class="BUTTONS" id="HelpBtn" accesskey="H" onclick="window.external.OnHelp('vc.appwiz.custom.overview');">
+                      <u>H</u>elp</button>
+                  </td>
+                  <td valign="MIDDLE" height="23" style="width: 12px">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="TOP" colspan="8" style="height: 17px">
+                    &nbsp;
+                  </td>
+                </tr>
+              </table>
+              <!--CLOSE OF BUTTON HTML//-->
+            </td>
+          </tr>
+        </table>
+        <!--CLOSE OF NAVIGATION, CONTENT, AND BUTTON TABLES//-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+
+<script language="JSCRIPT">
+
+
+// This is an example of a function which initializes the page
+
+function InitDocument(document)
+{
+	setDirection();
+	
+	if (window.external.FindSymbol('DOCUMENT_FIRST_LOAD'))
+	{
+		// This function sets the default symbols based 
+		// on the values specified in the SYMBOL tags above
+
+		window.external.SetDefaults(document);
+	}
+
+	// Load the document and initialize the controls 
+	// with the appropriate symbol values
+
+	window.external.Load(document);
+	
+	// Initialize the default values
+	
+	var author       = document.getElementById("PLUGIN_AUTHOR").value;
+	var project_name = window.external.FindSymbol("PROJECT_NAME");
+	var strip_name   = project_name.replace(/ /g, "");
+
+  document.getElementById("PLUGIN_LICENSE").value = "Copyright © 2008 " + author;
+  document.getElementById("PLUGIN_NAME").value = strip_name;
+  document.getElementById("PLUGIN_DESC").value = "Metamod Source Plugin: " + strip_name;
+  document.getElementById("PLUGIN_DLL").value = strip_name + ".dll";
+  document.getElementById("PLUGIN_CLASS").value = "C" + strip_name;
+}
+
+// Checks all functions in the list
+
+function OnCheckAll(document)
+{
+  var a=0;
+  var check_boxes = document.getElementsByName('checkbox[]');
+  
+  for(a=0; a<check_boxes.length; a++)
+  {
+    check_boxes[a].checked = true;
+  }
+}
+
+// Unchecks all functions in the list
+
+function OnUncheckAll(document)
+{
+  var a=0;
+  var check_boxes = document.getElementsByName('checkbox[]');
+  
+  for(a=0; a<check_boxes.length; a++)
+  {
+    check_boxes[a].checked = false;
+  }
+}
+
+// If the wizard has more than 1 page, this 
+// function will browse to the page specified
+
+function Next(document, linkto)
+{
+	window.external.Next(document, linkto);
+}
+
+// This is an example of a function which
+// gets called when the user clicks on 'Finish'
+
+function OnFinish(document)
+{
+  //var checkBox = document.getElementById(boxID);
+  //checkBoxValue = checkBox.value; 
+
+	OnWizFinish(document);
+	
+}
+
+</script>
+
+<script id="INCLUDE_SCRIPT" language="JSCRIPT"></script>
+
+<script id="INCLUDE_COMMON" language="JSCRIPT"></script>
+
+<!-- 
+Common.js is a script file which contains the helper functions 
+used by the wizards.  Include this line if you want to
+call these functions from your html scripts.
+//-->
+
+<script>
+	var strPath = window.external.FindSymbol("PRODUCT_INSTALLATION_DIR");
+	strPath += "VCWizards/";
+	strPath += window.external.GetHostLocale();
+	var strScriptPath = strPath + "/Script.js";
+	var strCommonPath = strPath + "/Common.js";
+	document.scripts("INCLUDE_SCRIPT").src = strScriptPath;
+	document.scripts("INCLUDE_COMMON").src = strCommonPath;
+</script>
+

@@ -115,7 +115,7 @@ namespace SourceMM
 		 * @param val				Default string to return if none found.
 		 * @return					Parameter value.
 		 */
-		virtual const char *GetCommandLineValue(const char *key, const char *defval) =0;
+		virtual const char *GetCommandLineValue(const char *key, const char *defval=NULL) =0;
 
 		/**
 		 * @brief Prints a string to the remote server console. 

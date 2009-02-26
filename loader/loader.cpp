@@ -35,6 +35,11 @@
 #include "serverplugin.h"
 #include "gamedll.h"
 #include "utility.h"
+#include "valve_commandline.h"
+
+#undef GetCommandLine
+
+typedef ICommandLine *(*GetCommandLine)();
 
 static HMODULE mm_library = NULL;
 static char mm_fatal_logfile[PLATFORM_MAX_PATH] = "metamod-fatal.log";
@@ -64,11 +69,12 @@ mm_LogFatal(const char *message, ...)
 	fclose(fp);	
 }
 
-static const char *backend_names[3] =
+static const char *backend_names[] =
 {
 	"1.ep1",
 	"2.ep2",
-	"2.l4d"
+	"2.l4d",
+	"2.darkm"
 };
 
 #if defined _WIN32
@@ -163,8 +169,76 @@ mm_GetProcAddress(const char *name)
 	return mm_GetLibAddress(mm_library, name);
 }
 
+#if defined _WIN32
+#define TIER0_NAME			"bin\\tier0.dll"
+#define VSTDLIB_NAME		"bin\\vstdlib.dll"
+#elif defined __linux__
+#define TIER0_NAME			"bin/tier0_i486.so"
+#define VSTDLIB_NAME		"bin/vstdlib_i486.so"
+#endif
+
+const char *
+mm_GetGameName()
+{
+	void *lib;
+	char error[255];
+	GetCommandLine valve_cmdline;
+	char lib_path[PLATFORM_MAX_PATH];
+	const char *game_name;
+
+	if (!mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path)))
+	{
+		mm_LogFatal("Could not find path for: " TIER0_NAME);
+		return NULL;
+	}
+
+	if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
+	{
+		mm_LogFatal("Could not load %s: %s", lib_path, error);
+		return NULL;
+	}
+
+	valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine_Tier0");
+	if (valve_cmdline == NULL)
+	{
+		/* We probably have a Ship engine. */
+		mm_UnloadLibrary(lib);
+		if (!mm_ResolvePath(VSTDLIB_NAME, lib_path, sizeof(lib_path)))
+		{
+			mm_LogFatal("Could not find path for: " VSTDLIB_NAME);
+			return NULL;
+		}
+
+		if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
+		{
+			mm_LogFatal("Could not load %s: %s", lib_path, error);
+			return NULL;
+		}
+
+		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
+	}
+
+	mm_UnloadLibrary(lib);
+
+	if (valve_cmdline == NULL)
+	{
+		mm_LogFatal("Could not locate any command line functionality");
+		return NULL;
+	}
+
+	game_name = valve_cmdline()->ParmValue("-game");
+
+	/* This probably means that the game directory is actually the current directory */
+	if (!game_name)
+	{
+		game_name = ".";
+	}
+
+	return game_name;
+}
+
 MetamodBackend
-mm_DetermineBackend(QueryValveInterface engineFactory)
+mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 {
 	/* Check for L4D */
 	if (engineFactory("VEngineServer022", NULL) != NULL &&
@@ -180,11 +254,16 @@ mm_DetermineBackend(QueryValveInterface engineFactory)
 		{
 			return MMBackend_Episode2;
 		}
-		/* Check for EP1 */
+		/* Check for Episode One/Old Engine */
 		else if (engineFactory("VModelInfoServer001", NULL) != NULL &&
 				 (engineFactory("VEngineCvar003", NULL) != NULL ||
 				  engineFactory("VEngineCvar002", NULL) != NULL))
 		{
+			/* Check for Dark Messiah which has a weird directory structure */
+			if (strcmp(game_name, ".") == 0)
+			{
+				return MMBackend_DarkMessiah;
+			}
 			return MMBackend_Episode1;
 		}
 	}
