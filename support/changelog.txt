@@ -1,10 +1,13 @@
-2009/?/? 1.7.1:
+2009/02/25 1.7.1:
  - Added support for the Source engine version that runs Dark Messiah. The
    development of this feature would not be possible without the support of the
    following people from the game's community: Dylan Riggs, Carl Pettengill, Ed
    Moreland, and Christian. 
  - Fixed a bug where plugin aliases defined in VDF files were not working on the
    Orange Box and Left 4 Dead engines.
+ - Fixed SourceHook passing invalid mprotect() values (bug 3642).
+ - Fixed "late" load parameter always being true in VSP mode (bug 3532).
+ - Added MSVC project templates for plugins, from Daedilus.
 
 2008/11/26 1.7.0:
  - Metamod:Source now uses a unified package that will run on all supported 
