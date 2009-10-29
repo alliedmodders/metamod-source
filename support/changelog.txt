@@ -1,3 +1,6 @@
+2009/??/?? 1.8.0:
+ - Added support for the Source engine that runs Left 4 Dead 2 (bug 4078).
+
 2009/02/25 1.7.1:
  - Added support for the Source engine version that runs Dark Messiah. The
    development of this feature would not be possible without the support of the
