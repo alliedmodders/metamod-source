@@ -18,6 +18,7 @@ Build('loader', 		'mm_loader', 		'Left4Dead2', 	'server_linux', 	'',				'linux')
 Build('core-legacy',	'mm_core-legacy', 	'', 			'metamod.1.ep1', 	'',				'both');
 Build('core', 			'mm_core', 			'OrangeBox', 	'metamod.2.ep2', 	'',				'both');
 Build('core', 			'mm_core', 			'Left4Dead', 	'metamod.2.l4d', 	'',				'both');
+Build('core', 			'mm_core', 			'Left4Dead2', 	'metamod.2.l4d2', 	'',				'both');
 Build('core',			'mm_core',			'DarkMessiah',	'metamod.2.darkm',	'',				'windows');
 
 #Structure our output folder
