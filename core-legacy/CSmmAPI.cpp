@@ -527,7 +527,7 @@ int CSmmAPI::GetGameDLLVersion()
 bool CSmmAPI::CacheUserMessages()
 {
 	UserMsgDict *dict = NULL;
-	char *vfunc = UTIL_GetOrigFunction(&IServerGameDLL::GetUserMessageInfo, g_GameDll.pGameDLL, g_GameDllPatch);
+	char *vfunc = UTIL_GetOrigFunction(&IServerGameDLL::GetUserMessageInfo, g_GameDll.pGameDLL);
 
 	if (!vfunc)
 	{

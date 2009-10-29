@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2007 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -16,6 +16,7 @@
 #include "sh_vector.h"
 #include "sh_tinyhash.h"
 #include "sh_stack.h"
+#include "sh_listcat.h"
 
 /*
 
@@ -89,6 +90,9 @@ Hooks
 
 ---------------------------------------
 Call classes
+
+	!! deprecated !!   - see below (new SH_CALL)
+
 	Call classes are identified by a this pointer and an instance size
 
 	We use the instance size because a derived class instance and a base class instance could
@@ -142,6 +146,28 @@ Return Values in Post Recalls
 	HookLoopEnd we make sure that status is high enough so that the override return will be returned. crazy.
 
 	All this stuff could be much less complicated if I didn't try to preserve binary compatibility :)
+
+VP Hooks
+	VP hooks are hooks which are called on a vfnptr, regardless of the this pointer with which it was called. They are
+	implemented as a special CIface instance with m_Ptr = NULL. All Hook Lists have a new "ListCatIterator" which
+	virtually concatenates the NULL-interface-hook-list with their normal hook list.
+
+
+	I'm afraid that with the addition of Recalls and VP Hooks, SourceHook is now a pretty complex and hacked-together
+	binary compatible beast which is pretty hard to maintain unless you've written it :)
+
+New SH_CALL
+	The addition of VP hooks messed up the Call Classes concept (see above) - call classes are bound to an
+	instance pointer; they only work on one of the hooked instances. But VP hooks are called on all instances.
+	
+	That's why now, SH_CALL takes an instance pointer instead of a callclass pointer. It basically does this:
+	1) call SH_GLOB_PTR->SetIgnoreHooks(vfnptr)
+	2) call this->*mfp
+	3) call SH_GLOB_PTR->ResetIgnoreHooks(vfnptr)
+
+	SourceHook stroes the "ignored vfnptr" and makes CVfnPtr::FindIface return NULL if the CVfnPtr instance
+	corresponds to the ignored vfnptr. This way the hook manager thinks that the instance isn't hooked, and calls
+	the original function. Everything works fine. This works even for VP hooks.
 */
 
 namespace SourceHook
@@ -160,6 +186,10 @@ namespace SourceHook
 			char *DupProto(const char *src);
 			void FreeProto(char *prot);
 		public:
+			CProto() : m_Proto(NULL)
+			{
+			}
+
 			CProto(const char *szProto) : m_Proto(DupProto(szProto))
 			{
 			}
@@ -191,6 +221,11 @@ namespace SourceHook
 			bool operator == (const CProto &other) const
 			{
 				return Equal(other.m_Proto, m_Proto);
+			}
+
+			const char *GetProto() const
+			{
+				return m_Proto;
 			}
 		};
 
@@ -226,17 +261,79 @@ namespace SourceHook
 			HookManagerPubFunc hookman;
 		};
 
+		// Associates hook ids with info about the hooks
+		// Also used to keep track of used hook ids
+		class CHookIDManager
+		{
+		public:
+			struct Entry
+			{
+				bool isfree;
+
+				// hookman info
+				CProto proto;
+				int vtbl_offs;
+				int vtbl_idx;
+
+				// vfnptr
+				void *vfnptr;
+
+				// iface
+				void* adjustediface;
+
+				// hook
+				Plugin plug;
+				int thisptr_offs;
+				ISHDelegate *handler;
+				bool post;
+
+				Entry(const CProto &pprt, int pvo, int pvi, void *pvp, void *pai, Plugin pplug, int pto,
+					ISHDelegate *ph, bool ppost)
+					: isfree(false), proto(pprt), vtbl_offs(pvo), vtbl_idx(pvi), vfnptr(pvp), 
+					adjustediface(pai), plug(pplug), thisptr_offs(pto), handler(ph), post(ppost)
+				{
+				}
+				Entry()
+				{
+				}
+			};
+		private:
+			// Internally, hookid 1 is stored as m_Entries[0]
+
+			CVector<Entry> m_Entries;
+		public:
+			CHookIDManager();
+			int New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr, void *adjustediface,
+				Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post);
+			bool Remove(int hookid);
+			const Entry * QueryHook(int hookid);
+
+			// Finds all hooks with the given info, and fills the hookids into output.
+			void FindAllHooks(CVector<int> &output, const CProto &proto, int vtbl_offs, int vtbl_idx,
+				void *adjustediface, Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post);
+
+			// Removes all hooks with a specified vfnptr
+			bool RemoveAll(void *vfnptr);
+		};
+
 		struct HookInfo
 		{
 			ISHDelegate *handler;			//!< Pointer to the handler
 			bool paused;					//!< If true, the hook should not be executed
 			Plugin plug;					//!< The owner plugin
 			int thisptr_offs;				//!< This pointer offset
+			int hookid;						//!< Unique ID given by CHookIDManager
+
+			bool operator==(int otherid)
+			{
+				return hookid == otherid;
+			}
 		};
 
 		class CHookList : public IHookList
 		{
 		public:
+			List<HookInfo> *m_VPList;			// left-hand list for ListCatIterator -> for VP hooks
 			List<HookInfo> m_List;
 
 			friend class CIter;
@@ -250,14 +347,13 @@ namespace SourceHook
 				void SkipPaused();
 			public:
 
-				List<HookInfo>::iterator m_Iter;
+				ListCatIterator<HookInfo> m_Iter;
 
 				CIter(CHookList *pList);
 
 				virtual ~CIter();
 
 				void GoToBegin();
-				void GoToEnd();
 				void Set(CIter *pOther);
 
 				bool End();
@@ -277,7 +373,6 @@ namespace SourceHook
 			// For recalls
 			bool m_Recall;
 			bool m_RQFlag;
-			bool m_RelFlag;
 
 			void SetRecallState();	// Sets the list into a state where the next returned
 									// iterator (from GetIter) will be a copy of the last
@@ -285,9 +380,8 @@ namespace SourceHook
 									// The hook resets this state automatically on:
 									// GetIter, ReleaseIter
 
-			void RQFlagReset() { m_RQFlag = false; m_RelFlag = false; }
+			void RQFlagReset() { m_RQFlag = false; }
 			bool RQFlagGet() { return m_RQFlag; }
-			bool RelFlagGet() { return m_RelFlag; }
 			CHookList();
 			CHookList(const CHookList &other);
 			virtual ~CHookList();
@@ -296,6 +390,9 @@ namespace SourceHook
 
 			IIter *GetIter();
 			void ReleaseIter(IIter *pIter);
+
+			void SetVPList(List<HookInfo> *newList);
+			void ClearVPList();
 		};
 
 		// I know, data hiding... But I'm a lazy bastard!
@@ -318,6 +415,10 @@ namespace SourceHook
 			{
 				return m_Ptr == ptr;
 			}
+			bool operator!=(void *ptr)
+			{
+				return m_Ptr != ptr;
+			}
 		};
 
 		class CVfnPtr : public IVfnPtr
@@ -331,8 +432,9 @@ namespace SourceHook
 
 			IfaceList m_Ifaces;
 
+			void **m_pOneIgnore;
 		public:
-			CVfnPtr(void *ptr);
+			CVfnPtr(void *ptr, void **pOneIgnore);
 			virtual ~CVfnPtr();
 
 			void *GetVfnPtr();
@@ -449,7 +551,7 @@ namespace SourceHook
 			void AddHookManager(Plugin plug, const CHookManagerInfo &hookman);
 		};
 
-		class CCallClassImpl : public GenericCallClass
+		class CCallClassImpl : public DeprecatedCallClass<void>
 		{
 		public:
 
@@ -523,6 +625,10 @@ namespace SourceHook
 		void SetPluginPaused(Plugin plug, bool paused);
 
 		HookLoopInfoStack m_HLIStack;
+		CHookIDManager m_HookIDMan;
+
+		void *m_OneIgnore; //:TODO:
+		bool m_IgnoreActive;
 	public:
 		CSourceHookImpl();
 		virtual ~CSourceHookImpl();
@@ -611,14 +717,14 @@ namespace SourceHook
 		*	@param iface The interface pointer
 		*	@param size Size of the class instance
 		*/
-		GenericCallClass *GetCallClass(void *iface, size_t size);
+		DeprecatedCallClass<void> *GetCallClass(void *iface, size_t size);
 
 		/**
 		*	@brief Release a callclass
 		*
 		*	@param ptr Pointer to the callclass
 		*/
-		virtual void ReleaseCallClass(GenericCallClass *ptr);
+		virtual void ReleaseCallClass(DeprecatedCallClass<void> *ptr);
 
 		virtual void SetRes(META_RES res);				//!< Sets the meta result
 		virtual META_RES GetPrevRes();					//!< Gets the meta result of the previously called handler
@@ -653,6 +759,58 @@ namespace SourceHook
 
 		virtual void *SetupHookLoop(META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
 			void **ifacePtrPtr, const void *origRetPtr, void *overrideRetPtr);
+
+		/**
+		*	@brief Add a (VP) hook.
+		*
+		*	@return non-zero hook id on success, 0 otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param mode	Can be either Hook_Normal or Hook_VP (vtable-wide hook)
+		*	@param iface The interface pointer
+		*				 The representative interface pointer for VP hooks
+		*				 The vtable pointer for direct VP hooks !!!
+		*	@param ifacesize The size of the class iface points to
+		*	@param myHookMan A hook manager function that should be capable of handling the function
+		*	@param handler A pointer to a FastDelegate containing the hook handler
+		*	@param post Set to true if you want a post handler
+		*/
+		virtual int AddHookNew(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
+			ISHDelegate *handler, bool post);
+
+		/**
+		*	@brief Remove a VP hook by ID.
+		*
+		*	@return true on success, false otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param hookid The hook id (returned by AddHookNew)
+		*/
+		virtual bool RemoveHookByID(Plugin plug, int hookid);
+
+		/**
+		*	@brief Makes sure that hooks are going to be ignored on the next call of vfnptr
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void SetIgnoreHooks(Plugin plug, void *vfnptr);
+
+		/**
+		*	@brief Reverses SetIgnoreHooks' effect
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param vfnptr The virtual function pointer of the function in question
+		*/
+		virtual void ResetIgnoreHooks(Plugin plug, void *vfnptr);
+
+		/**
+		*	@brief Finds the original entry of a virtual function pointer
+		*
+		*	@param vfnptr The virtual function pointer
+		*	@return The original entry if the virtual function pointer has been patched; NULL otherwise.
+		*/
+		virtual void *GetOrigVfnPtrEntry(void *vfnptr);
 	};
 }
 

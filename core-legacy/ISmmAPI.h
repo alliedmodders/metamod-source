@@ -315,6 +315,7 @@ public:		// Added in 1.4 (1:5)
  * 1.2.2 Added API for printing to client console (with string formatting).
  * 1.3   Added new interface search API.
  * 1.4	 Added VSP listener and user message API.
+ * 1.8   Added VP hooks to SH-legacy.
  */
 
 #endif //_INCLUDE_ISMM_API_H

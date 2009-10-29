@@ -80,6 +80,7 @@ DO_TEST(Recall);
 DO_TEST(Multi);
 DO_TEST(Ref);
 DO_TEST(RefRet);
+DO_TEST(VPHooks);
 
 int main(int argc, char *argv[])
 {

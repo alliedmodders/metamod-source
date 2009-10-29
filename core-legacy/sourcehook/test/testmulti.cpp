@@ -53,7 +53,7 @@ bool TestMulti(std::string &error)
 	
 
 	for (unsigned int i=0; i<10; i++)
-		SH_ADD_HOOK_STATICFUNC(VMultiTest, HookTarget, pv[i], HookFunction, false);
+		SH_ADD_HOOK(VMultiTest, HookTarget, pv[i], SH_STATIC(HookFunction), false);
 
 	pv[0]->HookTarget();
 
@@ -72,7 +72,7 @@ bool TestMulti(std::string &error)
 		}
 	}
 
-	SH_REMOVE_HOOK_STATICFUNC(VMultiTest, HookTarget, pv[0], HookFunction, false);
+	SH_REMOVE_HOOK(VMultiTest, HookTarget, pv[0], SH_STATIC(HookFunction), false);
 
 	for (unsigned int i=1; i<10; i++)
 		pv[i]->HookTarget();
@@ -94,9 +94,9 @@ bool TestMulti(std::string &error)
 		}
 	}
 
-	for (unsigned int i=0; i<10; i++)
+	for (unsigned int i=1; i<10; i++)
 	{
-		SH_REMOVE_HOOK_STATICFUNC(VMultiTest, HookTarget, pv[i], HookFunction, false);
+		SH_REMOVE_HOOK(VMultiTest, HookTarget, pv[1], SH_STATIC(HookFunction), false);
 		delete pv[i];
 	}
 
@@ -104,4 +104,3 @@ bool TestMulti(std::string &error)
 
 	return true;
 }
-

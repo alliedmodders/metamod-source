@@ -111,13 +111,7 @@ extern bool g_bLevelChanged;
 
 void UnloadMetamod(bool shutting_down);
 
-/** @brief Global CallClass for IServerGameDLL */
-extern SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
-
 void LoadAsGameDLL(const gamedll_bridge_info *info);
-
-/** @brief Global CallClass for ICvar */
-extern SourceHook::CallClass<ICvar> *g_CvarPatch;
 
 #endif //_INCLUDE_SOURCEMM_H
 

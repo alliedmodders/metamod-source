@@ -81,27 +81,16 @@ bool UTIL_VerifySignature(const void *addr, const char *sig, size_t len);
  *
  * @param mfp			Member function pointer to virtual function.
  * @param ptr			Pointer to interface in which the virtual function belongs.
- * @param cls			A CallClass for the interface in which the virtual function belongs.
  * @return				Address of function originally pointed to by the virtual function.
  */
 template <class MFP, class Iface>
-char *UTIL_GetOrigFunction(MFP vfunc, Iface *ptr, SourceHook::CallClass<Iface> *cls)
+char *UTIL_GetOrigFunction(MFP vfunc, Iface *ptr)
 {
 	SourceHook::MemFuncInfo info = {true, -1, 0, 0};
 	SourceHook::GetFuncInfo(vfunc, info);
 
 	/* Get address of original GetUserMessageInfo() */
-	char *func = reinterpret_cast<char *>(cls->GetOrigFunc(info.vtbloffs, info.vtblindex));
-
-	/* If we can't get original function, that means there's no hook */
-	if (func == NULL)
-	{
-		/* Get virtual function address 'manually' then */
-		char *adjustedptr = reinterpret_cast<char *>(ptr) + info.vtbloffs + info.vtbloffs;
-		char **vtable = *reinterpret_cast<char ***>(adjustedptr);
-
-		func = vtable[info.vtblindex];
-	}
+	char *func = reinterpret_cast<char *>(SH_GET_ORIG_VFNPTR_ENTRY(ptr, vfunc));
 
 	/* Check for relative jumps */
 	if (func[0] == IA32_JMP_IMM32)

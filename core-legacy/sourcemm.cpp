@@ -60,8 +60,6 @@ SourceHook::String g_ModPath;
 PluginId g_PLID = Pl_Console;			/* Technically, SourceMM is the "Console" plugin... :p */
 static bool bInFirstLevel = true;
 bool g_bGameInit = false;
-SourceHook::CallClass<IServerGameDLL> *g_GameDllPatch;
-SourceHook::CallClass<ICvar> *g_CvarPatch;
 int g_GameDllVersion = 0;
 static const char VSPIFACE_001[] = "ISERVERPLUGINCALLBACKS001";
 static const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
@@ -181,9 +179,6 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 	g_Engine.original = strcmp(CommandLine()->ParmValue("-game", "hl2"), "ship") == 0;
 
 	ConCommandBaseMgr::OneTimeInit(static_cast<IConCommandBaseAccessor *>(&g_SMConVarAccessor));
-
-	g_GameDllPatch = SH_GET_CALLCLASS(g_GameDll.pGameDLL);
-	g_CvarPatch = SH_GET_CALLCLASS(g_Engine.icvar);
 
 	if (g_GameDll.pGameClients)
 	{
@@ -336,11 +331,6 @@ void UnloadMetamod(bool shutting_down)
 		g_SMConVarAccessor.MarkCommandsAsGameDLL();
 		g_Engine.icvar->UnlinkVariables(FCVAR_GAMEDLL);
 	}
-
-	SH_RELEASE_CALLCLASS(g_GameDllPatch);
-	SH_RELEASE_CALLCLASS(g_CvarPatch);
-	g_GameDllPatch = NULL;
-	g_CvarPatch = NULL;
 
 	g_SourceHook.CompleteShutdown();
 }

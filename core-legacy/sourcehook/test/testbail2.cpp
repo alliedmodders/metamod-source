@@ -5,7 +5,6 @@
 #include "sourcehook_test.h"
 #include "testbail.h"
 
-static unsigned int n_calls = 0;
 
 int EatYams_Handler2(int a)
 {
@@ -25,25 +24,13 @@ namespace N_TestBail
 	{
 		g_PLID = 2;
 
-		SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler2, false);
-		SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler3, false);
+		SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler2), false);
+		SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler3), false);
 
 		int ret = g_Gabgab->EatYams(0xDEAD);
 
 		CHECK_COND(ret == 6, "Part 2.1");
 
-		n_calls++;
-
 		return true;
-	}
-
-	void UntestBail2()
-	{
-		while (n_calls)
-		{
-			SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler3, false);
-			SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler2, false);
-			n_calls--;
-		}
 	}
 }

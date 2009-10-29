@@ -776,7 +776,7 @@ const char *GetMetamodBaseDir()
  */
 bool SMConVarAccessor::InitConCommandBaseList()
 {
-	char *vfunc = UTIL_GetOrigFunction(&ICvar::GetCommands, g_Engine.icvar, g_CvarPatch);
+	char *vfunc = UTIL_GetOrigFunction(&ICvar::GetCommands, g_Engine.icvar);
 
 	if (!vfunc)
 	{

@@ -44,7 +44,7 @@ bool TestBail(std::string &error)
 
 	g_Gabgab = new IGaben;
 
-	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
+	SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler1), false);
 
 	ADD_STATE(State_EatYams_Return(g_Gabgab->EatYams(0xDEAD)));
 
@@ -75,7 +75,7 @@ bool TestBail(std::string &error)
 		new State_EatYams_Return(5),
 		NULL), "Part 3");
 
-	SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
+	SH_REMOVE_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler1), false);
 
 	ADD_STATE(State_EatYams_Return(g_Gabgab->EatYams(0xDEAD)));
 
@@ -97,7 +97,7 @@ bool TestBail(std::string &error)
 		new State_EatYams_Called(0xBEEF),
 		NULL), "Part 5");
 
-	SH_ADD_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
+	SH_ADD_HOOK(IGaben, EatYams, g_Gabgab, SH_STATIC(EatYams_Handler1), false);
 
 	ADD_STATE(State_EatYams_Return(g_Gabgab->EatYams(0xDEAD)));
 
@@ -108,10 +108,6 @@ bool TestBail(std::string &error)
 		new State_EatYams_Called(0xBEEF),
 		new State_EatYams_Return(6),
 		NULL), "Part 6");
-
-	SH_REMOVE_HOOK_STATICFUNC(IGaben, EatYams, g_Gabgab, EatYams_Handler1, false);
-
-	UntestBail2();
 
 	delete g_Gabgab;
 

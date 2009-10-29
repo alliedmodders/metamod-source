@@ -50,6 +50,11 @@ namespace
 		}
 	};
 
+	// GCC's optimizer is too good. I had to add this in order to make it execute a virtual table lookup!
+	class Whatever : public IGaben
+	{
+	};
+
 	SH_DECL_HOOK0_void(IGaben, EatYams, SH_NOATTRIB, 0);
 	SH_DECL_HOOK1(IGaben, EatYams, const, 1, bool, const char *);
 	SH_DECL_HOOK2_void_vafmt(IGaben, Vafmt1, SH_NOATTRIB, 0, bool, int);
@@ -92,14 +97,12 @@ bool TestVafmtAndOverload(std::string &error)
 	GET_SHPTR(g_SHPtr);
 	g_PLID = 1337;	
 
-	IGaben gabgab;
+	Whatever gabgab;
 	IGaben *pGab = &gabgab;
 
-	SourceHook::CallClass<IGaben> *cc = SH_GET_CALLCLASS(pGab);
-
 	// Part 1
-	SH_CALL(cc, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();
-	SH_CALL(cc, static_cast<bool (IGaben::*)(const char *) const>(&IGaben::EatYams))("Here!");
+	SH_CALL(pGab, static_cast<void (IGaben::*)()>(&IGaben::EatYams))();
+	SH_CALL(pGab, static_cast<bool (IGaben::*)(const char *) const>(&IGaben::EatYams))("Here!");
 
 	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams0_Handler, false);
 	SH_ADD_HOOK(IGaben, EatYams, pGab, EatYams1_Handler, false);
@@ -121,9 +124,9 @@ bool TestVafmtAndOverload(std::string &error)
 
 	// Part 2
 	pGab->Vafmt1(true, 55, "Hello %s%d%s", "BA", 1, "L");
-	SH_CALL(cc, &IGaben::Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
+	SH_CALL(pGab, &IGaben::Vafmt1)(true, 55, "Hello %s%d%s", "BA", 1, "L");
 	pGab->Vafmt2("Hello %s%d%s", "BA", 1, "LOPAN");
-	SH_CALL(cc, &IGaben::Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
+	SH_CALL(pGab, &IGaben::Vafmt2)("Hello %s%d%s", "BA", 1, "LOPAN");
 
 	CHECK_STATES((&g_States,
 		new State_Vafmt_Called(1, "Hello BA1L"),
@@ -164,8 +167,6 @@ bool TestVafmtAndOverload(std::string &error)
 		new State_Vafmt_Called(1, "Hello BA1L"),
 		new State_Vafmt_Called(2, "Hello BA1LOPAN"),
 		NULL), "Part 4");
-
-	SH_RELEASE_CALLCLASS(cc);
 
 	return true;
 }
