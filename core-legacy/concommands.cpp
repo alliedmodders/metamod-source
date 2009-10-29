@@ -135,7 +135,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			CONMSG("Metamod:Source was developed by:\n");
 			CONMSG("  SourceHook: Pavol \"PM OnoTo\" Marko\n");
 			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-			CONMSG("  GameDLL: Scott \"Damaged Soul\" Ehlert\n");
+			CONMSG("  GameDLL: Scott \"DS\" Ehlert\n");
 			CONMSG("For more information, see the official website\n");
 			CONMSG("http://www.metamodsource.net/\n");
 			
@@ -667,7 +667,7 @@ void ClientCommand_handler(edict_t *client)
 				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
 				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
 				CLIENT_CONMSG(client, "  Core: David \"BAILOPAN\" Anderson\n");
-				CLIENT_CONMSG(client, "  Core: Scott \"Damaged Soul\" Ehlert\n");
+				CLIENT_CONMSG(client, "  Core: Scott \"DS\" Ehlert\n");
 				CLIENT_CONMSG(client, "For more information, see the official website\n");
 				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
 
