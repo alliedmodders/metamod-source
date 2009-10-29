@@ -113,11 +113,11 @@ all: check
 	mkdir -p $(BIN_DIR)/provider
 	mkdir -p $(BIN_DIR)/sourcehook
 	if [ "$(ENGINE)" = "left4dead2" ]; then \
-		ln -sf $(SRCDS)/bin/vstdlib_linux.so vstdlib_linux.so; \
-		ln -sf $(SRCDS)/bin/tier0_linux.so tier0_linux.so; \
+		ln -sf $(HL2LIB)/vstdlib_linux.so vstdlib_linux.so; \
+		ln -sf $(HL2LIB)/tier0_linux.so tier0_linux.so; \
 	else \
-		ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so; \
-		ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so; \
+		ln -sf $(HL2LIB)/vstdlib_i486.so vstdlib_i486.so; \
+		ln -sf $(HL2LIB)/tier0_i486.so tier0_i486.so; \
 	fi
 	$(MAKE) -f Makefile metamod
 
