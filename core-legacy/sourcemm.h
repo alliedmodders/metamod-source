@@ -24,7 +24,6 @@
 #include "ISmmAPI.h"
 #include "CPlugin.h"
 #include "oslink.h"
-#include "util.h"
 #include "version.h"
 #include "loader_bridge.h"
 

@@ -28,6 +28,7 @@
 #include <assert.h>
 #include "sourcemm.h"
 #include "concommands.h"
+#include "util.h"
 #include <loader_bridge.h>
 
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
