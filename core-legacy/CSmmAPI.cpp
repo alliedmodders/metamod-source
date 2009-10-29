@@ -119,6 +119,11 @@ void CSmmAPI::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
 	}
 
+	CPluginManager::CPlugin *pPlugin = g_PluginMngr.FindByAPI(plugin);
+	PluginId id = (pPlugin != NULL) ? pPlugin->m_Id : Pl_BadLoad;
+
+	NotifyConCommandBaseDrop(id, pCommand);
+
 	g_SMConVarAccessor.Unregister(pCommand);
 }
 
@@ -632,4 +637,17 @@ const char *CSmmAPI::GetUserMessage(int index, int *size)
 	}
 
 	return msg->name;
+}
+
+IServerPluginCallbacks *CSmmAPI::GetVSPInfo(int *pVersion)
+{
+	if (pVersion != NULL)
+		*pVersion = g_vsp_version;
+
+	return g_pRealVspCallbacks;
+}
+
+int CSmmAPI::GetSourceEngineBuild()
+{
+	return g_Engine.original ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
 }

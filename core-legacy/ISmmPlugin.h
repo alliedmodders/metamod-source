@@ -316,6 +316,20 @@ public:
 	virtual void OnVSPListening(IServerPluginCallbacks *iface)
 	{
 	}
+
+	/**
+	 * @brief Called when Metamod:Source knows that a specific ConCommandBase is 
+	 * about to be unregistered. This is only called for ConCommandBases 
+	 * registered by Metamod:Source plugins.
+	 *
+	 * This is only invoked on Metamod:Source 1.8 or higher (PLAPI_VERSION >= 11).
+	 *
+	 * @param plugin        Plugin owning the ConCommandBase.
+	 * @param base          ConCommandBase that is being unlinked.
+	 */
+	virtual void OnUnlinkConCommandBase(PluginId id, ConCommandBase *base)
+	{
+	}
 };
 
 #define PL_EXPOSURE		CreateInterface

@@ -84,6 +84,7 @@ class VspBridge : public IVspBridge
 
 		g_bIsBridgedAsVsp = true;
 		g_pRealVspCallbacks = info->vsp_callbacks;
+		g_vsp_version = info->vsp_version;
 
 		g_PluginMngr.SetVSPAsLoaded();
 

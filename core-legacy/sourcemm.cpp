@@ -67,6 +67,7 @@ static const char GAMEINFO_PATH[] = "|gameinfo_path|";
 IFileSystem *baseFs = NULL;
 bool g_bLevelChanged = false;
 IServerPluginCallbacks *g_pRealVspCallbacks = &g_VspListener;
+unsigned int g_vsp_version = 0;
 
 #define ITER_EVENT(evn, args) \
 	CPluginManager::CPlugin *pl; \
@@ -147,6 +148,8 @@ CreateInterface(const char *iface, int *ret)
 				*ret = IFACE_FAILED;
 			return NULL;
 		}
+
+		g_vsp_version = vsp_version;
 
 		return g_pRealVspCallbacks;
 	}

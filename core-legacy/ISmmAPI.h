@@ -35,6 +35,10 @@ class ISmmPlugin;
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define IFACE_MAXNUM			999
 
+#define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
+#define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
+#define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
+
 class ISmmAPI
 {
 public:
@@ -303,6 +307,30 @@ public:		// Added in 1.4 (1:5)
 	 * @return				Message name, or NULL on failure.
 	 */
 	virtual const char *GetUserMessage(int index, int *size=NULL) =0;
+
+	/**
+	 * @brief Returns the VSP listener loaded.
+	 *
+	 * This is useful for late-loading plugins which need to decide whether 
+	 * to add a listener or not (or need to get the pointer at all).
+	 *
+	 * @param pVersion		Optional pointer to store the VSP version.
+	 * @return				IServerPluginCallbacks pointer, or NULL if an
+	 * 						IMetamodListener event has yet to occur for 
+	 * 						EnableVSPListener().
+	 */
+	virtual IServerPluginCallbacks *GetVSPInfo(int *pVersion) =0;
+
+	/**
+	 * @brief Returns the engine interface that MM:S is using as a backend.
+	 *
+	 * The values will be one of the SOURCE_ENGINE_* constants from the top
+	 * of this file.
+	 *
+	 * @return				A SOURCE_ENGINE_* constant value.
+	 */
+	virtual int GetSourceEngineBuild() =0;
+
 };
 
 
@@ -315,7 +343,7 @@ public:		// Added in 1.4 (1:5)
  * 1.2.2 Added API for printing to client console (with string formatting).
  * 1.3   Added new interface search API.
  * 1.4	 Added VSP listener and user message API.
- * 1.8   Added VP hooks to SH-legacy.
+ * 1.8   Backported SH VP hooks and various "new API" calls.
  */
 
 #endif //_INCLUDE_ISMM_API_H
