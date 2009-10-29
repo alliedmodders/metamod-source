@@ -14,6 +14,7 @@
 #include "concommands.h"
 #include "CPlugin.h"
 #include "vsp_listener.h"
+#include "util.h"
 
 /**
  * @brief Implementation of main API interface

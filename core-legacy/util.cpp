@@ -11,9 +11,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include "sourcemm.h"
 #include "util.h"
 #include "oslink.h"
-#include "sourcemm.h"
 
 /**
  * @brief Utility functions

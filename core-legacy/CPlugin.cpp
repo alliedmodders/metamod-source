@@ -13,6 +13,7 @@
 #include "sourcemm.h"
 #include "concommands.h"
 #include "vsp_listener.h"
+#include "util.h"
 
 /** 
  * @brief Implements functions from CPlugin.h

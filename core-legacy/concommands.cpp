@@ -16,6 +16,7 @@
 #include "sh_string.h"
 #include "sh_list.h"
 #include "vsp_listener.h"
+#include "util.h"
 
 /**
  * @brief Console Command Implementations
