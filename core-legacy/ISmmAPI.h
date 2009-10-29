@@ -35,6 +35,10 @@ class ISmmPlugin;
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define IFACE_MAXNUM			999
 
+#define SOURCE_ENGINE_UNKNOWN			0				/**< Could not determine the engine version */
+#define SOURCE_ENGINE_ORIGINAL			1				/**< Original Source Engine (used by The Ship) */
+#define SOURCE_ENGINE_EPISODEONE		2				/**< Episode 1 Source Engine (second major SDK) */
+
 class ISmmAPI
 {
 public:
@@ -316,6 +320,17 @@ public:		// Added in 1.4 (1:5)
 	 * 						EnableVSPListener().
 	 */
 	virtual IServerPluginCallbacks *GetVSPInfo(int *pVersion) =0;
+
+	/**
+	 * @brief Returns the engine interface that MM:S is using as a backend.
+	 *
+	 * The values will be one of the SOURCE_ENGINE_* constants from the top
+	 * of this file.
+	 *
+	 * @return				A SOURCE_ENGINE_* constant value.
+	 */
+	virtual int GetSourceEngineBuild() =0;
+
 };
 
 

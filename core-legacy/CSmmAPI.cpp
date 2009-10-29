@@ -646,3 +646,8 @@ IServerPluginCallbacks *CSmmAPI::GetVSPInfo(int *pVersion)
 
 	return g_pRealVspCallbacks;
 }
+
+int CSmmAPI::GetSourceEngineBuild()
+{
+	return g_Engine.original ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
+}
