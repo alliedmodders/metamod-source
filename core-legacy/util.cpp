@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include "util.h"
 #include "oslink.h"
+#include "sourcemm.h"
 
 /**
  * @brief Utility functions
