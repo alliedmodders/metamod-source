@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -113,12 +111,16 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			}
 #endif
 
-#if SOURCE_ENGINE == SE_LEFT4DEAD
+#if SOURCE_ENGINE == SE_LEFT4DEAD2
+			CONMSG("  Engine: Left 4 Dead 2 (2009)\n");
+#elif SOURCE_ENGINE == SE_LEFT4DEAD
 			CONMSG("  Engine: Left 4 Dead (2008)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOX
 			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
-#else
+#elif SOURCE_ENGINE == SE_DARKMESSIAH
 			CONMSG("  Engine: Dark Messiah (2006)\n");
+#else
+#error "SOURCE_ENGINE not defined to a known value"
 #endif
 
 			// Display user messages

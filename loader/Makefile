@@ -1,11 +1,9 @@
-# (C)2004-2008 SourceMod Development Team
+# (C)2004-2009 SourceMod Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
-
-BINARY = server_i486.so
 
 OBJECTS = loader.cpp			\
 		  utility.cpp			\
@@ -22,6 +20,14 @@ C_GCC4_FLAGS = -fvisibility=hidden
 CPP_GCC4_FLAGS = -fvisibility-inlines-hidden
 CPP = gcc-4.1
 
+ifeq "$(ENGINE)" "left4dead2"
+	BINARY = server_linux.so
+	CFLAGS += -DBINARY_SUFFIX=\"_linux.so\"
+else
+	BINARY = server_i486.so
+	CFLAGS += -DBINARY_SUFFIX=\"_i486.so\"
+endif
+
 LINK += -static-libgcc
 	
 INCLUDE += -I. -I../core/sourcehook
@@ -36,10 +42,18 @@ CPPFLAGS += -Wno-non-virtual-dtor -fno-exceptions -fno-rtti
 ################################################
 
 ifeq "$(DEBUG)" "true"
-	BIN_DIR = Debug
+	ifeq "$(ENGINE)" ""
+		BIN_DIR = Debug
+	else
+		BIN_DIR = Debug.$(ENGINE)
+	endif
 	CFLAGS += $(C_DEBUG_FLAGS)
 else
-	BIN_DIR = Release
+	ifeq "$(ENGINE)" ""
+		BIN_DIR = Release
+	else
+		BIN_DIR = Release.$(ENGINE)
+	endif
 	CFLAGS += $(C_OPT_FLAGS)
 endif
 

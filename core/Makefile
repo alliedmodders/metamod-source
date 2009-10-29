@@ -1,9 +1,10 @@
-# (C)2004-2008 SourceMod Development Team
+# (C)2004-2009 SourceMod Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
 SRCDS_BASE = ~/srcds
 HL2SDK_OB = ../../hl2sdk-ob
 HL2SDK_L4D = ../../hl2sdk-l4d
+HL2SDK_L4D2 = ../../hl2sdk-l4d2
 
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
@@ -35,28 +36,42 @@ CPP = gcc-4.1
 override ENGSET = false
 ifeq "$(ENGINE)" "orangebox"
 	HL2SDK = $(HL2SDK_OB)
-	HL2PUB = $(HL2SDK_OB)/public
-	HL2LIB = $(HL2SDK_OB)/lib/linux
+	HL2PUB = $(HL2SDK)/public
+	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=3
-	INCLUDE += -I$(HL2SDK_OB)/public/game/server
+	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
 	HL2SDK = $(HL2SDK_L4D)
-	HL2PUB = $(HL2SDK_L4D)/public
-	HL2LIB = $(HL2SDK_L4D)/lib/linux
-	CFLAGS += -DSOURCE_ENGINE=4
-	INCLUDE += -I$(HL2SDK_L4D)/public/game/server
+	HL2PUB = $(HL2SDK)/public
+	HL2LIB = $(HL2SDK)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=5
+	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/l4d
 	BINARY = metamod.2.l4d.so
 	override ENGSET = true
 endif
+ifeq "$(ENGINE)" "left4dead2"
+	HL2SDK = $(HL2SDK_L4D2)
+	HL2PUB = $(HL2SDK)/public
+	HL2LIB = $(HL2SDK)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=6
+	INCLUDE += -I$(HL2SDK)/public/game/server
+	SRCDS = $(SRCDS_BASE)/left4dead2_demo
+	BINARY = metamod.2.l4d2.so
+	override ENGSET = true
+endif
 
-CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=4
+CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=5 -DSE_LEFT4DEAD2=6
 
-LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
+ifeq "$(ENGINE)" "left4dead2"
+	LINK += $(HL2LIB)/tier1_i486.a vstdlib_linux.so tier0_linux.so -static-libgcc
+else
+	LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
+endif
 
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
 	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -Isourcehook -I../loader
@@ -97,13 +112,18 @@ all: check
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(BIN_DIR)/provider
 	mkdir -p $(BIN_DIR)/sourcehook
-	ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so
-	ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so
+	if [ "$(ENGINE)" = "left4dead2" ]; then \
+		ln -sf $(SRCDS)/bin/vstdlib_linux.so vstdlib_linux.so; \
+		ln -sf $(SRCDS)/bin/tier0_linux.so tier0_linux.so; \
+	else \
+		ln -sf $(SRCDS)/bin/vstdlib_i486.so vstdlib_i486.so; \
+		ln -sf $(SRCDS)/bin/tier0_i486.so tier0_i486.so; \
+	fi
 	$(MAKE) -f Makefile metamod
 
 check:
 	if [ "$(ENGSET)" = "false" ]; then \
-		echo "You must supply ENGINE=left4dead or ENGINE=orangebox"; \
+		echo "You must supply one of the following values for ENGINE: left4dead2, left4dead or orangebox"; \
 		exit 1; \
 	fi
 

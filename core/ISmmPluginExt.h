@@ -1,8 +1,8 @@
 /*
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
@@ -43,6 +41,7 @@
 #define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
 #define SOURCE_ENGINE_LEFT4DEAD			4				/**< Left 4 Dead */
 #define SOURCE_ENGINE_DARKMESSIAH		5				/**< Dark Messiah Multiplayer (based on original engine) */
+#define SOURCE_ENGINE_LEFT4DEAD2		7				/**< Left 4 Dead 2 */
 
 #define METAMOD_PLAPI_VERSION			14				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */

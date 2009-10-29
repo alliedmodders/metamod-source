@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <time.h>
@@ -72,16 +70,17 @@ mm_LogFatal(const char *message, ...)
 static const char *backend_names[] =
 {
 	"1.ep1",
+	"2.darkm",
 	"2.ep2",
 	"2.l4d",
-	"2.darkm"
+	"2.l4d2"
 };
 
 #if defined _WIN32
 #define LIBRARY_EXT		".dll"
 #define LIBRARY_MINEXT	".dll"
 #elif defined __linux__
-#define LIBRARY_EXT		"_i486.so"
+#define LIBRARY_EXT		BINARY_SUFFIX
 #define LIBRARY_MINEXT	".so"
 #endif
 
@@ -173,8 +172,8 @@ mm_GetProcAddress(const char *name)
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
 #elif defined __linux__
-#define TIER0_NAME			"bin/tier0_i486.so"
-#define VSTDLIB_NAME		"bin/vstdlib_i486.so"
+#define TIER0_NAME			"bin/tier0" BINARY_SUFFIX
+#define VSTDLIB_NAME		"bin/vstdlib" BINARY_SUFFIX
 #endif
 
 const char *
@@ -244,6 +243,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
+		if (engineFactory("VPrecacheSystem001", NULL) != NULL)
+		{
+			return MMBackend_Left4Dead2;
+		}
 		return MMBackend_Left4Dead;
 	}
 	else if (engineFactory("VEngineServer021", NULL) != NULL)

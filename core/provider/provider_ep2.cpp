@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -385,12 +383,16 @@ const char *BaseProvider::GetGameDescription()
 
 int BaseProvider::DetermineSourceEngine(const char *game)
 {
-#if SOURCE_ENGINE == SE_LEFT4DEAD
+#if SOURCE_ENGINE == SE_LEFT4DEAD2
+	return SOURCE_ENGINE_LEFT4DEAD2;
+#elif SOURCE_ENGINE == SE_LEFT4DEAD
 	return SOURCE_ENGINE_LEFT4DEAD;
 #elif SOURCE_ENGINE == SE_ORANGEBOX
 	return SOURCE_ENGINE_ORANGEBOX;
-#else
+#elif SOURCE_ENGINE == SE_DARKMESSIAH
 	return SOURCE_ENGINE_DARKMESSIAH;
+#else
+#error "SOURCE_ENGINE not defined to a known value"
 #endif
 }
 

@@ -14,6 +14,7 @@ chdir('..');
 
 #	   Folder			.vcproj				Engine			Binary				Suffix type		Platform
 Build('loader', 		'mm_loader', 		'', 			'server', 			'full',			'both');
+Build('loader', 		'mm_loader', 		'Left4Dead2', 	'server_linux', 	'',				'linux');
 Build('core-legacy',	'mm_core-legacy', 	'', 			'metamod.1.ep1', 	'',				'both');
 Build('core', 			'mm_core', 			'OrangeBox', 	'metamod.2.ep2', 	'',				'both');
 Build('core', 			'mm_core', 			'Left4Dead', 	'metamod.2.l4d', 	'',				'both');
@@ -94,6 +95,10 @@ sub BuildWindows
 	{
 		$param = "Release - Left 4 Dead";
 	}
+	elsif ($build eq "Left4Dead2")
+	{
+		$param = "Release - Left 4 Dead 2";
+	}
 	elsif ($build eq "DarkMessiah")
 	{
 		$param = "Release - Dark Messiah";
@@ -134,6 +139,11 @@ sub BuildLinux
 	{
 		$param = "ENGINE=left4dead";
 		$file .= '.left4dead';
+	}
+	elsif ($build eq "Left4Dead2")
+	{
+		$param = "ENGINE=left4dead2";
+		$file .= '.left4dead2';
 	}
 	$file .= '/' . $binary;
 
