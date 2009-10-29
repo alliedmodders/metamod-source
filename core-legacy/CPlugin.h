@@ -149,6 +149,8 @@ namespace SourceMM
 	};
 };
 
+void NotifyConCommandBaseDrop(PluginId id, ConCommandBase *base);
+
 typedef SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator PluginIter;
 
 /** @brief Singleton for plugin manager */

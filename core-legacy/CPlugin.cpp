@@ -37,6 +37,26 @@ using namespace SourceMM;
 
 CPluginManager g_PluginMngr;
 
+void NotifyConCommandBaseDrop(PluginId id, ConCommandBase *base)
+{
+	CPluginManager::CPlugin *pl;
+	SourceHook::List<CPluginEventHandler>::iterator event;
+	IMetamodListener *api;
+	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++)
+	{
+		pl = (*iter);
+		if (pl->m_Status < Pl_Paused)
+			continue;
+		if (pl->m_API->GetApiVersion() < 11)
+			continue;
+		for (event = pl->m_Events.begin(); event != pl->m_Events.end(); event++)
+		{
+			api = (*event).event;
+			api->OnUnlinkConCommandBase(id, base);
+		}
+	}
+}
+
 CPluginManager::CPluginManager()
 {
 	m_LastId = Pl_MinId;
@@ -653,13 +673,19 @@ void CPluginManager::UnregAllConCmds(CPlugin *pl)
 {
 	SourceHook::List<ConCommandBase *>::iterator i;
 
-	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
-		g_SMConVarAccessor.Unregister( (*i) );
+	for (i = pl->m_Cvars.begin(); i != pl->m_Cvars.end(); i++)
+	{
+		NotifyConCommandBaseDrop(pl->m_Id, (*i));
+		g_SMConVarAccessor.Unregister((*i));
+	}
 
 	pl->m_Cvars.clear();
 
-	for (i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
-		g_SMConVarAccessor.Unregister( (*i) );
+	for (i = pl->m_Cmds.begin(); i != pl->m_Cmds.end(); i++)
+	{
+		NotifyConCommandBaseDrop(pl->m_Id, (*i));
+		g_SMConVarAccessor.Unregister((*i));
+	}
 
 	pl->m_Cmds.clear();
 }

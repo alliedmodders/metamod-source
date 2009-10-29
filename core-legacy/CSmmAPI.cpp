@@ -118,6 +118,11 @@ void CSmmAPI::UnregisterConCmdBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
 	}
 
+	CPluginManager::CPlugin *pPlugin = g_PluginMngr.FindByAPI(plugin);
+	PluginId id = (pPlugin != NULL) ? pPlugin->m_Id : Pl_BadLoad;
+
+	NotifyConCommandBaseDrop(id, pCommand);
+
 	g_SMConVarAccessor.Unregister(pCommand);
 }
 
