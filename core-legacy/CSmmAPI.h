@@ -63,6 +63,7 @@ namespace SourceMM
 		virtual void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 		virtual const char *GetBaseDir();
 		virtual void PathFormat(char *buffer, size_t len, const char *fmt, ...);
+		virtual IServerPluginCallbacks *GetVSPInfo(int *pVersion);
 		void ClientConPrintf(edict_t *client, const char *fmt, ...);
 		void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1);
 		void EnableVSPListener();

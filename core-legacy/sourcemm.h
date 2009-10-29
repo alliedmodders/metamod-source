@@ -108,6 +108,8 @@ extern int g_GameDllVersion;
 extern bool g_bGameInit;
 extern bool g_bLevelChanged;
 
+extern unsigned int g_vsp_version;
+
 void UnloadMetamod(bool shutting_down);
 
 void LoadAsGameDLL(const gamedll_bridge_info *info);

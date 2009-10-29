@@ -638,3 +638,11 @@ const char *CSmmAPI::GetUserMessage(int index, int *size)
 
 	return msg->name;
 }
+
+IServerPluginCallbacks *CSmmAPI::GetVSPInfo(int *pVersion)
+{
+	if (pVersion != NULL)
+		*pVersion = g_vsp_version;
+
+	return g_pRealVspCallbacks;
+}
