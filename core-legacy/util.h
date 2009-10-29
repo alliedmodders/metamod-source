@@ -12,7 +12,7 @@
 #define _INCLUDE_UTIL_H
 
 #include <stdarg.h>
-#include <sourcehook/sourcehook.h>
+#include "sourcehook/sourcehook.h"
 
 /**
  * @brief Utility functions

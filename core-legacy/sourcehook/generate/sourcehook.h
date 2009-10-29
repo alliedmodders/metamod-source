@@ -29,7 +29,7 @@
 //     This is not a SH_IFACE_VERSION change so that old plugins continue working!
 // 5 - addition of direct vp hooks (new hook mode; from now on AddHookNew checks for
 //	   invalid hookmode -> impl version won't have to change because of things like this)
-#define SH_IMPL_VERSION 5
+#define SH_IMPL_VERSION 4
 
 // Hookman version:
 //  1 - Support for recalls, performance optimisations
