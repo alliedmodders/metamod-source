@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -62,7 +60,8 @@ MetamodVersionInfo GlobVersionInfo =
 	SH_IMPL_VERSION,
 	PLAPI_MIN_VERSION,
 	METAMOD_PLAPI_VERSION,
-	SOURCE_ENGINE_UNKNOWN
+	SOURCE_ENGINE_UNKNOWN,
+	NULL
 };
 
 CPluginManager::CPluginManager()
@@ -437,6 +436,11 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				{
 					GlobVersionInfo.source_engine = g_Metamod.GetSourceEngineBuild();
 				}
+				if (GlobVersionInfo.game_dir == NULL)
+				{
+					GlobVersionInfo.game_dir = strrchr(g_Metamod.GetBaseDir(), PATH_SEP_CHAR) + 1;
+					Msg("OH MY GIDDY AUNT: %s\n", GlobVersionInfo.game_dir);
+				}
 
 				/* Build path information */
 				char file_path[256];
@@ -456,6 +460,14 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				info.pl_path = file_path;
 
 				pl->m_API = fnLoad(&GlobVersionInfo, &info);
+#if SOURCE_ENGINE == SE_ORANGEBOXVALVE
+				/* For plugin compat - try loading again using original OB if OB-Valve has failed */
+				if (pl->m_API == NULL)
+				{
+					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOX;
+					pl->m_API = fnLoad(&GlobVersionInfo, &info);
+				}
+#endif
 				pl->m_UnloadFn = (METAMOD_FN_UNLOAD)dlsym(pl->m_Lib, "UnloadInterface_MMS");
 			}
 

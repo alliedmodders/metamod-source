@@ -24,6 +24,7 @@ symstore("loader\\msvc9\\server.*", $version);
 symstore("core-legacy\\msvc9\\Release\\metamod.1.ep1.*", $version);
 symstore("core\\msvc9\\Release - Dark Messiah\\metamod.2.darkm.*", $version);
 symstore("core\\msvc9\\Release - Orange Box\\metamod.2.ep2.*", $version);
+symstore("core\\msvc9\\Release - Orange Box Valve\\metamod.2.ep2v.*", $version);
 symstore("core\\msvc9\\Release - Left 4 Dead\\metamod.2.l4d.*", $version);
 symstore("core\\msvc9\\Release - Left 4 Dead 2\\metamod.2.l4d2.*", $version);
 

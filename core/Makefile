@@ -3,6 +3,7 @@
 
 SRCDS_BASE = ~/srcds
 HL2SDK_OB = ../../hl2sdk-ob
+HL2SDK_OB_VALVE = ../../hl2sdk-ob-valve
 HL2SDK_L4D = ../../hl2sdk-l4d
 HL2SDK_L4D2 = ../../hl2sdk-l4d2
 
@@ -44,6 +45,16 @@ ifeq "$(ENGINE)" "orangebox"
 	BINARY = metamod.2.ep2.so
 	override ENGSET = true
 endif
+ifeq "$(ENGINE)" "orangeboxvalve"
+	HL2SDK = $(HL2SDK_OB_VALVE)
+	HL2PUB = $(HL2SDK)/public
+	HL2LIB = $(HL2SDK)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=4
+	INCLUDE += -I$(HL2SDK)/public/game/server
+	SRCDS = $(SRCDS_BASE)/orangebox
+	BINARY = metamod.2.ep2v.so
+	override ENGSET = true
+endif
 ifeq "$(ENGINE)" "left4dead"
 	HL2SDK = $(HL2SDK_L4D)
 	HL2PUB = $(HL2SDK)/public
@@ -65,7 +76,7 @@ ifeq "$(ENGINE)" "left4dead2"
 	override ENGSET = true
 endif
 
-CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=5 -DSE_LEFT4DEAD2=6
+CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_ORANGEBOXVALVE=4 -DSE_LEFT4DEAD=5 -DSE_LEFT4DEAD2=6
 
 ifeq "$(ENGINE)" "left4dead2"
 	LINK += $(HL2LIB)/tier1_i486.a vstdlib_linux.so tier0_linux.so -static-libgcc
@@ -123,7 +134,8 @@ all: check
 
 check:
 	if [ "$(ENGSET)" = "false" ]; then \
-		echo "You must supply one of the following values for ENGINE: left4dead2, left4dead or orangebox"; \
+		echo "You must supply one of the following values for ENGINE:"; \
+		echo "left4dead2, left4dead, orangeboxvalve or orangebox"; \
 		exit 1; \
 	fi
 

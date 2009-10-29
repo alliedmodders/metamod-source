@@ -62,6 +62,7 @@ enum MetamodBackend
 	MMBackend_Episode1 = 0,
 	MMBackend_DarkMessiah,
 	MMBackend_Episode2,
+	MMBackend_Episode2Valve,
 	MMBackend_Left4Dead,
 	MMBackend_Left4Dead2,
 	MMBackend_UNKNOWN

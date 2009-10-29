@@ -12,14 +12,15 @@ require 'helpers.pm';
 chdir('..');
 chdir('..');
 
-#	   Folder			.vcproj				Engine			Binary				Suffix type		Platform
-Build('loader', 		'mm_loader', 		'', 			'server', 			'full',			'both');
-Build('loader', 		'mm_loader', 		'Left4Dead2', 	'server_linux', 	'',				'linux');
-Build('core-legacy',	'mm_core-legacy', 	'', 			'metamod.1.ep1', 	'',				'both');
-Build('core', 			'mm_core', 			'OrangeBox', 	'metamod.2.ep2', 	'',				'both');
-Build('core', 			'mm_core', 			'Left4Dead', 	'metamod.2.l4d', 	'',				'both');
-Build('core', 			'mm_core', 			'Left4Dead2', 	'metamod.2.l4d2', 	'',				'both');
-Build('core',			'mm_core',			'DarkMessiah',	'metamod.2.darkm',	'',				'windows');
+#	   Folder			.vcproj				Engine				Binary				Suffix type		Platform
+Build('loader', 		'mm_loader', 		'', 				'server', 			'full',			'both');
+Build('loader', 		'mm_loader', 		'Left4Dead2', 		'server_linux', 	'',				'linux');
+Build('core-legacy',	'mm_core-legacy', 	'', 				'metamod.1.ep1', 	'',				'both');
+Build('core', 			'mm_core', 			'OrangeBox', 		'metamod.2.ep2', 	'',				'both');
+Build('core', 			'mm_core', 			'OrangeBoxValve',	'metamod.2.ep2v', 	'',				'both');
+Build('core', 			'mm_core', 			'Left4Dead', 		'metamod.2.l4d', 	'',				'both');
+Build('core', 			'mm_core', 			'Left4Dead2', 		'metamod.2.l4d2', 	'',				'both');
+Build('core',			'mm_core',			'DarkMessiah',		'metamod.2.darkm',	'',				'windows');
 
 #Structure our output folder
 mkdir('OUTPUT');
@@ -92,6 +93,10 @@ sub BuildWindows
 	{
 		$param = "Release - Orange Box";
 	}
+	if ($build eq "OrangeBoxValve")
+	{
+		$param = "Release - Orange Box Valve";
+	}
 	elsif ($build eq "Left4Dead")
 	{
 		$param = "Release - Left 4 Dead";
@@ -135,6 +140,11 @@ sub BuildLinux
 	{
 		$param = "ENGINE=orangebox";
 		$file .= '.orangebox';
+	}
+	if ($build eq "OrangeBoxValve")
+	{
+		$param = "ENGINE=orangeboxvalve";
+		$file .= '.orangeboxvalve';
 	}
 	elsif ($build eq "Left4Dead")
 	{

@@ -72,6 +72,7 @@ static const char *backend_names[] =
 	"1.ep1",
 	"2.darkm",
 	"2.ep2",
+	"2.ep2v",
 	"2.l4d",
 	"2.l4d2"
 };
@@ -255,6 +256,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		if (engineFactory("VEngineCvar004", NULL) != NULL &&
 			engineFactory("VModelInfoServer002", NULL) != NULL)
 		{
+			if (strcmp(game_name, "tf") == 0 || strcmp(game_name, "dod") == 0)
+			{
+				return MMBackend_Episode2Valve;
+			}
 			return MMBackend_Episode2;
 		}
 		/* Check for Episode One/Old Engine */

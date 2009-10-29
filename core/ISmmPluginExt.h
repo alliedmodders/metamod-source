@@ -41,9 +41,10 @@
 #define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
 #define SOURCE_ENGINE_LEFT4DEAD			4				/**< Left 4 Dead */
 #define SOURCE_ENGINE_DARKMESSIAH		5				/**< Dark Messiah Multiplayer (based on original engine) */
+#define SOURCE_ENGINE_ORANGEBOXVALVE	6				/**< Orange Box Source Engine for Valve games (TF2/DOD:S) */
 #define SOURCE_ENGINE_LEFT4DEAD2		7				/**< Left 4 Dead 2 */
 
-#define METAMOD_PLAPI_VERSION			14				/**< Version of this header file */
+#define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
 
 namespace SourceMM
@@ -110,6 +111,7 @@ struct MetamodVersionInfo
 	int pl_min;				/**< Plugin API minimum version */
 	int pl_max;				/**< Plugin API maximum version */
 	int source_engine;		/**< Source Engine version (SOURCE_* constants) */
+	const char *game_dir;	/**< Game directory name */
 };
 
 /**
