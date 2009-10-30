@@ -112,6 +112,19 @@ struct MetamodVersionInfo
 	int pl_max;				/**< Plugin API maximum version */
 	int source_engine;		/**< Source Engine version (SOURCE_* constants) */
 	const char *game_dir;	/**< Game directory name */
+
+	/**
+	 * @brief Returns the game folder.
+	 *
+	 * @return      Game folder, or NULL if not available on this version
+	 *              of Metamod:Source.
+	 */
+	inline const char *GetGameDir() const
+	{
+		if (pl_max >= 15)
+			return NULL;
+		return game_dir;
+	}
 };
 
 /**
