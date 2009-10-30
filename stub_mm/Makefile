@@ -59,7 +59,7 @@ ifeq "$(ENGINE)" "left4dead"
 	override ENGSET = true
 endif
 
-CFLAGS += -DSE_EPISODEONE=1 -SE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=4
+CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_LEFT4DEAD=4
 
 LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
 
