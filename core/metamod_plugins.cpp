@@ -439,7 +439,6 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				if (GlobVersionInfo.game_dir == NULL)
 				{
 					GlobVersionInfo.game_dir = strrchr(g_Metamod.GetBaseDir(), PATH_SEP_CHAR) + 1;
-					Msg("OH MY GIDDY AUNT: %s\n", GlobVersionInfo.game_dir);
 				}
 
 				/* Build path information */
