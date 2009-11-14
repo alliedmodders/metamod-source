@@ -105,7 +105,9 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 
 #ifndef __linux__
 	#define snprintf	_snprintf
-	#define vsnprintf	_vsnprintf
+	#if defined _MSC_VER && _MSC_VER < 1500
+		#define vsnprintf	_vsnprintf
+	#endif
 #endif
 
 #endif //_INCLUDE_OSLINK_H

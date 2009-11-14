@@ -89,7 +89,7 @@
 # error Unsupported compiler
 #endif
 
-#if SH_COMP==SH_COMP_MSVC
+#if SH_COMP==SH_COMP_MSVC && _MSC_VER < 1500
 # define vsnprintf _vsnprintf
 #endif
 
