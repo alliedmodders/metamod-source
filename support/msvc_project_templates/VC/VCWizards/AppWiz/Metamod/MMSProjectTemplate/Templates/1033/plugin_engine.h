@@ -27,9 +27,14 @@ class [!output PLUGIN_CLASS];
 /////////////////////////////////////////////////////////////////////////
 // Episode One
 
-#if SOURCE_ENGINE == SE_EPISODEONE
+#if SOURCE_ENGINE == SE_EPISODEONE && defined METAMOD_PLAPI_VERSION
+
+#error "Metamod:Source 1.6 API is not supported on the old engine."
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////
+// Wrap some API calls for legacy MM:S.
 
 #if !defined METAMOD_PLAPI_VERSION
 
@@ -41,12 +46,14 @@ class [!output PLUGIN_CLASS];
 
 #else
 
-#error "Metamod:Source 1.6 is not supported on the old engine."
+#define MM_Format g_SMAPI->Format
 
 #endif
 
 /////////////////////////////////////////////////////////////////////////
 // Wrap the CCommand class so our code looks the same for both engines.
+
+#if SOURCE_ENGINE <= SE_DARKMESSIAH
 
 class CCommand
 {
@@ -69,15 +76,6 @@ class CCommand
 };
 
 #define CVAR_INTERFACE_VERSION	VENGINE_CVAR_INTERFACE_VERSION
-#define ENGINE_CALL(func)			  SH_CALL(m_engine_server, func)
-
-/////////////////////////////////////////////////////////////////////////
-// Episode Orange Box or newer
-
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
-
-#define ENGINE_CALL(func) SH_CALL([!output PLUGIN_CLASS]::EngineServer, func)
-#define MM_Format				  g_SMAPI->Format
 
 #endif
 
@@ -120,5 +118,10 @@ inline edict_t* PEntityOfEntIndex(int entity_index)
 #if defined WIN32 && !defined snprintf
 #define snprintf _snprintf
 #endif
+
+/////////////////////////////////////////////////////////////////////////
+// Define ENGINE_CALL
+
+#define ENGINE_CALL(func) SH_CALL([!output PLUGIN_CLASS]::EngineServer, &IVEngineServer::func)
 
 #endif // _MMS_ENGINE_H

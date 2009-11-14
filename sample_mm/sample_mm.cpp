@@ -1,5 +1,5 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source Sample Plugin
  * Written by AlliedModders LLC.
@@ -10,8 +10,6 @@
  * the use of this software.
  *
  * This sample plugin is public domain.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -80,9 +78,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	META_LOG(g_PLAPI, "Starting plugin.");
 
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
-#if defined METAMOD_PLAPI_VERSION
 	if ((vsp_callbacks = ismm->GetVSPInfo(NULL)) == NULL)
-#endif
 	{
 		ismm->AddListener(this, this);
 		ismm->EnableVSPListener();
@@ -100,11 +96,7 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
 
-#if !defined METAMOD_PLAPI_VERSION
-	m_EngineCC = SH_GET_CALLCLASS(engine);
-#endif
-
-	ENGINE_CALL(&IVEngineServer::LogPrint)("All hooks started!\n");
+	ENGINE_CALL(LogPrint)("All hooks started!\n");
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
@@ -129,10 +121,6 @@ bool SamplePlugin::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &SamplePlugin::Hook_ClientSettingsChanged, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
-
-#if !defined METAMOD_PLAPI_VERSION
-	SH_RELEASE_CALLCLASS(m_EngineCC);
-#endif
 
 	return true;
 }

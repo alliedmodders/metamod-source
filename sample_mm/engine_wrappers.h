@@ -1,5 +1,5 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source Sample Plugin
  * Written by AlliedModders LLC.
@@ -10,8 +10,6 @@
  * the use of this software.
  *
  * This sample plugin is public domain.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_SOURCE_ENGINE_WRAPPERS_
@@ -26,17 +24,17 @@ extern CGlobalVars *gpGlobals;
 #error "Metamod:Source 1.6 API is not supported on the old engine."
 #endif
 
+#define ENGINE_CALL(func) SH_CALL(engine, &IVEngineServer::func)
+
 /**
- * MM:S 1.4.x needs older API calls.
+ * Wrap some API calls for legacy MM:S.
  */
 #if !defined METAMOD_PLAPI_VERSION
 #define GetEngineFactory engineFactory
 #define GetServerFactory serverFactory
 #define MM_Format snprintf
 #define	GetCGlobals	pGlobals
-#define ENGINE_CALL(func) SH_CALL(m_EngineCC, func)
 #else
-#define ENGINE_CALL(func) SH_CALL(engine, func)
 #define MM_Format g_SMAPI->Format
 #endif
 

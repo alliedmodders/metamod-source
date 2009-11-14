@@ -84,9 +84,7 @@ bool [!output PLUGIN_CLASS]::Load(PluginId id, ISmmAPI* ismm, char* error, size_
 
 	// Load the VSP listener. This is usually needed for IServerPluginHelpers
 
-  #if defined METAMOD_PLAPI_VERSION
-  if (([!output PLUGIN_CLASS]::VspCallbacks = ismm->GetVSPInfo(NULL)) == NULL)
-  #endif
+	if (([!output PLUGIN_CLASS]::VspCallbacks = ismm->GetVSPInfo(NULL)) == NULL)
 	{
 		ismm->AddListener(this, this);
 		ismm->EnableVSPListener();
@@ -96,15 +94,7 @@ bool [!output PLUGIN_CLASS]::Load(PluginId id, ISmmAPI* ismm, char* error, size_
 
   AddHooks();
 
-  // Get the engine server interface
-
-  #if SOURCE_ENGINE == SE_EPISODEONE
-	
-  m_engine_server = SH_GET_CALLCLASS([!output PLUGIN_CLASS]::EngineServer);
-
-  #endif
-
-	ENGINE_CALL(&IVEngineServer::LogPrint)("All hooks started!\n");
+  ENGINE_CALL(LogPrint)("All hooks started!\n");
 
   // Register the base accessor
 
@@ -130,14 +120,6 @@ bool [!output PLUGIN_CLASS]::Unload(char *error, size_t maxlen)
   // Remove the hooks
 
   RemoveHooks();
-
-  // Release the engine server interface
-
-  #if SOURCE_ENGINE == SE_EPISODEONE
-
-	SH_RELEASE_CALLCLASS(m_engine_server);
-
-  #endif
 
 	return true;
 }

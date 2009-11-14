@@ -232,6 +232,25 @@ function AddConfig(proj, strProjectName)
 		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
 		
 		
+		// Debug - Dark Messiah -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		var config   = proj.Object.Configurations('Debug - Dark Messiah');
+		var CLTool   = config.Tools('VCCLCompilerTool');
+		var LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		// Release - Dark Messiah -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		config   = proj.Object.Configurations('Release - Dark Messiah');
+		CLTool   = config.Tools('VCCLCompilerTool');
+		LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		
 		// Debug - Orange Box -> Configuration Properties -> C/C++ -> Preprocessor
 		
 		config   = proj.Object.Configurations('Debug - Orange Box');
@@ -251,6 +270,25 @@ function AddConfig(proj, strProjectName)
 		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
 		
 		
+		// Debug - Orange Box Valve -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		config   = proj.Object.Configurations('Debug - Orange Box Valve');
+		CLTool   = config.Tools('VCCLCompilerTool');
+		LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		// Release - Orange Box Valve -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		config   = proj.Object.Configurations('Release - Orange Box Valve');
+		CLTool   = config.Tools('VCCLCompilerTool');
+		LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		
 		// Debug - Left 4 Dead -> Configuration Properties -> C/C++ -> Preprocessor
 		
 		config   = proj.Object.Configurations('Debug - Left 4 Dead');
@@ -263,6 +301,25 @@ function AddConfig(proj, strProjectName)
 		// Release - Left 4 Dead -> Configuration Properties -> C/C++ -> Preprocessor
 		
 		config   = proj.Object.Configurations('Release - Left 4 Dead');
+		CLTool   = config.Tools('VCCLCompilerTool');
+		LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		
+		// Debug - Left 4 Dead 2 -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		config   = proj.Object.Configurations('Debug - Left 4 Dead 2');
+		CLTool   = config.Tools('VCCLCompilerTool');
+		LinkTool = config.Tools('VCLinkerTool');
+
+		CLTool.PreprocessorDefinitions = project_exports + CLTool.PreprocessorDefinitions;
+		LinkTool.OutputFile            = "$(ProjectDir)\\Bin\\$(ConfigurationName)\\" + plugin_dll;
+		
+		// Release - Left 4 Dead 2 -> Configuration Properties -> C/C++ -> Preprocessor
+		
+		config   = proj.Object.Configurations('Release - Left 4 Dead 2');
 		CLTool   = config.Tools('VCCLCompilerTool');
 		LinkTool = config.Tools('VCLinkerTool');
 

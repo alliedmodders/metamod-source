@@ -486,7 +486,7 @@ void [!output PLUGIN_CLASS]::HookedClientCommand(edict_t* entity)
 {
   // Verify the parameters
 
-  #if SOURCE_ENGINE == SE_EPISODEONE
+  #if SOURCE_ENGINE <= SE_DARKMESSIAH
 	CCommand args;
   #endif
 

@@ -154,15 +154,6 @@ class [!output PLUGIN_CLASS] : public ISmmPlugin, public IMetamodListener
 [!if IServerGameClients_SetCommandClient]
     DECL_HOOK_SET_COMMAND_CLIENT;
 [!endif]
-
-  ////////////////////////////////////////
-  // Plugin Variables
-
-  protected:
-
-    #if SOURCE_ENGINE == SE_EPISODEONE
-	  SourceHook::CallClass<IVEngineServer>* m_engine_server;
-    #endif
 };
 
 /////////////////////////////////////////////////////////////////////////

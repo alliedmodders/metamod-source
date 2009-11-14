@@ -1,5 +1,5 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source Sample Plugin
  * Written by AlliedModders LLC.
@@ -10,8 +10,6 @@
  * the use of this software.
  *
  * This sample plugin is public domain.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
@@ -71,10 +69,6 @@ public:
 	const char *GetVersion();
 	const char *GetDate();
 	const char *GetLogTag();
-private:
-#if !defined METAMOD_PLAPI_VERSION
-	SourceHook::CallClass<IVEngineServer> *m_EngineCC;
-#endif
 };
 
 extern SamplePlugin g_SamplePlugin;
