@@ -56,7 +56,7 @@ static int isgd_shutdown_index = -1;
 #if defined _WIN32
 #define SERVER_NAME			"server.dll"
 #elif defined __linux__
-#define SERVER_NAME			"server_i486.so"
+#define SERVER_NAME			"server" BINARY_SUFFIX
 #endif
 
 static bool
@@ -174,6 +174,12 @@ mm_DetectGameInformation()
 	fclose(fp);
 
 	game_info_detected = 1;
+
+	if (gamedll_path_count == 0)
+	{
+		mm_LogFatal("Could not detect any valid game paths in gameinfo.txt");
+		return false;
+	}
 
 	return true;
 }
