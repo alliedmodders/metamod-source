@@ -659,6 +659,7 @@ bool CacheUserMessages()
 				void *addr = dlsym(handle, "usermessages");
 				if (addr == NULL)
 				{
+					dlclose(handle);
 					return false;
 				}
 				dict = (UserMsgDict *)*(void **)addr;
