@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -95,6 +95,9 @@ extern SourceHook::CSourceHookImpl g_SourceHook;
 
 /** @brief Mod path (important!)*/
 extern SourceHook::String g_ModPath;
+
+/** @brief Path to Metamod binary */
+extern SourceHook::String g_MetamodPath;
 
 /** @brief Global variable for SourceHook macros */
 extern SourceHook::ISourceHook *g_SHPtr;

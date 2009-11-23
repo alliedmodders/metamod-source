@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
@@ -141,15 +139,6 @@ namespace SourceMM
 		 * @param msg				Message string.
 		 */
 		virtual void ClientConsolePrint(edict_t *client, const char *msg) =0;
-
-		/**
-		 * @brief Returns a server plugin helper for the given interface 
-		 * string.
-		 *
-		 * @param iface				Interface version
-		 * @return					IServerPluginCallbacks pointer.
-		 */
-		virtual IServerPluginCallbacks *GetVSPCallbacks(int version) =0;
 
 		/**
 		 * @brief Halts the server with a fatal error message.

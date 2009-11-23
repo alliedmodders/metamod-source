@@ -22,10 +22,10 @@ CPP = gcc-4.1
 
 ifeq "$(ENGINE)" "left4dead2"
 	BINARY = server_linux.so
-	CFLAGS += -DBINARY_SUFFIX=\"_linux.so\"
+	CFLAGS += -DLIB_SUFFIX=\"_linux.so\"
 else
 	BINARY = server_i486.so
-	CFLAGS += -DBINARY_SUFFIX=\"_i486.so\"
+	CFLAGS += -DLIB_SUFFIX=\"_i486.so\"
 endif
 
 LINK += -static-libgcc

@@ -983,10 +983,6 @@
 					RelativePath="..\provider\provider_ep2.h"
 					>
 				</File>
-				<File
-					RelativePath="..\provider\vsp_listener.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Source Files"
@@ -997,10 +993,6 @@
 				</File>
 				<File
 					RelativePath="..\provider\provider_ep2.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\provider\vsp_listener.cpp"
 					>
 				</File>
 			</Filter>

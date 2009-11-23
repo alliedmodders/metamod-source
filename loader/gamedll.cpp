@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -52,17 +50,17 @@ static IServerGameDLL *gamedll_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
+static char mm_path[PLATFORM_MAX_PATH];
 
 #if defined _WIN32
 #define SERVER_NAME			"server.dll"
 #elif defined __linux__
-#define SERVER_NAME			"server" BINARY_SUFFIX
+#define SERVER_NAME			"server" LIB_SUFFIX
 #endif
 
 static bool
 mm_DetectGameInformation()
 {
-	char mm_path[PLATFORM_MAX_PATH];
 	char game_path[PLATFORM_MAX_PATH];
 
 	if (game_info_detected)
@@ -77,7 +75,7 @@ mm_DetectGameInformation()
 
 	if (!mm_GetFileOfAddress((void*)mm_DetectGameInformation, mm_path, sizeof(mm_path)))
 	{
-		mm_LogFatal("Could not locate metamod loader library path");
+		mm_LogFatal("Could not locate Metamod loader library path");
 		return false;
 	}
 
@@ -216,18 +214,18 @@ public:
 						 QueryValveInterface fileSystemFactory, 
 						 void *pGlobals)
 	{
-		MetamodBackend backend = mm_DetermineBackend(engineFactory, game_name);
+		mm_backend = mm_DetermineBackend(engineFactory, game_name);
 
 		char error[255];
-		if (backend == MMBackend_UNKNOWN)
+		if (mm_backend == MMBackend_UNKNOWN)
 		{
 			mm_LogFatal("Could not detect engine version");
 		}
 		else
 		{
-			if (!mm_LoadMetamodLibrary(backend, error, sizeof(error)))
+			if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
 			{
-				mm_LogFatal("Detected engine %d but could not load: %s", backend, error);
+				mm_LogFatal("Detected engine %d but could not load: %s", mm_backend, error);
 			}
 			else
 			{
@@ -236,7 +234,7 @@ public:
 				if (get_bridge == NULL)
 				{
 					mm_UnloadMetamodLibrary();
-					mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", backend);
+					mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", mm_backend);
 				}
 				else
 				{
@@ -256,13 +254,14 @@ public:
 			info.dllVersion = gamedll_version;
 			info.isgd = gamedll_iface;
 			info.gsFactory = gamedll_qvi;
+			info.vsp_listener_path = mm_path;
 
 			strcpy(error, "Unknown error");
 			if (!gamedll_bridge->DLLInit_Pre(&info, error, sizeof(error)))
 			{
 				gamedll_bridge = NULL;
 				mm_UnloadMetamodLibrary();
-				mm_LogFatal("Unknown error loading Metamod for engine %d: %s", backend, error);	
+				mm_LogFatal("Unknown error loading Metamod for engine %d: %s", mm_backend, error);	
 			}
 		}
 

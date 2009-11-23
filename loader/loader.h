@@ -86,5 +86,7 @@ mm_GetGameName();
 extern MetamodBackend
 mm_DetermineBackend(QueryValveInterface qvi, const char *game_name);
 
+extern MetamodBackend mm_backend;
+
 #endif /* _INCLUDE_METAMOD_SOURCE_LOADER_H_ */
 

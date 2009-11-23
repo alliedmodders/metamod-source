@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_SOURCEMM_H
@@ -100,6 +98,7 @@ public:
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
+	void SetVSPListener(const char *path);
 };
 
 bool

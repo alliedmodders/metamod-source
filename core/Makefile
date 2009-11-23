@@ -20,7 +20,6 @@ OBJECTS = metamod.cpp 				\
 		  sourcehook/sourcehook_hookmangen.cpp \
 		  provider/console.cpp 		\
 		  provider/provider_ep2.cpp \
-		  provider/vsp_listener.cpp	\
 		  vsp_bridge.cpp			\
 		  gamedll_bridge.cpp
 
@@ -43,6 +42,7 @@ ifeq "$(ENGINE)" "orangebox"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2.so
+	LIB_SUFFIX = i486
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangeboxvalve"
@@ -53,6 +53,7 @@ ifeq "$(ENGINE)" "orangeboxvalve"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2v.so
+	LIB_SUFFIX = i486
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
@@ -63,6 +64,7 @@ ifeq "$(ENGINE)" "left4dead"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/l4d
 	BINARY = metamod.2.l4d.so
+	LIB_SUFFIX = i486
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead2"
@@ -73,16 +75,13 @@ ifeq "$(ENGINE)" "left4dead2"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/left4dead2_demo
 	BINARY = metamod.2.l4d2.so
+	LIB_SUFFIX = linux
 	override ENGSET = true
 endif
 
 CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_ORANGEBOXVALVE=4 -DSE_LEFT4DEAD=5 -DSE_LEFT4DEAD2=6
 
-ifeq "$(ENGINE)" "left4dead2"
-	LINK += $(HL2LIB)/tier1_i486.a vstdlib_linux.so tier0_linux.so -static-libgcc
-else
-	LINK += $(HL2LIB)/tier1_i486.a vstdlib_i486.so tier0_i486.so -static-libgcc
-endif
+LINK += $(HL2LIB)/tier1_i486.a vstdlib_$(LIB_SUFFIX).so tier0_$(LIB_SUFFIX).so -static-libgcc
 
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
 	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -Isourcehook -I../loader
@@ -123,13 +122,8 @@ all: check
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(BIN_DIR)/provider
 	mkdir -p $(BIN_DIR)/sourcehook
-	if [ "$(ENGINE)" = "left4dead2" ]; then \
-		ln -sf $(HL2LIB)/vstdlib_linux.so vstdlib_linux.so; \
-		ln -sf $(HL2LIB)/tier0_linux.so tier0_linux.so; \
-	else \
-		ln -sf $(HL2LIB)/vstdlib_i486.so vstdlib_i486.so; \
-		ln -sf $(HL2LIB)/tier0_i486.so tier0_i486.so; \
-	fi
+	ln -sf $(HL2LIB)/vstdlib_$(LIB_SUFFIX).so
+	ln -sf $(HL2LIB)/tier0_$(LIB_SUFFIX).so
 	$(MAKE) -f Makefile metamod
 
 check:

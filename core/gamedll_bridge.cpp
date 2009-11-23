@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <assert.h>
@@ -49,6 +47,7 @@ public:
 		g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory,
 								 info->dllVersion,
 								 true);
+		g_Metamod.SetVSPListener(info->vsp_listener_path);
 		mm_InitializeGlobals((CreateInterfaceFn)info->engineFactory,
 							 (CreateInterfaceFn)info->physicsFactory,
 							 (CreateInterfaceFn)info->fsFactory,

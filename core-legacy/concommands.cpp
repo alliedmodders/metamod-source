@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -15,7 +15,6 @@
 #include "CPlugin.h"
 #include "sh_string.h"
 #include "sh_list.h"
-#include "vsp_listener.h"
 #include "util.h"
 
 /**
@@ -121,7 +120,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 
 	int args = e->Cmd_Argc();
 
-	if (g_bIsBridgedAsVsp && !g_bLevelChanged)
+	if (!g_GameDll.loaded && !g_bLevelChanged)
 	{
 		CONMSG("WARNING: You must change the map to activate Metamod:Source.\n");
 		return;
@@ -143,13 +142,13 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 		} else if (strcmp(command, "version") == 0) {
 			CONMSG("Metamod:Source version %s\n", MMS_FULL_VERSION);
 			CONMSG("Build ID: %s\n", MMS_BUILD_UNIQUEID);
-			if (g_bIsBridgedAsVsp)
+			if (g_GameDll.loaded)
 			{
-				CONMSG("Loaded As: Valve Server Plugin\n");
+				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
 			}
 			else
 			{
-				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
+				CONMSG("Loaded As: Valve Server Plugin\n");
 			}
 			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
 			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);

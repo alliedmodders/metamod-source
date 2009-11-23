@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -12,7 +12,6 @@
 #include "CSmmAPI.h"
 #include "sourcemm.h"
 #include "concommands.h"
-#include "vsp_listener.h"
 #include "util.h"
 
 /** 
@@ -427,8 +426,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 								//if (pl->m_API->GetApiVersion() >= 4)
 								pl->m_API->AllPluginsLoaded();
 							}
-							if (g_bIsBridgedAsVsp ||
-								(g_VspListener.IsLoaded() && g_SmmAPI.VSPEnabled()))
+							if (g_bIsBridgedAsVsp)
 							{
 								SourceHook::List<CPluginEventHandler>::iterator event;
 								for (event = pl->m_Events.begin();

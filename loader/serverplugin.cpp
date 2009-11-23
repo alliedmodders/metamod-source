@@ -31,6 +31,7 @@
 #include <sh_memfuncinfo.h>
 #include <sh_memory.h>
 #include "serverplugin.h"
+#include "gamedll.h"
 
 typedef enum
 {
@@ -51,12 +52,6 @@ typedef int QueryCvarCookie_t;
 class CCommand;
 class IServerPluginCallbacks;
 struct edict_t;
-
-#if defined WIN32
-#define LIBRARY_EXT		".dll"
-#else
-#define LIBRARY_EXT		"_i486.so"
-#endif
 
 class IRandomThings
 {
@@ -90,19 +85,23 @@ public:
 
 		load_allowed = false;
 
-		if ((game_name = mm_GetGameName()) == NULL)
+		/* Backend should already filled in if loaded as gamedll */
+		if (gamedll_bridge == NULL)
 		{
-			return false;
+			if ((game_name = mm_GetGameName()) == NULL)
+			{
+				return false;
+			}
+
+			mm_backend = mm_DetermineBackend(engineFactory, game_name);
 		}
 
-		MetamodBackend backend = mm_DetermineBackend(engineFactory, game_name);
-
-		if (backend == MMBackend_UNKNOWN)
+		if (mm_backend == MMBackend_UNKNOWN)
 		{
 			mm_LogFatal("Could not detect engine version");
 			return false;
 		}
-		else if (backend >= MMBackend_Episode2)
+		else if (mm_backend >= MMBackend_Episode2)
 		{
 			/* We need to insert the right type of call into this vtable */
 			void **vtable_src;
@@ -132,18 +131,24 @@ public:
 		}
 
 		char error[255];
-		if (!mm_LoadMetamodLibrary(backend, error, sizeof(error)))
+		if (gamedll_bridge == NULL)
 		{
-			mm_LogFatal("Detected engine %d but could not load: %s", backend, error);
-			return false;
+			if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
+			{
+				mm_LogFatal("Detected engine %d but could not load: %s", mm_backend, error);
+				return false;
+			}
 		}
 
 		typedef IVspBridge *(*GetVspBridge)();
 		GetVspBridge get_bridge = (GetVspBridge)mm_GetProcAddress("GetVspBridge");
 		if (get_bridge == NULL)
 		{
-			mm_UnloadMetamodLibrary();
-			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback", backend);
+			if (gamedll_bridge == NULL)
+			{
+				mm_UnloadMetamodLibrary();
+			}
+			mm_LogFatal("Detected engine %d but could not find GetVspBridge callback", mm_backend);
 			return false;
 		}
 
@@ -160,8 +165,11 @@ public:
 		if (!vsp_bridge->Load(&info, error, sizeof(error)))
 		{
 			vsp_bridge = NULL;
-			mm_UnloadMetamodLibrary();
-			mm_LogFatal("Unknown error loading Metamod for engine %d: %s", backend, error);	
+			if (gamedll_bridge == NULL)
+			{
+				mm_UnloadMetamodLibrary();
+			}
+			mm_LogFatal("Unknown error loading Metamod for engine %d: %s", mm_backend, error);	
 			return false;
 		}
 
@@ -172,7 +180,11 @@ public:
 		if (vsp_bridge == NULL)
 			return;
 		vsp_bridge->Unload();
-		mm_UnloadMetamodLibrary();
+
+		if (gamedll_bridge == NULL)
+		{
+			mm_UnloadMetamodLibrary();
+		}
 	}
 	virtual void Pause()
 	{

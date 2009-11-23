@@ -226,10 +226,6 @@
 				RelativePath="..\vsp_bridge.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\vsp_listener.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -262,10 +258,6 @@
 			</File>
 			<File
 				RelativePath="..\util.h"
-				>
-			</File>
-			<File
-				RelativePath="..\vsp_listener.h"
 				>
 			</File>
 		</Filter>

@@ -21,7 +21,6 @@ OBJECTS = oslink.cpp 			\
 		  CSmmAPI.cpp 			\
           sourcemm.cpp 			\
 		  CPlugin.cpp 			\
-		  vsp_listener.cpp		\
 		  vsp_bridge.cpp		\
 		  gamedll_bridge.cpp	\
 		  sourcehook/sourcehook.cpp

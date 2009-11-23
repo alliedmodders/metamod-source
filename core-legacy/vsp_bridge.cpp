@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <assert.h>
@@ -36,6 +34,7 @@ SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 bool g_bIsBridgedAsVsp;
+const char *vsp_desc = "Metamod:Source " MMS_FULL_VERSION;
 
 void InterceptPluginUnloads()
 {
@@ -51,13 +50,26 @@ class VspBridge : public IVspBridge
 {
 	virtual bool Load(const vsp_bridge_info *info, char *error, size_t maxlength)
 	{
-		assert(!g_GameDll.loaded && !g_bIsBridgedAsVsp);
+		assert(!g_bIsBridgedAsVsp);
 
-		CreateInterfaceFn engineFactory = (CreateInterfaceFn)info->engineFactory;
-		CreateInterfaceFn gsFactory = (CreateInterfaceFn)info->gsFactory;
+		if (!g_GameDll.loaded)
+		{
+			CreateInterfaceFn engineFactory = (CreateInterfaceFn)info->engineFactory;
+			CreateInterfaceFn gsFactory = (CreateInterfaceFn)info->gsFactory;
 
-		if (!AlternatelyLoadMetamod(engineFactory, gsFactory))
-			return false;
+			if (!AlternatelyLoadMetamod(engineFactory, gsFactory))
+				return false;
+
+			extern ConVar metamod_version;
+			char buffer[255];
+
+			UTIL_Format(buffer, sizeof(buffer), "%sV", metamod_version.GetString());
+			metamod_version.SetValue(buffer);
+		}
+		else
+		{
+			vsp_desc = "Metamod:Source Interface " MMS_FULL_VERSION;
+		}
 
 		ConCommandBase *pBase = g_Engine.icvar->GetCommands();
 		while (pBase != NULL)
@@ -75,12 +87,6 @@ class VspBridge : public IVspBridge
 			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
 			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
 		}
-
-		extern ConVar metamod_version;
-		char buffer[255];
-
-		UTIL_Format(buffer, sizeof(buffer), "%sV", metamod_version.GetString());
-		metamod_version.SetValue(buffer);
 
 		g_bIsBridgedAsVsp = true;
 		g_pRealVspCallbacks = info->vsp_callbacks;
@@ -104,13 +110,16 @@ class VspBridge : public IVspBridge
 			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
 			g_plugin_unload = NULL;
 		}
-		g_SMConVarAccessor.UnloadMetamodCommands();
-		UnloadMetamod(false);
+		if (!g_GameDll.loaded)
+		{
+			g_SMConVarAccessor.UnloadMetamodCommands();
+			UnloadMetamod(false);
+		}
 	}
 
 	virtual const char *GetDescription()
 	{
-		return "Metamod:Source " MMS_FULL_VERSION;
+		return vsp_desc;
 	}
 };
 

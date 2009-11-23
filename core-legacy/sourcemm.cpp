@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -18,7 +18,6 @@
 #include "CSmmAPI.h"
 #include "CPlugin.h"
 #include "util.h"
-#include "vsp_listener.h"
 #include "iplayerinfo.h"
 #include <filesystem.h>
 
@@ -57,6 +56,7 @@ EngineInfo g_Engine;
 SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
 SourceHook::String g_ModPath;
+SourceHook::String g_MetamodPath;
 PluginId g_PLID = Pl_Console;			/* Technically, SourceMM is the "Console" plugin... :p */
 static bool bInFirstLevel = true;
 bool g_bGameInit = false;
@@ -66,7 +66,7 @@ static const char VSPIFACE_002[] = "ISERVERPLUGINCALLBACKS002";
 static const char GAMEINFO_PATH[] = "|gameinfo_path|";
 IFileSystem *baseFs = NULL;
 bool g_bLevelChanged = false;
-IServerPluginCallbacks *g_pRealVspCallbacks = &g_VspListener;
+IServerPluginCallbacks *g_pRealVspCallbacks = NULL;
 unsigned int g_vsp_version = 0;
 
 #define ITER_EVENT(evn, args) \
@@ -123,41 +123,6 @@ void DoInitialPluginLoads()
 	g_SmmAPI.PathFormat(filepath, sizeof(filepath), "%s/%s", g_ModPath.c_str(), pluginFile);
 	g_SmmAPI.PathFormat(vdfpath, sizeof(vdfpath), "%s/%s", g_ModPath.c_str(), mmBaseDir);
 	LoadPlugins(filepath, vdfpath);
-}
-
-SMM_API void *
-CreateInterface(const char *iface, int *ret)
-{
-	void *ptr = NULL;
-
-	if (!g_bIsBridgedAsVsp && strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
-	{
-		if (g_VspListener.IsLoaded())
-		{
-			if (ret != NULL)
-				*ret = IFACE_FAILED;
-			return NULL;
-		}
-
-		assert(&g_VspListener == g_pRealVspCallbacks);
-
-		int vsp_version = atoi(&iface[22]);
-		if (vsp_version < 1 || vsp_version > 2)
-		{
-			if (ret != NULL)
-				*ret = IFACE_FAILED;
-			return NULL;
-		}
-
-		g_vsp_version = vsp_version;
-
-		return g_pRealVspCallbacks;
-	}
-
-	if (ret)
-		*ret = (ptr != NULL) ? IFACE_OK : IFACE_FAILED;
-
-	return ptr;
 }
 
 bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
@@ -241,6 +206,7 @@ void LoadAsGameDLL(const gamedll_bridge_info *info)
 	g_GameDll.factory = (CreateInterfaceFn)info->gsFactory;
 	g_GameDll.pGameDLL = (IServerGameDLL*)info->isgd;
 	g_GameDllVersion = info->dllVersion;
+	g_MetamodPath.assign(info->vsp_listener_path);
 
 	InitMainStates();
 

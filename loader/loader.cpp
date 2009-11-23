@@ -41,6 +41,7 @@ typedef ICommandLine *(*GetCommandLine)();
 
 static HMODULE mm_library = NULL;
 static char mm_fatal_logfile[PLATFORM_MAX_PATH] = "metamod-fatal.log";
+MetamodBackend mm_backend = MMBackend_UNKNOWN;
 
 extern void
 mm_LogFatal(const char *message, ...)
@@ -81,7 +82,7 @@ static const char *backend_names[] =
 #define LIBRARY_EXT		".dll"
 #define LIBRARY_MINEXT	".dll"
 #elif defined __linux__
-#define LIBRARY_EXT		BINARY_SUFFIX
+#define LIBRARY_EXT		LIB_SUFFIX
 #define LIBRARY_MINEXT	".so"
 #endif
 
@@ -146,16 +147,22 @@ CreateInterface(const char *name, int *ret)
 		return NULL;
 	}
 
-	/* If we've got a gamedll bridge, forward the request. */
-	if (gamedll_bridge != NULL)
-		return gamedll_bridge->QueryInterface(name, ret);
-
-	/* Otherwise, we're probably trying to load Metamod. */
 	void *ptr;
 	if (strncmp(name, "ISERVERPLUGINCALLBACKS", 22) == 0)
+	{
+		/* Either load as VSP or start VSP listener */
 		ptr = mm_GetVspCallbacks(atoi(&name[22]));
-	else
+	}
+	else if (gamedll_bridge == NULL)
+	{
+		/* Load as gamedll */
 		ptr = mm_GameDllRequest(name, ret);
+	}
+	else
+	{
+		/* If we've got a gamedll bridge, forward the request. */
+		return gamedll_bridge->QueryInterface(name, ret);
+	}
 
 	if (ret != NULL)
 		*ret = (ptr != NULL) ? 0 : 1;
@@ -173,8 +180,8 @@ mm_GetProcAddress(const char *name)
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
 #elif defined __linux__
-#define TIER0_NAME			"bin/tier0" BINARY_SUFFIX
-#define VSTDLIB_NAME		"bin/vstdlib" BINARY_SUFFIX
+#define TIER0_NAME			"bin/tier0" LIB_SUFFIX
+#define VSTDLIB_NAME		"bin/vstdlib" LIB_SUFFIX
 #endif
 
 const char *

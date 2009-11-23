@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_METAMOD_SOURCE_LOADER_BRIDGE_H_
@@ -56,6 +54,7 @@ struct gamedll_bridge_info
 	void *				pGlobals;
 	unsigned int		dllVersion;
 	void *				isgd;
+	const char *		vsp_listener_path;
 };
 
 class IGameDllBridge

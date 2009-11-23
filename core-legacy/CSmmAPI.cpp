@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -13,7 +13,6 @@
 #include "sourcemm.h"
 #include "concommands.h"
 #include "CPlugin.h"
-#include "vsp_listener.h"
 #include "util.h"
 
 /**
@@ -466,15 +465,13 @@ void CSmmAPI::LoadAsVSP()
 		}
 	}
 
-	char our_path[PATH_SIZE];
-	GetFileOfAddress((void*)LoadAsGameDLL, our_path, sizeof(our_path));
-
-	const char *usepath = our_path;
-	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_file, our_path))
+	const char *usepath = g_MetamodPath.c_str();
+	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_file, g_MetamodPath.c_str()))
+	{
 		usepath = rel_path;
+	}
 	
 	char command[PATH_SIZE * 2];
-	g_VspListener.SetLoadable(true);
 	UTIL_Format(command, sizeof(command), "plugin_load \"%s\"\n", usepath);
 	g_Engine.engine->ServerCommand(command);
 }
@@ -482,7 +479,7 @@ void CSmmAPI::LoadAsVSP()
 void CSmmAPI::EnableVSPListener()
 {
 	/* If GameInit already passed and we're not already enabled or loaded, go ahead and LoadAsVSP load */
-	if (g_bGameInit && !m_VSP && !g_VspListener.IsLoaded() && !g_bIsBridgedAsVsp)
+	if (g_bGameInit && !m_VSP && !g_bIsBridgedAsVsp)
 	{
 		LoadAsVSP();
 	}

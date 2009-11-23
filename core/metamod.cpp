@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #include <stdio.h>
@@ -182,16 +180,7 @@ mm_InitializeForLoad()
 bool
 mm_DetectGameInformation()
 {
-	char mm_path[PATH_SIZE];
 	char game_path[PATH_SIZE];
-
-	/* Get path to SourceMM DLL */
-	if (!GetFileOfAddress((void *)mm_InitializeForLoad, mm_path, sizeof(mm_path)))
-	{
-		return false;
-	}
-
-	metamod_path.assign(mm_path);
 
 	/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
 	const char *game_dir = provider->GetCommandLineValue("-game");
@@ -218,33 +207,6 @@ void *
 ServerFactory(const char *iface, int *ret)
 {
 	IFACE_MACRO(gamedll_info.factory, GameDLL);
-}
-
-SMM_API void *
-CreateInterface(const char *iface, int *ret)
-{
-	void *ptr = NULL;
-
-	if (!mm_IsVspBridged() && strncmp(iface, "ISERVERPLUGINCALLBACKS", 22) == 0)
-	{
-		if (vsp_callbacks != NULL)
-		{
-			if (ret != NULL)
-				*ret = IFACE_FAILED;
-			return NULL;
-		}
-
-		vsp_version = atoi(&iface[22]);
-		ptr = provider->GetVSPCallbacks(vsp_version);
-
-		if (ptr == NULL)
-			vsp_version = 0;
-	}
-
-	if (ret)
-		*ret = (ptr != NULL) ? IFACE_OK : IFACE_FAILED;
-
-	return ptr;
 }
 
 static int
@@ -868,7 +830,9 @@ void MetamodSource::ClientConPrintf(edict_t *client, const char *fmt, ...)
 void MetamodSource::EnableVSPListener()
 {
 	if (is_game_init && !vsp_load_requested && !vsp_loaded)
+	{
 		InitializeVSP();
+	}
 
 	vsp_load_requested = true;
 }
@@ -1077,6 +1041,16 @@ void MetamodSource::NotifyVSPListening(IServerPluginCallbacks *callbacks, int ve
 	
 	vsp_callbacks = callbacks;
 	ITER_EVENT(OnVSPListening, (callbacks));
+
+	if (is_gamedll_loaded)
+	{
+		/*
+		 * MM:S is loaded as a game DLL so we need to set these for mm_IsVspBridged() and
+		 * mm_IsVspLoadComplete()
+		 */
+		g_bIsVspBridged = true;
+		were_plugins_loaded = true;
+	}
 }
 
 IServerPluginCallbacks *MetamodSource::GetVSPInfo(int *pVersion)
@@ -1116,6 +1090,11 @@ void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version,
 	gamedll_info.factory = serverFactory;
 	gamedll_version = version;
 	is_gamedll_loaded = loaded;
+}
+
+void MetamodSource::SetVSPListener(const char *path)
+{
+	metamod_path.assign(path);
 }
 
 static bool

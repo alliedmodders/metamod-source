@@ -36,7 +36,6 @@
 #include "provider_ep2.h"
 #include "console.h"
 #include "metamod_console.h"
-#include "vsp_listener.h"
 #include <filesystem.h>
 #include "metamod.h"
 
@@ -74,7 +73,6 @@ void _ServerCommand();
 /* Variables */
 static bool usermsgs_extracted = false;
 static CVector<UsrMsgInfo> usermsgs_list;
-static VSPListener g_VspListener;
 static BaseProvider g_Ep1Provider;
 static List<ConCommandBase *> conbases_unreg;
 
@@ -418,17 +416,6 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 	g_SMConVarAccessor.RegisterConCommandBase(pVar);
 
 	return pVar;
-}
-
-IServerPluginCallbacks *BaseProvider::GetVSPCallbacks(int version)
-{
-	if (version > 2)
-	{
-		return NULL;
-	}
-
-	g_VspListener.SetLoadable(true);
-	return &g_VspListener;
 }
 
 bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len)
