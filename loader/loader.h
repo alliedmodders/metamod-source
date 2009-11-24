@@ -58,7 +58,7 @@
 typedef void *	HMODULE;
 #define PLATFORM_MAX_PATH	PATH_MAX
 #define SH_SYS				SH_SYS_LINUX
-#define SH_XP				SH_SYS_POSIX
+#define SH_XP				SH_XP_POSIX
 #define SH_COMP				SH_COMP_GCC
 #define	PATH_SEP_STR		"/"
 #define PATH_SEP_CHAR		'/'
