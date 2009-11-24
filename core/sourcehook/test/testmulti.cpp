@@ -4,7 +4,7 @@
 #include "testevents.h"
 
 // This should probably be done the other way round!
-#ifdef __linux__
+#if SH_XP == SH_XP_POSIX
 #define _snprintf snprintf
 #endif
 

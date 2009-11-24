@@ -1,9 +1,9 @@
 #ifndef __SH_PAGEALLOC_H__
 #define __SH_PAGEALLOC_H__
 
-# if	/********/ defined _WIN32
+# if SH_XP == SH_XP_WINAPI
 #		include <windows.h>
-# elif /******/ defined __linux__
+# elif SH_XP == SH_XP_POSIX
 #		include <sys/mman.h>
 #		include <unistd.h>
 # else
@@ -140,9 +140,9 @@ namespace SourceHook
 
 			void FreeRegion()
 			{
-#ifdef __linux__
+#if SH_XP == SH_XP_POSIX
 				munmap(startPtr, size);
-#else
+#elif SH_XP == SH_XP_WINAPI
 				VirtualFree(startPtr, 0, MEM_RELEASE);
 #endif
 			}
@@ -167,9 +167,12 @@ namespace SourceHook
 			if (newRegion.size < minSize)
 				newRegion.size += m_PageSize;
 
-#ifdef __linux__
+#if SH_XP == SH_XP_POSIX
+# if !defined MAP_ANONYMOUS
+#  define MAP_ANONYMOUS MAP_ANON
+# endif
 			newRegion.startPtr = mmap(0, newRegion.size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#else
+#elif SH_XP == SH_XP_WINAPI
 			newRegion.startPtr = VirtualAlloc(NULL, newRegion.size, MEM_COMMIT, PAGE_READWRITE);
 #endif
 
@@ -209,9 +212,9 @@ namespace SourceHook
 	public:
 		CPageAlloc(size_t minAlignment = 1 /* power of 2 */ ) : m_MinAlignment(minAlignment)
 		{
-#ifdef __linux__
+#if SH_XP == SH_XP_POSIX
 			m_PageSize = sysconf(_SC_PAGESIZE);
-#else
+#elif SH_XP == SH_XP_WINAPI
 			SYSTEM_INFO sysInfo;
 			GetSystemInfo(&sysInfo);
 			m_PageSize = sysInfo.dwPageSize;

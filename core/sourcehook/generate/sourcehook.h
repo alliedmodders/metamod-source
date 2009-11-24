@@ -73,11 +73,21 @@
 // System
 #define SH_SYS_WIN32 1
 #define SH_SYS_LINUX 2
+#define SH_SYS_APPLE 3
+
+// Platform
+#define SH_XP_POSIX  10
+#define SH_XP_WINAPI 20
 
 #ifdef _WIN32
 # define SH_SYS SH_SYS_WIN32
+# define SH_XP  SH_XP_WINAPI
 #elif defined __linux__
 # define SH_SYS SH_SYS_LINUX
+# define SH_XP  SH_XP_POSIX
+#elif defined __APPLE__
+# define SH_SYS SH_SYS_APPLE
+# define SH_XP  SH_XP_POSIX
 #else
 # error Unsupported system
 #endif

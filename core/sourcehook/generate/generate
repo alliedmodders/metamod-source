@@ -1,7 +1,11 @@
 #/bin/sh
 
-./shworker.bin iter sourcehook.hxx sourcehook.h $1
-./shworker.bin iter sh_memfuncinfo.hxx sh_memfuncinfo.h $1
-./shworker.bin hopter FastDelegate.hxx FastDelegate.h $1
+cd shworker
+make
+cd ..
+
+shworker/bin/shworker.bin iter sourcehook.hxx sourcehook.h $1
+shworker/bin/shworker.bin iter sh_memfuncinfo.hxx sh_memfuncinfo.h $1
+shworker/bin/shworker.bin hopter FastDelegate.hxx FastDelegate.h $1
 
 cp *.h ..

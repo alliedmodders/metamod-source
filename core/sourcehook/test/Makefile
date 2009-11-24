@@ -54,7 +54,7 @@ all:
 
 
 $(BINARY): $(OBJ_LINUX)
-	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -o$(BIN_DIR)/$(BINARY)
+	$(CPP) $(INCLUDE) $(CFLAGS) $(OBJ_LINUX) $(LINK) -o $(BIN_DIR)/$(BINARY)
 
 clean:
 	rm -rf Release/*.o
