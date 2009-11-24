@@ -26,6 +26,16 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_LOADER_H_
 #define _INCLUDE_METAMOD_SOURCE_LOADER_H_
 
+// System
+#define SH_SYS_WIN32	1
+#define SH_SYS_LINUX	2
+#define SH_SYS_APPLE	3
+
+// Platform
+#define SH_XP_POSIX		10
+#define SH_XP_WINAPI	20
+
+// Compiler
 #define SH_COMP_GCC 	1
 #define SH_COMP_MSVC	2
 
@@ -34,6 +44,8 @@
 #include <windows.h>
 #include <direct.h>
 #define PLATFORM_MAX_PATH	MAX_PATH
+#define SH_SYS				SH_SYS_WIN32
+#define SH_XP				SH_XP_WINAPI
 #define SH_COMP				SH_COMP_MSVC
 #define	PATH_SEP_STR		"\\"
 #define PATH_SEP_CHAR		'\\'
@@ -45,6 +57,8 @@
 #include <unistd.h>
 typedef void *	HMODULE;
 #define PLATFORM_MAX_PATH	PATH_MAX
+#define SH_SYS				SH_SYS_LINUX
+#define SH_XP				SH_SYS_POSIX
 #define SH_COMP				SH_COMP_GCC
 #define	PATH_SEP_STR		"/"
 #define PATH_SEP_CHAR		'/'
