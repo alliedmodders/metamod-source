@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2009 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -873,7 +873,7 @@ namespace SourceHook
 					// mov eax, [ecx]
 					// mov edx, [ecx+4]
 					IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_ECX, MOD_MEM_REG);
-					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EAX, REG_ECX, 4);
+					IA32_Mov_Reg_Rm_DispAuto(&m_HookFunc, REG_EDX, REG_ECX, 4);
 				}
 				else
 				{
@@ -1869,8 +1869,18 @@ namespace SourceHook
 						// MSVC seems to return _all_ structs, classes, unions in memory
 						pi.flags |= PassInfo::PassFlag_RetMem;
 #elif SH_COMP == SH_COMP_GCC
-						// Same goes for GCC :)
-						pi.flags |= PassInfo::PassFlag_RetMem;
+#if SH_SYS == SH_SYS_APPLE
+						// Apple GCC returns in memory if size isn't a power of 2 or > 8
+						if ((pi.size & (pi.size - 1)) == 0 && pi.size <= 8)
+						{
+							pi.flags |= PassInfo::PassFlag_RetReg;
+						}
+						else
+#endif
+						{
+							// GCC on Linux does same thing as MSVC
+							pi.flags |= PassInfo::PassFlag_RetMem;
+						}
 #endif
 					}
 				}

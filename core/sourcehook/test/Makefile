@@ -1,4 +1,4 @@
-#(C)2004-2008 SourceMM Development Team
+# (C)2004-2009 Metamod:Source Development Team
 # Makefile written by David "BAILOPAN" Anderson and Pavol Marko
 
 OPT_FLAGS = -O3 -funroll-loops -s -pipe
@@ -9,7 +9,7 @@ INCLUDE = -I. -I..
 MAX_PARAMS=20
 
 BINARY = sourcehook_test
-OBJECTS = main.cpp sourcehook.cpp ../sourcehook_hookmangen.cpp $(shell ls -t test*.cpp)
+OBJECTS = main.cpp sourcehook.cpp sourcehook_hookmangen.cpp $(shell ls -t test*.cpp)
 HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h
 
 ifeq "$(DEBUG)" "true"
@@ -46,10 +46,12 @@ debug:
 	
 all:
 	mkdir -p $(BIN_DIR)
-	ln -sf ../sourcehook.cpp sourcehook.cpp
+	ln -sf ../sourcehook.cpp
+	ln -sf ../sourcehook_hookmangen.cpp
 	$(MAKE) $(BINARY)
 	rm -f $(BINARY)
 	rm -f sourcehook.cpp
+	rm -f sourcehook_hookmangen.cpp
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 
