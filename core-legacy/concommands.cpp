@@ -176,29 +176,24 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			}
 
 			// Display user messages
-			if (g_SmmAPI.MsgCacheSuccessful())
+			const char *msgname;
+			int msgsize;
+			int msgcount = g_SmmAPI.GetUserMessageCount();
+
+			if (msgcount > 0)
 			{
-				const char *msgname;
-				int msgsize;
-				int msgcount = g_SmmAPI.GetUserMessageCount();
+				CONMSG("  User Messages:  %-32.31s  %-5s  %-5s\n", "Name", "Index", "Size");
 
-				if (msgcount > 0)
+				for (int i = 0; i < msgcount; i++)
 				{
-					CONMSG("  User Messages:  %-32.31s  %-5s  %-5s\n", "Name", "Index", "Size");
+					msgname = g_SmmAPI.GetUserMessage(i, &msgsize);
 
-					for (int i = 0; i < msgcount; i++)
-					{
-						msgname = g_SmmAPI.GetUserMessage(i, &msgsize);
-
-						CONMSG("                  %-32.31s  %-5d  %-5d\n", msgname, i, msgsize); 
-					}
-
-					CONMSG("  %d user message%s in total\n", msgcount, (msgcount > 1) ? "s" : "");
-				} else {
-					CONMSG("  User Messages: None\n");
+					CONMSG("                  %-32.31s  %-5d  %-5d\n", msgname, i, msgsize); 
 				}
+
+				CONMSG("  %d user message%s in total\n", msgcount, (msgcount > 1) ? "s" : "");
 			} else {
-				CONMSG("  User Messages: Failed to get list of user messages\n");
+				CONMSG("  User Messages: None\n");
 			}
 
 			return;

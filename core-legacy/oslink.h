@@ -1,5 +1,5 @@
 /* ======== SourceMM ======== 
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -75,6 +75,8 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
+	typedef __int32				int32_t;
+	typedef unsigned __int32	uint32_t;
 #elif defined __GNUC__
 #include <stdint.h>
 #if !__GLIBC_HAVE_LONG_LONG

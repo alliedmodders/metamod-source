@@ -165,14 +165,7 @@ bool StartupMetamod(CreateInterfaceFn engineFactory, bool bWaitForGameInit)
 		LogMessage("[META] Warning: Console messages will not be redirected to rcon console.");
 	}
 
-	if (!g_SmmAPI.CacheUserMessages())
-	{
-		/* Don't know of a mod that has stripped out user messages completely, 
-		 * but perhaps should do something different here?
-		 */
-		LogMessage("[META] Warning: Failed to get list of user messages.");
-		LogMessage("[META] Warning: The 'meta game' command will not display user messages.");
-	}
+	g_SmmAPI.CacheUserMessages();
 
 	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
 	if (baseFs == NULL)

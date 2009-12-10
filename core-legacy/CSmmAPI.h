@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2008 Metamod:Source Development Team
+ * Copyright (C) 2004-2009 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -17,15 +17,6 @@
  */
 
 #include "ISmmAPI.h"
-#include <tier1/utldict.h>
-
-struct UserMessage
-{
-	int size;
-	const char *name;
-};
-
-typedef CUtlDict<UserMessage *, int> UserMsgDict;
 
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
 
@@ -35,7 +26,6 @@ namespace SourceMM
 	{
 	public:
 		CSmmAPI();
-		~CSmmAPI();
 	public:
 		void LogMsg(ISmmPlugin *pl, const char *msg, ...);
 	public:
@@ -80,15 +70,12 @@ namespace SourceMM
 		{
 			return m_VSP;
 		}
-		bool CacheUserMessages();
-		bool MsgCacheSuccessful();
+		void CacheUserMessages();
 	private:
 		META_RES m_Res;
 		CONPRINTF_FUNC m_ConPrintf;
 		bool m_CmdCache;
 		bool m_VSP;
-		int m_MsgCount;
-		UserMsgDict m_UserMessages;
 	};
 };
 

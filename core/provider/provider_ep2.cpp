@@ -24,12 +24,12 @@
  */
 
 #include <stdio.h>
+#include <setjmp.h>
 #include "../metamod_oslink.h"
 #include <sourcehook.h>
 #include <convar.h>
 #include <eiface.h>
 #include <tier0/icommandline.h>
-#include <tier1/utldict.h>
 #include <sh_vector.h>
 #include <sh_string.h>
 #include "../metamod_util.h"
@@ -60,7 +60,8 @@ DLL_IMPORT ICommandLine *CommandLine();
 #endif
 
 /* Functions */
-bool CacheUserMessages();
+void CacheUserMessages();
+void Detour_Error(const tchar *pMsg, ...);
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
@@ -71,10 +72,10 @@ void LocalCommand_Meta();
 
 void _ServerCommand();
 /* Variables */
-static bool usermsgs_extracted = false;
-static CVector<UsrMsgInfo> usermsgs_list;
 static BaseProvider g_Ep1Provider;
 static List<ConCommandBase *> conbases_unreg;
+static CVector<UsrMsgInfo> usermsgs_list;
+static jmp_buf usermsg_end;
 
 ICvar *icvar = NULL;
 IFileSystem *baseFs = NULL;
@@ -89,22 +90,6 @@ SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *,
 #else
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
 #endif
-
-bool AssumeUserMessages()
-{
-	int q, size;
-	char buffer[256];
-
-	q = 0;
-
-	while (server->GetUserMessageInfo(q, buffer, sizeof(buffer), size))
-	{
-		usermsgs_list.push_back(UsrMsgInfo(size, buffer));
-		q++;
-	}
-
-	return true;
-}
 
 void BaseProvider::ConsolePrint(const char *str)
 {
@@ -155,10 +140,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
-	if ((usermsgs_extracted = CacheUserMessages()) == false)
-	{
-		usermsgs_extracted = AssumeUserMessages();
-	}
+	CacheUserMessages();
 
 #if SOURCE_ENGINE == SE_DARKMESSIAH
 	if (!g_SMConVarAccessor.InitConCommandBaseList())
@@ -334,11 +316,6 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-	if (!usermsgs_extracted)
-	{
-		return -1;
-	}
-
 	return (int)usermsgs_list.size();
 }
 
@@ -361,7 +338,7 @@ int BaseProvider::FindUserMessage(const char *name, int *size)
 
 const char *BaseProvider::GetUserMessage(int index, int *size)
 {
-	if (!usermsgs_extracted || index < 0 || index >= (int)usermsgs_list.size())
+	if (index < 0 || index >= (int)usermsgs_list.size())
 	{
 		return NULL;
 	}
@@ -534,153 +511,59 @@ void ClientCommand(edict_t *pEdict)
 	RETURN_META(MRES_IGNORED);
 }
 
-//////////////////////////////////////////////////////////////////////
-// EVEN MORE HACKS HERE! YOU HAVE BEEN WARNED!                      //
-// Signatures necessary in finding the pointer to the CUtlDict that //
-//   stores user message information.                               //
-// IServerGameDLL::GetUserMessageInfo() normally crashes with bad   //
-//   message indices. This is our answer to it. Yuck! <:-(          //
-//////////////////////////////////////////////////////////////////////
-#ifdef OS_WIN32
-	/* General Windows sig */
-	#define MSGCLASS_SIGLEN		7
-	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
-	#define MSGCLASS_OFFS		2
-
-	/* Dystopia Windows hack */
-	#define MSGCLASS2_SIGLEN	16
-	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
-	#define MSGCLASS2_OFFS		11
-
-	/* Windows frame pointer sig */
-	#define MSGCLASS3_SIGLEN	18
-	#define MSGCLASS3_SIG		"\x55\x8B\xEC\x51\x89\x2A\x2A\x8B\x2A\x2A\x50\x8B\x0D\x2A\x2A\x2A\x2A\xE8"
-	#define MSGCLASS3_OFFS		13
-#elif defined OS_LINUX
-	/* No frame pointer sig */
-	#define MSGCLASS_SIGLEN		14
-	#define MSGCLASS_SIG		"\x53\x83\xEC\x2A\x8B\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
-	#define MSGCLASS_OFFS		9
-
-	/* Frame pointer sig */
-	#define MSGCLASS2_SIGLEN	16
-	#define MSGCLASS2_SIG		"\x55\x89\xE5\x53\x83\xEC\x2A\x8B\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
-	#define MSGCLASS2_OFFS		11
-#endif
-
-struct UserMessage
+/* This only gets called if IServerGameDLL::GetUserMessageInfo() triggers it */
+void Detour_Error(const tchar *pMsg, ...)
 {
-	int size;
-	const char *name;
-};
-
-typedef CUtlDict<UserMessage *, int> UserMsgDict;
-
-/* This is the ugliest function in all of MM:S */
-bool CacheUserMessages()
-{
-	UserMsgDict *dict = NULL;
-
-	/* Get address of original GetUserMessageInfo() */
-	char *vfunc = (char *)SH_GET_ORIG_VFNPTR_ENTRY(server, &IServerGameDLL::GetUserMessageInfo);
-
-	/* Oh dear, we have a relative jump on our hands
-	 * PVK II on Windows made me do this, but I suppose it doesn't hurt to check this on Linux too...
-	 */
-	if (*vfunc == '\xE9')
-	{
-		/* Get address from displacement...
-		 *
-		 * Add 5 because it's relative to next instruction:
-		 * Opcode <1 byte> + 32-bit displacement <4 bytes> 
-		 */
-		vfunc += *reinterpret_cast<int *>(vfunc + 1) + 5;
-	}
-
-	if (UTIL_VerifySignature(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
-	{
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	} 
-	else if (UTIL_VerifySignature(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) 
-	{
-	#ifdef OS_WIN32
-		/* If we get here, the code is possibly inlined like in Dystopia */
-
-		/* Get the address of the CUtlRBTree */
-		char *rbtree = *reinterpret_cast<char **>(vfunc + MSGCLASS2_OFFS);
-
-		/* CUtlDict should be 8 bytes before the CUtlRBTree (hacktacular!) */
-		dict = reinterpret_cast<UserMsgDict *>(rbtree - 8);
-	#elif defined OS_LINUX
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	#endif
-	#ifdef OS_WIN32
-	} 
-	else if (UTIL_VerifySignature(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) 
-	{
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	#endif
-	}
-
-	#if !defined OS_WIN32
-	if (dict == NULL)
-	{
-		char path[255];
-		if (GetFileOfAddress(vfunc, path, sizeof(path)))
-		{
-			void *handle = dlopen(path, RTLD_NOW);
-			if (handle != NULL)
-			{
-				void *addr = dlsym(handle, "usermessages");
-				if (addr == NULL)
-				{
-					dlclose(handle);
-					return false;
-				}
-				dict = (UserMsgDict *)*(void **)addr;
-				dlclose(handle);
-			}
-		}
-	}
-	#endif
-
-	if (dict != NULL)
-	{
-		int msg_count = dict->Count();
-
-		/* Ensure that count is within bounds of an unsigned byte, because that's what engine supports */
-		if (msg_count < 0 || msg_count > 255)
-		{
-			return false;
-		}
-
-		UserMessage *msg;
-		UsrMsgInfo u_msg;
-
-		/* Cache messages in our CUtlDict */
-		for (int i = 0; i < msg_count; i++)
-		{
-			msg = dict->Element(i);
-			u_msg.name = msg->name;
-			u_msg.size = msg->size;
-			usermsgs_list.push_back(u_msg);
-		}
-
-		return true;
-	}
-
-	return false;
+	/* Jump back to setjmp() in CacheUserMessages() */
+	longjmp(usermsg_end, 1);
 }
 
+#define IA32_JMP_IMM32 0xE9
+
+/* IServerGameDLL::GetUserMessageInfo() crashes on games based on the old engine and
+ * early Orange Box. This is because Error() from tier0 gets called when a bad index is
+ * passed. This is all due to a bug in CUtlRBTree::IsValidIndex().
+ *
+ * So we detour Error() to fix this. Our detour then jumps back into CacheUserMessages()
+ * to a point before GetUserMessageInfo() is called. The detour is then removed and we
+ * exit.
+ */
+void CacheUserMessages()
+{
+	int q, size;
+	char buffer[256];
+	unsigned char *target, *detour;
+	unsigned char orig_bytes[5];
+
+	target = (unsigned char *)&Error;
+	detour = (unsigned char *)&Detour_Error;
+
+	/* Save bytes from target function */
+	memcpy(orig_bytes, target, sizeof(orig_bytes));
+
+	/* Patch in relative jump to our Error() detour */
+	SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+	target[0] = IA32_JMP_IMM32;
+	*(int32_t *)&target[1] = (int32_t)(detour - (target + 5));
+
+	/* This is where longjmp() will end up */
+	if (setjmp(usermsg_end))
+	{
+		/* Restore bytes and memory protection */
+		memcpy(target, orig_bytes, sizeof(orig_bytes));
+		SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ|SH_MEM_EXEC);
+		return;
+	}
+
+	q = 0;
+
+	/* If GetUserMessageInfo() calls Error(), we should end up in our detour */
+	while (server->GetUserMessageInfo(q, buffer, sizeof(buffer), size))
+	{
+		usermsgs_list.push_back(UsrMsgInfo(size, buffer));
+		q++;
+	}
+
+	/* Jump back to setjmp() */
+	longjmp(usermsg_end, 1);
+}

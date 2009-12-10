@@ -14,6 +14,8 @@
 #include "concommands.h"
 #include "CPlugin.h"
 #include "util.h"
+#include "sh_memory.h"
+#include <setjmp.h>
 
 /**
  * @brief Implementation of main API interface
@@ -21,20 +23,30 @@
  */
 
 using namespace SourceMM;
+using namespace SourceHook;
+
+struct UsrMsgInfo
+{
+	UsrMsgInfo()
+	{
+	}
+	UsrMsgInfo(int s, const char *t) : size(s), name(t)
+	{
+	}
+	int size;
+	String name;
+};
 
 CSmmAPI g_SmmAPI;
+
+static CVector<UsrMsgInfo> usermsgs_list;
+static jmp_buf usermsg_end;
 
 CSmmAPI::CSmmAPI()
 {
 	m_ConPrintf = NULL;
 	m_CmdCache = false;
-	m_MsgCount = -1;
 	m_VSP = false;
-}
-
-CSmmAPI::~CSmmAPI()
-{
-	m_UserMessages.RemoveAll();
 }
 
 void CSmmAPI::LogMsg(ISmmPlugin *pl, const char *msg, ...)
@@ -491,149 +503,96 @@ int CSmmAPI::GetGameDLLVersion()
 	return g_GameDllVersion;
 }
 
-//////////////////////////////////////////////////////////////////////
-// EVEN MORE HACKS HERE! YOU HAVE BEEN WARNED!                      //
-// Signatures necessary in finding the pointer to the CUtlDict that //
-//   stores user message information.                               //
-// IServerGameDLL::GetUserMessageInfo() normally crashes with bad   //
-//   message indices. This is our answer to it. Yuck! <:-(          //
-//////////////////////////////////////////////////////////////////////
-#ifdef OS_WIN32
-	/* General Windows sig */
-	#define MSGCLASS_SIGLEN		7
-	#define MSGCLASS_SIG		"\x8B\x0D\x2A\x2A\x2A\x2A\x56"
-	#define MSGCLASS_OFFS		2
-
-	/* Dystopia Wimdows hack */
-	#define MSGCLASS2_SIGLEN	16
-	#define MSGCLASS2_SIG		"\x56\x8B\x74\x24\x2A\x85\xF6\x7C\x2A\x3B\x35\x2A\x2A\x2A\x2A\x7D"
-	#define MSGCLASS2_OFFS		11
-
-	/* Windows frame pointer sig */
-	#define MSGCLASS3_SIGLEN	18
-	#define MSGCLASS3_SIG		"\x55\x8B\xEC\x51\x89\x2A\x2A\x8B\x2A\x2A\x50\x8B\x0D\x2A\x2A\x2A\x2A\xE8"
-	#define MSGCLASS3_OFFS		13
-#elif defined OS_LINUX
-	/* No frame pointer sig */
-	#define MSGCLASS_SIGLEN		14
-	#define MSGCLASS_SIG		"\x53\x83\xEC\x2A\x8B\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
-	#define MSGCLASS_OFFS		9
-
-	/* Frame pointer sig */
-	#define MSGCLASS2_SIGLEN	16
-	#define MSGCLASS2_SIG		"\x55\x89\xE5\x53\x83\xEC\x2A\x8B\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x89"
-	#define MSGCLASS2_OFFS		11
-#endif
-
-/* This is the ugliest function in all of SourceMM */
-/* :TODO: Make this prettier */
-bool CSmmAPI::CacheUserMessages()
+/* This only gets called if IServerGameDLL::GetUserMessageInfo() triggers it */
+void Detour_Error(const tchar *pMsg, ...)
 {
-	UserMsgDict *dict = NULL;
-	char *vfunc = UTIL_GetOrigFunction(&IServerGameDLL::GetUserMessageInfo, g_GameDll.pGameDLL);
-
-	if (!vfunc)
-	{
-		return false;
-	}
-
-	if (UTIL_VerifySignature(vfunc, MSGCLASS_SIG, MSGCLASS_SIGLEN))
-	{
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	} else if (UTIL_VerifySignature(vfunc, MSGCLASS2_SIG, MSGCLASS2_SIGLEN)) {
-	#ifdef OS_WIN32
-		/* If we get here, the code is possibly inlined like in Dystopia */
-
-		/* Get the address of the CUtlRBTree */
-		char *rbtree = *reinterpret_cast<char **>(vfunc + MSGCLASS2_OFFS);
-
-		/* CUtlDict should be 8 bytes before the CUtlRBTree (hacktacular!) */
-		dict = reinterpret_cast<UserMsgDict *>(rbtree - 8);
-	#elif defined OS_LINUX
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS2_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	#endif
-	#ifdef OS_WIN32
-	} else if (UTIL_VerifySignature(vfunc, MSGCLASS3_SIG, MSGCLASS3_SIGLEN)) {
-		/* Get address of CUserMessages instance */
-		char **userMsgClass = *reinterpret_cast<char ***>(vfunc + MSGCLASS3_OFFS);
-
-		/* Get address of CUserMessages::m_UserMessages */
-		dict = reinterpret_cast<UserMsgDict *>(*userMsgClass);
-	#endif
-	}
-
-	if (dict)
-	{
-		m_MsgCount = dict->Count();
-
-		/* Ensure that count is within bounds of an unsigned byte, because that's what engine supports */
-		if (m_MsgCount < 0 || m_MsgCount > 255)
-		{
-			m_MsgCount = -1;
-			return false;
-		}
-
-		UserMessage *msg;
-
-		/* Cache messages in our CUtlDict */
-		for (int i = 0; i < m_MsgCount; i++)
-		{
-			msg = dict->Element(i);
-			m_UserMessages.Insert(msg->name, msg);
-		}
-
-		return true;
-	}
-
-	return false;
+	/* Jump back to setjmp() in CacheUserMessages() */
+	longjmp(usermsg_end, 1);
 }
 
-bool CSmmAPI::MsgCacheSuccessful()
+/* IServerGameDLL::GetUserMessageInfo() crashes on games based on the old engine and
+ * early Orange Box. This is because Error() from tier0 gets called when a bad index is
+ * passed. This is all due to a bug in CUtlRBTree::IsValidIndex().
+ *
+ * So we detour Error() to fix this. Our detour then jumps back into CacheUserMessages()
+ * to a point before GetUserMessageInfo() is called. The detour is then removed and we
+ * exit.
+ */
+void CSmmAPI::CacheUserMessages()
 {
-	return m_MsgCount > -1;
+	int q, size;
+	char buffer[256];
+	unsigned char *target, *detour;
+	unsigned char orig_bytes[5];
+
+	target = (unsigned char *)&Error;
+	detour = (unsigned char *)&Detour_Error;
+
+	/* Save bytes from target function */
+	memcpy(orig_bytes, target, sizeof(orig_bytes));
+
+	/* Patch in relative jump to our Error() detour */
+	SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+	target[0] = IA32_JMP_IMM32;
+	*(int32_t *)&target[1] = (int32_t)(detour - (target + 5));
+
+	/* This is where longjmp() will end up */
+	if (setjmp(usermsg_end))
+	{
+		/* Restore bytes and memory protection */
+		memcpy(target, orig_bytes, sizeof(orig_bytes));
+		SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ|SH_MEM_EXEC);
+		return;
+	}
+
+	q = 0;
+
+	/* If GetUserMessageInfo() calls Error(), we should end up in our detour */
+	while (g_GameDll.pGameDLL->GetUserMessageInfo(q, buffer, sizeof(buffer), size))
+	{
+		usermsgs_list.push_back(UsrMsgInfo(size, buffer));
+		q++;
+	}
+
+	/* Jump back to setjmp() */
+	longjmp(usermsg_end, 1);
 }
 
 int CSmmAPI::GetUserMessageCount()
 {
-	return m_MsgCount;
+	return (int)usermsgs_list.size();
 }
 
 int CSmmAPI::FindUserMessage(const char *name, int *size)
 {
-	int index = m_UserMessages.Find(name);
-
-	if (size && index > -1)
+	for (size_t i = 0; i < usermsgs_list.size(); i++)
 	{
-		UserMessage *msg = m_UserMessages.Element(index);
-		*size = msg->size;
+		if (usermsgs_list[i].name.compare(name) == 0)
+		{
+			if (size)
+			{
+				*size = usermsgs_list[i].size;
+			}
+			return (int)i;
+		}
 	}
 
-	return index;
+	return -1;
 }
 
 const char *CSmmAPI::GetUserMessage(int index, int *size)
 {
-	if (m_MsgCount <= 0 || index < 0 || index >= m_MsgCount)
+	if (index < 0 || index >= (int)usermsgs_list.size())
 	{
 		return NULL;
 	}
 
-	UserMessage *msg = m_UserMessages.Element(index);
-
 	if (size)
 	{
-		*size = msg->size;
+		*size = usermsgs_list[index].size;
 	}
 
-	return msg->name;
+	return usermsgs_list[index].name.c_str();
 }
 
 IServerPluginCallbacks *CSmmAPI::GetVSPInfo(int *pVersion)

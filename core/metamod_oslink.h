@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2009 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,8 +21,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
 #ifndef _INCLUDE_OSLINK_H
@@ -95,6 +93,8 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	typedef __int64				int64_t;
 	typedef unsigned __int64	uint64_t;
+	typedef __int32				int32_t;
+	typedef unsigned __int32	uint32_t;
 #elif defined __GNUC__
 #include <stdint.h>
 #if !__GLIBC_HAVE_LONG_LONG

@@ -126,33 +126,26 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 #endif
 
 			// Display user messages
+			const char *msgname;
+			int msgsize;
 			int messages = g_Metamod.GetUserMessageCount();
-			if (messages != -1)
+
+			if (messages > 0)
 			{
-				const char *msgname;
-				int msgsize;
+				CONMSG("  User Messages:  %-32.31s  %-5s  %-5s\n", "Name", "Index", "Size");
 
-				if (messages > 0)
+				for (int i = 0; i < messages; i++)
 				{
-					CONMSG("  User Messages:  %-32.31s  %-5s  %-5s\n", "Name", "Index", "Size");
+					msgname = g_Metamod.GetUserMessage(i, &msgsize);
 
-					for (int i = 0; i < messages; i++)
-					{
-						msgname = g_Metamod.GetUserMessage(i, &msgsize);
-
-						CONMSG("                  %-32.31s  %-5d  %-5d\n", msgname, i, msgsize); 
-					}
-
-					CONMSG("  %d user message%s in total\n", messages, (messages > 1) ? "s" : "");
+					CONMSG("                  %-32.31s  %-5d  %-5d\n", msgname, i, msgsize); 
 				}
-				else
-				{
-					CONMSG("  User Messages: None\n");
-				}
+
+				CONMSG("  %d user message%s in total\n", messages, (messages > 1) ? "s" : "");
 			}
 			else
 			{
-				CONMSG("  User Messages: Failed to get list of user messages\n");
+				CONMSG("  User Messages: None\n");
 			}
 
 			return true;
