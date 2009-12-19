@@ -1,5 +1,15 @@
-2009/??/?? 1.8.0:
+2009/12/19 1.8.0:
  - Added support for the Source engine that runs Left 4 Dead 2 (bug 4078).
+ - Added VP hook support to legacy SourceHook (bug 4019).
+ - Backported GetSourceEngineBuild from the new API to the legacy API (bug
+   4082).
+ - Backported GetVSPInfo from the new API to the legacy API (bug 4079).
+ - Backported OnUnlinkConCommandBase event from the new API to the legacy API
+   (bug 4018).
+ - Improved usermessage extraction code (bug 4117).
+ - Improved OS X support for SourceHook (bug 3514).
+ - Added separate build for the Orange Box engine (bug 4084).
+ - Added game path to ISmmPluginExt API.
 
 2009/02/25 1.7.1:
  - Added support for the Source engine version that runs Dark Messiah. The
