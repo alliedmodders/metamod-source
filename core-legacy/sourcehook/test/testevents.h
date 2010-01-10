@@ -86,6 +86,14 @@ namespace
 			}
 		}
 
+		if (!ok && g_Verbose)
+		{
+			std::cout << std::endl << "FAIL: Should be:" << std::endl;
+			DumpStates(&requiredstates);
+			std::cout << std::endl << "FAIL: Is:" << std::endl;
+			DumpStates(sl);
+		}
+
 		for (StateList::iterator iter = requiredstates.begin(); iter != requiredstates.end(); ++iter)
 			delete *iter;
 		for (StateList::iterator iter = sl->begin(); iter != sl->end(); ++iter)

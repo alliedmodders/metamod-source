@@ -426,9 +426,7 @@ bool TestBasic(std::string &error)
 
 	// 1) SH_CALL it and call it normally
 
-	return true;
 	SH_CALL(pTest, &Test::F1)();
-	
 
 	pTest->F1();
 
@@ -472,15 +470,22 @@ bool TestBasic(std::string &error)
 	// 4) Test source-level compat with callclasses
 	SourceHook::CallClass<Test> *pCC = SH_GET_CALLCLASS(pTest);
 
+	// bug 4210
+	SH_CALL(pCC, &Test::F1)();
+
+	CHECK_STATES((&g_States,
+		new State_F1_Called,
+		NULL), "bug 4210");
+
 	SH_CALL(pCC, &Test::F1)();
 	pTest->F1();
-
-	SH_RELEASE_CALLCLASS(pCC);
 
 	CHECK_STATES((&g_States,
 		new State_F1_Called,
 		new State_F1_PreHandler_Called(&f1_handlers),
 		NULL), "Part 4");
+
+	SH_RELEASE_CALLCLASS(pCC);
 
 	// 5) Check ignore / supercede
 	g_F1Pre_WhatToDo = MRES_SUPERCEDE;
