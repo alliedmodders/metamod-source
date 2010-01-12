@@ -1370,7 +1370,7 @@ namespace SourceHook
 	MemFuncInfo mfi = {true, -1, 0, 0}; \
 	GetFuncInfo(CCW<Y>::GRP(ptr), mfp, mfi); \
 	void *vfnptr = reinterpret_cast<void*>( \
-		*reinterpret_cast<void***>(reinterpret_cast<char*>(ptr) + mfi.thisptroffs + mfi.vtbloffs) + mfi.vtblindex);
+		*reinterpret_cast<void***>(reinterpret_cast<char*>(CCW<Y>::GRP(ptr)) + mfi.thisptroffs + mfi.vtbloffs) + mfi.vtblindex);
 
 #define SH__CALL_GET_VFNPTR_MANUAL \
 	using namespace ::SourceHook; \
