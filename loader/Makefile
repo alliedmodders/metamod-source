@@ -21,11 +21,11 @@ CPP_GCC4_FLAGS = -fvisibility-inlines-hidden
 CPP = gcc-4.1
 
 ifeq "$(ENGINE)" "left4dead2"
-	BINARY = server_linux.so
-	CFLAGS += -DLIB_SUFFIX=\"_linux.so\"
+	BINARY = server.so
+	CFLAGS += -DLIB_PREFIX=\"lib\" -DLIB_SUFFIX=\".so\"
 else
 	BINARY = server_i486.so
-	CFLAGS += -DLIB_SUFFIX=\"_i486.so\"
+	CFLAGS += -DLIB_PREFIX=\"\" -DLIB_SUFFIX=\"_i486.so\"
 endif
 
 LINK += -static-libgcc
