@@ -1,4 +1,4 @@
-# (C)2004-2009 SourceMod Development Team
+# (C)2004-2010 SourceMod Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
 SRCDS_BASE = ~/srcds
@@ -73,7 +73,7 @@ ifeq "$(ENGINE)" "left4dead2"
 	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=6
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/left4dead2_demo
+	SRCDS = $(SRCDS_BASE)/left4dead2
 	BINARY = metamod.2.l4d2.so
 	LIB_PREFIX = lib
 	LIB_SUFFIX = .so
