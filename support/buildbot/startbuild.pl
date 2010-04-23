@@ -14,7 +14,7 @@ chdir('..');
 
 #	   Folder			.vcproj				Engine				Binary				Suffix type		Platform
 Build('loader', 		'mm_loader', 		'', 				'server', 			'full',			'both');
-Build('loader', 		'mm_loader', 		'Left4Dead2', 		'server_linux', 	'',				'linux');
+Build('loader', 		'mm_loader', 		'Left4Dead2', 		'server',			'',				'linux');
 Build('core-legacy',	'mm_core-legacy', 	'', 				'metamod.1.ep1', 	'',				'both');
 Build('core', 			'mm_core', 			'OrangeBox', 		'metamod.2.ep2', 	'',				'both');
 Build('core', 			'mm_core', 			'OrangeBoxValve',	'metamod.2.ep2v', 	'',				'both');

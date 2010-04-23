@@ -180,8 +180,8 @@ mm_GetProcAddress(const char *name)
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
 #elif defined __linux__
-#define TIER0_NAME			"bin/tier0" LIB_SUFFIX
-#define VSTDLIB_NAME		"bin/vstdlib" LIB_SUFFIX
+#define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
+#define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX
 #endif
 
 const char *
