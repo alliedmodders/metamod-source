@@ -60,7 +60,8 @@ ifeq "$(ENGINE)" "orangeboxvalve"
 	METAMOD = $(MMSOURCE18)/core
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	SRCDS = $(SRCDS_BASE)/orangebox
-	LIB_SUFFIX = _i486.so
+	LIB_PREFIX = lib
+	LIB_SUFFIX = .so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
