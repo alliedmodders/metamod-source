@@ -263,7 +263,15 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		if (engineFactory("VEngineCvar004", NULL) != NULL &&
 			engineFactory("VModelInfoServer002", NULL) != NULL)
 		{
-			if (strcmp(game_name, "tf") == 0 || strcmp(game_name, "dod") == 0)
+			char lib_path[PLATFORM_MAX_PATH];
+
+			/* These would have failed already if they were going to? */
+			mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path));
+			void *lib = mm_LoadLibrary(lib_path, NULL, 0);
+			void *tier0_ctime = mm_GetLibAddress(lib, "Plat_ctime");
+			mm_UnloadLibrary(lib);
+
+			if (tier0_ctime != NULL)
 			{
 				return MMBackend_Episode2Valve;
 			}
