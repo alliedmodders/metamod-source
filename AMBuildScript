@@ -123,7 +123,7 @@ class MMS:
 				if self.vendor == 'gcc':
 					self.compiler.AddToListVar('CFLAGS', '-O3')
 				elif self.vendor == 'msvc':
-					self.compiler.AddToListVar('CFLAGS', '/Ot')
+					self.compiler.AddToListVar('CFLAGS', '/Ox')
 					self.compiler.AddToListVar('POSTLINKFLAGS', '/OPT:ICF')
 					self.compiler.AddToListVar('POSTLINKFLAGS', '/OPT:REF')
 
