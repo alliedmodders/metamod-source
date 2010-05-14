@@ -34,6 +34,20 @@ my ($version);
 $version = Build::ProductVersion(Build::PathFormat('../product.version'));
 $version .= '-hg' . Build::HgRevNum('..');
 
+# Append OS to package version
+if ($^O eq "darwin")
+{
+    $version .= '-mac';
+}
+elsif ($^O =~ /MSWin/)
+{
+    $version .= '-windows';
+}
+else
+{
+    $version .= '-' . $^O;
+}
+
 my ($filename);
 $filename = 'mmsource-' . $version;
 if ($^O eq "linux")
