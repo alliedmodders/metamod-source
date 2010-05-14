@@ -7,7 +7,7 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "winres.h"
-#include "version.h"
+#include <metamod_version.h>
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -47,7 +47,7 @@ BEGIN
             VALUE "FileDescription", "Metamod: Source"
             VALUE "FileVersion", MMS_FULL_VERSION
             VALUE "InternalName", "mmsource"
-            VALUE "LegalCopyright", "Copyright (c) 2004-2008, Metamod: Source Development Team"
+            VALUE "LegalCopyright", "Copyright (c) 2004-2010, Metamod: Source Development Team"
             VALUE "OriginalFilename", BINARY_NAME
             VALUE "ProductName", "Metamod:Source"
             VALUE "ProductVersion", MMS_FULL_VERSION

@@ -1,0 +1,29 @@
+# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+import os
+
+sdk = MMS.sdkInfo['ep1']
+
+if AMBuild.target['platform'] in sdk['platform']:
+	compiler = MMS.DefaultHL2Compiler('core-legacy', 'ep1')
+
+	name = 'metamod.' + sdk['ext']
+
+	extension = AMBuild.AddJob(name)
+	binary = Cpp.LibraryBuilder(name, AMBuild, extension, compiler)
+	MMS.PreSetupHL2Job(extension, binary, 'ep1')
+	files = [
+		'sourcemm.cpp',
+		'concommands.cpp',
+		'oslink.cpp',
+		'util.cpp',
+		'CSmmAPI.cpp',
+		'CPlugin.cpp',
+		'gamedll_bridge.cpp',
+		'vsp_bridge.cpp',
+		'sourcehook/sourcehook.cpp'
+		]
+	binary.AddSourceFiles('core-legacy', files)
+	MMS.PostSetupHL2Job(extension, binary, 'ep1')
+	MMS.AutoVersion('core-legacy', binary)
+	binary.SendToJob()
+
