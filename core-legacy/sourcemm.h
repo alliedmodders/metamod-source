@@ -24,7 +24,7 @@
 #include "ISmmAPI.h"
 #include "CPlugin.h"
 #include "oslink.h"
-#include "version.h"
+#include <metamod_version.h>
 #include "loader_bridge.h"
 
 /**
