@@ -197,7 +197,7 @@ inline bool pathchar_sep(char a)
 {
 #if defined WIN32
 	return (a == '/' || a == '\\');
-#elif defined __linux__
+#else
 	return (a == '/');
 #endif
 }
@@ -208,7 +208,7 @@ inline bool pathstr_isabsolute(const char *str)
 	return (pathchar_isalpha(str[0]) 
 		&& str[1] == ':' 
 		&& pathchar_sep(str[2]));
-#elif defined __linux__
+#else
 	return (str[0] == '/');
 #endif
 }

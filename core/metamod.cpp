@@ -314,6 +314,8 @@ LoadPluginsFromFile(const char *filepath, int &skipped)
 			{
 #if defined WIN32 || defined _WIN32
 				ext = ".dll";
+#elif defined __APPLE__
+				ext = ".dylib";
 #else
 				ext = "_i486.so";
 #endif
@@ -481,7 +483,7 @@ mm_StartupMetamod(bool is_vsp_load)
 		ConVarFlag_SpOnly);
 
 	mm_basedir = provider->CreateConVar("mm_basedir",
-#if defined __linux__
+#if defined __linux__ || defined __APPLE__
 		"addons/metamod",
 #else
 		"addons\\metamod",
@@ -1123,6 +1125,8 @@ ProcessVDF(const char *path, bool &skipped)
 			file, 
 #if defined WIN32 || defined _WIN32
 			".dll"
+#elif defined __APPLE__
+			".dylib"
 #else
 			"_i486.so"
 #endif

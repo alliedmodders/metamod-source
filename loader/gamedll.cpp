@@ -54,6 +54,8 @@ static char mm_path[PLATFORM_MAX_PATH];
 
 #if defined _WIN32
 #define SERVER_NAME			"server.dll"
+#elif defined __APPLE__
+#define SERVER_NAME			"server.dylib"
 #elif defined __linux__
 #define SERVER_NAME			"server" LIB_SUFFIX
 #endif

@@ -40,26 +40,33 @@
 #define SH_COMP_MSVC	2
 
 #if defined WIN32
+#define SH_SYS              SH_SYS_WIN32
+#define SH_XP               SH_XP_WINAPI
+#define SH_COMP             SH_COMP_MSVC
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #include <direct.h>
 #define PLATFORM_MAX_PATH	MAX_PATH
-#define SH_SYS				SH_SYS_WIN32
-#define SH_XP				SH_XP_WINAPI
-#define SH_COMP				SH_COMP_MSVC
 #define	PATH_SEP_STR		"\\"
 #define PATH_SEP_CHAR		'\\'
 #define ALT_SEP_CHAR		'/'
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
+#if defined __linux__
+#define SH_SYS				SH_SYS_LINUX
+#elif defined __APPLE__
+#define SH_SYS				SH_SYS_APPLE
+#endif
+#define SH_XP               SH_XP_POSIX
+#define SH_COMP             SH_COMP_GCC
 #include <dlfcn.h>
 #include <dirent.h>
 #include <stdint.h>
 #include <unistd.h>
+#if SH_SYS == SH_SYS_APPLE
+#include <sys/syslimits.h>
+#endif
 typedef void *	HMODULE;
 #define PLATFORM_MAX_PATH	PATH_MAX
-#define SH_SYS				SH_SYS_LINUX
-#define SH_XP				SH_XP_POSIX
-#define SH_COMP				SH_COMP_GCC
 #define	PATH_SEP_STR		"/"
 #define PATH_SEP_CHAR		'/'
 #define ALT_SEP_CHAR		'\\'

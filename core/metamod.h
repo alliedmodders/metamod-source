@@ -39,7 +39,7 @@
 #include <sourcehook/sourcehook.h>
 #include <ISmmPlugin.h>
 #include "metamod_provider.h"
-#include "version.h"
+#include <metamod_version.h>
 
 using namespace SourceMM;
 
