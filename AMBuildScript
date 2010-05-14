@@ -125,6 +125,7 @@ class MMS:
 				elif self.vendor == 'msvc':
 					self.compiler.AddToListVar('CFLAGS', '/Ot')
 					self.compiler.AddToListVar('POSTLINKFLAGS', '/OPT:ICF')
+					self.compiler.AddToListVar('POSTLINKFLAGS', '/OPT:REF')
 
 			#Debugging
 			if AMBuild.options.debug == '1':
