@@ -1,1 +1,2 @@
 MM:S and SM load on Portal on Mac OS X. How cool is that?
+It would be cool if the OS X package uploaded though.
