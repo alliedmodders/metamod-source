@@ -1,0 +1,31 @@
+# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+import os.path
+
+compiler = MMS.DefaultCompiler()
+compiler['CXXINCLUDES'].append(os.path.join(AMBuild.sourceFolder, 'core', 'sourcehook'))
+compiler2 = compiler.Clone()
+
+files = [
+	'loader.cpp',
+	'gamedll.cpp',
+	'serverplugin.cpp',
+	'utility.cpp'
+	]
+
+name = 'server'
+loader = AMBuild.AddJob(name)
+binary = Cpp.LibraryBuilder(name, AMBuild, loader, compiler)
+if AMBuild.target['platform'] == 'linux':
+	compiler['CDEFINES'].extend(['LIB_PREFIX=\"lib\"', 'LIB_SUFFIX=\".so\"'])
+binary.AddSourceFiles('loader', files)
+MMS.AutoVersion('loader', binary)
+binary.SendToJob()
+
+if AMBuild.target['platform'] == 'linux':
+	name = 'server_i486'
+	loader = AMBuild.AddJob(name)
+	binary = Cpp.LibraryBuilder(name, AMBuild, loader, compiler2)
+	compiler2['CDEFINES'].extend(['LIB_PREFIX=\"\"', 'LIB_SUFFIX=\"_i486.so\"'])
+	binary.AddSourceFiles('loader', files)
+	MMS.AutoVersion('loader', binary)
+	binary.SendToJob()

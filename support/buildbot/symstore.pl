@@ -12,21 +12,39 @@ chdir('..');
 
 our $SSH = 'ssh -i ../../mmspvkey';
 
+open(PDBLOG, '../OUTPUT/pdblog.txt') or die "Could not open pdblog.txt: $!\n";
+
 #Sync us up with the main symbol store
 rsync('sourcemm@alliedmods.net:~/public_html/symbols/', '..\\..\\symstore');
 
 #Get version info
 my ($version);
 $version = Build::ProductVersion(Build::PathFormat('product.version'));
+$version =~ s/-dev//g;
 $version .= '-hg' . Build::HgRevNum('.');
 
-symstore("loader\\msvc9\\server.*", $version);
-symstore("core-legacy\\msvc9\\Release\\metamod.1.ep1.*", $version);
-symstore("core\\msvc9\\Release - Dark Messiah\\metamod.2.darkm.*", $version);
-symstore("core\\msvc9\\Release - Orange Box\\metamod.2.ep2.*", $version);
-symstore("core\\msvc9\\Release - Orange Box Valve\\metamod.2.ep2v.*", $version);
-symstore("core\\msvc9\\Release - Left 4 Dead\\metamod.2.l4d.*", $version);
-symstore("core\\msvc9\\Release - Left 4 Dead 2\\metamod.2.l4d2.*", $version);
+my ($build_type);
+$build_type = Build::GetBuildType(Build::PathFormat('support/buildbot/build_type'));
+
+if ($build_type eq "dev")
+{
+	$build_type = "buildbot";
+}
+elsif ($build_type eq "rel")
+{
+	$build_type = "release";
+}
+
+my ($line);
+while (<PDBLOG>)
+{
+	$line = $_;
+	$line =~ s/\.pdb/\*/;
+	chomp $line;
+	Build::Command("symstore add /r /f \"..\\OUTPUT\\$line\" /s ..\\..\\symstore /t \"Metamod:Source\" /v \"$version\" /c \"$build_type\"");
+}
+
+close(PDBLOG);
 
 #Lowercase DLLs.  Sigh.
 my (@files);
@@ -52,12 +70,6 @@ for ($i = 0; $i <= $#files; $i++)
 
 #Now that we're done, rsync back.
 rsync('../../symstore/', 'sourcemm@alliedmods.net:~/public_html/symbols');
-
-sub symstore
-{
-	my ($line, $version) = (@_);
-	Build::Command("symstore add /r /f \"$line\" /s ..\\..\\symstore /t \"Metamod:Source\" /v \"$version\" /c \"buildbot\"");
-}
 
 sub rsync
 {
