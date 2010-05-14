@@ -425,6 +425,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 					const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
 					ext = ext ? "" : ".dll";
+#elif defined __APPLE__
+					ext = ext ? "" : ".dylib";
 #else
 					ext = ext ? "" : "_i486.so";
 #endif
@@ -547,6 +549,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 						const char *ext = UTIL_GetExtension(file);
 #if defined WIN32 || defined _WIN32
 						ext = ext ? "" : ".dll";
+#elif defined __APPLE__
+						ext = ext ? "" : ".dylib";
 #else
 						ext = ext ? "" : "_i486.so";
 #endif

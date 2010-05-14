@@ -270,7 +270,7 @@ mm_ResolvePath(const char *path, char *buffer, size_t maxlength)
 {
 #if defined _WIN32
 	return _fullpath(buffer, path, maxlength) != NULL;
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 	assert(maxlength >= PATH_MAX);
 	return realpath(path, buffer) != NULL;
 #endif
@@ -289,7 +289,7 @@ mm_LoadLibrary(const char *path, char *buffer, size_t maxlength)
 		mm_GetPlatformError(buffer, maxlength);
 		return NULL;
 	}
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 	lib = dlopen(path, RTLD_NOW);
 
 	if (lib == NULL)
@@ -307,7 +307,7 @@ mm_GetLibAddress(void *lib, const char *name)
 {
 #if defined _WIN32
 	return GetProcAddress((HMODULE)lib, name);
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 	return dlsym(lib, name);
 #endif
 }
@@ -317,7 +317,7 @@ mm_UnloadLibrary(void *lib)
 {
 #if defined _WIN32
 	FreeLibrary((HMODULE)lib);
-#else
+#elif defined __linux__ || defined __APPLE__
 	dlclose(lib);
 #endif
 }
@@ -333,7 +333,7 @@ mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 		return false;
 	HMODULE dll = (HMODULE)mem.AllocationBase;
 	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 	Dl_info info;
 	if (!dladdr(pAddr, &info))
 		return false;

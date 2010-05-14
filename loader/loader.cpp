@@ -81,6 +81,9 @@ static const char *backend_names[] =
 #if defined _WIN32
 #define LIBRARY_EXT		".dll"
 #define LIBRARY_MINEXT	".dll"
+#elif defined __APPLE__
+#define LIBRARY_EXT		".dylib"
+#define LIBRARY_MINEXT	".dylib"
 #elif defined __linux__
 #define LIBRARY_EXT		LIB_SUFFIX
 #define LIBRARY_MINEXT	".so"
@@ -179,6 +182,9 @@ mm_GetProcAddress(const char *name)
 #if defined _WIN32
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
+#elif defined __APPLE__
+#define TIER0_NAME			"bin/libtier0.dylib"
+#define VSTDLIB_NAME		"bin/libvstdlib.dylib"
 #elif defined __linux__
 #define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
 #define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX

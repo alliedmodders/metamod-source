@@ -27,9 +27,9 @@
 
 #include <stdio.h>
 #include "metamod_oslink.h"
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdio.h>
-#ifdef __linux
+#if defined __linux__ || defined __APPLE__
 #include <errno.h>
 #endif
 
@@ -57,7 +57,7 @@ const char *dlerror()
 }
 #endif
 
-#if defined __linux__
+#if defined __linux_ || defined __APPLE___
 int GetLastError()
 {
 	return errno;
@@ -82,7 +82,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 		return false;
 	HMODULE dll = (HMODULE)mem.AllocationBase;
 	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 	Dl_info info;
 	if (!dladdr(pAddr, &info))
 		return false;
