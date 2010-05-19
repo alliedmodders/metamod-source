@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2009 Metamod:Source Development Team
+ * Copyright (C) 2004-2010 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -71,6 +71,7 @@ namespace SourceMM
 			return m_VSP;
 		}
 		void CacheUserMessages();
+		void GetFullPluginPath(const char *plugin, char *buffer, size_t len);
 	private:
 		META_RES m_Res;
 		CONPRINTF_FUNC m_ConPrintf;

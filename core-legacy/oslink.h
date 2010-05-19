@@ -1,5 +1,5 @@
 /* ======== SourceMM ======== 
- * Copyright (C) 2004-2009 Metamod:Source Development Team
+ * Copyright (C) 2004-2010 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -36,7 +36,6 @@
 	#define PATH_SEP_CHAR		'\\'
 	#define ALT_SEP_CHAR		'/'
 	#define PATH_SIZE			MAX_PATH
-	#define SERVER_DLL			"server.dll"
 #elif defined __linux__
 	#define OS_LINUX
 	#include <dlfcn.h>
@@ -52,7 +51,6 @@
 	#define PATH_SIZE			PATH_MAX
 	#define	stricmp				strcasecmp
 	#define strnicmp			strncasecmp
-	#define SERVER_DLL			"server_i486.so"
 #endif
 
 #if defined __linux__

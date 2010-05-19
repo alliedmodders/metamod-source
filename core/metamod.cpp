@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2010 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -33,6 +33,9 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_ep2.h"
+#if defined __linux__
+#include <sys/stat.h>
+#endif
 
 using namespace SourceMM;
 using namespace SourceHook;
@@ -288,56 +291,20 @@ LoadPluginsFromFile(const char *filepath, int &skipped)
 		{
 			continue;
 		}
-		/* First find if it's an absolute path or not... */
-		if (file[0] == '/' || strncmp(&(file[1]), ":\\", 2) == 0)
+
+		g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
+
+		id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
+		if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 		{
-			/* If we're in an absolute path, ignore our normal heuristics */
-			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
-			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
-			{
-				mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			}
-			else
-			{
-				if (already)
-					skipped++;
-				else
-					total++;
-			}
+			mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
 		}
 		else
 		{
-			/* Attempt to find a file extension */
-			ptr = UTIL_GetExtension(file);
-			/* Add an extension if there's none there */
-			if (!ptr)
-			{
-#if defined WIN32 || defined _WIN32
-				ext = ".dll";
-#elif defined __APPLE__
-				ext = ".dylib";
-#else
-				ext = "_i486.so";
-#endif
-			}
+			if (already)
+				skipped++;
 			else
-			{
-				ext = "";
-			}
-			/* Format the new path */
-			g_Metamod.PathFormat(full_path, sizeof(full_path), "%s/%s%s", mod_path.c_str(), file, ext);
-			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
-			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
-			{
-				mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			}
-			else
-			{
-				if (already)
-					skipped++;
-				else
-					total++;
-			}
+				total++;
 		}
 	}
 	fclose(fp);
@@ -1099,6 +1066,50 @@ void MetamodSource::SetVSPListener(const char *path)
 	metamod_path.assign(path);
 }
 
+size_t MetamodSource::GetFullPluginPath(const char *plugin, char *buffer, size_t len)
+{
+	const char *pext, *ext;
+	size_t num;
+
+	/* First find if it's an absolute path or not... */
+	if (plugin[0] == '/' || strncmp(&(plugin[1]), ":\\", 2) == 0)
+	{
+		return UTIL_Format(buffer, len, plugin);
+	}
+
+	/* Attempt to find a file extension */
+	pext = UTIL_GetExtension(plugin);
+	/* Add an extension if there's none there */
+	if (!pext)
+	{
+#if defined WIN32 || defined _WIN32
+		ext = ".dll";
+#elif defined __APPLE__
+		ext = ".dylib";
+#else
+		ext = "_i486.so";
+#endif
+	}
+	else
+	{
+		ext = "";
+	}
+
+	/* Format the new path */
+	num = PathFormat(buffer, len, "%s/%s%s", mod_path.c_str(), plugin, ext);
+
+#if defined __linux__
+	/* If path was passed without extension and it doesn't exist with "_i486.so" try ".so" */
+	struct stat s;
+	if (!pext && stat(buffer, &s) != 0)
+	{
+		num = PathFormat(buffer, len, "%s/%s.so", mod_path.c_str(), plugin);
+	}
+#endif
+
+	return num;
+}
+
 static bool
 ProcessVDF(const char *path, bool &skipped)
 {
@@ -1115,31 +1126,7 @@ ProcessVDF(const char *path, bool &skipped)
 	if (alias[0] != '\0')
 		g_PluginMngr.SetAlias(alias, file);
 
-	/* Attempt to find a file extension */
-	if (UTIL_GetExtension(file) == NULL)
-	{
-		g_pMetamod->PathFormat(full_path, 
-			sizeof(full_path), 
-			"%s/%s%s", 
-			g_pMetamod->GetBaseDir(), 
-			file, 
-#if defined WIN32 || defined _WIN32
-			".dll"
-#elif defined __APPLE__
-			".dylib"
-#else
-			"_i486.so"
-#endif
-			);
-	}
-	else
-	{
-		g_pMetamod->PathFormat(full_path,
-			sizeof(full_path),
-			"%s/%s", 
-			g_pMetamod->GetBaseDir(),
-			file);
-	}
+	g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 	skipped = already;

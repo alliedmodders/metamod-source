@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2009 Metamod:Source Development Team
+ * Copyright (C) 2004-2010 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -424,18 +424,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 					file = alias;
 				}
 
-				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
-				{
-					g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s", file);
-				} else {
-					const char *ext = UTIL_GetExtension(file);
-#if defined WIN32 || defined _WIN32
-					ext = ext ? "" : ".dll";
-#else
-					ext = ext ? "" : "_i486.so";
-#endif
-					g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
-				}
+				g_SmmAPI.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 				char error[255]={0};
 				bool already;
@@ -526,19 +515,7 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 						file = alias;
 					}
 
-					/* first check if it's a known filename */
-					if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
-					{
-						g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s", file);
-					} else {
-						const char *ext = UTIL_GetExtension(file);
-#if defined WIN32 || defined _WIN32
-						ext = ext ? "" : ".dll";
-#else
-						ext = ext ? "" : "_i486.so";
-#endif
-						g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
-					}
+					g_SmmAPI.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 					SourceHook::List<SourceMM::CPluginManager::CPlugin *>::iterator iter, end;
 					SourceMM::CPluginManager::CPlugin *pl;

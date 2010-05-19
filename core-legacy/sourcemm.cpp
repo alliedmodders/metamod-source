@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2009 Metamod:Source Development Team
+ * Copyright (C) 2004-2010 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -336,29 +336,7 @@ bool LoadFromVDF(const char *file, bool &skipped)
 		g_PluginMngr.SetAlias(alias, plugin_file);
 	}
 
-	/* Attempt to find a file extension */
-	if (UTIL_GetExtension(plugin_file) == NULL)
-	{
-		g_SmmAPI.PathFormat(full_path, 
-			sizeof(full_path), 
-			"%s/%s%s", 
-			g_ModPath.c_str(), 
-			plugin_file, 
-#if defined WIN32 || defined _WIN32
-			".dll"
-#else
-			"_i486.so"
-#endif
-			);
-	}
-	else
-	{
-		g_SmmAPI.PathFormat(full_path,
-			sizeof(full_path),
-			"%s/%s", 
-			g_ModPath.c_str(),
-			plugin_file);
-	}
+	g_SmmAPI.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 	skipped = already;
@@ -559,61 +537,21 @@ int LoadPluginsFromFile(const char *filepath, int &skipped)
 		{
 			continue;
 		}
-		/* First find if it's an absolute path or not... */
-		if (file[0] == '/' || strncmp(&(file[1]), ":\\", 2) == 0)
+		g_SmmAPI.GetFullPluginPath(file, full_path, sizeof(full_path));
+		id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
+		if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
 		{
-			/* If we're in an absolute path, ignore our normal heuristics */
-			id = g_PluginMngr.Load(file, Pl_File, already, error, sizeof(error));
-			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
-			{
-				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			}
-			else
-			{
-				if (already)
-				{
-					skipped++;
-				}
-				else
-				{
-					total++;
-				}
-			}
+			LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
 		}
 		else
 		{
-			/* Attempt to find a file extension */
-			ptr = UTIL_GetExtension(file);
-			/* Add an extension if there's none there */
-			if (!ptr)
+			if (already)
 			{
-#if defined WIN32 || defined _WIN32
-				ext = ".dll";
-#else
-				ext = "_i486.so";
-#endif
+				skipped++;
 			}
 			else
 			{
-				ext = "";
-			}
-			/* Format the new path */
-			g_SmmAPI.PathFormat(full_path, sizeof(full_path), "%s/%s%s", g_ModPath.c_str(), file, ext);
-			id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
-			if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
-			{
-				LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
-			}
-			else
-			{
-				if (already)
-				{
-					skipped++;
-				}
-				else
-				{
-					total++;
-				}
+				total++;
 			}
 		}
 	}
