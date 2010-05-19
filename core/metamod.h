@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2010 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -99,6 +99,7 @@ public:
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
 	void SetVSPListener(const char *path);
+	size_t GetFullPluginPath(const char *plugin, char *buffer, size_t len);
 };
 
 bool

@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2010 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -416,27 +416,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 					file = alias;
 				}
 
-				if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
-				{
-					g_Metamod.PathFormat(full_path, sizeof(full_path), "%s", file);
-				}
-				else
-				{
-					const char *ext = UTIL_GetExtension(file);
-#if defined WIN32 || defined _WIN32
-					ext = ext ? "" : ".dll";
-#elif defined __APPLE__
-					ext = ext ? "" : ".dylib";
-#else
-					ext = ext ? "" : "_i486.so";
-#endif
-					g_Metamod.PathFormat(full_path,
-						sizeof(full_path),
-						"%s/%s%s",
-						g_Metamod.GetBaseDir(),
-						file,
-						ext);
-				}
+				g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 				char error[255]={0};
 				bool already;
@@ -539,28 +519,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 						file = alias;
 					}
 
-					/* first check if it's a known filename */
-					if (file[0] == '/' || strcmp(&(file[1]), ":\\") == 0)
-					{
-						g_Metamod.PathFormat(full_path, sizeof(full_path), "%s", file);
-					}
-					else
-					{
-						const char *ext = UTIL_GetExtension(file);
-#if defined WIN32 || defined _WIN32
-						ext = ext ? "" : ".dll";
-#elif defined __APPLE__
-						ext = ext ? "" : ".dylib";
-#else
-						ext = ext ? "" : "_i486.so";
-#endif
-						g_Metamod.PathFormat(full_path,
-							sizeof(full_path),
-							"%s/%s%s",
-							g_Metamod.GetBaseDir(),
-							file,
-							ext);
-					}
+					g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 					List<CPluginManager::CPlugin *>::iterator iter, end;
 					CPluginManager::CPlugin *pl;

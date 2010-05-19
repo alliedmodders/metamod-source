@@ -1,5 +1,5 @@
 /* ======== SourceMM ========
- * Copyright (C) 2004-2009 Metamod:Source Development Team
+ * Copyright (C) 2004-2010 Metamod:Source Development Team
  * No warranties of any kind
  *
  * License: zlib/libpng
@@ -16,6 +16,9 @@
 #include "util.h"
 #include "sh_memory.h"
 #include <setjmp.h>
+#if defined __linux__
+#include <sys/stat.h>
+#endif
 
 /**
  * @brief Implementation of main API interface
@@ -607,3 +610,44 @@ int CSmmAPI::GetSourceEngineBuild()
 {
 	return g_Engine.original ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
 }
+
+void CSmmAPI::GetFullPluginPath(const char *plugin, char *buffer, size_t len)
+{
+	const char *pext, *ext;
+
+	/* First find if it's an absolute path or not... */
+	if (plugin[0] == '/' || strncmp(&(plugin[1]), ":\\", 2) == 0)
+	{
+		UTIL_Format(buffer, len, plugin);
+		return;
+	}
+
+	/* Attempt to find a file extension */
+	pext = UTIL_GetExtension(plugin);
+	/* Add an extension if there's none there */
+	if (!pext)
+	{
+#if defined WIN32 || defined _WIN32
+		ext = ".dll";
+#else
+		ext = "_i486.so";
+#endif
+	}
+	else
+	{
+		ext = "";
+	}
+
+	/* Format the new path */
+	PathFormat(buffer, len, "%s/%s%s", g_ModPath.c_str(), plugin, ext);
+
+#if defined __linux__
+	/* If path was passed without extension and it doesn't exist with "_i486.so" try ".so" */
+	struct stat s;
+	if (!pext && stat(buffer, &s) != 0)
+	{
+		PathFormat(buffer, len, "%s/%s.so", g_ModPath.c_str(), plugin);
+	}
+#endif
+}
+
