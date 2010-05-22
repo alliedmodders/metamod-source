@@ -11,14 +11,13 @@ HL2SDK_OB_VALVE = ../../hl2sdk-ob-valve
 HL2SDK_L4D = ../../hl2sdk-l4d
 HL2SDK_L4D2 = ../../hl2sdk-l4d2
 MMSOURCE18 = ..
-SRCDS_BASE = ~/srcds
 
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
+PROJECT = stub_mm
 OBJECTS = stub_mm.cpp
-BINARY = stub_mm_i486.so
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
@@ -27,65 +26,70 @@ BINARY = stub_mm_i486.so
 OPT_FLAGS = -O3 -funroll-loops -s -pipe
 GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 DEBUG_FLAGS = -g -ggdb3 -D_DEBUG
-CPP = gcc-4.1
+CPP = gcc
+
+##########################
+### SDK CONFIGURATIONS ###
+##########################
 
 override ENGSET = false
+
+# Check for valid list of engines
+ifneq (,$(filter original orangebox orangeboxvalve left4dead left4dead2,$(ENGINE)))
+	override ENGSET = true
+endif
+
 ifeq "$(ENGINE)" "original"
 	HL2SDK = $(HL2SDK_ORIG)
-	HL2PUB = $(HL2SDK)/public
-	HL2LIB = $(HL2SDK)/linux_sdk
 	CFLAGS += -DSOURCE_ENGINE=1
-	METAMOD = $(MMSOURCE18)/core-legacy
-	INCLUDE += -I$(HL2SDK)/public/dlls
-	SRCDS = $(SRCDS_BASE)
-	LIB_SUFFIX = _i486.so
-	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangebox"
 	HL2SDK = $(HL2SDK_OB)
-	HL2PUB = $(HL2SDK)/public
-	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=3
-	METAMOD = $(MMSOURCE18)/core
-	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/orangebox
-	LIB_SUFFIX = _i486.so
-	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangeboxvalve"
 	HL2SDK = $(HL2SDK_OB_VALVE)
-	HL2PUB = $(HL2SDK)/public
-	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=4
-	METAMOD = $(MMSOURCE18)/core
-	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/orangebox
-	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
-	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
 	HL2SDK = $(HL2SDK_L4D)
-	HL2PUB = $(HL2SDK)/public
-	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=5
-	METAMOD = $(MMSOURCE18)/core
-	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/l4d
-	LIB_SUFFIX = _i486.so
-	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead2"
 	HL2SDK = $(HL2SDK_L4D2)
-	HL2PUB = $(HL2SDK)/public
-	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=6
-	METAMOD = $(MMSOURCE18)/core
+endif
+
+HL2PUB = $(HL2SDK)/public
+
+ifeq "$(ENGINE)" "original"
+	INCLUDE += -I$(HL2SDK)/public/dlls
+	METAMOD = $(MMSOURCE18)/core-legacy
+else
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/left4dead2
+	METAMOD = $(MMSOURCE18)/core
+endif
+
+OS := $(shell uname -s)
+
+ifeq "$(OS)" "Darwin"
+	LIB_EXT = dylib
+	HL2LIB = $(HL2SDK)/lib/mac
+else
+	LIB_EXT = so
+	ifeq "$(ENGINE)" "original"
+		HL2LIB = $(HL2SDK)/linux_sdk
+	else
+		HL2LIB = $(HL2SDK)/lib/linux
+	endif
+endif
+
+# if ENGINE is orig, OB, or L4D
+ifneq (,$(filter original orangebox left4dead,$(ENGINE)))
+	LIB_SUFFIX = _i486.$(LIB_EXT)
+else
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
-	override ENGSET = true
+	LIB_SUFFIX = .$(LIB_EXT)
 endif
 
 CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_ORANGEBOXVALVE=4 \
@@ -101,6 +105,8 @@ INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PU
 ### DO NOT EDIT BELOW HERE FOR MOST PROJECTS ###
 ################################################
 
+BINARY = $(PROJECT).$(LIB_EXT)
+
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug.$(ENGINE)
 	CFLAGS += $(DEBUG_FLAGS)
@@ -111,7 +117,17 @@ endif
 
 GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
 
-CFLAGS += -D_LINUX -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
+ifeq "$(OS)" "Darwin"
+	LIB_EXT = dylib
+	CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
+	LINK += -dynamiclib -lstdc++ -mmacosx-version-min=10.5
+else
+	LIB_EXT = so
+	CFLAGS += -D_LINUX
+	LINK += -shared
+endif
+
+CFLAGS += -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
 	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
 	-Dstrcmpi=strcasecmp -Wall -Wno-non-virtual-dtor -Werror -fPIC -fno-exceptions \
 	-fno-rtti -msse -m32 -fno-strict-aliasing
@@ -120,7 +136,7 @@ ifeq "$(GCC_VERSION)" "4"
 	CFLAGS += $(GCC4_FLAGS)
 endif
 
-OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
+OBJ_BIN := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 
 $(BIN_DIR)/%.o: %.cpp
 	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
@@ -138,8 +154,8 @@ check:
 		exit 1; \
 	fi
 
-stub_mm: check $(OBJ_LINUX)
-	$(CPP) $(INCLUDE) -m32 $(OBJ_LINUX) $(LINK) -shared -ldl -lm -o$(BIN_DIR)/$(BINARY)
+stub_mm: check $(OBJ_BIN)
+	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
 
 default: all
 
