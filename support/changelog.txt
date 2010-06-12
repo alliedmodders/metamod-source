@@ -1,3 +1,8 @@
+2010/06/11 1.8.2:
+ - Added support for Mac OS X (bug 4391).
+ - Added support for CS:S on Orange Box (bug 4401).
+ - Platform suffix "_i486" is now optional for plugins (bug 4410).
+
 2010/05/02 1.8.1:
  - Added support for latest L4D2 and Orange Box engine updates.
 
