@@ -336,7 +336,7 @@ bool LoadFromVDF(const char *file, bool &skipped)
 		g_PluginMngr.SetAlias(alias, plugin_file);
 	}
 
-	g_SmmAPI.GetFullPluginPath(file, full_path, sizeof(full_path));
+	g_SmmAPI.GetFullPluginPath(plugin_file, full_path, sizeof(full_path));
 
 	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 	skipped = already;
