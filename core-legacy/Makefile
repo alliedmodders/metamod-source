@@ -6,7 +6,7 @@ SRCDS = ~/srcds
 
 ### EDIT BELOW FOR OTHER PROJECTS ###
 
-OPT_FLAGS = -O2 -funroll-loops -s -pipe
+OPT_FLAGS = -O2 -funroll-loops -pipe -fno-strict-aliasing
 GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc-4.1
@@ -32,10 +32,10 @@ INCLUDE = -I. -I$(HL2PUB) -I$(HL2PUB)/dlls -I$(HL2PUB)/engine -I$(HL2PUB)/tier0 
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
-	CFLAGS = $(DEBUG_FLAGS)
+	CFLAGS += $(DEBUG_FLAGS)
 else
 	BIN_DIR = Release
-	CFLAGS = $(OPT_FLAGS)
+	CFLAGS += $(OPT_FLAGS)
 endif
 
 GCC_VERSION := $(shell $(CPP) -dumpversion >&1 | cut -b1)
