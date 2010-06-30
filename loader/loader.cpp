@@ -231,8 +231,6 @@ mm_GetGameName()
 		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
 	}
 
-	mm_UnloadLibrary(lib);
-
 	if (valve_cmdline == NULL)
 	{
 		mm_LogFatal("Could not locate any command line functionality");
@@ -240,6 +238,8 @@ mm_GetGameName()
 	}
 
 	game_name = valve_cmdline()->ParmValue("-game");
+
+	mm_UnloadLibrary(lib);
 
 	/* This probably means that the game directory is actually the current directory */
 	if (!game_name)
