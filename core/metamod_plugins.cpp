@@ -465,6 +465,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				{
 					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOX;
 					pl->m_API = fnLoad(&GlobVersionInfo, &info);
+					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOXVALVE;
 				}
 #endif
 				pl->m_UnloadFn = (METAMOD_FN_UNLOAD)dlsym(pl->m_Lib, "UnloadInterface_MMS");
