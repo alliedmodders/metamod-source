@@ -1,3 +1,12 @@
+2010/07/18 1.8.3:
+ - Added support for the latest L4D2 update (bug 4509).
+ - Fixed bug on OBV engine where extended plugins (such as SourceMod and
+   Stripper) could be given the wrong engine. (bug 4491).
+ - Fixed rare crash when certain engine libraries were loaded from an unexpected
+   location (bug 4475).
+ - Added MSVC 10.0 (Visual Studio 2010) project files for stub_mm and sample_mm
+   (bug 4520).
+
 2010/06/11 1.8.2:
  - Added support for Mac OS X (bug 4391).
  - Added support for CS:S on Orange Box (bug 4401).
