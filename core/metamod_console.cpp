@@ -111,7 +111,9 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			}
 #endif
 
-#if SOURCE_ENGINE == SE_LEFT4DEAD2
+#if SOURCE_ENGINE == SE_ALIENSWARM
+			CONMSG("  Engine: Alien Swarm (2010)\n");
+#elif SOURCE_ENGINE == SE_LEFT4DEAD2
 			CONMSG("  Engine: Left 4 Dead 2 (2009)\n");
 #elif SOURCE_ENGINE == SE_LEFT4DEAD
 			CONMSG("  Engine: Left 4 Dead (2008)\n");

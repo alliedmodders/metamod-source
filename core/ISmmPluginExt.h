@@ -43,6 +43,7 @@
 #define SOURCE_ENGINE_DARKMESSIAH		5				/**< Dark Messiah Multiplayer (based on original engine) */
 #define SOURCE_ENGINE_ORANGEBOXVALVE	6				/**< Orange Box Source Engine for Valve games (TF2/DOD:S) */
 #define SOURCE_ENGINE_LEFT4DEAD2		7				/**< Left 4 Dead 2 */
+#define SOURCE_ENGINE_ALIENSWARM		8				/**< Alien Swarm */
 
 #define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
