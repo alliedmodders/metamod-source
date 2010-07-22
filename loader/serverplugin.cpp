@@ -128,6 +128,25 @@ public:
 									 sizeof(void*),
 									 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
 			vtable_dest[mfp_dest.vtblindex] = vtable_src[mfp_src.vtblindex];
+
+			/* AS engine inserted ClientFullyConnect into the vtable, so move entries up on older engines */
+			if (mm_backend != MMBackend_AlienSwarm)
+			{
+				SourceHook::MemFuncInfo mfp_fconnect;
+				mfp_fconnect.isVirtual = false;
+
+				SourceHook::GetFuncInfo(&ServerPlugin::ClientFullyConnect, mfp_fconnect);
+
+				assert(mfp_fconnect.isVirtual);
+				assert(mfp_fconnect.thisptroffs == 0);
+				assert(mfp_fconnect.vtbloffs == 0);
+
+				/* Shifting ClientDisconnect through OnQueryCvarValueFinished up into slot for ClientFullyConnect (8 entries) */
+				SourceHook::SetMemAccess(&vtable_dest[mfp_fconnect.vtblindex],
+										 sizeof(void *) * 8,
+										 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+				memmove(&vtable_dest[mfp_fconnect.vtblindex], &vtable_dest[mfp_fconnect.vtblindex + 1], sizeof(void *) * 8);
+			}
 		}
 
 		char error[255];
@@ -211,6 +230,9 @@ public:
 	{
 	}
 	virtual void ClientActive(edict_t *pEntity)
+	{
+	}
+	virtual void ClientFullyConnect(edict_t *pEntity)
 	{
 	}
 	virtual void ClientDisconnect(edict_t *pEntity)
