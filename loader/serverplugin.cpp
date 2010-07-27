@@ -101,11 +101,14 @@ public:
 			mm_LogFatal("Could not detect engine version");
 			return false;
 		}
-		else if (mm_backend >= MMBackend_Episode2)
+		
+		void **this_vtable;
+		this_vtable = (void **)*(void **)this;
+
+		if (mm_backend >= MMBackend_Episode2)
 		{
 			/* We need to insert the right type of call into this vtable */
 			void **vtable_src;
-			void **vtable_dest;
 			IRandomThings sample;
 			SourceHook::MemFuncInfo mfp_dest, mfp_src;
 
@@ -123,31 +126,36 @@ public:
 			assert(mfp_src.vtbloffs == 0);
 
 			vtable_src = (void **)*(void **)&sample;
-			vtable_dest = (void **)*(void **)this;
-			SourceHook::SetMemAccess(&vtable_dest[mfp_dest.vtblindex],
+			SourceHook::SetMemAccess(&this_vtable[mfp_dest.vtblindex],
 									 sizeof(void*),
 									 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
-			vtable_dest[mfp_dest.vtblindex] = vtable_src[mfp_src.vtblindex];
-
-			/* AS engine inserted ClientFullyConnect into the vtable, so move entries up on older engines */
-			if (mm_backend != MMBackend_AlienSwarm)
-			{
-				SourceHook::MemFuncInfo mfp_fconnect;
-				mfp_fconnect.isVirtual = false;
-
-				SourceHook::GetFuncInfo(&ServerPlugin::ClientFullyConnect, mfp_fconnect);
-
-				assert(mfp_fconnect.isVirtual);
-				assert(mfp_fconnect.thisptroffs == 0);
-				assert(mfp_fconnect.vtbloffs == 0);
-
-				/* Shifting ClientDisconnect through OnQueryCvarValueFinished up into slot for ClientFullyConnect (8 entries) */
-				SourceHook::SetMemAccess(&vtable_dest[mfp_fconnect.vtblindex],
-										 sizeof(void *) * 8,
-										 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
-				memmove(&vtable_dest[mfp_fconnect.vtblindex], &vtable_dest[mfp_fconnect.vtblindex + 1], sizeof(void *) * 8);
-			}
+			this_vtable[mfp_dest.vtblindex] = vtable_src[mfp_src.vtblindex];
 		}
+
+#ifdef _WIN32
+		/* AS inserted ClientFullyConnect into vtable, so move entries up on older engines */
+		if (mm_backend != MMBackend_AlienSwarm)
+		{
+			SourceHook::MemFuncInfo mfp_fconnect;
+			mfp_fconnect.isVirtual = false;
+
+			SourceHook::GetFuncInfo(&ServerPlugin::ClientFullyConnect, mfp_fconnect);
+
+			assert(mfp_fconnect.isVirtual);
+			assert(mfp_fconnect.thisptroffs == 0);
+			assert(mfp_fconnect.vtbloffs == 0);
+
+			/* Shifting ClientDisconnect through OnQueryCvarValueFinished up into slot for
+			 * ClientFullyConnect (8 entries)
+			 */
+			SourceHook::SetMemAccess(&this_vtable[mfp_fconnect.vtblindex],
+									 sizeof(void *) * 8,
+									 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+			memmove(&this_vtable[mfp_fconnect.vtblindex],
+					&this_vtable[mfp_fconnect.vtblindex + 1],
+					sizeof(void *) * 8);
+		}
+#endif
 
 		char error[255];
 		if (gamedll_bridge == NULL)
@@ -232,9 +240,11 @@ public:
 	virtual void ClientActive(edict_t *pEntity)
 	{
 	}
+#ifdef _WIN32
 	virtual void ClientFullyConnect(edict_t *pEntity)
 	{
 	}
+#endif
 	virtual void ClientDisconnect(edict_t *pEntity)
 	{
 	}
