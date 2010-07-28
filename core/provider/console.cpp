@@ -41,7 +41,9 @@ SMConVarAccessor g_SMConVarAccessor;
 bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
 	m_RegisteredCommands.push_back(pCommand);
+#if SOURCE_ENGINE != SE_ALIENSWARM
 	pCommand->SetNext(NULL);
+#endif
 	icvar->RegisterConCommand(pCommand);
 
 	return true;
@@ -49,7 +51,9 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 
 bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 {
+#if SOURCE_ENGINE != SE_ALIENSWARM
 	pCommand->SetNext(NULL);
+#endif
 	icvar->RegisterConCommand(pCommand);
 
 	return true;

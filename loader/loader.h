@@ -86,6 +86,7 @@ enum MetamodBackend
 	MMBackend_Episode2Valve,
 	MMBackend_Left4Dead,
 	MMBackend_Left4Dead2,
+	MMBackend_AlienSwarm,
 	MMBackend_UNKNOWN
 };
 

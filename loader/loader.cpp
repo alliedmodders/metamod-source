@@ -75,7 +75,8 @@ static const char *backend_names[] =
 	"2.ep2",
 	"2.ep2v",
 	"2.l4d",
-	"2.l4d2"
+	"2.l4d2",
+	"2.swarm"
 };
 
 #if defined _WIN32
@@ -212,6 +213,13 @@ mm_GetGameName()
 	}
 
 	valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine_Tier0");
+
+	/* '_Tier0' dropped on Alien Swarm version */
+	if (valve_cmdline == NULL)
+	{
+		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
+	}
+
 	if (valve_cmdline == NULL)
 	{
 		/* We probably have a Ship engine. */
@@ -257,7 +265,11 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
-		if (engineFactory("VPrecacheSystem001", NULL) != NULL)
+		if (engineFactory("EngineTraceServer004", NULL) != NULL)
+		{
+			return MMBackend_AlienSwarm;
+		}
+		else if (engineFactory("VPrecacheSystem001", NULL) != NULL)
 		{
 			return MMBackend_Left4Dead2;
 		}
