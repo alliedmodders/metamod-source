@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2010 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -183,12 +183,15 @@ mm_GetProcAddress(const char *name)
 #if defined _WIN32
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
+#define STEAM_API_NAME		"bin\\steam_api.dll"
 #elif defined __APPLE__
 #define TIER0_NAME			"bin/libtier0.dylib"
 #define VSTDLIB_NAME		"bin/libvstdlib.dylib"
+#define STEAM_API_NAME		"bin/libsteam_api.dylib"
 #elif defined __linux__
 #define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
 #define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX
+#define STEAM_API_NAME		"bin/" LIB_PREFIX "steam_api" LIB_SUFFIX
 #endif
 
 const char *
@@ -284,12 +287,12 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 			char lib_path[PLATFORM_MAX_PATH];
 
 			/* These would have failed already if they were going to? */
-			mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path));
+			mm_ResolvePath(STEAM_API_NAME, lib_path, sizeof(lib_path));
 			void *lib = mm_LoadLibrary(lib_path, NULL, 0);
-			void *tier0_ctime = mm_GetLibAddress(lib, "Plat_ctime");
+			void *steamapi_breakpad = mm_GetLibAddress(lib, "SteamAPI_SetBreakpadAppID");
 			mm_UnloadLibrary(lib);
 
-			if (tier0_ctime != NULL)
+			if (steamapi_breakpad != NULL)
 			{
 				return MMBackend_Episode2Valve;
 			}
