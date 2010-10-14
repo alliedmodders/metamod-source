@@ -67,33 +67,25 @@ else
 my ($major,$minor) = ($version =~ /^(\d+)\.(\d+)/);
 $ftp_path .= "/$major.$minor";
 
-if ($^O eq "darwin")
+my ($ftp);
+
+$ftp = Net::FTP->new($ftp_host, Debug => 0) 
+    or die "Cannot connect to host $ftp_host: $@";
+
+$ftp->login($ftp_user, $ftp_pass)
+    or die "Cannot connect to host $ftp_host as $ftp_user: " . $ftp->message . "\n";
+
+if ($ftp_path ne '')
 {
-	# Horrible workaround for weird upload failure
-	system("ftp -Vu ftp://$ftp_user:$ftp_pass\@$ftp_host/$ftp_path/$filename $filename");
+    $ftp->cwd($ftp_path)
+        or die "Cannot change to folder $ftp_path: " . $ftp->message . "\n";
 }
-else
-{
-	my ($ftp);
 
-	$ftp = Net::FTP->new($ftp_host, Debug => 0) 
-	    or die "Cannot connect to host $ftp_host: $@";
+$ftp->binary();
+$ftp->put($filename)
+    or die "Cannot drop file $filename ($ftp_path): " . $ftp->message . "\n";
 
-	$ftp->login($ftp_user, $ftp_pass)
-	    or die "Cannot connect to host $ftp_host as $ftp_user: " . $ftp->message . "\n";
-
-	if ($ftp_path ne '')
-	{
-	    $ftp->cwd($ftp_path)
-	        or die "Cannot change to folder $ftp_path: " . $ftp->message . "\n";
-	}
-
-	$ftp->binary();
-	$ftp->put($filename)
-	    or die "Cannot drop file $filename ($ftp_path): " . $ftp->message . "\n";
-
-	$ftp->close();
-}
+$ftp->close();
 
 print "File sent to drop site as $filename -- build succeeded.\n";
 
