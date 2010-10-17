@@ -743,7 +743,7 @@ int main(int argc, const char **argv)
 
 	const char *action = argv[1];
 
-	if (strcasecmp(action, "hopter") == 0)
+	if (stricmp(action, "hopter") == 0)
 	{
 		const char *filenamein = argv[2];
 		const char *filenameout = argv[3];
@@ -751,7 +751,7 @@ int main(int argc, const char **argv)
 
 		return action_hopter(argsnum, filenamein, filenameout); 
 	}
-	else if (strcasecmp(action, "iter") == 0)
+	else if (stricmp(action, "iter") == 0)
 	{
 		const char *filenamein = argv[2];
 		const char *filenameout = argv[3];

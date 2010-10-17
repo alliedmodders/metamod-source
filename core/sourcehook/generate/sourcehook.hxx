@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -307,6 +307,20 @@ namespace SourceHook
 		};
 	};
 
+	template <class T> struct ReferenceUtil
+	{
+		typedef T plain_type;
+		typedef T* pointer_type;
+		typedef T& reference_type;
+	};
+
+	template <class T> struct ReferenceUtil<T&>
+	{
+		typedef T plain_type;
+		typedef T* pointer_type;
+		typedef T& reference_type;
+	};
+
 	struct IHookContext
 	{
 		virtual ISHDelegate *GetNext() = 0;
@@ -480,7 +494,7 @@ namespace SourceHook
 		*	@return Override Return Pointer the hookfunc should use (may differ from overrideRetPtr
 		*		when the hook func is being called as part of a recall
 		*/
-		virtual IHookContext *SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origentry,
+		virtual IHookContext *SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origCallAddr,
 			META_RES *statusPtr, META_RES *prevResPtr, META_RES *curResPtr,
 			const void *origRetPtr, void *overrideRetPtr) = 0;
 
@@ -579,10 +593,14 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 
 // only call these from the hook handlers directly!
 
+#define MAKE_NOREF_VALUE(rettype) \
+	*reinterpret_cast< ::SourceHook::ReferenceUtil<rettype>::pointer_type >(0)
+
 // If a hook on a function which returns a reference does not want to specify a return value,
 // it can use this macro.
 //   ONLY USE THIS WITH MRES_IGNORED AND MRES_HANDLED !!!
-#define RETURN_META_NOREF(result, rettype)	do { SET_META_RESULT(result); return reinterpret_cast<rettype>(*SH_GLOB_SHPTR); } while(0)
+#define RETURN_META_NOREF(result, rettype) \
+	RETURN_META_VALUE(result, MAKE_NOREF_VALUE(rettype))
 
 // Why take a memfuncptr instead of iface and func when we have to deduce the iface anyway now?
 // Well, without it, there'd be no way to specify which overloaded version we want in _VALUE
@@ -1163,7 +1181,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfosM_##hookname, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
 	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype value) \
 	{ \
-		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(shptr, value); \
+		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>()(shptr, value); \
 	}
 
 #define SH_DECL_MANUALEXTERN$1(hookname, rettype@[$2,1,$1:, param$2@]) \
@@ -1196,7 +1214,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfosM_##hookname, 0, __SH_EPI, __SourceHook_ParamInfos2M_##hookname }; \
 	void __SoureceHook_FHM_SetOverrideResult##hookname(::SourceHook::ISourceHook *shptr, rettype value) \
 	{ \
-		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>(shptr, value); \
+		::SourceHook::SetOverrideResult<SH_MFHCls(hookname)::RetType>()(shptr, value); \
 	}
 
 #define SH_DECL_MANUALEXTERN$1_vafmt(hookname, rettype@[$2,1,$1:, param$2@]) \
@@ -1415,12 +1433,6 @@ SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]..
 
 namespace SourceHook
 {
-	template <class RetType>
-	void SetOverrideResult(ISourceHook *shptr, const RetType res)
-	{
-		*reinterpret_cast<RetType*>(shptr->GetOverrideRetPtr()) = res;
-	}
-
 	// SetOverrideResult used to be implemented like this:
 	//  SetOverrideResult(shptr, memfuncptr, return);
 	//  normally the compiler can deduce the return type from memfuncptr, but (at least msvc8) failed when it was a reference
@@ -1444,6 +1456,14 @@ namespace SourceHook
 			*reinterpret_cast<typename ReferenceCarrier<T&>::type *>(shptr->GetOverrideRetPtr()) = res;
 		}
 	};
+
+	// For manual hooks:
+	// The rettype is passed in manually
+	template <class RetType>
+	OverrideFunctor<RetType> SetOverrideResult()
+	{
+		return OverrideFunctor<RetType>();
+	}
 @[$1,0,$a:
 	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
 	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))

@@ -1,6 +1,9 @@
 #ifndef __SH_PAGEALLOC_H__
 #define __SH_PAGEALLOC_H__
 
+#include "sh_list.h"
+#include "sh_memory.h"
+
 # if SH_XP == SH_XP_WINAPI
 #		include <windows.h>
 # elif SH_XP == SH_XP_POSIX
@@ -53,6 +56,7 @@ namespace SourceHook
 			bool isolated;					// may contain only one AU
 			size_t minAlignment;
 			AUList allocUnits;
+			bool isRE;						// true: RE, otherwise: RW
 
 			void CheckGap(size_t gap_begin, size_t gap_end, size_t reqsize,
 				size_t &smallestgap_pos, size_t &smallestgap_size, size_t &outAlignBytes)
@@ -122,15 +126,37 @@ namespace SourceHook
 					void *alignedAUBegin = reinterpret_cast<void*>(
 						AUBegin + ((minAlignment - AUBegin % minAlignment) % minAlignment)
 						);
-					
+
 					if (addr == alignedAUBegin)
 					{
+						DebugCleanMemory(reinterpret_cast<unsigned char*>(startPtr) + iter->begin_offset,
+							iter->size);
 						allocUnits.erase(iter);
 						return true;
 					}
 				}
 
 				return false;
+			}
+
+			void DebugCleanMemory(unsigned char* start, size_t size)
+			{
+				bool wasRE = isRE;
+				if (isRE)
+				{
+					SetRW();
+				}
+
+				unsigned char* end = start + size;
+				for (unsigned char* p = start; p != end; ++p)
+				{
+					*p = 0xCC;
+				}
+
+				if (wasRE)
+				{
+					SetRE();
+				}
 			}
 
 			bool Contains(void *addr)
@@ -145,6 +171,18 @@ namespace SourceHook
 #elif SH_XP == SH_XP_WINAPI
 				VirtualFree(startPtr, 0, MEM_RELEASE);
 #endif
+			}
+
+			void SetRE()
+			{
+				SetMemAccess(startPtr, size, SH_MEM_READ | SH_MEM_EXEC);
+				isRE = true;
+			}
+
+			void SetRW()
+			{
+				SetMemAccess(startPtr, size, SH_MEM_READ | SH_MEM_WRITE);
+				isRE = false;
 			}
 		};
 
@@ -178,6 +216,7 @@ namespace SourceHook
 
 			if (newRegion.startPtr)
 			{
+				newRegion.SetRW();
 				m_Regions.push_back(newRegion);
 				return true;
 			}
@@ -210,7 +249,7 @@ namespace SourceHook
 		}
 
 	public:
-		CPageAlloc(size_t minAlignment = 1 /* power of 2 */ ) : m_MinAlignment(minAlignment)
+		CPageAlloc(size_t minAlignment = 4 /* power of 2 */ ) : m_MinAlignment(minAlignment)
 		{
 #if SH_XP == SH_XP_POSIX
 			m_PageSize = sysconf(_SC_PAGESIZE);
@@ -262,7 +301,7 @@ namespace SourceHook
 			{
 				if (iter->Contains(ptr))
 				{
-					SetMemAccess(iter->startPtr, iter->size, SH_MEM_READ | SH_MEM_EXEC);
+					iter->SetRE();
 					break;
 				}
 			}
@@ -274,7 +313,7 @@ namespace SourceHook
 			{
 				if (iter->Contains(ptr))
 				{
-					SetMemAccess(iter->startPtr, iter->size, SH_MEM_READ | SH_MEM_WRITE);
+					iter->SetRW();
 					break;
 				}
 			}

@@ -23,6 +23,10 @@ for i in MMS.sdkInfo:
 		'provider/provider_ep2.cpp',
 		'sourcehook/sourcehook.cpp',
 		'sourcehook/sourcehook_hookmangen.cpp',
+		'sourcehook/sourcehook_impl_chookidman.cpp',
+		'sourcehook/sourcehook_impl_chookmaninfo.cpp',
+		'sourcehook/sourcehook_impl_cproto.cpp',
+		'sourcehook/sourcehook_impl_cvfnptr.cpp',
 		'gamedll_bridge.cpp',
 		'vsp_bridge.cpp'
 		]

@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -189,6 +189,10 @@ namespace SourceHook
 	{
 		struct CHookContext : IHookContext
 		{
+			CHookContext() : m_CleanupTask(NULL)
+			{
+			}
+
 			enum State
 			{
 				State_Born,
@@ -224,6 +228,8 @@ namespace SourceHook
 
 			bool m_CallOrig;
 
+			ICleanupTask *m_CleanupTask;
+
 			void SkipPaused(List<CHook>::iterator &iter, List<CHook> &list)
 			{
 				while (iter != list.end() && iter->IsPaused())
@@ -238,12 +244,13 @@ namespace SourceHook
 			void *GetOverrideRetPtr();
 			const void *GetOrigRetPtr();
 			bool ShouldCallOrig();
+			void DoCleanupTaskAndDeleteIt();
 		};
 
 		class CVfnPtrList : public List<CVfnPtr>
 		{
 		public:
-			CVfnPtr &GetVfnPtr(void *p);
+			CVfnPtr *GetVfnPtr(void *p);
 		};
 
 		typedef CStack<CHookContext> HookContextStack;
@@ -259,6 +266,7 @@ namespace SourceHook
 
 			bool SetHookPaused(int hookid, bool paused);
 			CHookManList::iterator RemoveHookManager(CHookManList::iterator iter);
+			List<CVfnPtr>::iterator RevertAndRemoveVfnPtr(List<CVfnPtr>::iterator vfnptr_iter);
 		public:
 			CSourceHookImpl();
 			virtual ~CSourceHookImpl();
@@ -308,7 +316,7 @@ namespace SourceHook
 
 			void DoRecall();
 
-			IHookContext *SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origentry, META_RES *statusPtr,
+			IHookContext *SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origCallAddr, META_RES *statusPtr,
 				META_RES *prevResPtr, META_RES *curResPtr, const void *origRetPtr, void *overrideRetPtr);
 
 			void EndContext(IHookContext *pCtx);
