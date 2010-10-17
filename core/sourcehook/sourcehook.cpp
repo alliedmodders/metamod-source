@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -42,372 +42,32 @@ namespace SourceHook
 	namespace Impl
 	{
 		//////////////////////////////////////////////////////////////////////////
-		// CProto
-		//////////////////////////////////////////////////////////////////////////
-		void CProto::Fill(const ProtoInfo *pProto)
-		{
-			if (pProto == NULL)
-				m_Version = -1;
-
-			m_ParamsPassInfo.clear();
-
-			if (pProto->paramsPassInfo[0].size == 0)
-			{
-				// Version 1
-				m_Version = 0;
-				m_Convention = pProto->convention;
-				m_NumOfParams = pProto->numOfParams;
-
-				m_RetPassInfo.size = pProto->retPassInfo.size;
-				m_RetPassInfo.type = pProto->retPassInfo.type;
-				m_RetPassInfo.flags = GetRealFlags(pProto->retPassInfo);
-
-				m_RetPassInfo.pNormalCtor = NULL;
-				m_RetPassInfo.pCopyCtor = NULL;
-				m_RetPassInfo.pDtor = NULL;
-				m_RetPassInfo.pAssignOperator = NULL;
-
-				
-				m_ParamsPassInfo.resize(pProto->numOfParams);
-
-				for (int i = 1; i <= pProto->numOfParams; ++i)
-				{
-					m_ParamsPassInfo[i-1].size = pProto->paramsPassInfo[i].size;
-					m_ParamsPassInfo[i-1].type = pProto->paramsPassInfo[i].type;
-					m_ParamsPassInfo[i-1].flags = GetRealFlags(pProto->paramsPassInfo[i]);
-
-					m_ParamsPassInfo[i-1].pNormalCtor = NULL;
-					m_ParamsPassInfo[i-1].pCopyCtor = NULL;
-					m_ParamsPassInfo[i-1].pDtor = NULL;
-					m_ParamsPassInfo[i-1].pAssignOperator = NULL;
-				}
-			}
-			else if (pProto->paramsPassInfo[0].size == 1)
-			{
-				// Version 2
-				m_Version = 1;
-				m_Convention = pProto->convention;
-				m_NumOfParams = pProto->numOfParams;
-
-				m_RetPassInfo.size = pProto->retPassInfo.size;
-				m_RetPassInfo.type = pProto->retPassInfo.type;
-				m_RetPassInfo.flags = pProto->retPassInfo.flags;
-
-				m_RetPassInfo.pNormalCtor = pProto->retPassInfo2.pNormalCtor;
-				m_RetPassInfo.pCopyCtor = pProto->retPassInfo2.pCopyCtor;
-				m_RetPassInfo.pDtor = pProto->retPassInfo2.pDtor;
-				m_RetPassInfo.pAssignOperator = pProto->retPassInfo2.pAssignOperator;
-
-				m_ParamsPassInfo.resize(pProto->numOfParams);
-
-				for (int i = 1; i <= pProto->numOfParams; ++i)
-				{
-					m_ParamsPassInfo[i-1].size = pProto->paramsPassInfo[i].size;
-					m_ParamsPassInfo[i-1].type = pProto->paramsPassInfo[i].type;
-					m_ParamsPassInfo[i-1].flags = pProto->paramsPassInfo[i].flags;
-
-					m_ParamsPassInfo[i-1].pNormalCtor = pProto->paramsPassInfo2[i].pNormalCtor;
-					m_ParamsPassInfo[i-1].pCopyCtor = pProto->paramsPassInfo2[i].pCopyCtor;
-					m_ParamsPassInfo[i-1].pDtor = pProto->paramsPassInfo2[i].pDtor;
-					m_ParamsPassInfo[i-1].pAssignOperator = pProto->paramsPassInfo2[i].pAssignOperator;
-				}
-			}
-			else
-			{
-				// Unknown
-				m_Version = -1;
-			}
-		}
-
-		// Basic compat test
-		// Other than this, we assume that the plugins know what they're doing
-		bool CProto::operator == (const CProto &other) const
-		{
-			if (m_Version < 0 || other.GetVersion() < 0)
-				return false;
-
-			if (m_NumOfParams != other.GetNumOfParams())
-				return false;
-
-			if (m_Convention != ProtoInfo::CallConv_Unknown && other.GetConvention() != ProtoInfo::CallConv_Unknown &&
-				m_Convention != other.GetConvention())
-				return false;
-
-			if (GetRealSize(GetRet()) != GetRealSize(other.GetRet()))
-				return false;
-
-			for (int i = 0; i < m_NumOfParams; ++i)
-			{
-				if (GetRealSize(GetParam(i)) != GetRealSize(other.GetParam(i)))
-					return false;
-				if (GetParam(i).type != PassInfo::PassType_Unknown && other.GetParam(i).type != PassInfo::PassType_Unknown)
-				{
-					if (GetParam(i).type != other.GetParam(i).type)
-						return false;
-					if (GetParam(i).flags != other.GetParam(i).flags)
-						return false;
-				}
-			}
-
-			return true;
-		}
-
-		bool CProto::ExactlyEqual(const CProto &other) const
-		{
-			if (m_Version != other.m_Version ||
-				m_NumOfParams != other.m_NumOfParams ||
-				m_Convention != other.m_Convention ||
-				GetRet() != other.GetRet())
-			{
-				return false;
-			}
-
-			for (int i = 0; i < m_NumOfParams; ++i)
-			{
-				if(GetParam(i) != other.GetParam(i))
-					return false;
-			}
-
-			return true;
-		}
-		
-		//////////////////////////////////////////////////////////////////////////
-		// CHookManager
-		//////////////////////////////////////////////////////////////////////////
-		void CHookManager::SetInfo(int hookman_version, int vtbloffs, int vtblidx,
-			ProtoInfo *proto, void *hookfunc_vfnptr)
-		{
-			m_Version = hookman_version;
-			m_VtblOffs = vtbloffs;
-			m_VtblIdx = vtblidx;
-			m_Proto = proto;
-			m_HookfuncVfnptr = hookfunc_vfnptr;
-		}
-
-		//////////////////////////////////////////////////////////////////////////
 		// CVfnPtrList
 		//////////////////////////////////////////////////////////////////////////
 
-		CVfnPtr &CVfnPtrList::GetVfnPtr(void *vfnptr)
+		CVfnPtr *CVfnPtrList::GetVfnPtr(void *vfnptr)
 		{
 			iterator iter = find(vfnptr);
 			if (iter == end())
 			{
+				// No vfnptr info object found
+				// --> create a new one
 				CVfnPtr newVfnPtr(vfnptr);
-				push_back(newVfnPtr);
-
-				return back();
-			}
-			else
-			{
-				return *iter;
-			}
-		}
-		//////////////////////////////////////////////////////////////////////////
-		// CVfnPtr
-		//////////////////////////////////////////////////////////////////////////
-		
-		void CVfnPtr::AddHookMan(CHookManager *pHookMan)
-		{
-			List<CHookManager*>::iterator iter;
-
-			// Don't accept invalid hook managers
-			if (!*pHookMan)
-				return;
-
-			// Check whether this hook manager already exists; if yes, ignore.
-			iter = m_HookMans.find(pHookMan);
-			if (iter != m_HookMans.end())
-				return;
-
-			// It doesn't -> add it. Add it to the end of its version group.
-			for (iter = m_HookMans.begin(); iter != m_HookMans.end(); ++iter)
-			{
-				if ((*iter)->GetVersion() < pHookMan->GetVersion())
-					break;
-			}
-
-			bool isBeginning = iter == m_HookMans.begin();
-
-			m_HookMans.insert(iter, pHookMan);
-
-			if (isBeginning)
-			{
-				pHookMan->IncrRef(this);
-				if (m_HookMans.size() > 1)
+				if (newVfnPtr.Init())
 				{
-					// If another hookman was used until now but this one is better
-					// (which it is because it's the first -> it has a higher version)
-					// -> switch!
+					push_back(newVfnPtr);
 
-					List<CHookManager*>::iterator second = m_HookMans.begin();
-					++second;
-
-					(*second)->DecrRef(this);
-				}
-
-				// Make sure that this vfnptr points at it
-				Patch(pHookMan->GetHookFunc());
-			}
-		}
-
-		bool CVfnPtr::HookManRemoved(CHookManager *pHookMan)
-		{
-			// Don't accept invalid hook managers
-			if (!*pHookMan)
-				return true;
-
-			List<CHookManager*>::iterator iter = m_HookMans.find(pHookMan);
-			if (iter == m_HookMans.end())
-				return true;							// Didn't exist here anyway
-
-			if (iter == m_HookMans.begin())
-			{
-				// It is the first one!
-				pHookMan->DecrRef(this);
-				m_HookMans.erase(iter);
-
-				if (m_HookMans.empty())
-					return false;				// No more hookmans -> let SH delete us
-
-				// Activate second -> now first hookman
-				m_HookMans.front()->IncrRef(this);
-				Patch(m_HookMans.front()->GetHookFunc());
-			}
-			else
-			{
-				m_HookMans.erase(iter);
-			}
-			return true;
-		}
-
-		bool CVfnPtr::Patch(void *newValue)
-		{
-			if (!SetMemAccess(m_Ptr, sizeof(void*), SH_MEM_READ | SH_MEM_WRITE))
-			{
-				return false;
-			}
-
-			*reinterpret_cast<void**>(m_Ptr) = newValue;
-
-			return true;
-		}
-
-		CIface &CVfnPtr::GetIface(void *iface)
-		{
-			List<CIface>::iterator iter = m_IfaceList.find(iface);
-			if (iter == m_IfaceList.end())
-			{
-				CIface newIface(iface);
-				if (iface == NULL)
-				{
-					m_IfaceList.push_front(newIface);
-					return m_IfaceList.front();
+					return &(back());
 				}
 				else
 				{
-					m_IfaceList.push_back(newIface);
-					return m_IfaceList.back();
+					// Initialization failed.
+					return NULL;
 				}
 			}
 			else
 			{
-				return *iter;
-			}
-		}
-
-		//////////////////////////////////////////////////////////////////////////
-		// CHookIdManager
-		//////////////////////////////////////////////////////////////////////////
-		CHookIDManager::CHookIDManager()
-		{
-		}
-
-		int CHookIDManager::New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr,
-			void *adjustediface, Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post)
-		{
-			Entry tmp(proto, vtbl_offs, vtbl_idx, vfnptr, adjustediface, plug, thisptr_offs, handler, post);
-
-			size_t cursize = m_Entries.size();
-			for (size_t i = 0; i < cursize; ++i)
-			{
-				if (m_Entries[i].isfree)
-				{
-					m_Entries[i] = tmp;
-					return static_cast<int>(i) + 1;
-				}
-			}
-
-			m_Entries.push_back(tmp);
-			return static_cast<int>(m_Entries.size());		// return size() because hookid = id+1 anyway
-		}
-
-		bool CHookIDManager::Remove(int hookid)
-		{
-			int realid = hookid - 1;
-			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].isfree)
-				return false;
-
-			m_Entries[realid].isfree = true;
-
-			// :TODO: remove free ids from back sometimes ??
-
-			return true;
-		}
-
-		const CHookIDManager::Entry * CHookIDManager::QueryHook(int hookid)
-		{
-			int realid = hookid - 1;
-			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].isfree)
-				return NULL;
-
-			return &m_Entries[realid];
-		}
-
-		void CHookIDManager::FindAllHooks(CVector<int> &output, const CProto &proto, int vtbl_offs,
-			int vtbl_idx, void *adjustediface, Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post)
-		{
-			// oh my god, a lot of parameters...
-			size_t cursize = m_Entries.size();
-			for (size_t i = 0; i < cursize; ++i)
-			{
-				if (!m_Entries[i].isfree && m_Entries[i].proto == proto && m_Entries[i].vtbl_offs == vtbl_offs &&
-					m_Entries[i].vtbl_idx == vtbl_idx && m_Entries[i].adjustediface == adjustediface && m_Entries[i].plug == plug &&
-					m_Entries[i].thisptr_offs == thisptr_offs && m_Entries[i].handler->IsEqual(handler) && m_Entries[i].post == post)
-				{
-					output.push_back(static_cast<int>(i) + 1);
-				}
-			}
-		}
-
-		void CHookIDManager::FindAllHooks(CVector<int> &output)
-		{
-			size_t cursize = m_Entries.size();
-			for (size_t i = 0; i < cursize; ++i)
-			{
-				if (!m_Entries[i].isfree)
-					output.push_back(static_cast<int>(i) + 1);
-			}
-		}
-
-		void CHookIDManager::FindAllHooks(CVector<int> &output, Plugin plug)
-		{
-			size_t cursize = m_Entries.size();
-			for (size_t i = 0; i < cursize; ++i)
-			{
-				if (!m_Entries[i].isfree && m_Entries[i].plug == plug)
-					output.push_back(static_cast<int>(i) + 1);
-			}
-		}
-
-
-		void CHookIDManager::RemoveAll(void *vfnptr)
-		{
-			size_t cursize = m_Entries.size();
-			for (size_t i = 0; i < cursize; ++i)
-			{
-				if (!m_Entries[i].isfree && m_Entries[i].vfnptr == vfnptr)
-					m_Entries[i].isfree = true;
+				return &(*iter);
 			}
 		}
 
@@ -480,9 +140,18 @@ namespace SourceHook
 				break;
 			}
 
-			CVfnPtr &vfnPtr = m_VfnPtrs.GetVfnPtr(cur_vfnptr);
-			vfnPtr.AddHookMan(m_HookManList.GetHookMan(hookManager));
-			CIface &ifaceinst = vfnPtr.GetIface(adjustediface);
+			CVfnPtr *vfnPtr = m_VfnPtrs.GetVfnPtr(cur_vfnptr);
+			if (!vfnPtr)
+			{
+				// Could not create the vfnptr info object.
+				// This could be because a thunk generation on GCC
+				// has failed. See sourcehook_impl_cvfnptr.cpp
+				// for details.
+				return false;
+			}
+
+			vfnPtr->AddHookMan(m_HookManList.GetHookMan(hookManager));
+			CIface &ifaceinst = vfnPtr->GetIface(adjustediface);
 
 			// Add the hook
 			CHook hook(plug, thisptr_offs, handler, 
@@ -588,14 +257,58 @@ namespace SourceHook
 						ctx_iter->VfnPtrRemoved(&(*vfnptr_iter));
 					}
 
-					vfnptr_iter->Revert();
-
-					m_VfnPtrs.erase(vfnptr_iter);
+					RevertAndRemoveVfnPtr(vfnptr_iter);
 				}
 			}
 
 			m_HookIDMan.Remove(hookid);
 			return true;
+		}
+
+		List<CVfnPtr>::iterator CSourceHookImpl::RevertAndRemoveVfnPtr(List<CVfnPtr>::iterator vfnptr_iter)
+		{
+			ICleanupTask *cleanupTask = vfnptr_iter->GetCleanupTask();
+
+			// Some vfnptrs require cleanup.
+			// Concrete case: on GCC, when the original vtable entry is not even
+			// we generate an even-aligned thunk to call the original function.
+			// If the vfnptr is being removed from a pre hook on the vfnptr
+			// we have to delay the cleanup of this thunk until the hook loop is done
+			// (because the orig function call mechanism is going to use the thunk).
+
+			if (cleanupTask != NULL)
+			{
+				// If this vfnptr is in use in one of the hook loops running at the moment
+				// Schedule it for removal on the DEEPEST hook loop.
+
+				size_t numOfContexts = m_ContextStack.size();
+				// m_ContextStack.at(0) is the deepest hook context
+				// m_ContextStack.at(size-1) = m_ContextStack.front is the uppermost
+
+				bool cleanupImmedieately = true;
+
+				CVfnPtr *vfnPtrObjAddr = &(*vfnptr_iter);
+				for (size_t i = 0; i < numOfContexts; ++i)
+				{
+					CHookContext &context = m_ContextStack.at(i);
+					if (context.pVfnPtr == vfnPtrObjAddr)
+					{
+						// Found a hook context using this vfnptr at the moment.
+						context.m_CleanupTask = cleanupTask;
+						cleanupImmedieately = false;			// Delay the cleanup
+						break;
+					}
+				}
+
+				if (cleanupImmedieately)
+				{
+					cleanupTask->CleanupAndDeleteThis();
+				}
+			}
+
+			// Do the work
+			vfnptr_iter->Revert();
+			return m_VfnPtrs.erase(vfnptr_iter);
 		}
 
 		void CSourceHookImpl::SetRes(META_RES res)
@@ -675,10 +388,9 @@ namespace SourceHook
 					// This vfnptr has no more hook managers
 					// and asks to be removed.
 
-					vfnptr_iter->Revert();
-
 					m_HookIDMan.RemoveAll(vfnptr_iter->GetPtr());
-					vfnptr_iter = m_VfnPtrs.erase(vfnptr_iter);
+
+					vfnptr_iter = RevertAndRemoveVfnPtr(vfnptr_iter);
 				}
 				else
 				{
@@ -710,7 +422,12 @@ namespace SourceHook
 		void CSourceHookImpl::ResetIgnoreHooks(void *vfnptr)
 		{
 			if (!m_ContextStack.empty() && m_ContextStack.front().m_State == CHookContext::State_Ignore)
-				m_ContextStack.pop();
+			{
+				// Actually use EndContext
+				// instead of m_ContextStack.pop directly
+				// because it runs the cleanup task if neccesary
+				EndContext(&(m_ContextStack.front()));
+			}
 		}
 
 		void *CSourceHookImpl::GetOrigVfnPtrEntry(void *vfnptr)
@@ -753,7 +470,7 @@ namespace SourceHook
 			curCtx.m_State = CHookContext::State_Dead;
 		}
 
-		IHookContext *CSourceHookImpl::SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origentry, META_RES *statusPtr,
+		IHookContext *CSourceHookImpl::SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origCallAddr, META_RES *statusPtr,
 			META_RES *prevResPtr, META_RES *curResPtr, const void *origRetPtr, void *overrideRetPtr)
 		{
 			CHookContext *pCtx = NULL;
@@ -781,7 +498,8 @@ namespace SourceHook
 					}
 					else
 					{
-						*origentry = (*vfnptr_iter)->GetOrigEntry();
+						*origCallAddr = (*vfnptr_iter)->GetOrigCallAddr();
+						oldctx->pVfnPtr = *vfnptr_iter;
 					}
 
 					oldctx->pOrigRet = origRetPtr;
@@ -839,7 +557,7 @@ namespace SourceHook
 			else
 			{
 				pCtx->pVfnPtr = *vfnptr_iter;
-				*origentry = pCtx->pVfnPtr->GetOrigEntry();
+				*origCallAddr = pCtx->pVfnPtr->GetOrigCallAddr();
 				pCtx->pIface = pCtx->pVfnPtr->FindIface(thisptr);
 			}
 
@@ -855,6 +573,9 @@ namespace SourceHook
 
 		void CSourceHookImpl::EndContext(IHookContext *pCtx)
 		{
+			// Do clean up task, if any is associated with this context
+			m_ContextStack.front().DoCleanupTaskAndDeleteIt();
+			// Then remove it
 			m_ContextStack.pop();
 		}
 
@@ -1085,8 +806,21 @@ namespace SourceHook
 		{
 			if (pVfnPtr == vfnptr)
 			{
-				pVfnPtr = NULL;
+				// Don't set pVfnPtr = NULL here!
+				// It may be used still.
+				// RevertAndRemoveVfnPtr uses it to find the hook context
+				// to which to attach the cleanup task of the vfnptr.
+
+				//pVfnPtr = NULL;
 				m_State = State_Dead;
+			}
+		}
+
+		void CHookContext::DoCleanupTaskAndDeleteIt()
+		{
+			if (m_CleanupTask != NULL)
+			{
+				m_CleanupTask->CleanupAndDeleteThis();
 			}
 		}
 	}

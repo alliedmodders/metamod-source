@@ -9,8 +9,8 @@ INCLUDE = -I. -I..
 MAX_PARAMS=20
 
 BINARY = sourcehook_test
-OBJECTS = main.cpp sourcehook.cpp sourcehook_hookmangen.cpp $(shell ls -t test*.cpp)
-HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h
+OBJECTS = main.cpp sourcehook.cpp sourcehook_hookmangen.cpp sourcehook_impl_chookmaninfo.cpp sourcehook_impl_chookidman.cpp sourcehook_impl_cproto.cpp sourcehook_impl_cvfnptr.cpp $(shell ls -t test*.cpp)
+HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h ../sh_pagealloc.h
 
 ifeq "$(DEBUG)" "true"
 	BIN_DIR = Debug
@@ -48,10 +48,18 @@ all:
 	mkdir -p $(BIN_DIR)
 	ln -sf ../sourcehook.cpp
 	ln -sf ../sourcehook_hookmangen.cpp
+	ln -sf ../sourcehook_impl_chookidman.cpp
+	ln -sf ../sourcehook_impl_chookmaninfo.cpp
+	ln -sf ../sourcehook_impl_cproto.cpp
+	ln -sf ../sourcehook_impl_cvfnptr.cpp
 	$(MAKE) $(BINARY)
 	rm -f $(BINARY)
 	rm -f sourcehook.cpp
 	rm -f sourcehook_hookmangen.cpp
+	rm -f sourcehook_impl_chookidman.cpp
+	rm -f sourcehook_impl_chookmaninfo.cpp
+	rm -f sourcehook_impl_cproto.cpp
+	rm -f sourcehook_impl_cvfnptr.cpp
 	ln -sf $(BIN_DIR)/$(BINARY) $(BINARY)
 
 
