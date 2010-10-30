@@ -1,3 +1,12 @@
+2010/10/31 1.8.4:
+ - Added support for Alien Swarm (bug 4529).
+ - Added support for L4D and L4D2 on Mac OS X (bug 4680 and bug 4646).
+ - Updated support for L4D on Linux (bug 4680).
+ - Fixed bug on OB listen servers where the engine was being detected as OBV
+   (bug 4560).
+ - Fixed hooking vtables with unaligned thunk entries and returning references
+   in manual hooks (bug 4655).
+
 2010/07/18 1.8.3:
  - Added support for the latest L4D2 update (bug 4509).
  - Fixed bug on OBV engine where extended plugins (such as SourceMod and
