@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng

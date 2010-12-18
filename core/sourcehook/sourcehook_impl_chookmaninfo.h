@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -46,7 +46,7 @@ namespace SourceHook
 			};
 
 			// *** Interface ***
-			inline CHookManager(Plugin ownerPlugin, HookManagerPubFunc pubFunc);
+			CHookManager(Plugin ownerPlugin, HookManagerPubFunc pubFunc);
 
 			inline bool operator==(const Descriptor &other) const;
 			inline bool operator==(const CHookManager &other) const;
@@ -60,11 +60,11 @@ namespace SourceHook
 			inline void *GetHookFunc() const;
 			inline HookManagerPubFunc GetPubFunc() const;
 
-			inline void Register();
-			inline void Unregister();
+			void Register();
+			void Unregister();
 
-			inline void IncrRef(CVfnPtr *pVfnPtr);
-			inline void DecrRef(CVfnPtr *pVfnPtr);
+			void IncrRef(CVfnPtr *pVfnPtr);
+			void DecrRef(CVfnPtr *pVfnPtr);
 
 			List<CVfnPtr*> &GetVfnPtrList()
 			{
@@ -79,22 +79,11 @@ namespace SourceHook
 		class CHookManList : public List<CHookManager>
 		{
 		public:
-			inline CHookManager *GetHookMan(Plugin plug, HookManagerPubFunc pubFunc);
-			inline CHookManager *GetHookMan(CHookManager &hm);
+			CHookManager *GetHookMan(Plugin plug, HookManagerPubFunc pubFunc);
+			CHookManager *GetHookMan(CHookManager &hm);
 		};
 
-		// *** Implementation ***
-		inline CHookManager::CHookManager(Plugin ownerPlugin, HookManagerPubFunc pubFunc)
-			: m_OwnerPlugin(ownerPlugin), m_PubFunc(pubFunc), m_Version(-1)
-		{
-			// Query pubfunc
-			//  -> Should call SetInfo and set all the other variables!
-			if (m_PubFunc(false, this) != 0)
-			{
-				// Error!
-				m_Version = -1;
-			}
-		}
+		// *** Implementation **/
 
 		inline CHookManager::operator bool() const
 		{
@@ -146,50 +135,6 @@ namespace SourceHook
 		inline HookManagerPubFunc CHookManager::GetPubFunc() const
 		{
 			return m_PubFunc;
-		}
-
-		inline void CHookManager::Register()
-		{
-			m_PubFunc(true, this);
-		}
-
-		inline void CHookManager::Unregister()
-		{
-			m_PubFunc(true, NULL);
-		}
-
-		inline void CHookManager::IncrRef(CVfnPtr *pVfnPtr)
-		{
-			m_VfnPtrs.push_back(pVfnPtr);
-			if (m_VfnPtrs.size() == 1)
-				Register();
-		}
-
-		inline void CHookManager::DecrRef(CVfnPtr *pVfnPtr)
-		{
-			m_VfnPtrs.remove(pVfnPtr);
-			if (m_VfnPtrs.empty())
-				Unregister();
-		}
-
-		inline CHookManager *CHookManList::GetHookMan(Plugin plug, HookManagerPubFunc pubFunc)
-		{
-			CHookManager hm(plug, pubFunc);
-			return GetHookMan(hm);
-		}
-
-		inline CHookManager *CHookManList::GetHookMan(CHookManager &hm)
-		{
-			iterator iter = find(hm);
-			if (iter == end())
-			{
-				push_back(hm);
-				return &(back());
-			}
-			else
-			{
-				return &(*iter);
-			}
 		}
 	}
 }
