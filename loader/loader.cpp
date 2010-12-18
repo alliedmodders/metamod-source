@@ -281,22 +281,16 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	else if (engineFactory("VEngineServer021", NULL) != NULL)
 	{
 		/* Check for OB */
-		if (engineFactory("VEngineCvar004", NULL) != NULL &&
-			engineFactory("VModelInfoServer002", NULL) != NULL)
+		if (engineFactory("VEngineCvar004", NULL) != NULL)
 		{
-			char lib_path[PLATFORM_MAX_PATH];
-
-			/* These would have failed already if they were going to? */
-			mm_ResolvePath(STEAM_API_NAME, lib_path, sizeof(lib_path));
-			void *lib = mm_LoadLibrary(lib_path, NULL, 0);
-			void *steamapi_breakpad = mm_GetLibAddress(lib, "SteamAPI_SetBreakpadAppID");
-			mm_UnloadLibrary(lib);
-
-			if (steamapi_breakpad != NULL)
+			if (engineFactory("VModelInfoServer002", NULL) != NULL)
+			{
+				return MMBackend_Episode2;
+			}
+			else if (engineFactory("VModelInfoServer003", NULL) != NULL)
 			{
 				return MMBackend_Episode2Valve;
 			}
-			return MMBackend_Episode2;
 		}
 		/* Check for Episode One/Old Engine */
 		else if (engineFactory("VModelInfoServer001", NULL) != NULL &&
