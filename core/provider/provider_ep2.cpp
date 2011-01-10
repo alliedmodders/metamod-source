@@ -358,7 +358,9 @@ const char *BaseProvider::GetGameDescription()
 
 int BaseProvider::DetermineSourceEngine(const char *game)
 {
-#if SOURCE_ENGINE == SE_ALIENSWARM
+#if SOURCE_ENGINE == SE_BLOODYGOODTIME
+	return SOURCE_ENGINE_BLOODYGOODTIME;
+#elif SOURCE_ENGINE == SE_ALIENSWARM
 	return SOURCE_ENGINE_ALIENSWARM;
 #elif SOURCE_ENGINE == SE_LEFT4DEAD2
 	return SOURCE_ENGINE_LEFT4DEAD2;
