@@ -73,6 +73,7 @@ static const char *backend_names[] =
 	"1.ep1",
 	"2.darkm",
 	"2.ep2",
+	"2.bgt",
 	"2.ep2v",
 	"2.l4d",
 	"2.l4d2",
@@ -285,7 +286,15 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		{
 			if (engineFactory("VModelInfoServer002", NULL) != NULL)
 			{
-				return MMBackend_Episode2;
+				/* BGT has same iface version numbers and libs as ep2 */
+				if (strcmp(game_name, "pm") == 0)
+				{
+					return MMBackend_BloodyGoodTime;
+				}
+				else
+				{
+					return MMBackend_Episode2;
+				}
 			}
 			else if (engineFactory("VModelInfoServer003", NULL) != NULL)
 			{
