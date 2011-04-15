@@ -1,3 +1,7 @@
+2011/04/15 1.8.6:
+ - Fixed compatibility with latest breaking Orange Box changes.
+ - Added support for Bloody Good Time (bug 4784).
+
 2010/12/19 1.8.5:
  - Added support for latest Orange Box engine update (bug 4752).
 
