@@ -445,7 +445,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				char file_path[256];
 				size_t len = g_Metamod.PathFormat(file_path, sizeof(file_path), "%s", file);
 
-				for (size_t i = len - 1; i >= 0 && i < len; i--)
+				for (size_t i = len - 1; i < len; i--)
 				{
 					if (_IsPathSepChar(file_path[i]))
 					{
