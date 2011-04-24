@@ -464,7 +464,7 @@ public:
 
 		if (!GrowIfNeeded(1))
 		{
-			return false;
+			return iterator(0);
 		}
 
 		++m_CurrentUsedSize;

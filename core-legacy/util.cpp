@@ -71,7 +71,7 @@ void UTIL_TrimRight(char *buffer)
 		size_t len = strlen(buffer);
 
 		/* Loop through buffer backwards while replacing whitespace chars with null chars */
-		for (size_t i = len - 1; i >= 0; i--)
+		for (size_t i = len - 1; i < len; i--)
 		{
 			if (isspace((unsigned char) buffer[i]))
 			{
