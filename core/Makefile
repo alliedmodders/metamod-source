@@ -11,17 +11,21 @@ HL2SDK_L4D2 = ../../hl2sdk-l4d2
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-OBJECTS = metamod.cpp 				\
-		  metamod_util.cpp 			\
-		  metamod_console.cpp 		\
-		  metamod_oslink.cpp 		\
-		  metamod_plugins.cpp 		\
-		  sourcehook/sourcehook.cpp \
-		  sourcehook/sourcehook_hookmangen.cpp \
-		  provider/console.cpp 		\
-		  provider/provider_ep2.cpp \
-		  vsp_bridge.cpp			\
-		  gamedll_bridge.cpp
+OBJECTS = metamod.cpp \
+		metamod_util.cpp \
+		metamod_console.cpp \
+		metamod_oslink.cpp \
+		metamod_plugins.cpp \
+		sourcehook/sourcehook.cpp \
+		sourcehook/sourcehook_hookmangen.cpp \
+		sourcehook/sourcehook_impl_chookidman.cpp \
+		sourcehook/sourcehook_impl_chookmaninfo.cpp \
+		sourcehook/sourcehook_impl_cproto.cpp \
+		sourcehook/sourcehook_impl_cvfnptr.cpp \
+		provider/console.cpp \
+		provider/provider_ep2.cpp \
+		vsp_bridge.cpp \
+		gamedll_bridge.cpp
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
@@ -86,7 +90,7 @@ CFLAGS += -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_ORANGEBOXVALVE=4 -DSE_LEFT4DE
 LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX) \
 	-static-libgcc
 
-INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
+INCLUDE += -I. -I.. -I../public -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
 	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -Isourcehook -I../loader
 
 CFLAGS += -D_LINUX -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
