@@ -100,6 +100,8 @@ class MMS:
 				self.compiler.AddToListVar('CDEFINES', 'HAVE_STDINT_H')
 				if self.vendor == 'gcc':
 					self.compiler.AddToListVar('CFLAGS', '-mfpmath=sse')
+				else:
+					self.compiler.AddToListVar('POSTLINKFLAGS', '-lgcc_eh')
 			elif isinstance(cxx, Cpp.MSVC):
 				self.vendor = 'msvc'
 				if AMBuild.options.debug == '1':
