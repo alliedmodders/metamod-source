@@ -98,8 +98,6 @@ class MMS:
 				if self.vendor == 'gcc':
 					self.compiler.AddToListVar('CFLAGS', '-mfpmath=sse')
 					self.compiler.AddToListVar('POSTLINKFLAGS', '-static-libgcc')
-				else:
-					self.compiler.AddToListVar('POSTLINKFLAGS', '-lgcc_eh')
 			elif isinstance(cxx, Cpp.MSVC):
 				self.vendor = 'msvc'
 				if AMBuild.options.debug == '1':
@@ -155,6 +153,8 @@ class MMS:
 			#Platform-specifics
 			if AMBuild.target['platform'] == 'linux':
 				self.compiler.AddToListVar('CDEFINES', '_LINUX')
+				if self.vendor == 'clang':
+					self.compiler.AddToListVar('POSTLINKFLAGS', '-lgcc_eh')
 			elif AMBuild.target['platform'] == 'darwin':
 				self.compiler.AddToListVar('CFLAGS', ['-isysroot',
 				                                      '/Developer/SDKs/MacOSX10.5.sdk'])
