@@ -87,7 +87,6 @@ class MMS:
 				self.compiler.AddToListVar('CFLAGS', '-msse')
 				self.compiler.AddToListVar('CFLAGS', '-m32')
 				self.compiler.AddToListVar('POSTLINKFLAGS', '-m32')
-				self.compiler.AddToListVar('POSTLINKFLAGS', '-static-libgcc')
 				self.compiler.AddToListVar('CXXFLAGS', '-fno-exceptions')
 				self.compiler.AddToListVar('CXXFLAGS', '-fno-rtti')
 				self.compiler.AddToListVar('CXXFLAGS', '-fno-threadsafe-statics')
@@ -148,6 +147,7 @@ class MMS:
 			#Platform-specifics
 			if AMBuild.target['platform'] == 'linux':
 				self.compiler.AddToListVar('CDEFINES', '_LINUX')
+				self.compiler.AddToListVar('POSTLINKFLAGS', '-static-libgcc')
 			elif AMBuild.target['platform'] == 'darwin':
 				self.compiler.AddToListVar('CFLAGS', ['-isysroot',
 				                                      '/Developer/SDKs/MacOSX10.5.sdk'])
