@@ -131,7 +131,6 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	if (baseFs == NULL)
 	{
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
-		return;
 	}
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
