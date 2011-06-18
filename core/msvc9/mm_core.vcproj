@@ -213,7 +213,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_ORANGEBOXVALVE=4 /D SE_LEFT4DEAD=5 /D SE_LEFT4DEAD2=6"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..\loader;..\sourcehook;&quot;$(HL2SDKOBVALVE)\public&quot;;&quot;$(HL2SDKOBVALVE)\public\engine&quot;;&quot;$(HL2SDKOBVALVE)\public\game\server&quot;;&quot;$(HL2SDKOBVALVE)\public\tier0&quot;;&quot;$(HL2SDKOBVALVE)\public\tier1&quot;;&quot;$(HL2SDKOBVALVE)\public\vstdlib&quot;"
+				AdditionalIncludeDirectories="..;..\..\public;..\..\loader;..\sourcehook;&quot;$(HL2SDKOBVALVE)\public&quot;;&quot;$(HL2SDKOBVALVE)\public\engine&quot;;&quot;$(HL2SDKOBVALVE)\public\game\server&quot;;&quot;$(HL2SDKOBVALVE)\public\tier0&quot;;&quot;$(HL2SDKOBVALVE)\public\tier1&quot;;&quot;$(HL2SDKOBVALVE)\public\vstdlib&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=4"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -1009,6 +1009,22 @@
 				</File>
 				<File
 					RelativePath="..\sourcehook\sourcehook_hookmangen.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\sourcehook\sourcehook_impl_chookidman.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\sourcehook\sourcehook_impl_chookmaninfo.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\sourcehook\sourcehook_impl_cproto.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\sourcehook\sourcehook_impl_cvfnptr.cpp"
 					>
 				</File>
 			</Filter>
