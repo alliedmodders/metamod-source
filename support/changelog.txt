@@ -1,3 +1,8 @@
+2011/06/23 1.8.7:
+ - Fixed libgcc_s.so.1 load error present on some systems (bug 4876). 
+ - Metamod:Source will now work even when the Valve filesytem interface isn't
+   found (bug 4958).
+
 2011/04/15 1.8.6:
  - Fixed compatibility with latest breaking Orange Box changes.
  - Added support for Bloody Good Time (bug 4784).
