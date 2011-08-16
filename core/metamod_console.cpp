@@ -125,6 +125,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Episode 2 (Valve Orange Box, 2009)\n");
 #elif SOURCE_ENGINE == SE_DARKMESSIAH
 			CONMSG("  Engine: Dark Messiah (2006)\n");
+#elif SOURCE_ENGINE == SE_EYE
+			CONMSG("  Engine: E.Y.E. Divine Cybermancy (2011)\n");
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
