@@ -366,7 +366,7 @@ namespace SourceHook
 			CVfnPtr vfp(cur_vfnptr, &m_OneIgnore);
 
 			// Alter vtable entry
-			if (!SetMemAccess(cur_vtptr, sizeof(void*) * (tmp.m_VtblIdx + 1), SH_MEM_READ | SH_MEM_WRITE))
+			if (!MakePageWritable(cur_vtptr))
 				return 0;
 
 			*reinterpret_cast<void**>(cur_vfnptr) = *reinterpret_cast<void**>(hookman->m_HookfuncVfnptr);

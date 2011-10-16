@@ -217,7 +217,7 @@ namespace SourceHook
 
 		bool CVfnPtr::Patch(void *newValue)
 		{
-			if (!SetMemAccess(m_Ptr, sizeof(void*), SH_MEM_READ | SH_MEM_WRITE))
+			if (!MakePageWritable(m_Ptr))
 			{
 				return false;
 			}

@@ -47,6 +47,116 @@
 
 namespace SourceHook
 {
+	static inline bool GetPageBits(void *addr, int *bits)
+	{
+#if SH_SYS == SH_SYS_LINUX
+		// On linux, first check /proc/self/maps
+		unsigned long laddr = reinterpret_cast<unsigned long>(addr);
+
+		FILE *pF = fopen("/proc/self/maps", "r");
+		if (pF) {
+			// Linux /proc/self/maps -> parse
+			// Format:
+			// lower    upper    prot     stuff                 path
+			// 08048000-0804c000 r-xp 00000000 03:03 1010107    /bin/cat
+			unsigned long rlower, rupper;
+			char r, w, x;
+			while (fscanf(pF, "%lx-%lx %c%c%c", &rlower, &rupper, &r, &w, &x) != EOF) {
+				// Check whether we're IN THERE!
+				if (laddr >= rlower && laddr < rupper) {
+					fclose(pF);
+					*bits = 0;
+					if (r == 'r')
+						*bits |= SH_MEM_READ;
+					if (w == 'w')
+						*bits |= SH_MEM_WRITE;
+					if (x == 'x')
+						*bits |= SH_MEM_EXEC;
+					return true;
+				}
+				// Read to end of line
+				int c;
+				while ((c = fgetc(pF)) != '\n') {
+					if (c == EOF)
+						break;
+				}
+				if (c == EOF)
+					break;
+			}
+			fclose(pF);
+			return false;
+		}
+		pF = fopen("/proc/curproc/map", "r");
+		if (pF) {
+			// FreeBSD /proc/curproc/map -> parse
+			// 0x804800 0x805500 13 15 0xc6e18960 r-x 21 0x0 COW NC vnode
+			unsigned long rlower, rupper, ignoreLong;
+			int ignoreInt;
+			char r, w, x;
+			while (fscanf(pF, "0x%lx 0x%lx %d %d 0x%lx %c%c%c", &rlower, &rupper, &ignoreInt,
+						  &ignoreInt, &ignoreLong, &r, &w, &x) != EOF) {
+				// Check whether we're IN THERE!
+				if (laddr >= rlower && laddr < rupper) {
+					fclose(pF);
+					*bits = 0;
+					if (r == 'r')
+						*bits |= SH_MEM_READ;
+					if (r == 'w')
+						*bits |= SH_MEM_WRITE;
+					if (r == 'x')
+						*bits |= SH_MEM_EXEC;
+					return true;
+				}
+				// Read to end of line
+				int c;
+				while ((c = fgetc(pF)) != '\n') {
+					if (c == EOF)
+						break;
+				}
+				if (c == EOF)
+					break;
+			}
+			fclose(pF);
+			return false;
+		}
+		return false;
+#elif SH_SYS == SH_SYS_APPLE
+#elif SH_XP == SH_XP_WINAPI
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+
+		MEMORY_BASIC_INFORMATION mem;
+		size_t base = size_t(addr) & ~size_t(info.dwPageSize - 1);
+		if (!VirtualQuery((void *)base, &mem, sizeof(mem)))
+			return false;
+		switch (mem.Protect) {
+			case PAGE_EXECUTE:
+				*bits = SH_MEM_EXEC;
+				break;
+			case PAGE_EXECUTE_READ:
+				*bits = SH_MEM_EXEC | SH_MEM_READ;
+				break;
+			case PAGE_EXECUTE_READWRITE:
+			case PAGE_EXECUTE_WRITECOPY:
+				*bits = SH_MEM_EXEC | SH_MEM_READ | SH_MEM_WRITE;
+				break;
+			case PAGE_NOACCESS:
+				*bits = 0;
+				break;
+			case PAGE_READONLY:
+				*bits = SH_MEM_READ;
+				break;
+			case PAGE_READWRITE:
+			case PAGE_WRITECOPY:
+				*bits = SH_MEM_READ | SH_MEM_WRITE;
+				break;
+			default:
+				return false;
+		}
+		return true;
+#endif
+	}
+
 	inline bool SetMemAccess(void *addr, size_t len, int access)
 	{
 # if SH_XP == SH_XP_POSIX
@@ -68,6 +178,19 @@ namespace SourceHook
 		}
 		return VirtualProtect(addr, len, prot, &tmp) ? true : false;
 # endif
+	}
+
+	inline bool MakePageWritable(void *addr)
+	{
+		int bits;
+		if (GetPageBits(addr, &bits)) {
+			if (bits & SH_MEM_WRITE)
+				return true;
+			bits |= SH_MEM_WRITE;
+		} else {
+			bits = SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC;
+		}
+		return SetMemAccess(addr, sizeof(void *), bits);
 	}
 
 #if SH_XP == SH_XP_POSIX
