@@ -1,4 +1,5 @@
 /* ======== SourceHook ========
+* vim: set ts=4 sw=4 tw=99 noet:
 * Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
@@ -357,7 +358,7 @@ namespace SourceHook
 			return m_ContextStack.front().pOverrideRet;
 		}
 
-		void CSourceHookImpl::UnloadPlugin(Plugin plug)
+		void CSourceHookImpl::UnloadPlugin(Plugin plug, UnloadListener *listener)
 		{
 			// 1) Remove all hooks by this plugin
 
@@ -374,6 +375,20 @@ namespace SourceHook
 					iter = RemoveHookManager(iter);
 				else
 					++iter;
+			}
+
+			// Fix for bug 5034. It's pretty tricky to find whether hookmanagers owned by this
+			// plugin are active. We could change how hook managers are tracked in SH, and lazily
+			// free them as the context stack drops to 0, or we could change the pubfunc API to
+			// know whether it's active or not. Rather than deal with this extra complexity, we
+			// just conservatively wait until the context stack hits 0 before unloading.
+			if (m_ContextStack.size() == 0)
+			{
+				listener->ReadyToUnload(plug);
+			}
+			else
+			{
+				m_PendingUnloads.push_back(new PendingUnload(listener, plug));
 			}
 		}
 
@@ -571,12 +586,41 @@ namespace SourceHook
 			return pCtx;
 		}
 
+		void CSourceHookImpl::ResolvePendingUnloads(bool force)
+		{
+			List<PendingUnload *>::iterator iter = m_PendingUnloads.begin();
+			while (iter != m_PendingUnloads.end())
+			{
+				PendingUnload *unload = *iter;
+
+				if (!force && !unload->deactivated())
+				{
+					// Unless being forced, wait one drop of the context stack
+					// before actually unloading. Otherwise, we'll still return
+					// to unloaded memory.
+					unload->deactivate();
+					iter++;
+				}
+				else
+				{
+					unload->listener()->ReadyToUnload(unload->plugin());
+					delete unload;
+					iter = m_PendingUnloads.erase(iter);
+				}
+			}
+		}
+
 		void CSourceHookImpl::EndContext(IHookContext *pCtx)
 		{
 			// Do clean up task, if any is associated with this context
 			m_ContextStack.front().DoCleanupTaskAndDeleteIt();
 			// Then remove it
 			m_ContextStack.pop();
+
+			// If we've reached 0 contexts and there are pending unloads,
+			// resolve them now.
+			if (m_ContextStack.size() == 0 && m_PendingUnloads.size() != 0)
+				ResolvePendingUnloads();
 		}
 
 		void CSourceHookImpl::CompleteShutdown()

@@ -382,6 +382,36 @@ const char *CPluginManager::GetStatusText(CPlugin *pl)
 	}
 }
 
+struct Unloader : public SourceHook::Impl::UnloadListener
+{
+	CPluginManager::CPlugin *plugin_;
+	bool destroy_;
+
+	Unloader(CPluginManager::CPlugin *plugin, bool destroy)
+	  : plugin_(plugin), destroy_(destroy)
+	{ }
+
+	void ReadyToUnload(SourceHook::Plugin plug)
+	{
+		if (plugin_->m_UnloadFn != NULL)
+			plugin_->m_UnloadFn();
+
+		dlclose(plugin_->m_Lib);
+
+		if (destroy_)
+		{
+			delete plugin_;
+		}
+		else
+		{
+			plugin_->m_Lib = NULL;
+			plugin_->m_API = NULL;
+		}
+
+		delete this;
+	}
+};
+
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
 	FILE *fp;
@@ -552,17 +582,8 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	if (pl->m_Lib && (pl->m_Status < Pl_Paused))
 	{
 		pl->m_Events.clear();
-		g_SourceHook.UnloadPlugin(pl->m_Id);
 		UnregAllConCmds(pl);
-
-		if (pl->m_UnloadFn != NULL)
-		{
-			pl->m_UnloadFn();
-		}
-
-		dlclose(pl->m_Lib);
-		pl->m_Lib = NULL;
-		pl->m_API = NULL;
+		g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, false));
 	}
 
 	return pl;
@@ -580,22 +601,8 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 		//Note, we'll always tell the plugin it will be unloading...
 		if (pl->m_API->Unload(error, maxlen) || force)
 		{
-			//Make sure to detach it from sourcehook!
-			g_SourceHook.UnloadPlugin(pl->m_Id);
-
 			pl->m_Events.clear();
-
 			UnregAllConCmds(pl);
-
-			if (pl->m_UnloadFn != NULL)
-			{
-				pl->m_UnloadFn();
-			}
-
-			//Clean up the DLL
-			dlclose(pl->m_Lib);
-			pl->m_Lib = NULL;
-			pl->m_API = NULL;
 
 			//Remove the plugin from the list
 			PluginIter i;
@@ -607,9 +614,9 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 					break;
 				}
 			}
-			//Free its memory
-			delete pl;
 
+			//Make sure to detach it from sourcehook!
+			g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, true));
 			return true;
 		}
 	} else {

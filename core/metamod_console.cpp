@@ -428,6 +428,12 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				bool already;
 				CPluginManager::CPlugin *pl;
 
+				// If we've recently tried to unload plugins, they might still
+				// be in the unload queue. Force them out now. This is not
+				// lowered to CPluginManager because it's not strictly safe
+				// there.
+				g_SourceHook.ResolvePendingUnloads(true);
+
 				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error));
 				pl = g_PluginMngr.FindById(id);
 				if (!pl || id < Pl_MinId || (pl->m_Status < Pl_Paused))

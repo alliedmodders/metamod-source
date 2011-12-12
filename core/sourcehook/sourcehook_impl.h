@@ -1,4 +1,5 @@
 /* ======== SourceHook ========
+* vim: set ts=4 sw=4 tw=99 noet:
 * Copyright (C) 2004-2010 Metamod:Source Development Team
 * No warranties of any kind
 *
@@ -254,7 +255,43 @@ namespace SourceHook
 		};
 
 		typedef CStack<CHookContext> HookContextStack;
-		
+
+		class UnloadListener
+		{
+		public:
+			virtual void ReadyToUnload(Plugin plug) = 0;
+		};
+
+		class PendingUnload
+		{
+			UnloadListener *listener_;
+			Plugin plug_;
+			bool deactivated_;
+
+		public:
+			PendingUnload(UnloadListener *listener, Plugin plug)
+			  : listener_(listener), plug_(plug), deactivated_(false)
+			{ }
+
+			Plugin plugin() const
+			{
+				return plug_;
+			}
+
+			UnloadListener *listener() const
+			{
+				return listener_;
+			}
+
+			void deactivate()
+			{
+				deactivated_ = true;
+			}
+			bool deactivated() const
+			{
+				return deactivated_;
+			}
+		};
 
 		class CSourceHookImpl : public ISourceHook
 		{
@@ -263,6 +300,7 @@ namespace SourceHook
 			CVfnPtrList m_VfnPtrs;
 			CHookIDManager m_HookIDMan;
 			HookContextStack m_ContextStack;
+			List<PendingUnload *> m_PendingUnloads;
 
 			bool SetHookPaused(int hookid, bool paused);
 			CHookManList::iterator RemoveHookManager(CHookManList::iterator iter);
@@ -304,10 +342,16 @@ namespace SourceHook
 
 			void *GetOverrideRetPtr();				//!< Used for setting the override return value
 
-			/**
-			*	@brief Make sure that a plugin is not used by any other plugins anymore, and unregister all its hook managers
-			*/
-			void UnloadPlugin(Plugin plug);
+			/* 
+			 * @brief Make sure that a plugin is not used by any
+			 * other plugins anymore, and unregister all its hook
+			 * managers. If any hooks owned by this plugin are
+			 * still on the callstack, defers notifying the listener
+			 * until the count has dropped to 0.
+			 */
+			void UnloadPlugin(Plugin plug, UnloadListener *listener);
+
+			void ResolvePendingUnloads(bool force = false);
 
 			void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
 
