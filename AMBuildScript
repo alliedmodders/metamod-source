@@ -118,6 +118,7 @@ class MMS:
 				self.compiler.AddToListVar('CXXFLAGS', '-fno-threadsafe-statics')
 				self.compiler.AddToListVar('CXXFLAGS', '-Wno-non-virtual-dtor')
 				self.compiler.AddToListVar('CXXFLAGS', '-Wno-overloaded-virtual')
+				self.compiler.AddToListVar('CXXFLAGS', '-Wno-delete-non-virtual-dtor')
 				self.compiler.AddToListVar('CDEFINES', 'HAVE_STDINT_H')
 				if self.vendor == 'gcc':
 					self.compiler.AddToListVar('CFLAGS', '-mfpmath=sse')
