@@ -373,6 +373,10 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 	return SOURCE_ENGINE_DARKMESSIAH;
 #elif SOURCE_ENGINE == SE_EYE
 	return SOURCE_ENGINE_EYE;
+#elif SOURCE_ENGINE == SE_PORTAL2
+	return SOURCE_ENGINE_PORTAL2;
+#elif SOURCE_ENGINE == SE_CSGO
+	return SOURCE_ENGINE_CSGO;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif

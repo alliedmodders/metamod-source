@@ -27,6 +27,10 @@ class MMS:
 		                              'name': 'BLOODYGOODTIME', 'platform': ['windows']}
 		self.possibleSdks['eye'] =   {'sdk': 'HL2SDK-EYE',      'ext': '2.eye', 'def': '5',
 		                              'name': 'EYE', 'platform': ['windows']}
+		self.possibleSdks['csgo'] =   {'sdk': 'HL2SDKCSGO',      'ext': '2.csgo', 'def': '11',
+		                              'name': 'CSGO', 'platform': ['windows', 'linux']}
+		# self.possibleSdks['portal2'] =   {'sdk': 'HL2SDK-PORTAL2',      'ext': '2.portal2', 'def': '10',
+		#                               'name': 'PORTAL2', 'platform': ['windows']}
 		
 		self.sdkInfo = { }
 		
@@ -39,6 +43,7 @@ class MMS:
 			if AMBuild.target['platform'] != 'darwin':
 				envvars['HL2SDK'] = 'hl2sdk'
 				envvars['HL2SDKOB'] = 'hl2sdk-ob'
+				envvars['HL2SDKCSGO'] = 'hl2sdk-csgo'
 
 			envvars['HL2SDKOBVALVE'] = 'hl2sdk-ob-valve'
 			envvars['HL2SDKL4D'] = 'hl2sdk-l4d'
@@ -256,10 +261,13 @@ class MMS:
 			else:
 				staticLibs = os.path.join(sdkPath, 'lib', 'linux')
 			workFolder = os.path.join(AMBuild.outputFolder, job.workFolder)
-			if sdk in ['ep2v', 'l4d', 'l4d2']:
-				for i in ['tier1_i486.a', 'libvstdlib.so', 'libtier0.so']:
-					link = os.path.join(workFolder, i)
-					target = os.path.join(staticLibs, i)
+			if sdk in ['ep2v', 'l4d', 'l4d2', 'csgo']:
+				libs = ['tier1_i486.a', 'libvstdlib.so', 'libtier0.so']
+				if sdk == 'csgo':
+					libs.insert(0, 'interfaces_i486.a')
+				for lib in libs:
+					link = os.path.join(workFolder, lib)
+					target = os.path.join(staticLibs, lib)
 					try:
 						os.lstat(link)
 					except:
@@ -275,16 +283,19 @@ class MMS:
 		elif AMBuild.target['platform'] == 'darwin':
 			staticLibs = os.path.join(sdkPath, 'lib', 'mac')
 			workFolder = os.path.join(AMBuild.outputFolder, job.workFolder)
-			for i in ['tier1_i486.a', 'libvstdlib.dylib', 'libtier0.dylib']:
-				link = os.path.join(workFolder, i)
-				target = os.path.join(staticLibs, i)
+			libs = ['tier1_i486.a', 'libvstdlib.dylib', 'libtier0.dylib']
+			if sdk == 'csgo':
+				libs.append('interfaces_i486.a')
+			for lib in libs:
+				link = os.path.join(workFolder, lib)
+				target = os.path.join(staticLibs, lib)
 				try:
 					os.lstat(link)
 				except:
 					job.AddCommand(SymlinkCommand(link, target))
 		elif AMBuild.target['platform'] == 'windows':
 			libs = ['tier0', 'tier1', 'vstdlib']
-			if sdk == 'swarm':
+			if sdk in ['swarm', 'csgo']:
 				libs.append('interfaces')
 			for lib in libs:
 				libPath = os.path.join(sdkPath, 'lib', 'public', lib) + '.lib'
@@ -294,6 +305,8 @@ class MMS:
 	def PostSetupHL2Job(self, job, builder, sdk):
 		if AMBuild.target['platform'] in ['linux', 'darwin']:
 			builder.AddObjectFiles(['tier1_i486.a'])
+			if( sdk == 'csgo' ):
+				builder.AddObjectFiles(['interfaces_i486.a'])
 
 	def DefaultHL2Compiler(self, path, sdk, noLink = False):
 		compiler = self.DefaultCompiler()
@@ -304,6 +317,10 @@ class MMS:
 
 		info = self.possibleSdks
 		compiler['CDEFINES'].extend(['SE_' + info[i]['name'] + '=' + info[i]['def'] for i in info])
+		
+		# We don't build for Portal 2 (yet?, ever?), but using this define in code as 
+		# it saves trouble if we ever need to
+		compiler['CDEFINES'].append('SE_PORTAL2=10')
 
 		paths = [['public'], ['public', 'engine'], ['public', 'mathlib'], ['public', 'vstdlib'],
 						 ['public', 'tier0'], ['public', 'tier1']]
@@ -320,8 +337,11 @@ class MMS:
 
 		compiler['CDEFINES'].append('SOURCE_ENGINE=' + info['def'])
 
-		if sdk == 'swarm' and AMBuild.target['platform'] == 'windows':
-			compiler['CDEFINES'].extend(['COMPILER_MSVC', 'COMPILER_MSVC32'])
+		if sdk in ['swarm', 'csgo']:
+			if AMBuild.target['platform'] == 'windows':
+				compiler['CDEFINES'].extend(['COMPILER_MSVC', 'COMPILER_MSVC32'])
+			else:
+				compiler['CDEFINES'].extend(['COMPILER_GCC', 'POSIX'])
 
 		if sdk == 'ep1':
 			if AMBuild.target['platform'] == 'linux':
@@ -338,7 +358,7 @@ class MMS:
 		if not noLink:
 			if AMBuild.target['platform'] == 'linux':
 				compiler['POSTLINKFLAGS'][0:0] = ['-lm']
-				if sdk in ['ep2v', 'l4d', 'l4d2']:
+				if sdk in ['ep2v', 'l4d', 'l4d2', 'csgo']:
 					compiler['POSTLINKFLAGS'][0:0] = ['libtier0.so']
 					compiler['POSTLINKFLAGS'][0:0] = ['libvstdlib.so']
 				else:
