@@ -283,7 +283,7 @@ void BaseProvider::DisplayError(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-	Error(buffer);
+	Error("%s", buffer);
 }
 
 void BaseProvider::DisplayWarning(const char *fmt, ...)
@@ -295,7 +295,7 @@ void BaseProvider::DisplayWarning(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-	Warning(buffer);
+	Warning("%s", buffer);
 }
 
 IConCommandBaseAccessor *BaseProvider::GetConCommandBaseAccessor()
