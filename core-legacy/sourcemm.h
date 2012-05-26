@@ -16,7 +16,6 @@
  * @file sourcemm.h
  */
 
-#include <string>
 #include <interface.h>
 #include <eiface.h>
 #include <sourcehook/sourcehook_impl.h>
