@@ -34,6 +34,7 @@
  * The pure-virtual ISmmPlugin callbacks must be implemented for the load to load.
  */
 
+#include <interface.h>
 #include <sourcehook.h>
 #include <IPluginManager.h>
 #include <ISmmAPI.h>
@@ -267,7 +268,7 @@ namespace SourceMM
 		 * wrapper.  This can be used to provide interfaces to other plugins or
 		 * the GameDLL.
 		 *
-		 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
 		 *
 		 * @param iface			Interface string.
 		 * @param ret			Optional pointer to store return code.
@@ -278,7 +279,7 @@ namespace SourceMM
 		{
 			if (ret)
 			{
-				*ret = META_IFACE_FAILED;
+				*ret = IFACE_FAILED;
 			}
 
 			return NULL; 
@@ -289,7 +290,7 @@ namespace SourceMM
 		 * Metamod:Source's wrapper. This can be used to provide interfaces to 
 		 * other plugins.
 		 *
-		 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
 		 *
 		 * @param iface			Interface string.
 		 * @param ret			Optional pointer to store return code.
@@ -300,7 +301,7 @@ namespace SourceMM
 		{
 			if (ret)
 			{
-				*ret = META_IFACE_FAILED;
+				*ret = IFACE_FAILED;
 			}
 	
 			return NULL; 
@@ -311,7 +312,7 @@ namespace SourceMM
 		 * Metamod:Source's wrapper.  This can be used to provide interfaces to 
 		 * other plugins.
 		 *
-		 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
 		 *
 		 * @param iface			Interface string.
 		 * @param ret			Optional pointer to store return code.
@@ -322,7 +323,7 @@ namespace SourceMM
 		{
 			if (ret)
 			{
-				*ret = META_IFACE_FAILED;
+				*ret = IFACE_FAILED;
 			}
 			
 			return NULL; 
@@ -333,7 +334,7 @@ namespace SourceMM
 		 * Metamod:Source's wrapper.  This can be used to provide interfaces to 
 		 * other plugins.
 		 *
-		 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
 		 *
 		 * @param iface			Interface string.
 		 * @param ret			Optional pointer to store return code.
@@ -344,7 +345,7 @@ namespace SourceMM
 		{
 			if (ret)
 			{
-				*ret = META_IFACE_FAILED;
+				*ret = IFACE_FAILED;
 			}
 	
 			return NULL; 
@@ -354,7 +355,7 @@ namespace SourceMM
 		 * @brief Called when Metamod's own factory is invoked.  
 		 * This can be used to provide interfaces to other plugins.
 		 *
-		 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
+		 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
 		 *
 		 * @param iface			Interface string.
 		 * @param ret			Optional pointer to store return code.
@@ -365,7 +366,7 @@ namespace SourceMM
 		{
 			if (ret)
 			{
-				*ret = META_IFACE_FAILED;
+				*ret = IFACE_FAILED;
 			}
 	
 			return NULL; 	

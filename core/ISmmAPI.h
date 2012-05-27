@@ -34,6 +34,8 @@
  */
 
 #include <stdarg.h>
+#include <interface.h>
+#include <eiface.h>
 #include <sourcehook.h>
 #include <IPluginManager.h>
 #include <ISmmPlugin.h>
@@ -49,24 +51,6 @@
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define MMIFACE_SH_HOOKMANAUTOGEN	"IHookManagerAutoGen"		/**< SourceHook::IHookManagerAutoGen Pointer */
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
-
-#if defined META_NO_HL2SDK
-class CGlobalVars;
-class IServerPluginCallbacks;
-struct edict_t;
-class ConCommandBase;
-#else
-#include <eiface.h>
-#endif
-
-// Interface return status, binary-compatible with HL2SDK's IFACE_OK and IFACE_FAILED.
-enum 
-{
-	META_IFACE_OK = 0,
-	META_IFACE_FAILED
-};
-
-typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 
 namespace SourceMM
 {
