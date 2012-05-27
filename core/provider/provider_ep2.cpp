@@ -283,7 +283,7 @@ void BaseProvider::DisplayError(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-	Error(buffer);
+	Error("%s", buffer);
 }
 
 void BaseProvider::DisplayWarning(const char *fmt, ...)
@@ -295,7 +295,7 @@ void BaseProvider::DisplayWarning(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-	Warning(buffer);
+	Warning("%s", buffer);
 }
 
 IConCommandBaseAccessor *BaseProvider::GetConCommandBaseAccessor()
@@ -373,6 +373,10 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 	return SOURCE_ENGINE_DARKMESSIAH;
 #elif SOURCE_ENGINE == SE_EYE
 	return SOURCE_ENGINE_EYE;
+#elif SOURCE_ENGINE == SE_PORTAL2
+	return SOURCE_ENGINE_PORTAL2;
+#elif SOURCE_ENGINE == SE_CSGO
+	return SOURCE_ENGINE_CSGO;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif

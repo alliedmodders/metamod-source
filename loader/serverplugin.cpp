@@ -132,9 +132,8 @@ public:
 			this_vtable[mfp_dest.vtblindex] = vtable_src[mfp_src.vtblindex];
 		}
 
-#ifdef _WIN32
 		/* AS inserted ClientFullyConnect into vtable, so move entries up on older engines */
-		if (mm_backend != MMBackend_AlienSwarm)
+		if (mm_backend < MMBackend_AlienSwarm)
 		{
 			SourceHook::MemFuncInfo mfp_fconnect;
 			mfp_fconnect.isVirtual = false;
@@ -155,7 +154,6 @@ public:
 					&this_vtable[mfp_fconnect.vtblindex + 1],
 					sizeof(void *) * 8);
 		}
-#endif
 
 		char error[255];
 		if (gamedll_bridge == NULL)
@@ -240,11 +238,9 @@ public:
 	virtual void ClientActive(edict_t *pEntity)
 	{
 	}
-#ifdef _WIN32
 	virtual void ClientFullyConnect(edict_t *pEntity)
 	{
 	}
-#endif
 	virtual void ClientDisconnect(edict_t *pEntity)
 	{
 	}

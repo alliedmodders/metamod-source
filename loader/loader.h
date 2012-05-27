@@ -89,6 +89,8 @@ enum MetamodBackend
 	MMBackend_Left4Dead,
 	MMBackend_Left4Dead2,
 	MMBackend_AlienSwarm,
+	MMBackend_Portal2,
+	MMBackend_CSGO,
 	MMBackend_UNKNOWN
 };
 

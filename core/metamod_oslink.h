@@ -71,8 +71,12 @@
 	#define PATH_SEP_CHAR		'/'
 	#define ALT_SEP_CHAR		'\\'
 	#define PATH_SIZE			PATH_MAX
-	#define	stricmp				strcasecmp
-	#define strnicmp			strncasecmp
+	#ifndef stricmp
+		#define	stricmp			strcasecmp
+	#endif
+	#ifndef strnicmp
+		#define strnicmp		strncasecmp
+	#endif
 	inline bool _IsPathSepChar(char c) { return (c == '/'); }
 #endif
 
