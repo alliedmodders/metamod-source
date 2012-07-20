@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Interfaces">
+      <UniqueIdentifier>{e1f942fd-e188-4408-a347-29a0bd790807}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceHook">
+      <UniqueIdentifier>{6c8edd0d-fc24-4c2a-8eb6-567adec28d62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceHook\Headers">
+      <UniqueIdentifier>{4fe57361-d4c2-4541-b142-589bf1c4bad5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HL2SDK">
+      <UniqueIdentifier>{e9b1d0a7-f08b-4b0a-9d69-d88f827f5ad3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\concommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CSmmAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gamedll_bridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oslink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcemm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vsp_bridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook.cpp">
+      <Filter>SourceHook\Headers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\concommands.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CSmmAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oslink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcemm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\svn_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IPluginManager.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ISmmAPI.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ISmmPlugin.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_list.h">
+      <Filter>SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_stack.h">
+      <Filter>SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_string.h">
+      <Filter>SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_tinyhash.h">
+      <Filter>SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_vector.h">
+      <Filter>SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\FastDelegate.h">
+      <Filter>SourceHook\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_memfuncinfo.h">
+      <Filter>SourceHook\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_memory.h">
+      <Filter>SourceHook\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook.h">
+      <Filter>SourceHook\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl.h">
+      <Filter>SourceHook\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\convar_smm.h">
+      <Filter>HL2SDK</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\svn_version.tpl">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\version.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

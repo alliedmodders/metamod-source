@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Interfaces">
+      <UniqueIdentifier>{164581e9-afc3-4834-9fb9-b75638df6014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Metamod">
+      <UniqueIdentifier>{c5bf4755-d61f-4ec8-a807-bdd63b58c01c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Metamod\Source Files">
+      <UniqueIdentifier>{5692b9dd-f21e-452e-bacd-e7e31277755b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Metamod\Header Files">
+      <UniqueIdentifier>{72668373-0466-495c-8b9e-683af0cccf47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Provider">
+      <UniqueIdentifier>{e1e87a63-9709-4c3b-a5c3-ed636b36c6ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Provider\Header Files">
+      <UniqueIdentifier>{8258f77b-cb2f-4d79-a05e-9930ff1cb44d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Provider\Source Files">
+      <UniqueIdentifier>{cf9ff2d7-b5eb-46f0-8d52-e797194bfefd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceHook">
+      <UniqueIdentifier>{14df2031-ed46-4e12-8456-bdffada2d706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceHook\Source Files">
+      <UniqueIdentifier>{2f387549-7fe6-4d64-bc34-14a32bc70cf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceHook\Header Files">
+      <UniqueIdentifier>{188ed842-cd55-4ce7-a33b-60d426730a63}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\version.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\IPluginManager.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ISmmAPI.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ISmmPlugin.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ISmmPluginExt.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod_console.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod_oslink.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod_plugins.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod_provider.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metamod_util.h">
+      <Filter>Metamod\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\provider\console.h">
+      <Filter>Provider\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\provider\provider_ep2.h">
+      <Filter>Provider\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\FastDelegate.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_list.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_memfuncinfo.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_memory.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_pagealloc.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_stack.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_string.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_tinyhash.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sh_vector.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_hookmangen.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_hookmangen_x86.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_chook.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_chookidman.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_chookmaninfo.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_ciface.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_cproto.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_impl_cvfnptr.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook\sourcehook_pibuilder.h">
+      <Filter>SourceHook\Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\gamedll_bridge.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metamod.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metamod_console.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metamod_oslink.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metamod_plugins.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metamod_util.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vsp_bridge.cpp">
+      <Filter>Metamod\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\provider\console.cpp">
+      <Filter>Provider\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\provider\provider_ep2.cpp">
+      <Filter>Provider\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook_hookmangen.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook_impl_chookidman.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook_impl_chookmaninfo.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook_impl_cproto.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sourcehook\sourcehook_impl_cvfnptr.cpp">
+      <Filter>SourceHook\Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
