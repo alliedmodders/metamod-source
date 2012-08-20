@@ -48,14 +48,14 @@ enum
 #define SOURCE_ENGINE_ORANGEBOX			3				/**< Orange Box Source Engine (third major SDK) */
 #define SOURCE_ENGINE_LEFT4DEAD			4				/**< Left 4 Dead */
 #define SOURCE_ENGINE_DARKMESSIAH		5				/**< Dark Messiah Multiplayer (based on original engine) */
-#define SOURCE_ENGINE_CSS				6				/**< Counter-Strike: Source (sometimes older version of Orange Box Valve) */
-#define SOURCE_ENGINE_ORANGEBOXVALVE	7				/**< Orange Box Source Engine for Valve games (TF2/DOD:S/HL2DM) */
-#define SOURCE_ENGINE_LEFT4DEAD2		8				/**< Left 4 Dead 2 */
-#define SOURCE_ENGINE_ALIENSWARM		9				/**< Alien Swarm */
-#define SOURCE_ENGINE_BLOODYGOODTIME	10				/**< Bloody Good Time */
-#define SOURCE_ENGINE_EYE				11				/**< E.Y.E Divine Cybermancy */
-#define SOURCE_ENGINE_PORTAL2			12				/**< Portal 2 */
-#define SOURCE_ENGINE_CSGO				13				/**< Counter-Strike: Global Offensive */
+#define SOURCE_ENGINE_ORANGEBOXVALVE	6				/**< Orange Box Source Engine for Valve games (TF2/DOD:S/HL2DM) */
+#define SOURCE_ENGINE_LEFT4DEAD2		7				/**< Left 4 Dead 2 */
+#define SOURCE_ENGINE_ALIENSWARM		8				/**< Alien Swarm */
+#define SOURCE_ENGINE_BLOODYGOODTIME	9				/**< Bloody Good Time */
+#define SOURCE_ENGINE_EYE				10				/**< E.Y.E Divine Cybermancy */
+#define SOURCE_ENGINE_PORTAL2			11				/**< Portal 2 */
+#define SOURCE_ENGINE_CSGO				12				/**< Counter-Strike: Global Offensive */
+#define SOURCE_ENGINE_CSS				13				/**< Counter-Strike: Source (sometimes older version of Orange Box Valve) */
 
 #define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
