@@ -1,8 +1,8 @@
 # (C)2004-2010 SourceMod Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-SRCDS_BASE = ~/srcds
 HL2SDK_OB = ../../hl2sdk-ob
+HL2SDK_CSS = ../../hl2sdk-css
 HL2SDK_OB_VALVE = ../../hl2sdk-ob-valve
 HL2SDK_L4D = ../../hl2sdk-l4d
 HL2SDK_L4D2 = ../../hl2sdk-l4d2
@@ -36,7 +36,7 @@ C_OPT_FLAGS = -DNDEBUG -O3 -funroll-loops -pipe -fno-strict-aliasing
 C_DEBUG_FLAGS = -D_DEBUG -DDEBUG -g -ggdb3
 C_GCC4_FLAGS = -fvisibility=hidden
 CPP_GCC4_FLAGS = -fvisibility-inlines-hidden
-CPP = gcc-4.1
+CPP = gcc
 
 override ENGSET = false
 ifeq "$(ENGINE)" "orangebox"
@@ -45,18 +45,27 @@ ifeq "$(ENGINE)" "orangebox"
 	HL2LIB = $(HL2SDK)/lib/linux
 	CFLAGS += -DSOURCE_ENGINE=3
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2.so
 	LIB_SUFFIX = _i486.so
+	override ENGSET = true
+endif
+ifeq "$(ENGINE)" "css"
+	HL2SDK = $(HL2SDK_CSS)
+	HL2PUB = $(HL2SDK)/public
+	HL2LIB = $(HL2SDK)/lib/linux
+	CFLAGS += -DSOURCE_ENGINE=6
+	INCLUDE += -I$(HL2SDK)/public/game/server
+	BINARY = metamod.2.css.so
+	LIB_PREFIX = lib
+	LIB_SUFFIX = .so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangeboxvalve"
 	HL2SDK = $(HL2SDK_OB_VALVE)
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
-	CFLAGS += -DSOURCE_ENGINE=6
+	CFLAGS += -DSOURCE_ENGINE=7
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/orangebox
 	BINARY = metamod.2.ep2v.so
 	LIB_PREFIX = lib
 	LIB_SUFFIX = .so
@@ -66,9 +75,8 @@ ifeq "$(ENGINE)" "left4dead"
 	HL2SDK = $(HL2SDK_L4D)
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
-	CFLAGS += -DSOURCE_ENGINE=7
+	CFLAGS += -DSOURCE_ENGINE=8
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/l4d
 	BINARY = metamod.2.l4d.so
 	LIB_SUFFIX = _i486.so
 	override ENGSET = true
@@ -77,9 +85,8 @@ ifeq "$(ENGINE)" "left4dead2"
 	HL2SDK = $(HL2SDK_L4D2)
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
-	CFLAGS += -DSOURCE_ENGINE=8
+	CFLAGS += -DSOURCE_ENGINE=9
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/left4dead2
 	BINARY = metamod.2.l4d2.so
 	LIB_PREFIX = lib
 	LIB_SUFFIX = .so
@@ -89,9 +96,8 @@ ifeq "$(ENGINE)" "csgo"
 	HL2SDK = $(HL2SDK_CSGO)
 	HL2PUB = $(HL2SDK)/public
 	HL2LIB = $(HL2SDK)/lib/linux
-	CFLAGS += -DSOURCE_ENGINE=11
+	CFLAGS += -DSOURCE_ENGINE=12
 	INCLUDE += -I$(HL2SDK)/public/game/server
-	SRCDS = $(SRCDS_BASE)/csgo
 	BINARY = metamod.2.csgo.so
 	LIB_PREFIX = lib
 	LIB_SUFFIX = .so
@@ -99,8 +105,8 @@ ifeq "$(ENGINE)" "csgo"
 endif
 
 CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODTIME=4 -DSE_EYE=5 \
-	-DSE_ORANGEBOXVALVE=6 -DSE_LEFT4DEAD=7 -DSE_LEFT4DEAD2=8 -DSE_ALIENSWARM=9 -DSE_PORTAL2=10 \
-	-DSE_CSGO=11
+	-DSE_CSS=6 -DSE_ORANGEBOXVALVE=7 -DSE_LEFT4DEAD=8 -DSE_LEFT4DEAD2=9 -DSE_ALIENSWARM=10 \
+	-DSE_PORTAL2=11 -DSE_CSGO=12
 
 LINK += $(HL2LIB)/tier1_i486.a $(HL2LIB)/interfaces_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX) \
 	-static-libgcc
@@ -152,7 +158,7 @@ all: check
 check:
 	if [ "$(ENGSET)" = "false" ]; then \
 		echo "You must supply one of the following values for ENGINE:"; \
-		echo "left4dead2, left4dead, orangeboxvalve or orangebox"; \
+		echo "csgo, left4dead2, left4dead, orangeboxvalve, css or orangebox"; \
 		exit 1; \
 	fi
 

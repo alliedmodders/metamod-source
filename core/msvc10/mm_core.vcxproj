@@ -13,6 +13,10 @@
       <Configuration>Debug - CS GO</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - CSS|Win32">
+      <Configuration>Debug - CSS</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug - Dark Messiah|Win32">
       <Configuration>Debug - Dark Messiah</Configuration>
       <Platform>Win32</Platform>
@@ -51,6 +55,10 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release - CS GO|Win32">
       <Configuration>Release - CS GO</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release - CSS|Win32">
+      <Configuration>Release - CSS</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release - Dark Messiah|Win32">
@@ -140,6 +148,10 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
@@ -149,6 +161,10 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -210,6 +226,9 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -217,6 +236,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'" Label="PropertySheets">
@@ -241,21 +263,27 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Bloody Good Time|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Bloody Good Time|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug - Bloody Good Time|Win32'">true</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'">$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'">$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - Bloody Good Time|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - Bloody Good Time|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release - Bloody Good Time|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Left 4 Dead|Win32'">$(Configuration)\</OutDir>
@@ -319,6 +347,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'">
     <TargetName>metamod.2.ep2v</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'">
+    <TargetName>metamod.2.css</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'">
     <TargetName>metamod.2.eye</TargetName>
   </PropertyGroup>
@@ -349,6 +380,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'">
     <TargetName>metamod.2.ep2v</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'">
+    <TargetName>metamod.2.css</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'">
     <TargetName>metamod.2.eye</TargetName>
   </PropertyGroup>
@@ -357,7 +391,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKOB)\public;$(HL2SDKOB)\public\engine;$(HL2SDKOB)\public\game\server;$(HL2SDKOB)\public\tier0;$(HL2SDKOB)\public\tier1;$(HL2SDKOB)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=3;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -394,7 +428,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
@@ -434,10 +468,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Orange Box Valve|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKOBVALVE)\public;$(HL2SDKOBVALVE)\public\engine;$(HL2SDKOBVALVE)\public\game\server;$(HL2SDKOBVALVE)\public\tier0;$(HL2SDKOBVALVE)\public\tier1;$(HL2SDKOBVALVE)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=6;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=7;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -469,9 +503,46 @@
       <Command>IF NOT "%MMSOUTDIR%"=="" copy /Y "$(TargetDir)$(TargetFileName)" "%MMSOUTDIR%\bin"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - CSS|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKCSS)\public;$(HL2SDKCSS)\public\engine;$(HL2SDKCSS)\public\game\server;$(HL2SDKCSS)\public\tier0;$(HL2SDKCSS)\public\tier1;$(HL2SDKCSS)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=6;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>BINARY_NAME="\"$(TargetFileName)\"";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>$(HL2SDKCSS)\lib\public\tier0.lib;$(HL2SDKCSS)\lib\public\tier1.lib;$(HL2SDKCSS)\lib\public\vstdlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetFileName)</OutputFile>
+      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)sourcemm.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>$(OutDir)sourcemm.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>IF NOT "%MMSOUTDIR%"=="" copy /Y "$(TargetDir)$(TargetFileName)" "%MMSOUTDIR%\bin"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - EYE|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDK-EYE)\public;$(HL2SDK-EYE)\public\engine;$(HL2SDK-EYE)\public\game\server;$(HL2SDK-EYE)\public\tier0;$(HL2SDK-EYE)\public\tier1;$(HL2SDK-EYE)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=5;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -508,7 +579,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Bloody Good Time|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDK-BGT)\public;$(HL2SDK-BGT)\public\engine;$(HL2SDK-BGT)\public\game\server;$(HL2SDK-BGT)\public\tier0;$(HL2SDK-BGT)\public\tier1;$(HL2SDK-BGT)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=4;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -545,12 +616,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Orange Box Valve|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKOBVALVE)\public;$(HL2SDKOBVALVE)\public\engine;$(HL2SDKOBVALVE)\public\game\server;$(HL2SDKOBVALVE)\public\tier0;$(HL2SDKOBVALVE)\public\tier1;$(HL2SDKOBVALVE)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=6;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=7;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -583,9 +654,49 @@
       <Command>IF NOT "%MMSOUTDIR%"=="" copy /Y "$(TargetDir)$(TargetFileName)" "%MMSOUTDIR%\bin"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - CSS|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
+      <Optimization>Full</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKCSS)\public;$(HL2SDKCSS)\public\engine;$(HL2SDKCSS)\public\game\server;$(HL2SDKCSS)\public\tier0;$(HL2SDKCSS)\public\tier1;$(HL2SDKCSS)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=6;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>BINARY_NAME="\"$(TargetFileName)\"";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>$(HL2SDKCSS)\lib\public\tier0.lib;$(HL2SDKCSS)\lib\public\tier1.lib;$(HL2SDKCSS)\lib\public\vstdlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetFileName)</OutputFile>
+      <IgnoreSpecificDefaultLibraries>libc.lib;libcd.lib;libcmtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>$(OutDir)sourcemm.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>IF NOT "%MMSOUTDIR%"=="" copy /Y "$(TargetDir)$(TargetFileName)" "%MMSOUTDIR%\bin"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - EYE|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
@@ -625,7 +736,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Bloody Good Time|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
@@ -665,10 +776,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Left 4 Dead|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKL4D)\public;$(HL2SDKL4D)\public\engine;$(HL2SDKL4D)\public\game\server;$(HL2SDKL4D)\public\tier0;$(HL2SDKL4D)\public\tier1;$(HL2SDKL4D)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=7;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -702,12 +813,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Left 4 Dead|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKL4D)\public;$(HL2SDKL4D)\public\engine;$(HL2SDKL4D)\public\game\server;$(HL2SDKL4D)\public\tier0;$(HL2SDKL4D)\public\tier1;$(HL2SDKL4D)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=7;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -742,10 +853,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Left 4 Dead 2|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKL4D2)\public;$(HL2SDKL4D2)\public\engine;$(HL2SDKL4D2)\public\game\server;$(HL2SDKL4D2)\public\tier0;$(HL2SDKL4D2)\public\tier1;$(HL2SDKL4D2)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=9;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -779,10 +890,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Alien Swarm|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDK-SWARM)\public;$(HL2SDK-SWARM)\public\engine;$(HL2SDK-SWARM)\public\game\server;$(HL2SDK-SWARM)\public\tier0;$(HL2SDK-SWARM)\public\tier1;$(HL2SDK-SWARM)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=9;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=10;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -816,12 +927,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Left 4 Dead 2|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKL4D2)\public;$(HL2SDKL4D2)\public\engine;$(HL2SDKL4D2)\public\game\server;$(HL2SDKL4D2)\public\tier0;$(HL2SDKL4D2)\public\tier1;$(HL2SDKL4D2)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=9;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -856,12 +967,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Alien Swarm|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDK-SWARM)\public;$(HL2SDK-SWARM)\public\engine;$(HL2SDK-SWARM)\public\game\server;$(HL2SDK-SWARM)\public\tier0;$(HL2SDK-SWARM)\public\tier1;$(HL2SDK-SWARM)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=9;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=10;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -896,10 +1007,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - CS GO|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKCSGO)\public;$(HL2SDKCSGO)\public\engine;$(HL2SDKCSGO)\public\game\server;$(HL2SDKCSGO)\public\tier0;$(HL2SDKCSGO)\public\tier1;$(HL2SDKCSGO)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=12;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -933,10 +1044,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Portal 2|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKPORTAL2)\public;$(HL2SDKPORTAL2)\public\engine;$(HL2SDKPORTAL2)\public\game\server;$(HL2SDKPORTAL2)\public\tier0;$(HL2SDKPORTAL2)\public\tier1;$(HL2SDKPORTAL2)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=10;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -970,12 +1081,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - CS GO|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKCSGO)\public;$(HL2SDKCSGO)\public\engine;$(HL2SDKCSGO)\public\game\server;$(HL2SDKCSGO)\public\tier0;$(HL2SDKCSGO)\public\tier1;$(HL2SDKCSGO)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=12;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -1010,12 +1121,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Portal 2|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDKPORTAL2)\public;$(HL2SDKPORTAL2)\public\engine;$(HL2SDKPORTAL2)\public\game\server;$(HL2SDKPORTAL2)\public\tier0;$(HL2SDKPORTAL2)\public\tier1;$(HL2SDKPORTAL2)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=10;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;COMPILER_MSVC;COMPILER_MSVC32;SOURCE_ENGINE=11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -1050,7 +1161,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Dark Messiah|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..;..\..\public;..\..\loader;..\sourcehook;$(HL2SDK-DARKM)\public;$(HL2SDK-DARKM)\public\engine;$(HL2SDK-DARKM)\public\dlls;$(HL2SDK-DARKM)\public\tier0;$(HL2SDK-DARKM)\public\tier1;$(HL2SDK-DARKM)\public\vstdlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SOURCEMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE;SOURCE_ENGINE=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1087,7 +1198,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - Dark Messiah|Win32'">
     <ClCompile>
-      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_ORANGEBOXVALVE=6 /D SE_LEFT4DEAD=7 /D SE_LEFT4DEAD2=8 /D SE_ALIENSWARM=9 /D SE_PORTAL2=10 /D SE_CSGO=11</AdditionalOptions>
+      <AdditionalOptions>/D SE_EPISODE1=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_ORANGEBOXVALVE=7 /D SE_LEFT4DEAD=8 /D SE_LEFT4DEAD2=9 /D SE_ALIENSWARM=10 /D SE_PORTAL2=1 /D SE_CSGO=12</AdditionalOptions>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
