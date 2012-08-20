@@ -28,6 +28,13 @@
 
 #include <stddef.h>
 
+// Interface return status, binary-compatible with HL2SDK's IFACE_OK and IFACE_FAILED.
+enum 
+{
+	META_IFACE_OK = 0,
+	META_IFACE_FAILED
+};
+
 /**
  * @file ISmmPluginExt.h Provides an alternate method for loading plugins, 
  * without needing to include the default headers and all their Half-Life baggage.
