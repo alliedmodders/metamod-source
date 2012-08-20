@@ -85,6 +85,7 @@ enum MetamodBackend
 	MMBackend_Episode2,
 	MMBackend_BloodyGoodTime,
 	MMBackend_EYE,
+	MMBackend_CSS,
 	MMBackend_Episode2Valve,
 	MMBackend_Left4Dead,
 	MMBackend_Left4Dead2,
