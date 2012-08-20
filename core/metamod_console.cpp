@@ -121,6 +121,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Left 4 Dead (2008)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOX
 			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
+#elif SOURCE_ENGINE == SE_CSS
+			CONMSG("  Engine: Counter-Strike: Source (Old Valve Orange Box, 2009)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOXVALVE
 			CONMSG("  Engine: Episode 2 (Valve Orange Box, 2009)\n");
 #elif SOURCE_ENGINE == SE_DARKMESSIAH

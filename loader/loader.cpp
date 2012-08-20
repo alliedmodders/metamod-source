@@ -75,6 +75,7 @@ static const char *backend_names[] =
 	"2.ep2",
 	"2.bgt",
 	"2.eye",
+	"2.css",
 	"2.ep2v",
 	"2.l4d",
 	"2.l4d2",
@@ -312,6 +313,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 				if (engineFactory("VFileSystem017", NULL) != NULL)
 				{
 					return MMBackend_EYE;
+				}
+				else if (strcmp(game_name, "cstrike") == 0)
+				{
+					return MMBackend_CSS;
 				}
 				else
 				{
