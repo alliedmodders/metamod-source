@@ -30,7 +30,7 @@ class MMS:
 		self.possibleSdks['eye'] =   {'sdk': 'HL2SDK-EYE',      'ext': '2.eye', 'def': '5',
 		                              'name': 'EYE', 'platform': ['windows']}
 		self.possibleSdks['csgo'] =   {'sdk': 'HL2SDKCSGO',      'ext': '2.csgo', 'def': '12',
-		                              'name': 'CSGO', 'platform': ['windows', 'linux']}
+		                              'name': 'CSGO', 'platform': ['windows', 'linux', 'darwin']}
 		# self.possibleSdks['portal2'] =   {'sdk': 'HL2SDK-PORTAL2',      'ext': '2.portal2', 'def': '11',
 		#                               'name': 'PORTAL2', 'platform': ['windows']}
 		
@@ -45,12 +45,12 @@ class MMS:
 			if AMBuild.target['platform'] != 'darwin':
 				envvars['HL2SDK'] = 'hl2sdk'
 				envvars['HL2SDKOB'] = 'hl2sdk-ob'
-				envvars['HL2SDKCSGO'] = 'hl2sdk-csgo'
 
 			envvars['HL2SDKCSS'] = 'hl2sdk-css'
 			envvars['HL2SDKOBVALVE'] = 'hl2sdk-ob-valve'
 			envvars['HL2SDKL4D'] = 'hl2sdk-l4d'
 			envvars['HL2SDKL4D2'] = 'hl2sdk-l4d2'
+			envvars['HL2SDKCSGO'] = 'hl2sdk-csgo'
 
 			#Dark Messiah is Windows-only
 			if AMBuild.target['platform'] == 'windows':
@@ -192,6 +192,8 @@ class MMS:
 				if self.vendor == 'clang':
 					self.compiler.AddToListVar('POSTLINKFLAGS', '-lgcc_eh')
 			elif AMBuild.target['platform'] == 'darwin':
+				self.compiler.AddToListVar('CDEFINES', 'OSX')
+				self.compiler.AddToListVar('CDEFINES', '_OSX')
 				self.compiler.AddToListVar('POSTLINKFLAGS', '-mmacosx-version-min=10.5')
 				self.compiler.AddToListVar('POSTLINKFLAGS', ['-arch', 'i386'])
 				self.compiler.AddToListVar('POSTLINKFLAGS', '-lstdc++')
