@@ -90,6 +90,9 @@ static const char *backend_names[] =
 #elif defined __APPLE__
 #define LIBRARY_EXT		".dylib"
 #define LIBRARY_MINEXT	".dylib"
+#elif defined __linux__
+#define LIBRARY_EXT		LIB_SUFFIX
+#define LIBRARY_MINEXT	".so"
 #endif
 
 bool
