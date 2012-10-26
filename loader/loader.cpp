@@ -188,15 +188,12 @@ mm_GetProcAddress(const char *name)
 #if defined _WIN32
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
-#define STEAM_API_NAME		"bin\\steam_api.dll"
 #elif defined __APPLE__
 #define TIER0_NAME			"bin/libtier0.dylib"
 #define VSTDLIB_NAME		"bin/libvstdlib.dylib"
-#define STEAM_API_NAME		"bin/libsteam_api.dylib"
 #elif defined __linux__
 #define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
 #define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX
-#define STEAM_API_NAME		"bin/" LIB_PREFIX "steam_api" LIB_SUFFIX
 #endif
 
 const char *
