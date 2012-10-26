@@ -90,9 +90,6 @@ static const char *backend_names[] =
 #elif defined __APPLE__
 #define LIBRARY_EXT		".dylib"
 #define LIBRARY_MINEXT	".dylib"
-#elif defined __linux__
-#define LIBRARY_EXT		LIB_SUFFIX
-#define LIBRARY_MINEXT	".so"
 #endif
 
 bool
@@ -205,9 +202,15 @@ mm_GetGameName()
 	char lib_path[PLATFORM_MAX_PATH];
 	const char *game_name;
 
-	if (!mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path)))
+#ifdef __linux__
+	if (!mm_ResolvePath("bin/libtier0_srv.so", lib_path, sizeof(lib_path))
+		&& !mm_ResolvePath("bin/libtier0.so", lib_path, sizeof(lib_path))
+		&& !mm_ResolvePath("bin/tier0_i486.so", lib_path, sizeof(lib_path)))
+#else
+        if (!mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path)))
+#endif
 	{
-		mm_LogFatal("Could not find path for: " TIER0_NAME);
+		mm_LogFatal("Could not find path for tier0");
 		return NULL;
 	}
 
@@ -229,9 +232,15 @@ mm_GetGameName()
 	{
 		/* We probably have a Ship engine. */
 		mm_UnloadLibrary(lib);
+#ifdef __linux__
+		if (!mm_ResolvePath("bin/libvstdlib_srv.so", lib_path, sizeof(lib_path))
+			&& !mm_ResolvePath("bin/libvstdlib.so", lib_path, sizeof(lib_path))
+			&& !mm_ResolvePath("bin/vstdlib_i486.so", lib_path, sizeof(lib_path)))
+#else
 		if (!mm_ResolvePath(VSTDLIB_NAME, lib_path, sizeof(lib_path)))
+#endif
 		{
-			mm_LogFatal("Could not find path for: " VSTDLIB_NAME);
+			mm_LogFatal("Could not find path for vstdlib");
 			return NULL;
 		}
 
