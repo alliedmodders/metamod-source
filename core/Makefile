@@ -68,7 +68,7 @@ ifeq "$(ENGINE)" "orangeboxvalve"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.ep2v.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
