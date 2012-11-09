@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="test"
 	ProjectGUID="{456BBA64-FF14-4292-8443-3BA79E4D84CC}"
 	RootNamespace="test"
@@ -127,7 +127,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories=".."
+				AdditionalIncludeDirectories="../.."
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -429,6 +429,10 @@
 			</File>
 			<File
 				RelativePath="..\testrefret.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\testvphooks.cpp"
 				>
 			</File>
 		</Filter>
