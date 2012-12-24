@@ -1,3 +1,8 @@
+2012/12/23 1.9.1:
+ - Fixed core-legacy crash on hook from making wrong page writable (bug 5533).
+ - Updated loader to attempt to guess correct tier0/vstdlib filenames on linux, fixing load on ep2v engine (bug 5522).
+ - Recompiled against new hl2sdk-ob-valve to fix vdf plugin loading on ep2v engine.
+
 2012/09/03 1.9.0:
  - Added support for Counter-Strike: Global Offensive (bug 5228).
  - Split Counter-Strike: Source to a separate build from 'ep2v' (SOURCE_ENGINE_CSS) (bug 5369).
