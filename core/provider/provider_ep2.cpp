@@ -315,7 +315,11 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
+#if SOURCE_ENGINE == SE_CSGO
+	return -1;
+#else
 	return (int)usermsgs_list.size();
+#endif
 }
 
 int BaseProvider::FindUserMessage(const char *name, int *size)
@@ -522,6 +526,14 @@ void ClientCommand(edict_t *pEdict)
 	RETURN_META(MRES_IGNORED);
 }
 
+#if SOURCE_ENGINE == SE_CSGO
+
+void CacheUserMessages()
+{
+}
+
+#else
+
 /* This only gets called if IServerGameDLL::GetUserMessageInfo() triggers it */
 void Detour_Error(const tchar *pMsg, ...)
 {
@@ -578,3 +590,5 @@ void CacheUserMessages()
 	/* Jump back to setjmp() */
 	longjmp(usermsg_end, 1);
 }
+
+#endif
