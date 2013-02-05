@@ -100,7 +100,7 @@ ifneq (,$(filter original orangebox,$(ENGINE)))
 	LIB_SUFFIX = _i486.$(LIB_EXT)
 else
 	LIB_PREFIX = lib
-	ifeq "$(ENGINE)" "orangeboxvalve"
+	ifneq (,$(filter orangeboxvalve css,$(ENGINE)))
 		ifneq "$(OS)" "Darwin"
 			LIB_SUFFIX = _srv.$(LIB_EXT)
 		else

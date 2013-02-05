@@ -57,7 +57,7 @@ ifeq "$(ENGINE)" "css"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.css.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangeboxvalve"
