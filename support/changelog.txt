@@ -1,3 +1,7 @@
+2013/02/06 1.9.2
+ - Fixed load issues on CS:GO after protobuf networking game update (bug 5578).
+ - Fixed load issues on CS:S under linux after game update.
+
 2012/12/23 1.9.1:
  - Fixed core-legacy crash on hook from making wrong page writable (bug 5533).
  - Updated loader to attempt to guess correct tier0/vstdlib filenames on linux, fixing load on ep2v engine (bug 5522).
