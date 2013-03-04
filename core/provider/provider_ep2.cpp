@@ -315,7 +315,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -383,6 +383,8 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 	return SOURCE_ENGINE_PORTAL2;
 #elif SOURCE_ENGINE == SE_CSGO
 	return SOURCE_ENGINE_CSGO;
+#elif SOURCE_ENGINE == SE_DOTA
+	return SOURCE_ENGINE_DOTA;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -526,7 +528,7 @@ void ClientCommand(edict_t *pEdict)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
 
 void CacheUserMessages()
 {

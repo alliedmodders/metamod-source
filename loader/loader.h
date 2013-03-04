@@ -92,6 +92,7 @@ enum MetamodBackend
 	MMBackend_AlienSwarm,
 	MMBackend_Portal2,
 	MMBackend_CSGO,
+	MMBackend_DOTA,
 	MMBackend_UNKNOWN
 };
 
