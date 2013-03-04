@@ -31,6 +31,8 @@ class MMS:
 		                              'name': 'EYE', 'platform': ['windows']}
 		self.possibleSdks['csgo'] =   {'sdk': 'HL2SDKCSGO',      'ext': '2.csgo', 'def': '12',
 		                              'name': 'CSGO', 'platform': ['windows', 'linux', 'darwin']}
+		self.possibleSdks['dota'] =   {'sdk': 'HL2SDKDOTA',      'ext': '2.dota', 'def': '13',
+		                              'name': 'DOTA', 'platform': ['windows']}
 		# self.possibleSdks['portal2'] =   {'sdk': 'HL2SDK-PORTAL2',      'ext': '2.portal2', 'def': '11',
 		#                               'name': 'PORTAL2', 'platform': ['windows']}
 		
@@ -58,6 +60,7 @@ class MMS:
 				envvars['HL2SDK-SWARM'] = 'hl2sdk-swarm'
 				envvars['HL2SDK-BGT']   = 'hl2sdk-bgt'
 				envvars['HL2SDK-EYE']   = 'hl2sdk-eye'
+				envvars['HL2SDK-DOTA']   = 'hl2sdk-dota'
 
 			# Finds if a dict with `key` set to `value` is present on the dict of dicts `dictionary`
 			def findDictByKey(dictionary, key, value):
@@ -309,7 +312,7 @@ class MMS:
 					job.AddCommand(SymlinkCommand(link, target))
 		elif AMBuild.target['platform'] == 'windows':
 			libs = ['tier0', 'tier1', 'vstdlib']
-			if sdk in ['swarm', 'csgo']:
+			if sdk in ['swarm', 'csgo', 'dota']:
 				libs.append('interfaces')
 			for lib in libs:
 				libPath = os.path.join(sdkPath, 'lib', 'public', lib) + '.lib'
@@ -319,7 +322,7 @@ class MMS:
 	def PostSetupHL2Job(self, job, builder, sdk):
 		if AMBuild.target['platform'] in ['linux', 'darwin']:
 			builder.AddObjectFiles(['tier1_i486.a'])
-			if( sdk == 'csgo' ):
+			if( sdk in ['csgo', 'dota'] ):
 				builder.AddObjectFiles(['interfaces_i486.a'])
 
 	def DefaultHL2Compiler(self, path, sdk, noLink = False):
@@ -351,7 +354,7 @@ class MMS:
 
 		compiler['CDEFINES'].append('SOURCE_ENGINE=' + info['def'])
 
-		if sdk in ['swarm', 'csgo']:
+		if sdk in ['swarm', 'csgo', 'dota']:
 			if AMBuild.target['platform'] == 'windows':
 				compiler['CDEFINES'].extend(['COMPILER_MSVC', 'COMPILER_MSVC32'])
 			else:

@@ -81,7 +81,8 @@ static const char *backend_names[] =
 	"2.l4d2",
 	"2.swarm",
 	"2.portal2",
-	"2.csgo"
+	"2.csgo",
+	"2.dota",
 };
 
 #if defined _WIN32
@@ -281,7 +282,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	/* Check for L4D */
 	if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
-		return MMBackend_CSGO;
+		if (engineFactory("ISERVERPLUGINHELPERS001", NULL) != NULL)
+			return MMBackend_CSGO;
+		else
+			return MMBackend_DOTA;
 	}
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)

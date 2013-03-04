@@ -56,6 +56,7 @@ enum
 #define SOURCE_ENGINE_PORTAL2			11				/**< Portal 2 */
 #define SOURCE_ENGINE_CSGO				12				/**< Counter-Strike: Global Offensive */
 #define SOURCE_ENGINE_CSS				13				/**< Counter-Strike: Source (sometimes older version of Orange Box Valve) */
+#define SOURCE_ENGINE_DOTA				14				/**< Dota 2 */
 
 #define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
