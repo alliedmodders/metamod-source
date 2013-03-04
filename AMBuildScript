@@ -60,7 +60,7 @@ class MMS:
 				envvars['HL2SDK-SWARM'] = 'hl2sdk-swarm'
 				envvars['HL2SDK-BGT']   = 'hl2sdk-bgt'
 				envvars['HL2SDK-EYE']   = 'hl2sdk-eye'
-				envvars['HL2SDK-DOTA']   = 'hl2sdk-dota'
+				envvars['HL2SDKDOTA']   = 'hl2sdk-dota'
 
 			# Finds if a dict with `key` set to `value` is present on the dict of dicts `dictionary`
 			def findDictByKey(dictionary, key, value):
