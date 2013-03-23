@@ -41,7 +41,7 @@ class IServerGameDLL;
 
 IGameDllBridge* gamedll_bridge = NULL;
 static int game_info_detected = 0;
-static const char *game_name = NULL;
+static char game_name[128];
 static char gamedll_paths[MAX_GAMEDLL_PATHS][PLATFORM_MAX_PATH];
 static void *gamedll_libs[MAX_GAMEDLL_PATHS];
 static unsigned int gamedll_path_count = 0;
@@ -70,7 +70,7 @@ mm_DetectGameInformation()
 
 	game_info_detected = -1;
 
-	if ((game_name = mm_GetGameName()) == NULL)
+	if (!mm_GetGameName(game_name, sizeof(game_name)))
 	{
 		return false;
 	}

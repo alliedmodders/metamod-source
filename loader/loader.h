@@ -108,8 +108,8 @@ mm_UnloadMetamodLibrary();
 extern void
 mm_LogFatal(const char *message, ...);
 
-extern const char *
-mm_GetGameName();
+extern bool
+mm_GetGameName(char *buffer, size_t size);
 
 extern MetamodBackend
 mm_DetermineBackend(QueryValveInterface qvi, const char *game_name);

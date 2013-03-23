@@ -70,7 +70,7 @@ IVspBridge *vsp_bridge = NULL;
  */
 class ServerPlugin
 {
-	const char *game_name;
+	char game_name[128];
 	unsigned int vsp_version;
 	bool load_allowed;
 public:
@@ -88,7 +88,7 @@ public:
 		/* Backend should already filled in if loaded as gamedll */
 		if (gamedll_bridge == NULL)
 		{
-			if ((game_name = mm_GetGameName()) == NULL)
+			if (!mm_GetGameName(game_name, sizeof(game_name)))
 			{
 				return false;
 			}
