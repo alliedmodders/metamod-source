@@ -73,7 +73,9 @@ folders = [['addons', 'metamod', 'bin']]
 job.AddCommand(DestroyPath(os.path.join(AMBuild.outputFolder, 'package')))
 job.AddCommand(CreateFolders(folders))
 
-#Copiy Files
+#Copy Files
+job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'metamod.vdf'),
+                        os.path.join('addons')))
 job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'metaplugins.ini'),
                         os.path.join('addons', 'metamod')))
 job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'README.txt'),
