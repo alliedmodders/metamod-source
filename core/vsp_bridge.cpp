@@ -32,7 +32,9 @@
 #include <loader_bridge.h>
 #include "provider/provider_ep2.h"
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+SH_DECL_HOOK2_void(ConCommand, Dispatch, SH_NOATTRIB, false, void *, const CCommand &);
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
 #else
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
@@ -42,7 +44,9 @@ ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 const char *vsp_desc = "Metamod:Source " MMS_FULL_VERSION;
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+void InterceptPluginUnloads(void *pUnknown, const CCommand &args)
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads(const CCommand &args)
 #else
 void InterceptPluginUnloads()
@@ -51,7 +55,9 @@ void InterceptPluginUnloads()
 	g_bIsTryingToUnload = true;
 }
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+void InterceptPluginUnloads_Post(void *pUnknown, const CCommand &args)
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads_Post(const CCommand &args)
 #else
 void InterceptPluginUnloads_Post()
