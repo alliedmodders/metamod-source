@@ -62,7 +62,10 @@ DLL_IMPORT ICommandLine *CommandLine();
 /* Functions */
 void CacheUserMessages();
 void Detour_Error(const tchar *pMsg, ...);
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+void ClientCommand(edict_t *pEdict, const CCommand &args);
+void LocalCommand_Meta(void *pUnknown, const CCommand &args);
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
 #else
@@ -498,7 +501,11 @@ public:
 };
 #endif
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+void LocalCommand_Meta(void *pUnknown, const CCommand &args)
+{
+	GlobCommand cmd(&args);
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand &args)
 {
 	GlobCommand cmd(&args);
