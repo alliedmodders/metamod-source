@@ -77,6 +77,10 @@ public:
 	void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 	const char *GetBaseDir();
 	size_t PathFormat(char *buffer, size_t len, const char *fmt, ...);
+#if SOURCE_ENGINE == SE_DOTA
+	// Shim
+	void ClientConPrintf(int clientIndex, const char *fmt, ...);
+#endif
 	void ClientConPrintf(edict_t *client, const char *fmt, ...);
 	void *VInterfaceMatch(CreateInterfaceFn fn, const char *iface, int min=-1);
 	void EnableVSPListener();
