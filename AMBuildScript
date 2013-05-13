@@ -169,6 +169,11 @@ class MMS:
 				elif self.vendor == 'msvc':
 					self.compiler.AddToListVar('CFLAGS', '/Od')
 					self.compiler.AddToListVar('CFLAGS', '/RTC1')
+			
+			#This needs to be after our optimization flags which could otherwise disable it.
+			if self.vendor == 'msvc':
+				# Don't omit frame pointer
+				self.compiler.AddToListVar('CFLAGS', '/Oy-')
 
 			#Platform-specifics
 			if AMBuild.target['platform'] == 'linux':
