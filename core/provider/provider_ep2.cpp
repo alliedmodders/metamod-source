@@ -63,7 +63,7 @@ DLL_IMPORT ICommandLine *CommandLine();
 void CacheUserMessages();
 void Detour_Error(const tchar *pMsg, ...);
 #if SOURCE_ENGINE == SE_DOTA
-void ClientCommand(edict_t *pEdict, const CCommand &args);
+void ClientCommand(int client, const CCommand &args);
 void LocalCommand_Meta(void *pUnknown, const CCommand &args);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
@@ -88,7 +88,9 @@ IServerGameClients *gameclients = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE == SE_DOTA
+SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, int, const CCommand &);
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
 #else
 SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
@@ -176,9 +178,14 @@ bool BaseProvider::IsRemotePrintingAvailable()
 	return true;
 }
 
-void BaseProvider::ClientConsolePrint(edict_t *client, const char *message)
+void BaseProvider::ClientConsolePrint(edict_t *pEdict, const char *message)
 {
+#if SOURCE_ENGINE == SE_DOTA
+	int client = (int)(pEdict - g_Metamod.GetCGlobals()->pEdicts);
 	engine->ClientPrintf(client, message);
+#else
+	engine->ClientPrintf(pEdict, message);
+#endif
 }
 
 void BaseProvider::ServerCommand(const char *cmd)
@@ -517,18 +524,22 @@ void LocalCommand_Meta()
 	Command_Meta(&cmd);
 }
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
-void ClientCommand(edict_t *pEdict, const CCommand &_cmd)
+#if SOURCE_ENGINE == SE_DOTA
+void ClientCommand(int client, const CCommand &_cmd)
+{
+	GlobCommand cmd(&_cmd);
+#elif SOURCE_ENGINE >= SE_ORANGEBOX
+void ClientCommand(edict_t *client, const CCommand &_cmd)
 {
 	GlobCommand cmd(&_cmd);
 #else
-void ClientCommand(edict_t *pEdict)
+void ClientCommand(edict_t *client)
 {
 	GlobCommand cmd;
 #endif
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
-		Command_ClientMeta(pEdict, &cmd);
+		Command_ClientMeta(client, &cmd);
 		RETURN_META(MRES_SUPERCEDE);
 	}
 

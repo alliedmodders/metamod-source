@@ -659,7 +659,11 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 	return true;
 }
 
+#if SOURCE_ENGINE == SE_DOTA
+bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info)
+#else
 bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
+#endif
 {
 	const char *cmd = info->GetArg(0);
 
