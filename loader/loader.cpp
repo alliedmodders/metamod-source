@@ -264,13 +264,13 @@ mm_GetGameName(char *buffer, size_t size)
 MetamodBackend
 mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 {
-	/* Check for L4D */
-	if (engineFactory("VEngineServer023", NULL) != NULL)
+	if (engineFactory("VEngineServer024", NULL) != NULL)
 	{
-		if (engineFactory("ISERVERPLUGINHELPERS001", NULL) != NULL)
-			return MMBackend_CSGO;
-		else
-			return MMBackend_DOTA;
+		return MMBackend_DOTA;
+	}
+	else if (engineFactory("VEngineServer023", NULL) != NULL)
+	{
+		return MMBackend_CSGO;
 	}
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
