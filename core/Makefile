@@ -78,7 +78,8 @@ ifeq "$(ENGINE)" "left4dead"
 	CFLAGS += -DSOURCE_ENGINE=8
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.l4d.so
-	LIB_SUFFIX = _i486.so
+	LIB_PREFIX = lib
+	LIB_SUFFIX = .so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead2"
@@ -89,7 +90,7 @@ ifeq "$(ENGINE)" "left4dead2"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.l4d2.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "csgo"
