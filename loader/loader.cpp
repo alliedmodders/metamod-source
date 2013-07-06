@@ -237,7 +237,7 @@ mm_GetGameName(char *buffer, size_t size)
 	size_t argsize = 0;
 	bool bNextIsGame = false;
 
-	while (getdelim(&arg, &argsize, NULL, pFile) != -1)
+	while (getdelim(&arg, &argsize, 0, pFile) != -1)
 	{
 		if (bNextIsGame)
 		{
