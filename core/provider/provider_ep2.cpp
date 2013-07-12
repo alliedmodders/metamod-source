@@ -63,8 +63,8 @@ DLL_IMPORT ICommandLine *CommandLine();
 void CacheUserMessages();
 void Detour_Error(const tchar *pMsg, ...);
 #if SOURCE_ENGINE == SE_DOTA
-void ClientCommand(int client, const CCommand &args);
-void LocalCommand_Meta(void *pUnknown, const CCommand &args);
+void ClientCommand(CEntityIndex index, const CCommand &args);
+void LocalCommand_Meta(const CCommandContext &context, const CCommand &args);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
@@ -89,7 +89,7 @@ IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 #if SOURCE_ENGINE == SE_DOTA
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, int, const CCommand &);
+SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CEntityIndex, const CCommand &);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
 #else
@@ -509,7 +509,7 @@ public:
 #endif
 
 #if SOURCE_ENGINE == SE_DOTA
-void LocalCommand_Meta(void *pUnknown, const CCommand &args)
+void LocalCommand_Meta(const CCommandContext &context, const CCommand &args)
 {
 	GlobCommand cmd(&args);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
@@ -525,8 +525,9 @@ void LocalCommand_Meta()
 }
 
 #if SOURCE_ENGINE == SE_DOTA
-void ClientCommand(int client, const CCommand &_cmd)
+void ClientCommand(CEntityIndex index, const CCommand &_cmd)
 {
+	int client = index.Get();
 	GlobCommand cmd(&_cmd);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *client, const CCommand &_cmd)
