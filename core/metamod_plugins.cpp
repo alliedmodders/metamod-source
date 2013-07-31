@@ -489,13 +489,18 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				info.pl_path = file_path;
 
 				pl->m_API = fnLoad(&GlobVersionInfo, &info);
-#if SOURCE_ENGINE == SE_ORANGEBOXVALVE
+#if SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_DODS || SOURCE_ENGINE == SE_TF2
 				/* For plugin compat - try loading again using original OB if OB-Valve has failed */
 				if (pl->m_API == NULL)
 				{
-					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOX;
+					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOXVALVE_DEPRECATED;
 					pl->m_API = fnLoad(&GlobVersionInfo, &info);
-					GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOXVALVE;
+					if (pl->m_API == NULL)
+					{
+						GlobVersionInfo.source_engine = SOURCE_ENGINE_ORANGEBOX;
+						pl->m_API = fnLoad(&GlobVersionInfo, &info);
+					}
+					GlobVersionInfo.source_engine = g_Metamod.GetSourceEngineBuild();
 				}
 #endif
 				pl->m_UnloadFn = (METAMOD_FN_UNLOAD)dlsym(pl->m_Lib, "UnloadInterface_MMS");

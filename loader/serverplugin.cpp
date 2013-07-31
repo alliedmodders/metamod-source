@@ -105,7 +105,8 @@ public:
 		void **this_vtable;
 		this_vtable = (void **)*(void **)this;
 
-		if (mm_backend >= MMBackend_Episode2)
+		if (mm_backend != MMBackend_Episode1
+			&& mm_backend != MMBackend_DarkMessiah)
 		{
 			/* We need to insert the right type of call into this vtable */
 			void **vtable_src;
@@ -133,7 +134,10 @@ public:
 		}
 
 		/* AS inserted ClientFullyConnect into vtable, so move entries up on older engines */
-		if (mm_backend < MMBackend_AlienSwarm)
+		if (mm_backend != MMBackend_AlienSwarm
+			&& mm_backend != MMBackend_Portal2
+			&& mm_backend != MMBackend_CSGO
+			&& mm_backend != MMBackend_DOTA)
 		{
 			SourceHook::MemFuncInfo mfp_fconnect;
 			mfp_fconnect.isVirtual = false;

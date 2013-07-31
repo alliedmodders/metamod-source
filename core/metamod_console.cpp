@@ -117,14 +117,20 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Alien Swarm (2010)\n");
 #elif SOURCE_ENGINE == SE_LEFT4DEAD2
 			CONMSG("  Engine: Left 4 Dead 2 (2009)\n");
+#elif SOURCE_ENGINE == SE_NUCLEARDAWN
+			CONMSG("  Engine: Nuclear Dawn (2011)\n");
 #elif SOURCE_ENGINE == SE_LEFT4DEAD
 			CONMSG("  Engine: Left 4 Dead (2008)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOX
 			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
 #elif SOURCE_ENGINE == SE_CSS
-			CONMSG("  Engine: Counter-Strike: Source (Old Valve Orange Box, 2009)\n");
-#elif SOURCE_ENGINE == SE_ORANGEBOXVALVE
-			CONMSG("  Engine: Episode 2 (Valve Orange Box, 2009)\n");
+			CONMSG("  Engine: Counter-Strike: Source (Valve Orange Box)\n");
+#elif SOURCE_ENGINE == SE_HL2DM
+			CONMSG("  Engine: Half-Life 2 Deathmatch (Valve Orange Box)\n");
+#elif SOURCE_ENGINE == SE_DODS
+			CONMSG("  Engine: Day of Defeat: Source (Valve Orange Box)\n");
+#elif SOURCE_ENGINE == SE_TF2
+			CONMSG("  Engine: Team Fortress 2 (Valve Orange Box)\n");
 #elif SOURCE_ENGINE == SE_DARKMESSIAH
 			CONMSG("  Engine: Dark Messiah (2006)\n");
 #elif SOURCE_ENGINE == SE_EYE

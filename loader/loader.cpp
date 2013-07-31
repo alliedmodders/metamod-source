@@ -81,6 +81,10 @@ static const char *backend_names[] =
 	"2.portal2",
 	"2.csgo",
 	"2.dota",
+	"2.hl2dm",
+	"2.dods",	
+	"2.tf2",
+	"2.nd",
 };
 
 #if defined _WIN32
@@ -285,7 +289,14 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		}
 		else if (engineFactory("VPrecacheSystem001", NULL) != NULL)
 		{
-			return MMBackend_Left4Dead2;
+			if (strcmp(game_name, "nucleardawn") == 0)
+			{
+				return MMBackend_NuclearDawn;
+			}
+			else
+			{
+				return MMBackend_Left4Dead2;
+			}
 		}
 		return MMBackend_Left4Dead;
 	}
@@ -316,9 +327,17 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 				{
 					return MMBackend_CSS;
 				}
-				else
+				else if (strcmp(game_name, "tf") == 0)
 				{
-					return MMBackend_Episode2Valve;
+					return MMBackend_TF2;
+				}
+				else if (strcmp(game_name, "dod") == 0)
+				{
+					return MMBackend_DODS;
+				}
+				else if (strcmp(game_name, "hl2mp") == 0)
+				{
+					return MMBackend_HL2DM;
 				}
 			}
 		}
