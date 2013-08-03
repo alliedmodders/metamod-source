@@ -139,7 +139,7 @@ struct MetamodVersionInfo
 	 */
 	inline const char *GetGameDir() const
 	{
-		if (pl_max >= 15)
+		if (pl_max < 15)
 			return NULL;
 		return game_dir;
 	}
