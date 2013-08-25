@@ -1,4 +1,14 @@
-2013/02/06 1.9.2
+2013/08.25 1.10.0:
+ - Split TF2, DoD:S, HL2:DM, and ND to separate binaries (bug 5667).
+ - Updated for latest games changes on HL2:DM, TF2, CS:S, DoD:S, L4D2, and Dota 2.
+ - Added basic VDF file for easier installation (bug 5681).
+ - Removed loader's reliance on tier0 by manually parsing command line for -game (bug 5674).
+ - Fixed MetamodVersionInfo::GetGameDir always returning NULL or garbage. 
+ - Added META_NO_HL2SDK define to stop MM:S headers using the HL2SDK (bug 5079, bug 5469).
+ - Remove unused variables and defines (bug 5523).
+ - Fixed NULL conversion compile warning in loader.
+
+2013/02/06 1.9.2:
  - Fixed load issues on CS:GO after protobuf networking game update (bug 5578).
  - Fixed load issues on CS:S under linux after game update.
 
