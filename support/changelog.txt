@@ -1,4 +1,5 @@
-2013/08.25 1.10.0:
+2013/08/25 1.10.0:
+ - Added support for Dota 2 on Windows.
  - Split TF2, DoD:S, HL2:DM, and ND to separate binaries (bug 5667).
  - Updated for latest games changes on HL2:DM, TF2, CS:S, DoD:S, L4D2, and Dota 2.
  - Added basic VDF file for easier installation (bug 5681).
