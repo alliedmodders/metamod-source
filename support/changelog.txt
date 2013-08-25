@@ -1,3 +1,57 @@
+2013/02/06 1.9.2
+ - Fixed load issues on CS:GO after protobuf networking game update (bug 5578).
+ - Fixed load issues on CS:S under linux after game update.
+
+2012/12/23 1.9.1:
+ - Fixed core-legacy crash on hook from making wrong page writable (bug 5533).
+ - Updated loader to attempt to guess correct tier0/vstdlib filenames on linux, fixing load on ep2v engine (bug 5522).
+ - Recompiled against new hl2sdk-ob-valve to fix vdf plugin loading on ep2v engine.
+
+2012/09/03 1.9.0:
+ - Added support for Counter-Strike: Global Offensive (bug 5228).
+ - Split Counter-Strike: Source to a separate build from 'ep2v' (SOURCE_ENGINE_CSS) (bug 5369).
+ - Fixed page protection bug causing a rare startup crash (bug 5133).
+ - Delayed unloading of plugins until it is absolutely safe (bug 5034).
+ - Fixed passage of non-literals as error and warning format strings.
+
+2011/06/23 1.8.7:
+ - Fixed libgcc_s.so.1 load error present on some systems (bug 4876). 
+ - Metamod:Source will now work even when the Valve filesytem interface isn't
+   found (bug 4958).
+
+2011/04/15 1.8.6:
+ - Fixed compatibility with latest breaking Orange Box changes.
+ - Added support for Bloody Good Time (bug 4784).
+
+2010/12/19 1.8.5:
+ - Added support for latest Orange Box engine update (bug 4752).
+
+2010/10/30 1.8.4:
+ - Added support for Alien Swarm (bug 4529).
+ - Added support for L4D and L4D2 on Mac OS X (bug 4683 and bug 4646).
+ - Updated support for L4D (bug 4680).
+ - Fixed bug on OB listen servers where the engine was being detected as OBV
+   (bug 4560).
+ - Fixed hooking vtables with unaligned thunk entries and returning references
+   in manual hooks (bug 4655).
+
+2010/07/18 1.8.3:
+ - Added support for the latest L4D2 update (bug 4509).
+ - Fixed bug on OBV engine where extended plugins (such as SourceMod and
+   Stripper) could be given the wrong engine. (bug 4491).
+ - Fixed rare crash when certain engine libraries were loaded from an unexpected
+   location (bug 4475).
+ - Added MSVC 10.0 (Visual Studio 2010) project files for stub_mm and sample_mm
+   (bug 4520).
+
+2010/06/11 1.8.2:
+ - Added support for Mac OS X (bug 4391).
+ - Added support for CS:S on Orange Box (bug 4401).
+ - Platform suffix "_i486" is now optional for plugins (bug 4410).
+
+2010/05/02 1.8.1:
+ - Added support for latest L4D2 and Orange Box engine updates.
+ 
 2009/12/19 1.8.0:
  - Added support for the Source engine that runs Left 4 Dead 2 (bug 4078).
  - Added VP hook support to legacy SourceHook (bug 4019).
