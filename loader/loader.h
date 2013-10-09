@@ -98,6 +98,7 @@ enum MetamodBackend
 	MMBackend_TF2,
 	MMBackend_NuclearDawn,
 	MMBackend_SDK2013,
+	MMBackend_Blade,
 
 	MMBackend_UNKNOWN
 };

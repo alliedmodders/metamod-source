@@ -62,6 +62,7 @@ enum
 #define SOURCE_ENGINE_TF2				17				/**< Team Fortress 2 */
 #define SOURCE_ENGINE_NUCLEARDAWN		18				/**< Nuclear Dawn */
 #define SOURCE_ENGINE_SDK2013			19				/**< Source SDK 2013 */
+#define SOURCE_ENGINE_BLADE				20				/**< Blade Symphony */
 
 #define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */

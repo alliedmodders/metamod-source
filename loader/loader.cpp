@@ -86,6 +86,7 @@ static const char *backend_names[] =
 	"2.tf2",
 	"2.nd",
 	"2.sdk2013",
+	"2.blade",
 };
 
 #if defined _WIN32
@@ -280,6 +281,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
+		if (strcmp(game_name, "berimbau") == 0)
+		{
+			return MMBackend_Blade;
+		}
 		if (strcmp(game_name, "portal2") == 0)
 		{
 			return MMBackend_Portal2;
