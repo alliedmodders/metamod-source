@@ -139,6 +139,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: E.Y.E. Divine Cybermancy (2011)\n");
 #elif SOURCE_ENGINE == SE_PORTAL2
 			CONMSG("  Engine: Portal 2 (2011)\n");
+#elif SOURCE_ENGINE == SE_BLADE
+			CONMSG("  Engine: Blade Symphony (2013)\n");
 #elif SOURCE_ENGINE == SE_CSGO
 			CONMSG("  Engine: Counter-Strike: Global Offensive (2012)\n");
 #elif SOURCE_ENGINE == SE_DOTA

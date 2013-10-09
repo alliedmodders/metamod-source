@@ -136,6 +136,7 @@ public:
 		/* AS inserted ClientFullyConnect into vtable, so move entries up on older engines */
 		if (mm_backend != MMBackend_AlienSwarm
 			&& mm_backend != MMBackend_Portal2
+			&& mm_backend != MMBackend_Blade
 			&& mm_backend != MMBackend_CSGO
 			&& mm_backend != MMBackend_DOTA)
 		{
