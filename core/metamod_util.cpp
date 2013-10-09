@@ -323,7 +323,7 @@ bool UTIL_Relatize(char buffer[],
 	size_t len, total = 0;
 	while (numLevels--)
 	{
-		len = _snprintf(&buffer[total], maxlength - total, ".." PATH_SEP_STR);
+		len = snprintf(&buffer[total], maxlength - total, ".." PATH_SEP_STR);
 		if (len >= maxlength - total)
 		{
 			/* Not enough space in the buffer */
@@ -333,7 +333,7 @@ bool UTIL_Relatize(char buffer[],
 	}
 
 	/* Add the absolute path. */
-	len = _snprintf(&buffer[total], maxlength - total, "%s", &rootFrom[1]);
+	len = snprintf(&buffer[total], maxlength - total, "%s", &rootFrom[1]);
 	if (len >= maxlength - total)
 	{
 		return false;
