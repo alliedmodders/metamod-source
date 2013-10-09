@@ -401,6 +401,8 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 	return SOURCE_ENGINE_PORTAL2;
 #elif SOURCE_ENGINE == SE_BLADE
 	return SOURCE_ENGINE_BLADE;
+#elif SOURCE_ENGINE == SE_INSURGENCY
+	return SOURCE_ENGINE_INSURGENCY;
 #elif SOURCE_ENGINE == SE_CSGO
 	return SOURCE_ENGINE_CSGO;
 #elif SOURCE_ENGINE == SE_DOTA

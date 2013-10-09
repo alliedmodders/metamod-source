@@ -87,6 +87,7 @@ static const char *backend_names[] =
 	"2.nd",
 	"2.sdk2013",
 	"2.blade",
+	"2.insurgency",
 };
 
 #if defined _WIN32
@@ -276,6 +277,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	}
 	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
+		if (strcmp(game_name, "insurgency") == 0)
+		{
+			return MMBackend_Insurgency;
+		}
 		return MMBackend_CSGO;
 	}
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&

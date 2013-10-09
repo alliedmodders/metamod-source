@@ -99,6 +99,7 @@ enum MetamodBackend
 	MMBackend_NuclearDawn,
 	MMBackend_SDK2013,
 	MMBackend_Blade,
+	MMBackend_Insurgency,
 
 	MMBackend_UNKNOWN
 };
