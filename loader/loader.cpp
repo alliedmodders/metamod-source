@@ -85,6 +85,7 @@ static const char *backend_names[] =
 	"2.dods",	
 	"2.tf2",
 	"2.nd",
+	"2.sdk2013",
 };
 
 #if defined _WIN32
@@ -338,6 +339,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 				else if (strcmp(game_name, "hl2mp") == 0)
 				{
 					return MMBackend_HL2DM;
+				}
+				else
+				{
+					return MMBackend_SDK2013;
 				}
 			}
 		}

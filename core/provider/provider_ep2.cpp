@@ -389,6 +389,8 @@ int BaseProvider::DetermineSourceEngine(const char *game)
 	return SOURCE_ENGINE_HL2DM;
 #elif SOURCE_ENGINE == SE_DODS
 	return SOURCE_ENGINE_DODS;
+#elif SOURCE_ENGINE == SE_SDK2013
+	return SOURCE_ENGINE_SDK2013;
 #elif SOURCE_ENGINE == SE_TF2
 	return SOURCE_ENGINE_TF2;
 #elif SOURCE_ENGINE == SE_DARKMESSIAH
