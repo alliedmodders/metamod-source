@@ -373,6 +373,9 @@ class MMS:
 			else:
 				compiler['CDEFINES'].extend(['COMPILER_GCC'])
 		
+		if sdk == 'sdk2013' and AMBuild.target['platform'] == 'darwin':
+			compiler['POSTLINKFLAGS'].append('-liconv')
+		
 		if sdk in ['css','hl2dm','dods','sdk2013','tf2','l4d2']:
 			if AMBuild.target['platform'] == 'linux' or AMBuild.target['platform'] == 'darwin':
 				compiler['CDEFINES'].append('NO_MALLOC_OVERRIDE')
