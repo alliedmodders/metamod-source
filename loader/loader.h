@@ -116,7 +116,7 @@ mm_UnloadMetamodLibrary();
 extern void
 mm_LogFatal(const char *message, ...);
 
-extern bool
+extern void
 mm_GetGameName(char *buffer, size_t size);
 
 extern MetamodBackend

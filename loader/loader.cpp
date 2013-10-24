@@ -191,7 +191,7 @@ mm_GetProcAddress(const char *name)
 	return mm_GetLibAddress(mm_library, name);
 }
 
-bool
+void
 mm_GetGameName(char *buffer, size_t size)
 {
 	buffer[0] = '\0';
@@ -217,7 +217,6 @@ mm_GetGameName(char *buffer, size_t size)
 
 	LocalFree(wargv);
 
-	return buffer[0] != 0;
 #elif defined __APPLE__
 	int argc = *_NSGetArgc();
 	char **argv = *_NSGetArgv();
@@ -234,7 +233,6 @@ mm_GetGameName(char *buffer, size_t size)
 		break;
 	}
 
-	return buffer[0] != 0;
 #elif defined __linux__
 	FILE *pFile = fopen("/proc/self/cmdline", "rb");
 	if (!pFile)
@@ -262,10 +260,14 @@ mm_GetGameName(char *buffer, size_t size)
 	free(arg);
 	fclose(pFile);
 
-	return buffer[0] != 0;
 #else
 #error unsupported platform
 #endif
+
+	if (buffer[0] == 0)
+	{
+		strncpy(buffer, ".", size);
+	}
 }
 
 MetamodBackend

@@ -70,10 +70,7 @@ mm_DetectGameInformation()
 
 	game_info_detected = -1;
 
-	if (!mm_GetGameName(game_name, sizeof(game_name)))
-	{
-		return false;
-	}
+	mm_GetGameName(game_name, sizeof(game_name));
 
 	if (!mm_GetFileOfAddress((void*)mm_DetectGameInformation, mm_path, sizeof(mm_path)))
 	{
