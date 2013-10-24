@@ -279,7 +279,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	}
 	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
-		if (strcmp(game_name, "insurgency") == 0)
+		if (engineFactory("IEngineSoundServer004", NULL) != NULL)
 		{
 			return MMBackend_Insurgency;
 		}
