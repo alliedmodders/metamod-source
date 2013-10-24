@@ -235,31 +235,30 @@ mm_GetGameName(char *buffer, size_t size)
 
 #elif defined __linux__
 	FILE *pFile = fopen("/proc/self/cmdline", "rb");
-	if (!pFile)
-		return false;
-
-	char *arg = NULL;
-	size_t argsize = 0;
-	bool bNextIsGame = false;
-
-	while (getdelim(&arg, &argsize, 0, pFile) != -1)
+	if (pFile)
 	{
-		if (bNextIsGame)
+		char *arg = NULL;
+		size_t argsize = 0;
+		bool bNextIsGame = false;
+
+		while (getdelim(&arg, &argsize, 0, pFile) != -1)
 		{
-			strncpy(buffer, arg, size);
-			buffer[size-1] = '\0';
-			break;
+			if (bNextIsGame)
+			{
+				strncpy(buffer, arg, size);
+				buffer[size-1] = '\0';
+				break;
+			}
+
+			if (strcmp(arg, "-game") == 0)
+			{
+				bNextIsGame = true;
+			}
 		}
 
-		if (strcmp(arg, "-game") == 0)
-		{
-			bNextIsGame = true;
-		}
+		free(arg);
+		fclose(pFile);
 	}
-
-	free(arg);
-	fclose(pFile);
-
 #else
 #error unsupported platform
 #endif
