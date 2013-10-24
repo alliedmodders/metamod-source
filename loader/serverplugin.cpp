@@ -88,10 +88,7 @@ public:
 		/* Backend should already filled in if loaded as gamedll */
 		if (gamedll_bridge == NULL)
 		{
-			if (!mm_GetGameName(game_name, sizeof(game_name)))
-			{
-				return false;
-			}
+			mm_GetGameName(game_name, sizeof(game_name));
 
 			mm_backend = mm_DetermineBackend(engineFactory, game_name);
 		}
