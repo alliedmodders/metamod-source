@@ -20,6 +20,9 @@ sources = [
 
   # This is a hack, but we need some way to only run this script when HG changes.
   os.path.join(builder.sourcePath, '.hg', 'dirstate'),
+
+  # The script source is a dependency, of course...
+  argv[1]
 ]
 cmd_node, output_nodes = builder.AddCommand(
   inputs=sources,

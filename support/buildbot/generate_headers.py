@@ -14,6 +14,8 @@ OutputFolder = os.path.normpath(argv[1])
 def get_hg_version():
   argv = ['hg', 'parent', '-R', SourceFolder]
   text = subprocess.check_output(argv)
+  if str != bytes:
+    text = str(text, 'utf-8')
   m = re.match('changeset:\s+(\d+):(.+)', text)
   if m == None:
     raise Exception('Could not determine repository version')
