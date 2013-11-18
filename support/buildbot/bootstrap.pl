@@ -41,9 +41,6 @@ if (!(-f 'OUTPUT/.ambuild2/graph') || !(-f 'OUTPUT/.ambuild2/vars')) {
 	if ($? != 0) {
 		die('Could not configure!');
 	}
-	open(FILE, '>sentinel');
-	print FILE "this is nothing.\n";
-	close(FILE);
 }
 
 sub IsNewer
