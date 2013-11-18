@@ -10,7 +10,7 @@ require 'helpers.pm';
 
 chdir('../../../OUTPUT');
 
-system("build.py 2>&1");
+system("ambuild 2>&1");
 
 if ($? != 0)
 {
