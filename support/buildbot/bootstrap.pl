@@ -19,27 +19,7 @@ our ($root) = getcwd();
 
 my $reconf = 0;
 
-#Create output folder if it doesn't exist.
-if (!(-d 'OUTPUT')) {
-	$reconf = 1;
-} else {
-	if (-f 'OUTPUT/sentinel') {
-		my @s = stat('OUTPUT/sentinel');
-		my $mtime = $s[9];
-		my @files = ('build/pushbuild.txt', 'build/AMBuildScript', 'build/product.version');
-		my ($i);
-		for ($i = 0; $i <= $#files; $i++) {
-			if (IsNewer($files[$i], $mtime)) {
-				$reconf = 1;
-				last;
-			}
-		}
-	} else {
-		$reconf = 1;
-	}
-}
-
-if ($reconf) {
+if (!(-f 'OUTPUT/.ambuild2/graph')) {
 	rmtree('OUTPUT');
 	mkdir('OUTPUT') or die("Failed to create output folder: $!\n");
 	chdir('OUTPUT');
@@ -54,7 +34,7 @@ if ($reconf) {
 		} elsif ($^O eq "darwin") {
 			$result = `CC=clang CXX=clang python3 ../build/configure.py --enable-optimize`;
 		} else {
-			$result = `C:\\Python31\\Python.exe ..\\build\\configure.py --enable-optimize`;
+			$result = `C:\\Python27\\Python.exe ..\\build\\configure.py --enable-optimize`;
 		}
 	}
 	print "$result\n";

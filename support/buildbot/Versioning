@@ -1,57 +1,30 @@
-# vim: set ts=2 sw=2 tw=99 noet ft=python: 
-import os
-import re
-import subprocess
-from ambuild.cache import Cache
-import ambuild.command as command
+# vim: set ts=8 sts=2 sw=2 tw=99 et ft=python: 
+import os, sys
 
-#Quickly try to ascertain the current repository revision
-def GetVersion():
-	args = ['hg', 'parent', '-R', AMBuild.sourceFolder]
-	p = command.RunDirectCommand(AMBuild, args)
-	m = re.match('changeset:\s+(\d+):(.+)', p.stdoutText)
-	if m == None:
-		raise Exception('Could not determine repository version')
-	return m.groups()
+builder.SetBuildFolder('/')
 
-def PerformReversioning():
-	rev, cset = GetVersion()
-	cacheFile = os.path.join(AMBuild.outputFolder, '.ambuild', 'hgcache')
-	cache = Cache(cacheFile)
-	if os.path.isfile(cacheFile):
-		cache.LoadCache()
-		if cache.HasVariable('cset') and cache['cset'] == cset:
-			return False
-	cache.CacheVariable('cset', cset)
+includes = builder.AddFolder('includes')
 
-	productFile = open(os.path.join(AMBuild.sourceFolder, 'product.version'), 'r')
-	productContents = productFile.read()
-	productFile.close()
-	m = re.match('(\d+)\.(\d+)\.(\d+)(.*)', productContents)
-	if m == None:
-		raise Exception('Could not detremine product version')
-	major, minor, release, tag = m.groups()
+argv = [
+  sys.executable,
+  os.path.join(builder.sourcePath, 'support', 'buildbot', 'generate_headers.py'),
+  os.path.join(builder.sourcePath),
+  os.path.join(builder.buildPath, 'includes')
+]
+outputs = [
+  os.path.join(builder.buildFolder, 'includes', 'metamod_version_auto.h')
+]
 
-	incFolder = os.path.join(AMBuild.outputFolder, 'includes')
-	if not os.path.isdir(incFolder):
-		os.makedirs(incFolder)
-	incFile = open(os.path.join(incFolder, 'metamod_version_auto.h'), 'w')
-	incFile.write("""
-#ifndef _METAMOD_AUTO_VERSION_INFORMATION_H_
-#define _METAMOD_AUTO_VERSION_INFORMATION_H_
+sources = [
+  os.path.join(builder.sourcePath, 'product.version'),
 
-#define MMS_BUILD_STRING 		\"{0}\"
-#define MMS_BUILD_UNIQUEID		\"{1}:{2}\" MMS_BUILD_STRING
-#define MMS_FULL_VERSION		\"{3}.{4}.{5}\" MMS_BUILD_STRING
-#define MMS_FILE_VERSION		{6},{7},{8},0
+  # This is a hack, but we need some way to only run this script when HG changes.
+  os.path.join(builder.sourcePath, '.hg', 'dirstate'),
+]
+cmd_node, output_nodes = builder.AddCommand(
+  inputs=sources,
+  argv=argv,
+  outputs=outputs
+)
 
-#endif /* _METAMOD_AUTO_VERSION_INFORMATION_H_ */
-
-""".format(tag, rev, cset, major, minor, release, major, minor, release))
-	incFile.close()
-
-	cache.WriteCache()
-
-PerformReversioning()
-
-
+rvalue = output_nodes

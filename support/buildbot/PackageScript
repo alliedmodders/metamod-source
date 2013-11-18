@@ -1,114 +1,25 @@
 # vim: set ts=2 sw=2 tw=99 noet ft=python: 
 import os
-import shutil
-import ambuild.osutil as osutil
-from ambuild.command import Command
 
-job = AMBuild.AddJob('package')
+builder.SetBuildFolder('package')
 
-class DestroyPath(Command):
-	def __init__(self, folder):
-		Command.__init__(self)
-		self.folder = folder
+addons_folder = builder.AddFolder('addons')
+metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
+bin_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin'))
 
-	def destroy(self, path):
-		entries = os.listdir(path)
-		for entry in entries:
-			newpath = os.path.join(path, entry)
-			if os.path.isdir(newpath):
-				self.destroy(newpath)
-				os.rmdir(newpath)
-			elif os.path.isfile(newpath):
-				os.remove(newpath)
-
-	def run(self, runner, job):
-		runner.PrintOut('rm -rf {0}/*'.format(self.folder))
-		self.destroy(self.folder)
-
-class CreateFolders(Command):
-	def __init__(self, folders):
-		Command.__init__(self)
-		self.folders = folders
-	
-	def run(self, runner, job):
-		for folder in self.folders:
-			path = os.path.join(*folder)
-			runner.PrintOut('mkdir {0}'.format(path))
-			os.makedirs(path)
-
-#Shallow folder copy
-class CopyFolder(Command):
-	def __init__(self, fromList, toList, excludes = []):
-		Command.__init__(self)
-		self.fromPath = os.path.join(AMBuild.sourceFolder, *fromList)
-		self.toPath = os.path.join(*toList) 
-		self.excludes = excludes
-	
-	def run(self, runner, job):
-		entries = os.listdir(self.fromPath)
-		for entry in entries:
-			if entry in self.excludes:
-				continue
-			path = os.path.join(self.fromPath, entry)
-			if not os.path.isfile(path):
-				continue
-			runner.PrintOut('copy {0} to {1}'.format(path, self.toPath))
-			shutil.copy(path, self.toPath)
-
-#Single file copy
-class CopyFile(Command):
-	def __init__(self, fromFile, toPath):
-		Command.__init__(self)
-		self.fromFile = fromFile
-		self.toPath = toPath
-
-	def run(self, runner, job):
-		runner.PrintOut('copy {0} to {1}'.format(self.fromFile, self.toPath))
-		shutil.copy(self.fromFile, self.toPath)
-
-
-folders = [['addons', 'metamod', 'bin']]
-
-#Setup
-job.AddCommand(DestroyPath(os.path.join(AMBuild.outputFolder, 'package')))
-job.AddCommand(CreateFolders(folders))
-
-#Copy Files
-job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'metamod.vdf'),
-                        os.path.join('addons')))
-job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'metaplugins.ini'),
-                        os.path.join('addons', 'metamod')))
-job.AddCommand(CopyFile(os.path.join(AMBuild.sourceFolder, 'support', 'README.txt'),
-                        os.path.join('addons', 'metamod')))
-
-bincopies = []
-
-def AddNormalLibrary(name, dest):
-	dest = os.path.join('addons', 'metamod', dest)
-	bincopies.append(CopyFile(os.path.join('..', name, name + osutil.SharedLibSuffix()), dest))
-	pdb_list.append(name + '\\' + name + '.pdb')
-
-def AddHL2Library(name, dest):
-	for i in MMS.sdkInfo:
-		sdk = MMS.sdkInfo[i]
-		if AMBuild.target['platform'] not in sdk['platform']:
-			continue
-		AddNormalLibrary(name + '.' + sdk['ext'], dest)
+builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod.vdf'), addons_folder)
+builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metaplugins.ini'), metamod_folder)
+builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'README.txt'), metamod_folder)
 
 pdb_list = []
+for task in MMS.binaries:
+	builder.AddCopy(task.binary, bin_folder)
 
-# Copy loader binaries
-AddNormalLibrary('server', 'bin')
-if AMBuild.target['platform'] == 'linux':
-	AddNormalLibrary('server_i486', 'bin')
+	if task.debug:
+		pdb_list.extend(task.debug)
 
-AddHL2Library('metamod', 'bin')
-
-job.AddCommandGroup(bincopies)
-
-if AMBuild.target['platform'] == 'windows':
-	pdblog = open(os.path.join(AMBuild.outputFolder, 'pdblog.txt'), 'wt')
-	for pdb in pdb_list:
-		pdblog.write(pdb + '\n')
-	pdblog.close()
+# Generate PDB info.
+with open(os.path.join(builder.buildPath, 'pdblog.txt'), 'wt') as fp:
+	for line in pdb_list:
+		fp.write(line.path + '\n')
 
