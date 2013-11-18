@@ -10,7 +10,7 @@ require 'helpers.pm';
 
 chdir('../../../OUTPUT');
 
-system("ambuild 2>&1");
+system("ambuild --no-color 2>&1");
 
 if ($? != 0)
 {
