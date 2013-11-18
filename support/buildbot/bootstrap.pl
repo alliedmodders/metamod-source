@@ -19,7 +19,7 @@ our ($root) = getcwd();
 
 my $reconf = 0;
 
-if (!(-f 'OUTPUT/.ambuild2/graph')) {
+if (!(-f 'OUTPUT/.ambuild2/graph') || !(-f 'OUTPUT/.ambuild2/vars')) {
 	rmtree('OUTPUT');
 	mkdir('OUTPUT') or die("Failed to create output folder: $!\n");
 	chdir('OUTPUT');
