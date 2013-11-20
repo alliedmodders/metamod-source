@@ -1,37 +1,30 @@
-# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
-for i in MMS.sdkInfo:
-	sdk = MMS.sdkInfo[i]
-	if AMBuild.target['platform'] not in sdk['platform'] or i == 'ep1':
-		continue
+for sdk_name in MMS.sdks:
+  sdk = MMS.sdks[sdk_name]
+  if sdk.name == 'ep1':
+    continue
 
-	name = 'metamod.' + sdk['ext']
+  name = 'metamod.' + sdk.ext
+  binary = MMS.HL2Library(builder, name, sdk)
 
-	compiler = MMS.DefaultHL2Compiler('core', i)
-
-	extension = AMBuild.AddJob(name)
-	binary = Cpp.LibraryBuilder(name, AMBuild, extension, compiler)
-	MMS.PreSetupHL2Job(extension, binary, i)
-	files = [
-		'metamod.cpp',
-		'metamod_console.cpp',
-		'metamod_oslink.cpp',
-		'metamod_plugins.cpp',
-		'metamod_util.cpp',
-		'provider/console.cpp',
-		'provider/provider_ep2.cpp',
-		'sourcehook/sourcehook.cpp',
-		'sourcehook/sourcehook_hookmangen.cpp',
-		'sourcehook/sourcehook_impl_chookidman.cpp',
-		'sourcehook/sourcehook_impl_chookmaninfo.cpp',
-		'sourcehook/sourcehook_impl_cproto.cpp',
-		'sourcehook/sourcehook_impl_cvfnptr.cpp',
-		'gamedll_bridge.cpp',
-		'vsp_bridge.cpp'
-		]
-	binary.AddSourceFiles('core', files)
-	MMS.PostSetupHL2Job(extension, binary, i)
-	MMS.AutoVersion('core', binary)
-	binary.SendToJob()
-
+  binary.sources += [
+    'metamod.cpp',
+    'metamod_console.cpp',
+    'metamod_oslink.cpp',
+    'metamod_plugins.cpp',
+    'metamod_util.cpp',
+    'provider/console.cpp',
+    'provider/provider_ep2.cpp',
+    'sourcehook/sourcehook.cpp',
+    'sourcehook/sourcehook_hookmangen.cpp',
+    'sourcehook/sourcehook_impl_chookidman.cpp',
+    'sourcehook/sourcehook_impl_chookmaninfo.cpp',
+    'sourcehook/sourcehook_impl_cproto.cpp',
+    'sourcehook/sourcehook_impl_cvfnptr.cpp',
+    'gamedll_bridge.cpp',
+    'vsp_bridge.cpp'
+  ]
+  nodes = builder.Add(binary)
+  MMS.binaries += [nodes]

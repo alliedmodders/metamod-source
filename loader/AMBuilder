@@ -1,31 +1,22 @@
-# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+# vim: set ts=8 sts=2 sw=2 tw=99 et ft=python: 
 import os.path
 
-compiler = MMS.DefaultCompiler()
-compiler['CXXINCLUDES'].append(os.path.join(AMBuild.sourceFolder, 'core', 'sourcehook'))
-compiler2 = compiler.Clone()
+def configure_library(name, linux_defines):
+  binary = MMS.Library(builder, name)
+  binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'core', 'sourcehook')]
+  binary.sources += [
+    'loader.cpp',
+    'gamedll.cpp',
+    'serverplugin.cpp',
+    'utility.cpp',
+  ]
 
-files = [
-	'loader.cpp',
-	'gamedll.cpp',
-	'serverplugin.cpp',
-	'utility.cpp'
-	]
+  if builder.target_platform == 'linux':
+    binary.compiler.defines += linux_defines
 
-name = 'server'
-loader = AMBuild.AddJob(name)
-binary = Cpp.LibraryBuilder(name, AMBuild, loader, compiler)
-if AMBuild.target['platform'] == 'linux':
-	compiler['CDEFINES'].extend(['LIB_PREFIX=\"lib\"', 'LIB_SUFFIX=\".so\"'])
-binary.AddSourceFiles('loader', files)
-MMS.AutoVersion('loader', binary)
-binary.SendToJob()
+  nodes = builder.Add(binary)
+  MMS.binaries += [nodes]
 
-if AMBuild.target['platform'] == 'linux':
-	name = 'server_i486'
-	loader = AMBuild.AddJob(name)
-	binary = Cpp.LibraryBuilder(name, AMBuild, loader, compiler2)
-	compiler2['CDEFINES'].extend(['LIB_PREFIX=\"\"', 'LIB_SUFFIX=\"_i486.so\"'])
-	binary.AddSourceFiles('loader', files)
-	MMS.AutoVersion('loader', binary)
-	binary.SendToJob()
+configure_library('server', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
+if builder.target_platform == 'linux':
+  configure_library('server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'])
