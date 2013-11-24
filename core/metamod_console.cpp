@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include "metamod_oslink.h"
 #include <ctype.h>
+#include <versionlib.h>
 #include "metamod.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
@@ -68,8 +69,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 		}
 		else if (strcmp(command, "version") == 0)
 		{
-			CONMSG("Metamod:Source version %s\n", MMS_FULL_VERSION);
-			CONMSG("Build ID: %s\n", MMS_BUILD_UNIQUEID);
+			CONMSG("Metamod:Source version %s\n", METAMOD_VERSION);
+			CONMSG("Build ID: %s\n", METAMOD_BUILD_ID);
 
 			if (g_Metamod.IsLoadedAsGameDLL())
 			{
@@ -699,7 +700,7 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 			}
 			else if(strcmp(subcmd, "version") == 0)
 			{
-				CLIENT_CONMSG(client, "Metamod:Source version %s\n", MMS_FULL_VERSION);
+				CLIENT_CONMSG(client, "Metamod:Source version %s\n", METAMOD_VERSION);
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
 				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());

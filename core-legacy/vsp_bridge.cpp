@@ -28,13 +28,15 @@
 #include "concommands.h"
 #include "util.h"
 #include <loader_bridge.h>
+#include <sh_string.h>
+#include <versionlib.h>
 
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 bool g_bIsBridgedAsVsp;
-const char *vsp_desc = "Metamod:Source " MMS_FULL_VERSION;
+SourceHook::String vsp_desc("Metamod:Source");
 
 void InterceptPluginUnloads()
 {
@@ -54,6 +56,9 @@ class VspBridge : public IVspBridge
 
 		if (!g_GameDll.loaded)
 		{
+			vsp_desc.append(" ");
+			vsp_desc.append(METAMOD_VERSION);
+
 			CreateInterfaceFn engineFactory = (CreateInterfaceFn)info->engineFactory;
 			CreateInterfaceFn gsFactory = (CreateInterfaceFn)info->gsFactory;
 
@@ -68,7 +73,8 @@ class VspBridge : public IVspBridge
 		}
 		else
 		{
-			vsp_desc = "Metamod:Source Interface " MMS_FULL_VERSION;
+			vsp_desc.append(" Interface ");
+			vsp_desc.append(METAMOD_VERSION);
 		}
 
 		ConCommandBase *pBase = g_Engine.icvar->GetCommands();
@@ -119,7 +125,7 @@ class VspBridge : public IVspBridge
 
 	virtual const char *GetDescription()
 	{
-		return vsp_desc;
+		return vsp_desc.c_str();
 	}
 };
 

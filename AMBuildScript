@@ -63,6 +63,7 @@ class MMSConfig(object):
     self.sdks = {}
     self.binaries = []
     self.generated_headers = None
+    self.versionlib = None
 
   def detectProductVersion(self):
     builder.AddConfigureFile('product.version')
@@ -214,6 +215,7 @@ class MMSConfig(object):
     # Finish up.
     cfg.defines += ['MMS_GENERATED_BUILD']
     cfg.includes += [os.path.join(builder.buildPath, 'includes')]
+    cfg.includes += [os.path.join(builder.sourcePath, 'versionlib')]
     cfg.cxxincludes += [os.path.join(builder.sourcePath, 'public')]
 
   def HL2Compiler(self, context, sdk):
@@ -276,6 +278,7 @@ class MMSConfig(object):
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
       ]
+    binary.compiler.linkflags += [self.versionlib]
     binary.compiler.sourcedeps += MMS.generated_headers
     return binary
 
@@ -352,6 +355,10 @@ MMS.configure()
 
 MMS.generated_headers = builder.RunScript(
   'support/buildbot/Versioning',
+  { 'MMS': MMS }
+)
+MMS.versionlib = builder.RunScript(
+  'versionlib/AMBuildScript',
   { 'MMS': MMS }
 )
 

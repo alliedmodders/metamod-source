@@ -475,7 +475,7 @@ int LoadPluginsFromFile(const char *filepath, int &skipped)
 	}
 
 	char buffer[255], error[255], full_path[PATH_SIZE];
-	const char *ptr, *ext, *file;
+	const char *file;
 	size_t length;
 	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
 	{

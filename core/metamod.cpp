@@ -28,6 +28,7 @@
 #include "metamod.h"
 #include <interface.h>
 #include <eiface.h>
+#include <versionlib.h>
 #include "metamod_provider.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"
@@ -430,11 +431,11 @@ mm_StartupMetamod(bool is_vsp_load)
 	UTIL_Format(buffer,
 		sizeof(buffer),
 		"%s%s",
-		MMS_FULL_VERSION,
+		METAMOD_VERSION,
 		is_vsp_load ? "V" : "");
 
 	metamod_version = provider->CreateConVar("metamod_version", 
-		MMS_FULL_VERSION, 
+		METAMOD_VERSION, 
 		"Metamod:Source Version",
 		ConVarFlag_Notify|ConVarFlag_SpOnly);
 
