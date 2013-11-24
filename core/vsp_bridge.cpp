@@ -30,6 +30,8 @@
 #include <iplayerinfo.h>
 #include <assert.h>
 #include <loader_bridge.h>
+#include <versionlib.h>
+#include <sh_string.h>
 #include "provider/provider_ep2.h"
 
 #if SOURCE_ENGINE == SE_DOTA
@@ -42,7 +44,7 @@ SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
-const char *vsp_desc = "Metamod:Source " MMS_FULL_VERSION;
+SourceHook::String vsp_desc("Metamod:Source");
 
 #if SOURCE_ENGINE == SE_DOTA
 void InterceptPluginUnloads(const CCommandContext &context, const CCommand &args)
@@ -73,6 +75,9 @@ public:
 	{
 		if (!g_Metamod.IsLoadedAsGameDLL())
 		{
+			vsp_desc.append(" ");
+			vsp_desc.append(METAMOD_VERSION);
+
 			CGlobalVars *pGlobals;
 			IPlayerInfoManager *playerInfoManager;
 
@@ -126,7 +131,9 @@ public:
 		}
 		else
 		{
-			vsp_desc = "Metamod:Source Interface " MMS_FULL_VERSION;
+			vsp_desc.append(" Interface ");
+			vsp_desc.append(METAMOD_VERSION);
+
 			g_Metamod.NotifyVSPListening(info->vsp_callbacks, info->vsp_version);
 		}
 
@@ -175,7 +182,7 @@ public:
 
 	virtual const char *GetDescription()
 	{
-		return vsp_desc;
+		return vsp_desc.c_str();
 	}
 };
 

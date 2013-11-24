@@ -16,6 +16,7 @@
 #include "sh_string.h"
 #include "sh_list.h"
 #include "util.h"
+#include <versionlib.h>
 
 /**
  * @brief Console Command Implementations
@@ -105,7 +106,7 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	}
 }
 
-ConVar metamod_version("metamod_version", MMS_FULL_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
+ConVar metamod_version("metamod_version", METAMOD_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
 #ifdef OS_WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
 ConVar mm_basedir("mm_basedir", "addons\\metamod", FCVAR_SPONLY, "Metamod:Source base folder");
@@ -140,8 +141,8 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
-			CONMSG("Metamod:Source version %s\n", MMS_FULL_VERSION);
-			CONMSG("Build ID: %s\n", MMS_BUILD_UNIQUEID);
+			CONMSG("Metamod:Source version %s\n", METAMOD_VERSION);
+			CONMSG("Build ID: %s\n", METAMOD_BUILD_ID);
 			if (g_GameDll.loaded)
 			{
 				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
@@ -644,7 +645,7 @@ void ClientCommand_handler(edict_t *client)
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "version") == 0) {
-				CLIENT_CONMSG(client, "Metamod:Source version %s\n", MMS_FULL_VERSION);
+				CLIENT_CONMSG(client, "Metamod:Source version %s\n", METAMOD_VERSION);
 				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
 				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
 				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());

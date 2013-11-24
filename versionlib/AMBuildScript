@@ -1,0 +1,11 @@
+# vim: sts=2 ts=8 sw=2 tw=99 et ft=python:
+
+lib = builder.compiler.StaticLibrary("version")
+lib.compiler.sourcedeps += MMS.generated_headers
+lib.sources += [
+  'versionlib.cpp'
+]
+cmd = builder.Add(lib)
+
+rvalue = cmd.binary
+
