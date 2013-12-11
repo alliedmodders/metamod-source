@@ -10,6 +10,12 @@ require 'helpers.pm';
 
 chdir('../../../OUTPUT');
 
+my $argn = $#ARGV + 1;
+if ($argn > 0) {
+	$ENV{CC} = $ARGV[0];
+	$ENV{CXX} = $ARGV[0];
+}
+
 system("ambuild --no-color 2>&1");
 
 if ($? != 0)
