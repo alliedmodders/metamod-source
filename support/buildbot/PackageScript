@@ -16,7 +16,7 @@ for task in MMS.binaries:
 	builder.AddCopy(task.binary, bin_folder)
 
 	if task.debug:
-		pdb_list.extend(task.debug)
+		pdb_list.append(task.debug)
 
 # Generate PDB info.
 with open(os.path.join(builder.buildPath, 'pdblog.txt'), 'wt') as fp:
