@@ -213,7 +213,7 @@ public:
 						 QueryValveInterface fileSystemFactory, 
 						 void *pGlobals)
 	{
-		mm_backend = mm_DetermineBackend(engineFactory, game_name);
+		mm_backend = mm_DetermineBackend(engineFactory, gamedll_qvi, game_name);
 
 		char error[255];
 		if (mm_backend == MMBackend_UNKNOWN)

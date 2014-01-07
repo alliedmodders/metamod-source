@@ -270,7 +270,7 @@ mm_GetGameName(char *buffer, size_t size)
 }
 
 MetamodBackend
-mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
+mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serverFactory, const char *game_name)
 {
 	if (engineFactory("VEngineServer024", NULL) != NULL)
 	{
@@ -287,14 +287,16 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
-		if (strcmp(game_name, "berimbau") == 0)
+		if (serverFactory("ServerGameClients004", NULL))
 		{
+			if (strcmp(game_name, "portal2") == 0)
+			{
+				return MMBackend_Portal2;
+			}
+
 			return MMBackend_Blade;
 		}
-		if (strcmp(game_name, "portal2") == 0)
-		{
-			return MMBackend_Portal2;
-		}
+
 		if (engineFactory("EngineTraceServer004", NULL) != NULL)
 		{
 			return MMBackend_AlienSwarm;
@@ -310,6 +312,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 				return MMBackend_Left4Dead2;
 			}
 		}
+
 		return MMBackend_Left4Dead;
 	}
 	else if (engineFactory("VEngineServer021", NULL) != NULL)
