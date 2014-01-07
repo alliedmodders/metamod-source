@@ -120,7 +120,7 @@ extern void
 mm_GetGameName(char *buffer, size_t size);
 
 extern MetamodBackend
-mm_DetermineBackend(QueryValveInterface qvi, const char *game_name);
+mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serverFactory, const char *game_name);
 
 extern MetamodBackend mm_backend;
 
