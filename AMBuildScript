@@ -206,6 +206,7 @@ class MMSConfig(object):
         cfg.linkflags += ['-lgcc_eh']
     elif builder.target_platform == 'mac':
       cfg.defines += ['OSX', '_OSX', 'POSIX']
+      cfg.cflags += ['-mmacosx-version-min=10.5']
       cfg.linkflags += [
         '-mmacosx-version-min=10.5',
         '-arch', 'i386',
