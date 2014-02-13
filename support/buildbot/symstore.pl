@@ -43,7 +43,7 @@ close(PDBLOG);
 
 #Lowercase DLLs.  Sigh.
 my (@files);
-opendir(DIR, "S:\\mmsource");
+opendir(DIR, "S:\\mmsource") or die "Could not open mmsource symbol folder: $!\n";
 @files = readdir(DIR);
 closedir(DIR);
 
@@ -53,7 +53,7 @@ for ($i = 0; $i <= $#files; $i++)
 	$file = $files[$i];
 	next unless ($file =~ /\.dll$/);
 	next unless (-d "S:\\mmsource\\$file");
-	opendir(DIR, "S:\\mmsource\\$file");
+	opendir(DIR, "S:\\mmsource\\$file") or die "Could not open S:\\mmsource\\$file: $!\n";
 	@subdirs = readdir(DIR);
 	closedir(DIR);
 	for ($j = 0; $j <= $#subdirs; $j++)
