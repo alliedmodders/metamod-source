@@ -319,7 +319,7 @@ class MMSConfig(object):
     dynamic_libs = []
     if builder.target_platform == 'linux':
       compiler.linkflags[0:0] = ['-lm']
-      if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', '2013', 'l4d2']:
+      if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', '2013', 'l4d2', 'dota']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
       elif sdk.name in ['l4d', 'nd', 'blade', 'insurgency', 'csgo']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
