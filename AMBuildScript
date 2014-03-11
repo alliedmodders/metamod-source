@@ -100,6 +100,8 @@ class MMSConfig(object):
       raise Exception('At least one SDK must be available.')
 
   def configure(self):
+    builder.AddConfigureFile('pushbuild.txt')
+
     cfg = builder.DetectCompilers()
     cxx = cfg.cxx
 
