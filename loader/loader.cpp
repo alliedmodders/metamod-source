@@ -88,6 +88,7 @@ static const char *backend_names[] =
 	"2.sdk2013",
 	"2.blade",
 	"2.insurgency",
+	"2.contagion",
 };
 
 #if defined _WIN32
@@ -306,6 +307,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 			if (strcmp(game_name, "nucleardawn") == 0)
 			{
 				return MMBackend_NuclearDawn;
+			}
+			else if (strcmp(game_name, "contagion") == 0)
+			{
+				return MMBackend_Contagion;
 			}
 			else
 			{

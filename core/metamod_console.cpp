@@ -120,6 +120,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Left 4 Dead 2 (2009)\n");
 #elif SOURCE_ENGINE == SE_NUCLEARDAWN
 			CONMSG("  Engine: Nuclear Dawn (2011)\n");
+#elif SOURCE_ENGINE == SE_CONTAGION
+			CONMSG("  Engine: Contagion (2013)\n");
 #elif SOURCE_ENGINE == SE_LEFT4DEAD
 			CONMSG("  Engine: Left 4 Dead (2008)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOX

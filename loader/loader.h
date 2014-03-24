@@ -100,6 +100,7 @@ enum MetamodBackend
 	MMBackend_SDK2013,
 	MMBackend_Blade,
 	MMBackend_Insurgency,
+	MMBackend_Contagion,
 
 	MMBackend_UNKNOWN
 };
