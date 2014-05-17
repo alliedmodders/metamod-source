@@ -27,20 +27,19 @@ chdir('OUTPUT');
 my ($result, $argn);
 $argn = $#ARGV + 1;
 print "Attempting to reconfigure...\n";
+my $conf_args = '--enable-optimize --no-color --symbol-files';
 if ($argn > 0 && $^O !~ /MSWin/) {
-	$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py --enable-optimize`;
+	$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py $conf_args`;
 } else {
-	if ($^O eq "linux") {
-		$result = `CC=gcc-4.4 CXX="gcc-4.4 -fno-exceptions -fno-rtti" python ../build/configure.py --enable-optimize`;
-	} elsif ($^O eq "darwin") {
-		$result = `CC=clang CXX=clang python ../build/configure.py --enable-optimize`;
+	if ($^O =~ /MSWin/) {
+		$result = `C:\\Python27\\Python.exe ..\\build\\configure.py $conf_args`;
 	} else {
-		$result = `C:\\Python27\\Python.exe ..\\build\\configure.py --enable-optimize`;
+		$result = `CC=clang CXX=clang python ../build/configure.py $conf_args`;
 	}
 }
 print "$result\n";
 if ($? != 0) {
-	die('Could not configure!');
+	die("Could not configure: $!\n");
 }
 
 sub IsNewer
