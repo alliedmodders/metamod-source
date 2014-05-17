@@ -22,25 +22,25 @@ my $reconf = 0;
 if (!(-f 'OUTPUT/.ambuild2/graph') || !(-f 'OUTPUT/.ambuild2/vars')) {
 	rmtree('OUTPUT');
 	mkdir('OUTPUT') or die("Failed to create output folder: $!\n");
-	chdir('OUTPUT');
-	my ($result, $argn);
-	$argn = $#ARGV + 1;
-	print "Attempting to reconfigure...\n";
-	if ($argn > 0 && $^O !~ /MSWin/) {
-		$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py --enable-optimize`;
+}
+chdir('OUTPUT');
+my ($result, $argn);
+$argn = $#ARGV + 1;
+print "Attempting to reconfigure...\n";
+if ($argn > 0 && $^O !~ /MSWin/) {
+	$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py --enable-optimize`;
+} else {
+	if ($^O eq "linux") {
+		$result = `CC=gcc-4.4 CXX="gcc-4.4 -fno-exceptions -fno-rtti" python ../build/configure.py --enable-optimize`;
+	} elsif ($^O eq "darwin") {
+		$result = `CC=clang CXX=clang python ../build/configure.py --enable-optimize`;
 	} else {
-		if ($^O eq "linux") {
-			$result = `CC=gcc-4.4 CXX="gcc-4.4 -fno-exceptions -fno-rtti" python ../build/configure.py --enable-optimize`;
-		} elsif ($^O eq "darwin") {
-			$result = `CC=clang CXX=clang python ../build/configure.py --enable-optimize`;
-		} else {
-			$result = `C:\\Python27\\Python.exe ..\\build\\configure.py --enable-optimize`;
-		}
+		$result = `C:\\Python27\\Python.exe ..\\build\\configure.py --enable-optimize`;
 	}
-	print "$result\n";
-	if ($? != 0) {
-		die('Could not configure!');
-	}
+}
+print "$result\n";
+if ($? != 0) {
+	die('Could not configure!');
 }
 
 sub IsNewer
