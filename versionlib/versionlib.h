@@ -25,7 +25,8 @@
 #ifndef _INCLUDE_METAMOD_VERSIONLIB_H_
 #define _INCLUDE_METAMOD_VERSIONLIB_H_
 
-extern "C" const char *METAMOD_BUILD_ID;
+extern "C" const char *METAMOD_BUILD_LOCAL_REV;
+extern "C" const char *METAMOD_BUILD_SHA;
 extern "C" const char *METAMOD_VERSION;
 
 #endif // _INCLUDE_METAMOD_VERSIONLIB_H_

@@ -64,13 +64,15 @@ def output_version_header():
 #define _METAMOD_AUTO_VERSION_INFORMATION_H_
 
 #define MMS_BUILD_STRING     \"{0}\"
-#define MMS_BUILD_UNIQUEID    \"{1}\" MMS_BUILD_STRING
+#define MMS_BUILD_LOCAL_REV   \"{5}\"
+#define MMS_BUILD_SHA         \"{1}\"
+#define MMS_BUILD_UNIQUEID    \"{5}:{1}\" MMS_BUILD_STRING
 #define MMS_FULL_VERSION    \"{2}.{3}.{4}\" MMS_BUILD_STRING
-#define MMS_FILE_VERSION    {5},{6},{7},0
+#define MMS_FILE_VERSION    {2},{3},{4},0
 
 #endif /* _METAMOD_AUTO_VERSION_INFORMATION_H_ */
 
-""".format(tag, shorthash, major, minor, release, major, minor, release))
+""".format(tag, shorthash, major, minor, release, count))
 
 output_version_header()
 
