@@ -3,7 +3,7 @@ import os
 
 for sdk_name in MMS.sdks:
   sdk = MMS.sdks[sdk_name]
-  if sdk.name == 'ep1':
+  if sdk.name == 'episode1':
     continue
 
   name = 'metamod.' + sdk.ext
