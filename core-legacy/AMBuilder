@@ -1,8 +1,8 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
-if 'ep1' in MMS.sdks:
-  sdk = MMS.sdks['ep1']
+if 'episode1' in MMS.sdks:
+  sdk = MMS.sdks['episode1']
   name = 'metamod.' + sdk.ext
   binary = MMS.HL2Library(builder, name, sdk)
   binary.sources += [

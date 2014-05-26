@@ -26,6 +26,7 @@
 #include <metamod_version.h>
 #include <versionlib.h>
 
-const char *METAMOD_BUILD_ID = MMS_BUILD_UNIQUEID;
+const char *METAMOD_BUILD_LOCAL_REV = MMS_BUILD_LOCAL_REV;
+const char *METAMOD_BUILD_SHA = MMS_BUILD_SHA;
 const char *METAMOD_VERSION = MMS_FULL_VERSION;
 

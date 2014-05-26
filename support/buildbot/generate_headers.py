@@ -11,9 +11,19 @@ if len(argv) < 2:
 SourceFolder = os.path.abspath(os.path.normpath(argv[0]))
 OutputFolder = os.path.normpath(argv[1])
 
-def get_hg_version():
-  argv = ['hg', 'parent', '-R', SourceFolder]
+class FolderChanger:
+  def __init__(self, folder):
+    self.old = os.getcwd()
+    self.new = folder
 
+  def __enter__(self):
+    if self.new:
+      os.chdir(self.new)
+
+  def __exit__(self, type, value, traceback):
+    os.chdir(self.old)
+
+def run_and_return(argv):
   # Python 2.6 doesn't have check_output.
   if hasattr(subprocess, 'check_output'):
     text = subprocess.check_output(argv)
@@ -26,33 +36,43 @@ def get_hg_version():
     if rval:
       raise subprocess.CalledProcessError(rval, argv)
     text = output.decode('utf8')
+  return text.strip()
 
-  m = re.match('changeset:\s+(\d+):(.+)', text)
-  if m == None:
-    raise Exception('Could not determine repository version')
-  return m.groups()
+def get_git_version():
+  revision_count = run_and_return(['git', 'rev-list', '--count', 'HEAD'])
+  revision_hash = run_and_return(['git', 'log', '--pretty=format:%h:%H', '-n', '1'])
+  shorthash, longhash = revision_hash.split(':')
+
+  return revision_count, shorthash, longhash
 
 def output_version_header():
-  rev, cset = get_hg_version()
+  with FolderChanger(SourceFolder):
+    count, shorthash, longhash = get_git_version()
+
   with open(os.path.join(SourceFolder, 'product.version')) as fp:
-    productContents = fp.read()
-  m = re.match('(\d+)\.(\d+)\.(\d+)(.*)', productContents)
+    contents = fp.read()
+  m = re.match('(\d+)\.(\d+)\.(\d+)-?(.*)', contents)
   if m == None:
     raise Exception('Could not detremine product version')
   major, minor, release, tag = m.groups()
+
+  if tag:
+    tag = '-' + tag
 
   with open(os.path.join(OutputFolder, 'metamod_version_auto.h'), 'w') as fp:
     fp.write("""#ifndef _METAMOD_AUTO_VERSION_INFORMATION_H_
 #define _METAMOD_AUTO_VERSION_INFORMATION_H_
 
 #define MMS_BUILD_STRING     \"{0}\"
-#define MMS_BUILD_UNIQUEID    \"{1}:{2}\" MMS_BUILD_STRING
-#define MMS_FULL_VERSION    \"{3}.{4}.{5}\" MMS_BUILD_STRING
-#define MMS_FILE_VERSION    {6},{7},{8},0
+#define MMS_BUILD_LOCAL_REV   \"{5}\"
+#define MMS_BUILD_SHA         \"{1}\"
+#define MMS_BUILD_UNIQUEID    \"{5}:{1}\" MMS_BUILD_STRING
+#define MMS_FULL_VERSION    \"{2}.{3}.{4}\" MMS_BUILD_STRING
+#define MMS_FILE_VERSION    {2},{3},{4},0
 
 #endif /* _METAMOD_AUTO_VERSION_INFORMATION_H_ */
 
-""".format(tag, rev, cset, major, minor, release, major, minor, release))
+""".format(tag, shorthash, major, minor, release, count))
 
 output_version_header()
 
