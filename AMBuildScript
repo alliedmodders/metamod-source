@@ -84,7 +84,10 @@ class MMSConfig(object):
     for sdk_name in PossibleSDKs:
       sdk = PossibleSDKs[sdk_name]
       if builder.target_platform in sdk.platform:
-        sdk_path = ResolveEnvPath(sdk.envvar, sdk.folder)
+        if builder.options.hl2sdk_root:
+          sdk_path = os.path.join(builder.options.hl2sdk_root, sdk.folder)
+        else:
+          sdk_path = ResolveEnvPath(sdk.envvar, sdk.folder)
         if sdk_path is None:
           if use_all or sdk_name in sdk_list:
             raise Exception('Could not find a valid path for {0}'.format(sdk.envvar))
