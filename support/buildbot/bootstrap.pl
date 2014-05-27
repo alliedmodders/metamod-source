@@ -26,8 +26,25 @@ if (!(-f 'OUTPUT/.ambuild2/graph') || !(-f 'OUTPUT/.ambuild2/vars')) {
 chdir('OUTPUT');
 my ($result, $argn);
 $argn = $#ARGV + 1;
+
 print "Attempting to reconfigure...\n";
-my $conf_args = '--enable-optimize --no-color --symbol-files';
+
+my @conf_argv = (
+	'--enable-optimize',
+	'--no-color',
+	'--symbol-files'
+);
+
+if ($^O =~ /darwin/) {
+	push(@conf_argv, '--hl2sdk-root=/Volumes/hgshare');
+} elsif ($^O =~ /linux/) {
+	push(@conf_argv, '--hl2sdk-root=/hgshare');
+} elsif ($^O =~ /MSWin/) {
+	push(@conf_argv, '--hl2sdk-root=H:\\');
+}
+
+my $conf_args = join(' ', @conf_argv);
+
 if ($argn > 0 && $^O !~ /MSWin/) {
 	$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py $conf_args`;
 } else {
