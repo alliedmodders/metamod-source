@@ -190,7 +190,7 @@ class MMSConfig(object):
       if cxx.behavior == 'gcc':
         cfg.cflags += ['-g3']
       elif cxx.behavior == 'msvc':
-        cfg.cflags += ['/Od, /RTC1']
+        cfg.cflags += ['/Od', '/RTC1']
 
     # This needs to be after our optimization flags which could otherwise disable it.
     if cxx.name == 'msvc':
