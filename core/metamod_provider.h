@@ -214,6 +214,14 @@ namespace SourceMM
 		virtual void SetConVarString(ConVar *convar, const char *str) =0;
 
 		/**
+		 * @brief Retrieves the absolute path to the game directory.
+		 *
+		 * @param buffer			Buffer in which to store path.
+		 * @param maxlen			Maximum length of buffer.
+		 */
+		virtual void GetGamePath(char *buffer, int maxlen) = 0;
+
+		/**
 		 * @brief Retrieves the game description.
 		 *
 		 * @return					Game description.
@@ -279,10 +287,9 @@ namespace SourceMM
 		/**
 		 * @brief Returns the Source Engine build.
 		 *
-		 * @param game			Game folder.
 		 * @return				SOURCE_ENGINE constant.
 		 */
-		virtual int DetermineSourceEngine(const char *game) =0;
+		virtual int DetermineSourceEngine() =0;
 
 		/**
 		 * @brief Processes a VDF plugin file.

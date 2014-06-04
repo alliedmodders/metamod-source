@@ -115,17 +115,18 @@ public:
 					break;
 			}
 
+			mm_InitializeGlobals((CreateInterfaceFn) info->engineFactory,
+				(CreateInterfaceFn) info->engineFactory,
+				(CreateInterfaceFn) info->engineFactory,
+				pGlobals);
+
 			if (!mm_DetectGameInformation())
 			{
 				UTIL_Format(error, maxlength, "Metamod:Source failed to detect game paths; cannot load.");
 				return false;
 			}
 
-			mm_InitializeForLoad();
-			mm_InitializeGlobals((CreateInterfaceFn)info->engineFactory,
-				(CreateInterfaceFn)info->engineFactory,
-				(CreateInterfaceFn)info->engineFactory,
-				pGlobals);
+			mm_InitializeForLoad();			
 			g_Metamod.NotifyVSPListening(info->vsp_callbacks, info->vsp_version);
 			mm_StartupMetamod(true);
 		}
