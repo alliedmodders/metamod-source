@@ -364,12 +364,17 @@ const char *BaseProvider::GetUserMessage(int index, int *size)
 	return usermsgs_list[index].name.c_str();
 }
 
+void BaseProvider::GetGamePath(char *pszBuffer, int len)
+{
+	engine->GetGameDir(pszBuffer, len);
+}
+
 const char *BaseProvider::GetGameDescription()
 {
 	return server->GetGameDescription();
 }
 
-int BaseProvider::DetermineSourceEngine(const char *game)
+int BaseProvider::DetermineSourceEngine()
 {
 #if SOURCE_ENGINE == SE_BLOODYGOODTIME
 	return SOURCE_ENGINE_BLOODYGOODTIME;

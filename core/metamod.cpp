@@ -186,23 +186,11 @@ mm_DetectGameInformation()
 {
 	char game_path[PATH_SIZE];
 
-	/* Get value of -game from command line, defaulting to hl2 as engine seems to do */
-	const char *game_dir = provider->GetCommandLineValue("-game");
-
-	if (game_dir)
-	{
-		/* Get absolute path */
-		abspath(game_path, game_dir);
-	}
-	else
-	{
-		/* Get absolute path for current directory */
-		abspath(game_path, ".");
-	}
+	provider->GetGamePath(game_path, sizeof(game_path));
 
 	mod_path.assign(game_path);
 
-	engine_build = provider->DetermineSourceEngine(game_dir);
+	engine_build = provider->DetermineSourceEngine();
 
 	return true;
 }
