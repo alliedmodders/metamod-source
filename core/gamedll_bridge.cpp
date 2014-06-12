@@ -37,21 +37,22 @@ class GameDllBridge : public IGameDllBridge
 public:
 	virtual bool DLLInit_Pre(const gamedll_bridge_info *info, char *buffer, size_t maxlength)
 	{
+		server = (IServerGameDLL *) info->isgd;
+		g_Metamod.SetGameDLLInfo((CreateInterfaceFn) info->gsFactory,
+			info->dllVersion,
+			true);
+		g_Metamod.SetVSPListener(info->vsp_listener_path);
+		mm_InitializeGlobals((CreateInterfaceFn) info->engineFactory,
+			(CreateInterfaceFn) info->physicsFactory,
+			(CreateInterfaceFn) info->fsFactory,
+			(CGlobalVars*) info->pGlobals);
+
 		if (!mm_DetectGameInformation())
 		{
 			UTIL_Format(buffer, maxlength, "Metamod:Source failed to detect game paths; cannot load.");
 			return false;
 		}
 
-		server = (IServerGameDLL *)info->isgd;
-		g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory,
-								 info->dllVersion,
-								 true);
-		g_Metamod.SetVSPListener(info->vsp_listener_path);
-		mm_InitializeGlobals((CreateInterfaceFn)info->engineFactory,
-							 (CreateInterfaceFn)info->physicsFactory,
-							 (CreateInterfaceFn)info->fsFactory,
-							 (CGlobalVars*)info->pGlobals);
 		mm_InitializeForLoad();
 		mm_StartupMetamod(false);
 
