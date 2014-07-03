@@ -1,3 +1,12 @@
+2014/07/03 1.10.1:
+ - Added support for Source SDK 2013 mods (bug 5916).
+ - Added support for Insurgency (bug 5950).
+ - Added support for Contagion (bug 6006).
+ - Added support for Blade Symphony (bug 5948).
+ - Updated Dota 2 support to add Linux and Mac OS X support (bug 6067).
+ - Improved engine detection when '-game' launch param is not present (bug 6020).
+ - Fixed a regression in engine detection for some cases (bug 5963).
+
 2013/08/25 1.10.0:
  - Added support for Dota 2 on Windows.
  - Split TF2, DoD:S, HL2:DM, and ND to separate binaries (bug 5667).
