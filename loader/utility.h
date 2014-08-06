@@ -66,5 +66,8 @@ mm_PathCmp(const char *path1, const char *path2);
 extern bool
 mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 
+extern void *
+mm_FindPattern(const void *libPtr, const char *pattern, size_t len);
+
 #endif /* _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_ */
 
