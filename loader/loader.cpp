@@ -288,19 +288,19 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
-		if (serverFactory("ServerGameClients004", NULL))
+		if (engineFactory("EngineTraceServer004", NULL) != NULL)
 		{
+			if (engineFactory("XboxSystemInterface001", NULL) != NULL)
+			{
+				return MMBackend_AlienSwarm;
+			}
+			
 			if (strcmp(game_name, "portal2") == 0)
 			{
 				return MMBackend_Portal2;
 			}
 
 			return MMBackend_Blade;
-		}
-
-		if (engineFactory("EngineTraceServer004", NULL) != NULL)
-		{
-			return MMBackend_AlienSwarm;
 		}
 		else if (engineFactory("VPrecacheSystem001", NULL) != NULL)
 		{
