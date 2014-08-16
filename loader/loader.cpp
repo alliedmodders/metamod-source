@@ -295,7 +295,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 				return MMBackend_AlienSwarm;
 			}
 			
-			if (strcmp(game_name, "portal2") == 0)
+			void *lib = (void *)serverFactory;
+			void *addr;
+			if (strcmp(game_name, "portal2") == 0
+				|| (addr = mm_FindPattern(lib, "baseportalcombatweapon", sizeof("baseportalcombatweapon") - 1)))
 			{
 				return MMBackend_Portal2;
 			}
@@ -308,13 +311,19 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 			{
 				return MMBackend_NuclearDawn;
 			}
-			else if (strcmp(game_name, "contagion") == 0)
-			{
-				return MMBackend_Contagion;
-			}
 			else
 			{
-				return MMBackend_Left4Dead2;
+				void *lib = (void *)serverFactory;
+				void *addr;
+				if (strcmp(game_name, "contagion") == 0
+					|| (addr = mm_FindPattern(lib, "Contagion_Chat_All", sizeof("Contagion_Chat_All") - 1)))
+				{
+					return MMBackend_Contagion;
+				}
+				else
+				{
+					return MMBackend_Left4Dead2;
+				}
 			}
 		}
 
@@ -328,7 +337,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 			if (engineFactory("VModelInfoServer002", NULL) != NULL)
 			{
 				/* BGT has same iface version numbers and libs as ep2 */
-				if (strcmp(game_name, "pm") == 0)
+				void *lib = (void *)serverFactory;
+				void *addr;
+				if (strcmp(game_name, "pm") == 0
+					|| (addr = mm_FindPattern(lib, "DT_PMPlayerResource", sizeof("DT_PMPlayerResource") - 1)))
 				{
 					return MMBackend_BloodyGoodTime;
 				}
@@ -343,25 +355,34 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 				{
 					return MMBackend_EYE;
 				}
-				else if (strcmp(game_name, "cstrike") == 0)
-				{
-					return MMBackend_CSS;
-				}
-				else if (strcmp(game_name, "tf") == 0)
-				{
-					return MMBackend_TF2;
-				}
-				else if (strcmp(game_name, "dod") == 0)
-				{
-					return MMBackend_DODS;
-				}
-				else if (strcmp(game_name, "hl2mp") == 0)
-				{
-					return MMBackend_HL2DM;
-				}
 				else
 				{
-					return MMBackend_SDK2013;
+					void *lib = (void *)serverFactory;
+					void *addr;
+					if (strcmp(game_name, "cstrike") == 0
+						|| (addr = mm_FindPattern(lib, "DT_CSPlayerResource", sizeof("DT_CSPlayerResource") - 1)))
+					{
+						return MMBackend_CSS;
+					}
+					else if (strcmp(game_name, "tf") == 0
+						|| (addr = mm_FindPattern(lib, "DT_TFPlayerResource", sizeof("DT_TFPlayerResource") - 1)))
+					{
+						return MMBackend_TF2;
+					}
+					else if (strcmp(game_name, "dod") == 0
+						|| (addr = mm_FindPattern(lib, "DT_DODPlayerResource", sizeof("DT_DODPlayerResource") - 1)))
+					{
+						return MMBackend_DODS;
+					}
+					else if (strcmp(game_name, "hl2mp") == 0
+						|| (addr = mm_FindPattern(lib, "Half-Life 2 Deathmatch", sizeof("Half-Life 2 Deathmatch") - 1)))
+					{
+						return MMBackend_HL2DM;
+					}
+					else
+					{
+						return MMBackend_SDK2013;
+					}
 				}
 			}
 		}

@@ -34,6 +34,13 @@
 #include "loader.h"
 #include "utility.h"
 
+#if defined __linux__
+#include <link.h>
+
+#define PAGE_SIZE			4096
+#define PAGE_ALIGN_UP(x)	((x + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+#endif
+
 #if defined _WIN32
 static void
 mm_GetPlatformError(char *buffer, size_t maxlength)
@@ -345,3 +352,228 @@ mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 	return true;
 }
 
+struct DynLibInfo
+{
+	void *baseAddress;
+	size_t memorySize;
+};
+
+static bool
+mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
+{
+	uintptr_t baseAddr;
+
+	if (libPtr == NULL)
+	{
+		return false;
+	}
+
+#ifdef _WIN32
+
+	MEMORY_BASIC_INFORMATION info;
+	IMAGE_DOS_HEADER *dos;
+	IMAGE_NT_HEADERS *pe;
+	IMAGE_FILE_HEADER *file;
+	IMAGE_OPTIONAL_HEADER *opt;
+
+	if (!VirtualQuery(libPtr, &info, sizeof(MEMORY_BASIC_INFORMATION)))
+	{
+		return false;
+	}
+
+	baseAddr = reinterpret_cast<uintptr_t>(info.AllocationBase);
+
+	/* All this is for our insane sanity checks :o */
+	dos = reinterpret_cast<IMAGE_DOS_HEADER *>(baseAddr);
+	pe = reinterpret_cast<IMAGE_NT_HEADERS *>(baseAddr + dos->e_lfanew);
+	file = &pe->FileHeader;
+	opt = &pe->OptionalHeader;
+
+	/* Check PE magic and signature */
+	if (dos->e_magic != IMAGE_DOS_SIGNATURE || pe->Signature != IMAGE_NT_SIGNATURE || opt->Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+	{
+		return false;
+	}
+
+	/* Check architecture, which is 32-bit/x86 right now
+	* Should change this for 64-bit if Valve gets their act together
+	*/
+	if (file->Machine != IMAGE_FILE_MACHINE_I386)
+	{
+		return false;
+	}
+
+	/* For our purposes, this must be a dynamic library */
+	if ((file->Characteristics & IMAGE_FILE_DLL) == 0)
+	{
+		return false;
+	}
+
+	/* Finally, we can do this */
+	lib.memorySize = opt->SizeOfImage;
+
+#elif defined __linux__
+
+	Dl_info info;
+	Elf32_Ehdr *file;
+	Elf32_Phdr *phdr;
+	uint16_t phdrCount;
+
+	if (!dladdr(libPtr, &info))
+	{
+		return false;
+	}
+
+	if (!info.dli_fbase || !info.dli_fname)
+	{
+		return false;
+	}
+
+	/* This is for our insane sanity checks :o */
+	baseAddr = reinterpret_cast<uintptr_t>(info.dli_fbase);
+	file = reinterpret_cast<Elf32_Ehdr *>(baseAddr);
+
+	/* Check ELF magic */
+	if (memcmp(ELFMAG, file->e_ident, SELFMAG) != 0)
+	{
+		return false;
+	}
+
+	/* Check ELF version */
+	if (file->e_ident[EI_VERSION] != EV_CURRENT)
+	{
+		return false;
+	}
+
+	/* Check ELF architecture, which is 32-bit/x86 right now
+	* Should change this for 64-bit if Valve gets their act together
+	*/
+	if (file->e_ident[EI_CLASS] != ELFCLASS32 || file->e_machine != EM_386 || file->e_ident[EI_DATA] != ELFDATA2LSB)
+	{
+		return false;
+	}
+
+	/* For our purposes, this must be a dynamic library/shared object */
+	if (file->e_type != ET_DYN)
+	{
+		return false;
+	}
+
+	phdrCount = file->e_phnum;
+	phdr = reinterpret_cast<Elf32_Phdr *>(baseAddr + file->e_phoff);
+
+	for (uint16_t i = 0; i < phdrCount; i++)
+	{
+		Elf32_Phdr &hdr = phdr[i];
+
+		/* We only really care about the segment with executable code */
+		if (hdr.p_type == PT_LOAD && hdr.p_flags == (PF_X|PF_R))
+		{
+			/* From glibc, elf/dl-load.c:
+			 * c->mapend = ((ph->p_vaddr + ph->p_filesz + GLRO(dl_pagesize) - 1)
+			 * & ~(GLRO(dl_pagesize) - 1));
+			 *
+			 * In glibc, the segment file size is aligned up to the nearest page size and
+			 * added to the virtual address of the segment. We just want the size here.
+			 */
+			lib.memorySize = PAGE_ALIGN_UP(hdr.p_filesz);
+			break;
+		}
+	}
+
+#elif defined __APPLE__
+
+	Dl_info info;
+	struct mach_header *file;
+	struct segment_command *seg;
+	uint32_t cmd_count;
+
+	if (!dladdr(libPtr, &info))
+	{
+		return false;
+	}
+
+	if (!info.dli_fbase || !info.dli_fname)
+	{
+		return false;
+	}
+
+	/* This is for our insane sanity checks :o */
+	baseAddr = (uintptr_t)info.dli_fbase;
+	file = (struct mach_header *)baseAddr;
+
+	/* Check Mach-O magic */
+	if (file->magic != MH_MAGIC)
+	{
+		return false;
+	}
+
+	/* Check architecture (32-bit/x86) */
+	if (file->cputype != CPU_TYPE_I386 || file->cpusubtype != CPU_SUBTYPE_I386_ALL)
+	{
+		return false;
+	}
+
+	/* For our purposes, this must be a dynamic library */
+	if (file->filetype != MH_DYLIB)
+	{
+		return false;
+	}
+
+	cmd_count = file->ncmds;
+	seg = (struct segment_command *)(baseAddr + sizeof(struct mach_header));
+
+	/* Add up memory sizes of mapped segments */
+	for (uint32_t i = 0; i < cmd_count; i++)
+	{
+		if (seg->cmd == LC_SEGMENT)
+		{
+			lib.memorySize += seg->vmsize;
+		}
+
+		seg = (struct segment_command *)((uintptr_t)seg + seg->cmdsize);
+	}
+
+#endif
+
+	lib.baseAddress = reinterpret_cast<void *>(baseAddr);
+
+	return true;
+}
+
+void *mm_FindPattern(const void *libPtr, const char *pattern, size_t len)
+{
+	DynLibInfo lib;
+	bool found;
+	char *ptr, *end;
+
+	memset(&lib, 0, sizeof(DynLibInfo));
+
+	if (!mm_GetLibraryInfo(libPtr, lib))
+	{
+		return NULL;
+	}
+
+	ptr = reinterpret_cast<char *>(lib.baseAddress);
+	end = ptr + lib.memorySize - len;
+
+	while (ptr < end)
+	{
+		found = true;
+		for (register size_t i = 0; i < len; i++)
+		{
+			if (pattern[i] != '\x2A' && pattern[i] != ptr[i])
+			{
+				found = false;
+				break;
+			}
+		}
+
+		if (found)
+			return ptr;
+
+		ptr++;
+	}
+
+	return NULL;
+}
