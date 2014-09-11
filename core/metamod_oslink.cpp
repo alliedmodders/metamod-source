@@ -94,7 +94,11 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 	return true;
 }
 
-#if defined __GNUC__ && (__GNUC__ == 3 || __GNUC__ == 4)
+#if defined __linux__ || defined __APPLE__
+extern "C" void __cxa_pure_virtual(void)
+{
+}
+
 void * operator new(size_t size) {
 	return malloc(size);
 }
