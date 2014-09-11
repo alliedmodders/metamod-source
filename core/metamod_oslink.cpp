@@ -114,5 +114,7 @@ void operator delete(void * ptr) {
 void operator delete[](void * ptr) {
 	free(ptr);
 }
+
+void *__gxx_personality_v0;
 #endif
 
