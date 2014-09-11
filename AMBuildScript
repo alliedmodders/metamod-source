@@ -348,8 +348,6 @@ class MMSConfig(object):
       linker = make_linker(source_path, output_path)
       binary.compiler.linkflags[0:0] = [binary.Dep(library, linker)]
 
-    binary.compiler.linkflags[0:0] = ['-Wl,--no-as-needed']
-
     return binary
 
 MMS = MMSConfig()
