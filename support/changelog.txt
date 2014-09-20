@@ -1,3 +1,6 @@
+2014/09/20 1.10.3:
+ - Updated support for recent TF2 and CS:GO game updates.
+
 2014/08/17 1.10.2:
  - Fixed regression in Alien Swarm engine detection from version 1.10.1 (PR #6).
  - Improved engine detection for more games when '-game' launching param is missing (PR #7).
