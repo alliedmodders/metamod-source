@@ -181,7 +181,7 @@ class MMSConfig(object):
       if cxx.behavior == 'gcc':
         cfg.cflags += ['-O3']
       elif cxx.behavior == 'msvc':
-        cfg.cflags += ['/Ox']
+        cfg.cflags += ['/Ox', '/Zo']
         cfg.linkflags += ['/OPT:ICF', '/OPT:REF']
 
     # Debugging
