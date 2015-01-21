@@ -122,7 +122,7 @@ SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
 			api = (*event); \
-			mret = IFACE_FAILED; \
+			mret = META_IFACE_FAILED; \
 			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
 				if (ret) *ret = mret; \
 				return val; \
@@ -688,7 +688,7 @@ void *MetamodSource::InterfaceSearch(CreateInterfaceFn fn, const char *iface, in
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 		return NULL;
 	}
@@ -841,7 +841,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	{
 		if (ret)
 		{
-			*ret = IFACE_OK;
+			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
 	}
@@ -849,7 +849,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	{
 		if (ret)
 		{
-			*ret = IFACE_OK;
+			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
@@ -857,7 +857,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	{
 		if (ret)
 		{
-			*ret = IFACE_OK;
+			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
 	}
@@ -876,7 +876,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		for (event = pl->m_Events.begin(); event != pl->m_Events.end(); event++)
 		{
 			api = (*event);
-			subret = IFACE_FAILED;
+			subret = META_IFACE_FAILED;
 			if ((value = api->OnMetamodQuery(iface, &subret)) != NULL)
 			{
 				if (ret)
@@ -894,7 +894,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 
 	if (ret)
 	{
-		*ret = IFACE_FAILED;
+		*ret = META_IFACE_FAILED;
 	}
 
 	return NULL;

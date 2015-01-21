@@ -186,13 +186,13 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 	{
 		if (_ret)
 		{
-			*_ret = IFACE_OK;
+			*_ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
 	} else if (strcmp(iface, MMIFACE_PLMANAGER) == 0) {
 		if (_ret)
 		{
-			*_ret = IFACE_OK;
+			*_ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
@@ -209,7 +209,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++)
 		{
 			api = (*event).event;
-			ret = IFACE_FAILED;
+			ret = META_IFACE_FAILED;
 			if ( (val=api->OnMetamodQuery(iface, &ret)) != NULL )
 			{
 				if (_ret)
@@ -222,7 +222,7 @@ void *CSmmAPI::MetaFactory(const char *iface, int *_ret, PluginId *id)
 	}
 
 	if (_ret)
-		*_ret = IFACE_FAILED;
+		*_ret = META_IFACE_FAILED;
 
 	return NULL;
 }
@@ -371,7 +371,7 @@ void *CSmmAPI::InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max,
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 		return NULL;
 	}

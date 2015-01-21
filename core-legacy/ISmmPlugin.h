@@ -208,7 +208,7 @@ public:
 	 * @brief Called when engineFactory() is used through Metamod:Source's wrapper.
 	 * This can be used to provide interfaces to other plugins or the GameDLL.
 	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
 	 *
 	 * @param iface			Interface string.
 	 * @param ret			Optional pointer to store return code.
@@ -218,7 +218,7 @@ public:
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 
 		return NULL; 
@@ -228,7 +228,7 @@ public:
 	 * @brief Called when the physics factory is used through Metamod:Source's wrapper.
 	 * This can be used to provide interfaces to other plugins.
 	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
 	 *
 	 * @param iface			Interface string.
 	 * @param ret			Optional pointer to store return code.
@@ -238,7 +238,7 @@ public:
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 
 		return NULL; 
@@ -248,7 +248,7 @@ public:
 	 * @brief Called when the filesystem factory is used through Metamod:Source's wrapper.
 	 * This can be used to provide interfaces to other plugins.
 	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
 	 *
 	 * @param iface			Interface string.
 	 * @param ret			Optional pointer to store return code.
@@ -258,7 +258,7 @@ public:
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 		
 		return NULL; 
@@ -268,7 +268,7 @@ public:
 	 * @brief Called when the server DLL's factory is used through Metamod:Source's wrapper.
 	 * This can be used to provide interfaces to other plugins.
 	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
 	 *
 	 * @param iface			Interface string.
 	 * @param ret			Optional pointer to store return code.
@@ -278,7 +278,7 @@ public:
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 
 		return NULL; 
@@ -288,7 +288,7 @@ public:
 	 * @brief Called when Metamod's own factory is invoked.  
 	 * This can be used to provide interfaces to other plugins.
 	 *
-	 * If ret is passed, you should fill it with IFACE_OK or IFACE_FAILED.
+	 * If ret is passed, you should fill it with META_IFACE_OK or META_IFACE_FAILED.
 	 *
 	 * @param iface			Interface string.
 	 * @param ret			Optional pointer to store return code.
@@ -298,7 +298,7 @@ public:
 	{
 		if (ret)
 		{
-			*ret = IFACE_FAILED;
+			*ret = META_IFACE_FAILED;
 		}
 
 		return NULL; 	

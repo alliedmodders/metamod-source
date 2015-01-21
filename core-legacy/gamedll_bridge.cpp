@@ -42,7 +42,7 @@ using namespace SourceMM;
 		pl = (*iter); \
 		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
 			api = (*event).event; \
-			mret = IFACE_FAILED; \
+			mret = META_IFACE_FAILED; \
 			if ( (val=api->On##nam##Query(iface, &mret)) != NULL ) { \
 				if (ret) *ret = mret; \
 				return val; \
