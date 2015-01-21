@@ -25,6 +25,13 @@
 
 class ISmmAPI;
 
+// Interface return status, binary-compatible with HL2SDK's IFACE_OK and IFACE_FAILED.
+enum 
+{
+	META_IFACE_OK = 0,
+	META_IFACE_FAILED
+};
+
 class ISmmPlugin
 {
 public:
