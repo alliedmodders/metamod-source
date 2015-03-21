@@ -307,7 +307,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 		}
 		else if (engineFactory("VPrecacheSystem001", NULL) != NULL)
 		{
-			if (engineFactory("ServerGameTags002", NULL) != NULL)
+			if (gameFactory("ServerGameTags002", NULL) != NULL)
 			{
 				return MMBackend_NuclearDawn;
 			}
