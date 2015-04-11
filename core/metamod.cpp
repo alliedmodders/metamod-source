@@ -28,7 +28,7 @@
 #include "metamod.h"
 #include <interface.h>
 #include <eiface.h>
-#include <versionlib.h>
+#include <metamod_version.h>
 #include "metamod_provider.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"

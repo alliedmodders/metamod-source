@@ -33,12 +33,34 @@
  */
 
 #if defined MMS_GENERATED_BUILD
-#include <metamod_version_auto.h>
+# if defined RC_COMPILE
+#  undef MMS_USE_VERSIONLIB
+# endif
+# if defined MMS_USE_VERSIONLIB
+#  include <versionlib.h>
+# else 
+#  include <metamod_version_auto.h>
+# endif
 #else
-#define MMS_BUILD_STRING		"-pdev"
-#define MMS_BUILD_UNIQUEID		"701:46ea970e0eb6" MMS_BUILD_STRING
-#define MMS_FULL_VERSION		"1.9.0" MMS_BUILD_STRING
-#define MMS_FILE_VERSION		1,9,0,0
+#define MMS_BUILD_TAG		"manual"
+#define MMS_BUILD_LOCAL_REV	"0"
+#define MMS_BUILD_CSET		"0"
+#define MMS_BUILD_MAJOR		"1"
+#define MMS_BUILD_MINOR		"11"
+#define MMS_BUILD_RELEASE	"0"
+
+#define MMS_BUILD_UNIQUEID MMS_BUILD_LOCAL_REV ":" MMS_BUILD_CSET
+
+#define MMS_VERSION_STRING	MMS_BUILD_MAJOR "." MMS_BUILD_MINOR "." MMS_BUILD_RELEASE "-" MMS_BUILD_TAG
+#define MMS_VERSION_FILE		1,11,0,0
+#endif
+#define MMS_BUILD_TIMESTAMP	__DATE__ " " __TIME__
+
+#if !defined(MMS_GENERATED_BUILD) || !defined(MMS_USE_VERSIONLIB)
+# define METAMOD_VERSION 		MMS_VERSION_STRING
+# define METAMOD_BUILD_ID		MMS_BUILD_UNIQUEID
+# define METAMOD_BUILD_TIME 	MMS_BUILD_TIMESTAMP
 #endif
 
 #endif /* _INCLUDE_METAMOD_VERSION_INFORMATION_H_ */
+

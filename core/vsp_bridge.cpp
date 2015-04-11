@@ -30,11 +30,11 @@
 #include <iplayerinfo.h>
 #include <assert.h>
 #include <loader_bridge.h>
-#include <versionlib.h>
+#include <metamod_version.h>
 #include <sh_string.h>
 #include "provider/provider_ep2.h"
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 SH_DECL_HOOK2_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommandContext &, const CCommand &);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);

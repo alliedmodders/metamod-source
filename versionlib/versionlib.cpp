@@ -26,7 +26,7 @@
 #include <metamod_version.h>
 #include <versionlib.h>
 
-const char *METAMOD_BUILD_LOCAL_REV = MMS_BUILD_LOCAL_REV;
-const char *METAMOD_BUILD_SHA = MMS_BUILD_SHA;
-const char *METAMOD_VERSION = MMS_FULL_VERSION;
-
+const char *METAMOD_LOCAL_REV = MMS_BUILD_LOCAL_REV;
+const char *METAMOD_SHA = MMS_BUILD_CSET;
+const char *METAMOD_VERSION = MMS_VERSION_STRING;
+const char *METAMOD_BUILD_TIME = __DATE__ " " __TIME__;

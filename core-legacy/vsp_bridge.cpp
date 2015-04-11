@@ -29,7 +29,7 @@
 #include "util.h"
 #include <loader_bridge.h>
 #include <sh_string.h>
-#include <versionlib.h>
+#include <metamod_version.h>
 
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 
