@@ -16,7 +16,7 @@
 #include "sh_string.h"
 #include "sh_list.h"
 #include "util.h"
-#include <versionlib.h>
+#include <metamod_version.h>
 
 /**
  * @brief Console Command Implementations
@@ -142,10 +142,10 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 			return;
 		} else if (strcmp(command, "version") == 0) {
 			CONMSG("Metamod:Source version %s\n", METAMOD_VERSION);
+			CONMSG(" Compiled on: %s", MMS_BUILD_TIMESTAMP);
 #if defined(MMS_GENERATED_BUILD)
-			CONMSG("Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_BUILD_SHA);
+			CONMSG("Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_SHA);
 #endif
-			CONMSG("Build ID: %s:%s\n", METAMOD_BUILD_LOCAL_REV, METAMOD_BUILD_SHA);
 			if (g_GameDll.loaded)
 			{
 				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");

@@ -62,6 +62,12 @@ class MMSConfig(object):
     self.generated_headers = None
     self.versionlib = None
 
+  def use_auto_versioning(self):
+    if builder.backend != 'amb2':
+      return False
+    return not getattr(builder.options, 'disable_auto_versioning', False)
+
+
   def detectProductVersion(self):
     builder.AddConfigureFile('product.version')
 
@@ -216,10 +222,16 @@ class MMSConfig(object):
       cfg.defines += ['WIN32', '_WINDOWS']
 
     # Finish up.
+    cfg.defines += [ 'MMS_USE_VERSIONLIB' ]
+    cfg.includes += [
+      os.path.join(builder.sourcePath, 'public'),
+    ]
+    if self.use_auto_versioning():
     cfg.defines += ['MMS_GENERATED_BUILD']
-    cfg.includes += [os.path.join(builder.buildPath, 'includes')]
-    cfg.includes += [os.path.join(builder.sourcePath, 'versionlib')]
-    cfg.cxxincludes += [os.path.join(builder.sourcePath, 'public')]
+      cfg.includes += [
+        os.path.join(builder.buildPath, 'includes'),
+        os.path.join(builder.sourcePath, 'versionlib'),
+      ]
 
   def HL2Compiler(self, context, sdk):
     compiler = context.compiler.clone()
@@ -277,13 +289,14 @@ class MMSConfig(object):
       binary.sources += ['version.rc']
       binary.compiler.rcdefines += [
         'BINARY_NAME="{0}"'.format(binary.outputFile),
-        'MMS_GENERATED_BUILD'
+        'RC_COMPILE'
       ]
     elif builder.target_platform == 'mac':
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
       ]
+    if self.use_auto_versioning():
     binary.compiler.linkflags += [self.versionlib]
     binary.compiler.sourcedeps += MMS.generated_headers
     return binary
@@ -359,6 +372,7 @@ MMS.detectProductVersion()
 MMS.detectSDKs()
 MMS.configure()
 
+if MMS.use_auto_versioning():
 MMS.generated_headers = builder.RunScript(
   'support/buildbot/Versioning',
   { 'MMS': MMS }
@@ -368,15 +382,16 @@ MMS.versionlib = builder.RunScript(
   { 'MMS': MMS }
 )
 
-builder.RunBuildScripts(
-  [
+BuildScripts = [
     'loader/AMBuilder',
     'core-legacy/AMBuilder',
     'core/AMBuilder',
+]
+
+if builder.backend == 'amb2':
+  BuildScripts += [
     'support/buildbot/PackageScript',
-  ],
-  {
-    'MMS': MMS
-  }
-)
+  ]
+
+builder.RunBuildScripts(BuildScripts, { 'MMS': MMS })
 

@@ -55,24 +55,32 @@ def output_version_header():
   if m == None:
     raise Exception('Could not detremine product version')
   major, minor, release, tag = m.groups()
-
-  if tag:
-    tag = '-' + tag
+  product = "{0}.{1}.{2}".format(major, minor, release)
+  fullstring = product
+  if tag != "":
+    fullstring += "-{0}".format(tag)
+    if tag == "dev":
+      fullstring += "+{0}".format(count)
 
   with open(os.path.join(OutputFolder, 'metamod_version_auto.h'), 'w') as fp:
-    fp.write("""#ifndef _METAMOD_AUTO_VERSION_INFORMATION_H_
+    fp.write("""
+#ifndef _METAMOD_AUTO_VERSION_INFORMATION_H_
 #define _METAMOD_AUTO_VERSION_INFORMATION_H_
 
-#define MMS_BUILD_STRING     \"{0}\"
-#define MMS_BUILD_LOCAL_REV   \"{5}\"
-#define MMS_BUILD_SHA         \"{1}\"
-#define MMS_BUILD_UNIQUEID    \"{5}:{1}\" MMS_BUILD_STRING
-#define MMS_FULL_VERSION    \"{2}.{3}.{4}\" MMS_BUILD_STRING
-#define MMS_FILE_VERSION    {2},{3},{4},0
+#define MMS_BUILD_TAG		\"{0}\"
+#define MMS_BUILD_CSET		\"{1}\"
+#define MMS_BUILD_MAJOR		\"{2}\"
+#define MMS_BUILD_MINOR		\"{3}\"
+#define MMS_BUILD_RELEASE	\"{4}\"
+#define MMS_BUILD_LOCAL_REV      \"{6}\"
+
+#define MMS_BUILD_UNIQUEID       "{6}:" MMS_BUILD_CSET
+
+#define MMS_VERSION_STRING	\"{5}\"
+#define MMS_VERSION_FILE	{2},{3},{4},0
 
 #endif /* _METAMOD_AUTO_VERSION_INFORMATION_H_ */
-
-""".format(tag, shorthash, major, minor, release, count))
+    """.format(tag, shorthash, major, minor, release, fullstring, count))
 
 output_version_header()
 
