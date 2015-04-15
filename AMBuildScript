@@ -227,7 +227,7 @@ class MMSConfig(object):
       os.path.join(builder.sourcePath, 'public'),
     ]
     if self.use_auto_versioning():
-    cfg.defines += ['MMS_GENERATED_BUILD']
+      cfg.defines += ['MMS_GENERATED_BUILD']
       cfg.includes += [
         os.path.join(builder.buildPath, 'includes'),
         os.path.join(builder.sourcePath, 'versionlib'),
