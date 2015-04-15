@@ -297,8 +297,8 @@ class MMSConfig(object):
         '-current_version', self.productVersion
       ]
     if self.use_auto_versioning():
-    binary.compiler.linkflags += [self.versionlib]
-    binary.compiler.sourcedeps += MMS.generated_headers
+      binary.compiler.linkflags += [self.versionlib]
+      binary.compiler.sourcedeps += MMS.generated_headers
     return binary
 
   def Library(self, context, name):
@@ -373,14 +373,14 @@ MMS.detectSDKs()
 MMS.configure()
 
 if MMS.use_auto_versioning():
-MMS.generated_headers = builder.RunScript(
-  'support/buildbot/Versioning',
-  { 'MMS': MMS }
-)
-MMS.versionlib = builder.RunScript(
-  'versionlib/AMBuildScript',
-  { 'MMS': MMS }
-)
+  MMS.generated_headers = builder.RunScript(
+    'support/buildbot/Versioning',
+    { 'MMS': MMS }
+  )
+  MMS.versionlib = builder.RunScript(
+    'versionlib/AMBuildScript',
+    { 'MMS': MMS }
+  )
 
 BuildScripts = [
     'loader/AMBuilder',
