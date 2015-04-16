@@ -150,6 +150,10 @@ class MMSConfig(object):
         cfg.cflags += ['-mfpmath=sse']
       if cxx.name == 'clang':
         cfg.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
+        if cfg.version >= 'apple-clang-5.1' or cfg.version >= 'clang-3.4':
+          cfg.cxxflags += ['-Wno-deprecated-register']
+        else:
+          cfg.cxxflags += ['-Wno-deprecated']
 
     elif cxx.name == 'msvc':
       if builder.options.debug == '1':
