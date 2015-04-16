@@ -147,6 +147,8 @@ class MMSConfig(object):
         cfg.cxxflags += ['-Wno-delete-non-virtual-dtor']
       if cxx.name == 'gcc':
         cfg.cflags += ['-mfpmath=sse']
+      if cxx.name == 'clang':
+        cfg.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
 
     elif cxx.name == 'msvc':
       if builder.options.debug == '1':
