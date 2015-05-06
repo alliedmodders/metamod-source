@@ -414,6 +414,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_CSGO;
 #elif SOURCE_ENGINE == SE_DOTA
 	return SOURCE_ENGINE_DOTA;
+#elif SOURCE_ENGINE == SE_BMS
+	return SOURCE_ENGINE_BMS;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif

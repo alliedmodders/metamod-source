@@ -101,6 +101,7 @@ enum MetamodBackend
 	MMBackend_Blade,
 	MMBackend_Insurgency,
 	MMBackend_Contagion,
+	MMBackend_BMS,
 
 	MMBackend_UNKNOWN
 };

@@ -136,6 +136,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Day of Defeat: Source (Valve Orange Box)\n");
 #elif SOURCE_ENGINE == SE_SDK2013
 			CONMSG("  Engine: Source SDK 2013 (2013)\n");
+#elif SOURCE_ENGINE == SE_BMS
+			CONMSG("  Engine: Black Mesa (2015)\n");
 #elif SOURCE_ENGINE == SE_TF2
 			CONMSG("  Engine: Team Fortress 2 (Valve Orange Box)\n");
 #elif SOURCE_ENGINE == SE_DARKMESSIAH
