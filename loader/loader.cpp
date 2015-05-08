@@ -89,6 +89,7 @@ static const char *backend_names[] =
 	"2.blade",
 	"2.insurgency",
 	"2.contagion",
+	"2.bms",
 };
 
 #if defined _WIN32
@@ -378,6 +379,11 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 						|| (addr = mm_FindPattern(lib, "Half-Life 2 Deathmatch", sizeof("Half-Life 2 Deathmatch") - 1)))
 					{
 						return MMBackend_HL2DM;
+					}
+					else if (strcmp(game_name, "bms") == 0
+						|| (addr = mm_FindPattern(lib, "DT_BlackMesaPlayer", sizeof("DT_BlackMesaPlayer") - 1)))
+					{
+						return MMBackend_BMS;
 					}
 					else
 					{
