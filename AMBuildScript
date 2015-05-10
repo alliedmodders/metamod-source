@@ -247,7 +247,7 @@ class MMSConfig(object):
 
     compiler.defines += ['SOURCE_ENGINE=' + sdk.code]
 
-    if sdk.name == 'sdk2013' and compiler.cxx.behavior == 'gcc':
+    if sdk.name in ['sdk2013', 'bms'] and compiler.cxx.behavior == 'gcc':
       # The 2013 SDK already has these in public/tier0/basetypes.h
       compiler.defines.remove('stricmp=strcasecmp')
       compiler.defines.remove('_stricmp=strcasecmp')
@@ -259,7 +259,7 @@ class MMSConfig(object):
     else:
       compiler.defines += ['COMPILER_GCC']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
       if builder.target_platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
     
@@ -299,18 +299,18 @@ class MMSConfig(object):
     if builder.target_platform == 'linux':
       if sdk.name == 'episode1':
         lib_folder = os.path.join(sdk.path, 'linux_sdk')
-      elif sdk.name == 'sdk2013':
+      elif sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'linux')
     elif builder.target_platform == 'mac':
-      if sdk.name == 'sdk2013':
+      if sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'osx32')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'mac')
 
     if builder.target_platform in ['linux', 'mac']:
-      if sdk.name == 'sdk2013':
+      if sdk.name in ['sdk2013', 'bms']:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1.a'))]
       else:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
