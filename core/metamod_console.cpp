@@ -42,6 +42,107 @@ using namespace SourceHook;
 
 #define CONMSG			g_Metamod.ConPrintf
 #define CLIENT_CONMSG	g_Metamod.ClientConPrintf
+template <typename ... Ts>
+
+#if SOURCE_ENGINE == SE_DOTA
+void CMDMSG(int client, const char *pMsg, Ts ... ts)
+#else
+void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
+#endif
+{
+	if (client)
+	{
+		CLIENT_CONMSG(client, pMsg, ts...);
+	}
+	else
+	{
+		CONMSG(pMsg, ts...);
+	}
+}
+
+#if SOURCE_ENGINE == SE_BLOODYGOODTIME
+#define MMS_ENGINE_NAME "Bloody Good Time (2010)"
+#elif SOURCE_ENGINE == SE_ALIENSWARM
+#define MMS_ENGINE_NAME "Alien Swarm (2010)"
+#elif SOURCE_ENGINE == SE_LEFT4DEAD2
+#define MMS_ENGINE_NAME "Left 4 Dead 2 (2009)"
+#elif SOURCE_ENGINE == SE_NUCLEARDAWN
+#define MMS_ENGINE_NAME "Nuclear Dawn (2011)"
+#elif SOURCE_ENGINE == SE_CONTAGION
+#define MMS_ENGINE_NAME "Contagion (2013)"
+#elif SOURCE_ENGINE == SE_LEFT4DEAD
+#define MMS_ENGINE_NAME "Left 4 Dead (2008)"
+#elif SOURCE_ENGINE == SE_ORANGEBOX
+#define MMS_ENGINE_NAME "Episode 2 (Orange Box, 2007)"
+#elif SOURCE_ENGINE == SE_CSS
+#define MMS_ENGINE_NAME "Counter-Strike: Source (Valve Orange Box)"
+#elif SOURCE_ENGINE == SE_HL2DM
+#define MMS_ENGINE_NAME "Half-Life 2 Deathmatch (Valve Orange Box)"
+#elif SOURCE_ENGINE == SE_DODS
+#define MMS_ENGINE_NAME "Day of Defeat: Source (Valve Orange Box)"
+#elif SOURCE_ENGINE == SE_SDK2013
+#define MMS_ENGINE_NAME "Source SDK 2013 (2013)"
+#elif SOURCE_ENGINE == SE_BMS
+#define MMS_ENGINE_NAME "Black Mesa (2015)"
+#elif SOURCE_ENGINE == SE_TF2
+#define MMS_ENGINE_NAME "Team Fortress 2 (Valve Orange Box)"
+#elif SOURCE_ENGINE == SE_DARKMESSIAH
+#define MMS_ENGINE_NAME "Dark Messiah (2006)"
+#elif SOURCE_ENGINE == SE_EYE
+#define MMS_ENGINE_NAME "E.Y.E. Divine Cybermancy (2011)"
+#elif SOURCE_ENGINE == SE_PORTAL2
+#define MMS_ENGINE_NAME "Portal 2 (2011)"
+#elif SOURCE_ENGINE == SE_BLADE
+#define MMS_ENGINE_NAME "Blade Symphony (2013)"
+#elif SOURCE_ENGINE == SE_INSURGENCY
+#define MMS_ENGINE_NAME "Insurgency (2013)"
+#elif SOURCE_ENGINE == SE_CSGO
+#define MMS_ENGINE_NAME "Counter-Strike: Global Offensive (2012)"
+#elif SOURCE_ENGINE == SE_DOTA
+#define MMS_ENGINE_NAME "Dota 2 (2013)"
+#else
+#error "SOURCE_ENGINE not defined to a known value"
+#endif
+
+#if SOURCE_ENGINE == SE_DOTA
+static void ReplyCredits(int client = 0)
+#else
+static void ReplyCredits(edict_t *client = nullptr)
+#endif
+{
+	CMDMSG(client, "Metamod:Source was developed by:\n");
+	CMDMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
+	CMDMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
+	CMDMSG(client, "  GameDLL: Scott \"DS\" Ehlert\n");
+	CMDMSG(client, "For more information, see the official website\n");
+	CMDMSG(client, "http://www.metamodsource.net/\n");
+}
+
+#if SOURCE_ENGINE == SE_DOTA
+static void ReplyVersion(int client = 0)
+#else
+static void ReplyVersion(edict_t *client = nullptr)
+#endif
+{
+	CMDMSG(client, " Metamod:Source Version Information\n");
+	CMDMSG(client, "    Metamod:Source version %s\n", METAMOD_VERSION);
+	CMDMSG(client, "    Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
+	CMDMSG(client, "    SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
+	if (g_Metamod.IsLoadedAsGameDLL())
+	{
+		CMDMSG(client, "    Loaded As: GameDLL (gameinfo.txt)\n");
+	}
+	else
+	{
+		CMDMSG(client, "    Loaded As: Valve Server Plugin\n");
+	}
+	CMDMSG(client, "    Compiled on: %s\n", MMS_BUILD_TIMESTAMP);
+#if defined(MMS_GENERATED_BUILD)
+	CMDMSG(client, "    Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_SHA);
+	CMDMSG(client, "    Build ID: %s:%s\n", METAMOD_LOCAL_REV, METAMOD_SHA);
+#endif
+	CMDMSG(client, "    http://www.metamodsource.net/\n");
+}
 
 bool Command_Meta(IMetamodSourceCommandInfo *info)
 {
@@ -58,35 +159,13 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 		const char *command = info->GetArg(1);
 		if (strcmp(command, "credits") == 0)
 		{
-			CONMSG("Metamod:Source was developed by:\n");
-			CONMSG("  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-			CONMSG("  GameDLL: Scott \"DS\" Ehlert\n");
-			CONMSG("For more information, see the official website\n");
-			CONMSG("http://www.metamodsource.net/\n");
+			ReplyCredits();
 			
 			return true;
 		}
 		else if (strcmp(command, "version") == 0)
 		{
-			CONMSG("Metamod:Source version %s\n", METAMOD_VERSION);
-			CONMSG(" Compiled on: %s", MMS_BUILD_TIMESTAMP);
-#if defined(MMS_GENERATED_BUILD)
-			CONMSG("Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_SHA);
-#endif
-			if (g_Metamod.IsLoadedAsGameDLL())
-			{
-				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
-			}
-			else
-			{
-				CONMSG("Loaded As: Valve Server Plugin\n");
-			}
-
-			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
-			CONMSG("Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
-			CONMSG("SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
-			CONMSG("http://www.metamodsource.net/\n");
+			ReplyVersion();
 
 			return true;
 		}
@@ -97,66 +176,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Mod Path: %s\n", g_Metamod.GetBaseDir());
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
-
-#if 0
-			int engine = g_Metamod.GetSourceEngineBuild();
-			if (engine == SOURCE_ENGINE_ORIGINAL)
-			{
-				CONMSG("  Engine: Original (pre-Episode 1)\n");
-			}
-			else if (engine == SOURCE_ENGINE_EPISODEONE)
-			{
-				CONMSG("  Engine: Episode 1 (2004)\n");
-			}
-			else if (engine == SOURCE_ENGINE_ORANGEBOX)
-			{
-				CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
-			}
-#endif
-
-#if SOURCE_ENGINE == SE_BLOODYGOODTIME
-			CONMSG("  Engine: Bloody Good Time (2010)\n");
-#elif SOURCE_ENGINE == SE_ALIENSWARM
-			CONMSG("  Engine: Alien Swarm (2010)\n");
-#elif SOURCE_ENGINE == SE_LEFT4DEAD2
-			CONMSG("  Engine: Left 4 Dead 2 (2009)\n");
-#elif SOURCE_ENGINE == SE_NUCLEARDAWN
-			CONMSG("  Engine: Nuclear Dawn (2011)\n");
-#elif SOURCE_ENGINE == SE_CONTAGION
-			CONMSG("  Engine: Contagion (2013)\n");
-#elif SOURCE_ENGINE == SE_LEFT4DEAD
-			CONMSG("  Engine: Left 4 Dead (2008)\n");
-#elif SOURCE_ENGINE == SE_ORANGEBOX
-			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
-#elif SOURCE_ENGINE == SE_CSS
-			CONMSG("  Engine: Counter-Strike: Source (Valve Orange Box)\n");
-#elif SOURCE_ENGINE == SE_HL2DM
-			CONMSG("  Engine: Half-Life 2 Deathmatch (Valve Orange Box)\n");
-#elif SOURCE_ENGINE == SE_DODS
-			CONMSG("  Engine: Day of Defeat: Source (Valve Orange Box)\n");
-#elif SOURCE_ENGINE == SE_SDK2013
-			CONMSG("  Engine: Source SDK 2013 (2013)\n");
-#elif SOURCE_ENGINE == SE_BMS
-			CONMSG("  Engine: Black Mesa (2015)\n");
-#elif SOURCE_ENGINE == SE_TF2
-			CONMSG("  Engine: Team Fortress 2 (Valve Orange Box)\n");
-#elif SOURCE_ENGINE == SE_DARKMESSIAH
-			CONMSG("  Engine: Dark Messiah (2006)\n");
-#elif SOURCE_ENGINE == SE_EYE
-			CONMSG("  Engine: E.Y.E. Divine Cybermancy (2011)\n");
-#elif SOURCE_ENGINE == SE_PORTAL2
-			CONMSG("  Engine: Portal 2 (2011)\n");
-#elif SOURCE_ENGINE == SE_BLADE
-			CONMSG("  Engine: Blade Symphony (2013)\n");
-#elif SOURCE_ENGINE == SE_INSURGENCY
-			CONMSG("  Engine: Insurgency (2013)\n");
-#elif SOURCE_ENGINE == SE_CSGO
-			CONMSG("  Engine: Counter-Strike: Global Offensive (2012)\n");
-#elif SOURCE_ENGINE == SE_DOTA
-			CONMSG("  Engine: Dota 2 (2013)\n");
-#else
-#error "SOURCE_ENGINE not defined to a known value"
-#endif
+			CONMSG("  Engine: " MMS_ENGINE_NAME "\n");
 
 			// Display user messages
 			const char *msgname;
@@ -695,22 +715,13 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 
 			if (strcmp(subcmd, "credits") == 0)
 			{
-				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
-				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-				CLIENT_CONMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-				CLIENT_CONMSG(client, "  GameDLL: Scott \"DS\" Ehlert\n");
-				CLIENT_CONMSG(client, "For more information, see the official website\n");
-				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
+				ReplyCredits(client);
 
 				return true;
 			}
 			else if(strcmp(subcmd, "version") == 0)
 			{
-				CLIENT_CONMSG(client, "Metamod:Source version %s\n", METAMOD_VERSION);
-				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
-				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
-				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
-				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
+				ReplyVersion(client);
 
 				return true;
 			}
