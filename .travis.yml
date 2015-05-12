@@ -18,4 +18,4 @@ before_script:
 script:
   - mkdir build && cd build
   - CC=clang-3.5 CXX=clang-3.5 python ../configure.py --enable-optimize
-  - ambuild
+  - ambuild --jobs=4
