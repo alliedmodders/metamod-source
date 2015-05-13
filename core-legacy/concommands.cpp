@@ -106,6 +106,51 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	}
 }
 
+template <typename ... Ts>
+void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
+{
+	if (client)
+	{
+		CLIENT_CONMSG(client, pMsg, ts...);
+	}
+	else
+	{
+		CONMSG(pMsg, ts...);
+	}
+}
+
+static void ReplyCredits(edict_t *client = nullptr)
+{
+	CMDMSG(client, "Metamod:Source was developed by:\n");
+	CMDMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
+	CMDMSG(client, "  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
+	CMDMSG(client, "  GameDLL: Scott \"DS\" Ehlert\n");
+	CMDMSG(client, "For more information, see the official website\n");
+	CMDMSG(client, "http://www.metamodsource.net/\n");
+}
+
+static void ReplyVersion(edict_t *client = nullptr)
+{
+	CMDMSG(client, " Metamod:Source Version Information\n");
+	CMDMSG(client, "    Metamod:Source version %s\n", METAMOD_VERSION);
+	CMDMSG(client, "    Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
+	CMDMSG(client, "    SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
+	if (g_GameDll.loaded)
+	{
+		CMDMSG(client, "    Loaded As: GameDLL (gameinfo.txt)\n");
+	}
+	else
+	{
+		CMDMSG(client, "    Loaded As: Valve Server Plugin\n");
+	}
+	CMDMSG(client, "    Compiled on: %s\n", MMS_BUILD_TIMESTAMP);
+#if defined(MMS_GENERATED_BUILD)
+	CMDMSG(client, "    Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_SHA);
+	CMDMSG(client, "    Build ID: %s:%s\n", METAMOD_LOCAL_REV, METAMOD_SHA);
+#endif
+	CMDMSG(client, "    http://www.metamodsource.net/\n");
+}
+
 ConVar metamod_version("metamod_version", METAMOD_VERSION, FCVAR_SPONLY | FCVAR_NOTIFY, "Metamod:Source Version");
 #ifdef OS_WIN32
 ConVar mm_pluginsfile("mm_pluginsfile", "addons\\metamod\\metaplugins.ini", FCVAR_SPONLY, "Metamod:Source Plugins File");
@@ -132,32 +177,11 @@ CON_COMMAND(meta, "Metamod:Source Menu")
 		const char *command = e->Cmd_Argv(1);
 		if (strcmp(command, "credits") == 0)
 		{
-			CONMSG("Metamod:Source was developed by:\n");
-			CONMSG("  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-			CONMSG("  GameDLL/Plugins: David \"BAILOPAN\" Anderson\n");
-			CONMSG("  GameDLL: Scott \"DS\" Ehlert\n");
-			CONMSG("For more information, see the official website\n");
-			CONMSG("http://www.metamodsource.net/\n");
+			ReplyCredits();
 			
 			return;
 		} else if (strcmp(command, "version") == 0) {
-			CONMSG("Metamod:Source version %s\n", METAMOD_VERSION);
-			CONMSG(" Compiled on: %s", MMS_BUILD_TIMESTAMP);
-#if defined(MMS_GENERATED_BUILD)
-			CONMSG("Built from: https://github.com/alliedmodders/metamod-source/commit/%s\n", METAMOD_SHA);
-#endif
-			if (g_GameDll.loaded)
-			{
-				CONMSG("Loaded As: GameDLL (gameinfo.txt)\n");
-			}
-			else
-			{
-				CONMSG("Loaded As: Valve Server Plugin\n");
-			}
-			CONMSG("Compiled on: %s\n", SOURCEMM_DATE);
-			CONMSG("Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
-			CONMSG("SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-			CONMSG("http://www.metamodsource.net/\n");
+			ReplyVersion();
 
 			return;
 		} else if (strcmp(command, "game") == 0) {
@@ -639,20 +663,11 @@ void ClientCommand_handler(edict_t *client)
 
 			if (strcmp(subcmd, "credits") == 0)
 			{
-				CLIENT_CONMSG(client, "Metamod:Source was developed by:\n");
-				CLIENT_CONMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
-				CLIENT_CONMSG(client, "  Core: David \"BAILOPAN\" Anderson\n");
-				CLIENT_CONMSG(client, "  Core: Scott \"DS\" Ehlert\n");
-				CLIENT_CONMSG(client, "For more information, see the official website\n");
-				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
+				ReplyCredits(client);
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "version") == 0) {
-				CLIENT_CONMSG(client, "Metamod:Source version %s\n", METAMOD_VERSION);
-				CLIENT_CONMSG(client, "Compiled on: %s\n", SOURCEMM_DATE);
-				CLIENT_CONMSG(client, "Plugin interface version: %d:%d\n", PLAPI_VERSION, PLAPI_MIN_VERSION);
-				CLIENT_CONMSG(client, "SourceHook version: %d:%d\n", g_SourceHook.GetIfaceVersion(), g_SourceHook.GetImplVersion());
-				CLIENT_CONMSG(client, "http://www.metamodsource.net/\n");
+				ReplyVersion(client);
 
 				RETURN_META(MRES_SUPERCEDE);
 			} else if(strcmp(subcmd, "list") == 0) {
