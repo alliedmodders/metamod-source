@@ -58,10 +58,25 @@ static bool g_is_source2 = false;
 
 #if defined _WIN32
 #define SERVER_NAME			"server.dll"
+#if defined _WIN64
+#define PLATFORM_NAME		"win64"
+#else
+#define PLATFORM_NAME		"win32"
+#endif
 #elif defined __APPLE__
 #define SERVER_NAME			"server.dylib"
+#if defined __amd64__
+#define PLATFORM_NAME		"osx64"
+#else
+#define PLATFORM_NAME		"osx32"
+#endif
 #elif defined __linux__
 #define SERVER_NAME			"server" LIB_SUFFIX
+#if defined __amd64__
+#define PLATFORM_NAME		"linuxsteamrt64"
+#else
+#define PLATFORM_NAME		"linuxsteamrt32"
+#endif
 #endif
 
 static bool
@@ -146,7 +161,7 @@ mm_DetectGameInformation()
 		}
 
 		char *pRelPath = is_source2 ? "../../" : "";
-		char *pOSDir = is_source2 ? "win32/" : "";
+		char *pOSDir = is_source2 ? PLATFORM_NAME "/" : "";
 		if (stricmp(key, "GameBin") == 0)
 			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
 		else if (!ptr[0])
