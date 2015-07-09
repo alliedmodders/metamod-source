@@ -167,8 +167,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	g_pCVar = icvar;
 #endif
 
-	ConVar_Register(0, &g_SMConVarAccessor);
-	//g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 	CacheUserMessages();
 

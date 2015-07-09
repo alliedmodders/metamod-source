@@ -427,15 +427,6 @@ DoInitialPluginLoads()
 	mm_LoadPlugins(filepath, vdfpath);
 }
 
-ConVar *net_maxroutable;
-ConCommand *map;
-extern ConCommand meta_local_cmd;
-
-CON_COMMAND(meta_test, "")
-{
-	Msg("hi\n");
-}
-
 void
 mm_StartupMetamod(bool is_vsp_load)
 {
@@ -446,17 +437,6 @@ mm_StartupMetamod(bool is_vsp_load)
 		"%s%s",
 		METAMOD_VERSION,
 		is_vsp_load ? "V" : "");
-
-	net_maxroutable = g_pCVar->FindVar("net_maxroutable");
-	map = g_pCVar->FindCommand("logaddress_add");
-	meta_local_cmd.AddFlags(0);
-	meta_test_command.AddFlags(0);
-	CCommand cmd;
-	cmd.Tokenize("logaddress_add 192.168.5.9:33333");
-	map->Dispatch(CCommandContext(0), cmd);
-
-	Msg("logaddress_add is at 0x%p\n", map);
-	Msg("meta_local_cmd is at 0x%p\n", &meta_local_cmd);
 
 	metamod_version = provider->CreateConVar("metamod_version", 
 		METAMOD_VERSION, 
