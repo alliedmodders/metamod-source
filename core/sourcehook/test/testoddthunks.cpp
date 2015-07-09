@@ -96,13 +96,30 @@ namespace
 		// Now generate the jump code
 		g_ThunkAllocator.SetRW(g_OddThunkMemory);
 
-		*(base + 0) = 0xE9;		// offset jump, immediate operand
-		ptrdiff_t *offsetAddr = reinterpret_cast<ptrdiff_t*>(base + 1);
-				
 		// destination = src + offset + 5
 		// <=>  offset = destination - src - 5
-		*offsetAddr =
-			(reinterpret_cast<unsigned char*>(origEntry) - base) - 5;
+		ptrdiff_t offset = reinterpret_cast<unsigned char*>(origEntry) - base - 5;
+
+		if (offset >= INT_MIN && offset <= INT_MAX)
+		{
+			*(base + 0) = 0xE9;		// offset jump, immediate operand
+			ptrdiff_t *offsetAddr = reinterpret_cast<ptrdiff_t*>(base + 1);
+
+			*offsetAddr = offset;
+		}
+		else
+		{
+			// mov rax, origEntry
+			*(base + 0) = 0x48;
+			*(base + 1) = 0xB8;
+			void **offsetAddr = reinterpret_cast<void**>(reinterpret_cast<char*>(base) + 2);
+
+			*offsetAddr = origEntry;
+
+			// jmp rax
+			*(base + 10) = 0xFF;
+			*(base + 11) = 0xE0;
+		}
 
 		g_ThunkAllocator.SetRE(g_OddThunkMemory);
 		

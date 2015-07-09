@@ -78,7 +78,9 @@ int main(int argc, char *argv[])
 	DO_TEST(RefRet);
 	DO_TEST(VPHooks);
 	DO_TEST(CPageAlloc);
+#if !defined( _M_AMD64 ) && !defined( __amd64__ )		// TODO: Fix for 64-bit
 	DO_TEST(HookManGen);
+#endif
 	DO_TEST(OddThunks);
 
 	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;

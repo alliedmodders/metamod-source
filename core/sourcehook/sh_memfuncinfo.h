@@ -125,6 +125,11 @@ namespace SourceHook
 				addr += 2;
 				ok = true;
 			}
+			else if (addr[0] == 0x48 && addr[1] == 0x8B && addr[2] == 0x01)
+			{
+				addr += 3;
+				ok = true;
+			}
 			if (!ok)
 				return -1;
 
@@ -132,11 +137,11 @@ namespace SourceHook
 			{
 				if (*addr == 0x60)
 				{
-					return *++addr / 4;
+					return *++addr / SH_PTRSIZE;
 				}
 				else if (*addr == 0xA0)
 				{
-					return *((unsigned int*)++addr) / 4;
+					return *((unsigned int*)++addr) / SH_PTRSIZE;
 				}
 				else if (*addr == 0x20)
 					return 0;
