@@ -18,6 +18,11 @@
 using namespace std;
 bool g_Verbose;
 
+struct Unloader : public SourceHook::Impl::UnloadListener
+{
+	void ReadyToUnload(SourceHook::Plugin) { }
+} g_UnloadListener;
+
 #define DECL_TEST(x) bool Test##x(std::string &error);
 
 #define DO_TEST(x) \
@@ -102,7 +107,7 @@ void Test_CompleteShutdown(SourceHook::ISourceHook *shptr)
 
 void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnloadPlugin(plug);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnloadPlugin(plug, &g_UnloadListener);
 }
 
 void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)

@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{097d3bc9-e1f2-4054-93f3-b12d28409a01}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="Source Files\SourceHook">
+      <UniqueIdentifier>{c1c8bd55-c7ae-46fc-a115-e490b5068b5c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\TestTools">
+      <UniqueIdentifier>{17326c78-c7e4-456b-b9df-019e07ca478f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{c15408a4-1aa9-485e-916b-c4eeaddeeee2}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+    <Filter Include="Header Files\TestTools">
+      <UniqueIdentifier>{be31706d-65c6-4945-b7be-84dcbbcde2e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SourceHook">
+      <UniqueIdentifier>{75eb6b5b-331a-4eba-b0b2-687c273e2746}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SourceHook\generate">
+      <UniqueIdentifier>{1efd71b2-ab96-4217-ab65-dbc369ec623f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{d4f35fc6-e668-474b-82af-0771f32cde7f}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\sourcehook.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcehook_hookmangen.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcehook_impl_chookidman.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcehook_impl_chookmaninfo.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcehook_impl_cproto.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcehook_impl_cvfnptr.cpp">
+      <Filter>Source Files\SourceHook</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test1.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test2.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test3.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test4.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testbail.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testbail2.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testhookmangen.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testlist.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testmanual.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testmulti.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testoddthunks.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testrecall.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testreentr.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testref.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testrefret.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testvphooks.cpp">
+      <Filter>Source Files\TestTools</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\testbail.h">
+      <Filter>Header Files\TestTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testevents.h">
+      <Filter>Header Files\TestTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testhookmangen.h">
+      <Filter>Header Files\TestTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_list.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_memfuncinfo.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_memory.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_pagealloc.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_stack.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_string.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_tinyhash.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sh_vector.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_hookmangen.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_hookmangen_x86.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_chook.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_chookidman.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_chookmaninfo.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_ciface.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_cleanuptask.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_cproto.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_impl_cvfnptr.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sourcehook_pibuilder.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sourcehook_test.h">
+      <Filter>Header Files\SourceHook</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generate\FastDelegate.hxx">
+      <Filter>Header Files\SourceHook\generate</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generate\sh_memfuncinfo.hxx">
+      <Filter>Header Files\SourceHook\generate</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testhookmangen.hxx">
+      <Filter>Header Files\SourceHook\generate</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\generate\sourcehook.hxx">
+      <Filter>Header Files\SourceHook\generate</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
