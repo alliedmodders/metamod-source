@@ -38,7 +38,7 @@ PossibleSDKs = {
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
-  'source2': SDK('HL2SDKSOURCE2', '2.s2', '22', 'SOURCE2', WinOnly, 'source2'),
+  'source2': SDK('HL2SDKSOURCE2', '2.source2', '22', 'SOURCE2', WinOnly, 'source2'),
 }
 
 def ResolveEnvPath(env, folder):

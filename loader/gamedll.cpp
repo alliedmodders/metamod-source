@@ -300,30 +300,25 @@ public:
 
 	virtual InitReturnVal_t Init()
 	{
+		mm_backend = MMBackend_Source2;
+
 		char error[255];
-		if (mm_backend == MMBackend_UNKNOWN)
+		if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
 		{
-			mm_LogFatal("Could not detect engine version");
+			mm_LogFatal("Detected engine %d but could not load: %s", mm_backend, error);
 		}
 		else
 		{
-			if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
+			typedef IGameDllBridge *(*GetGameDllBridge)();
+			GetGameDllBridge get_bridge = (GetGameDllBridge)mm_GetProcAddress("GetGameDllBridge");
+			if (get_bridge == NULL)
 			{
-				mm_LogFatal("Detected engine %d but could not load: %s", mm_backend, error);
+				mm_UnloadMetamodLibrary();
+				mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", mm_backend);
 			}
 			else
 			{
-				typedef IGameDllBridge *(*GetGameDllBridge)();
-				GetGameDllBridge get_bridge = (GetGameDllBridge)mm_GetProcAddress("GetGameDllBridge");
-				if (get_bridge == NULL)
-				{
-					mm_UnloadMetamodLibrary();
-					mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", mm_backend);
-				}
-				else
-				{
-					gamedll_bridge = get_bridge();
-				}
+				gamedll_bridge = get_bridge();
 			}
 		}
 
