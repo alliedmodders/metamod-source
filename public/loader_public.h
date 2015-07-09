@@ -1,8 +1,8 @@
 /**
- * vim: set ts=4 :
+ * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2010 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -21,20 +21,38 @@
  * 2. Altered source versions must be plainly marked as such, and must not be
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
- *
- * Version: $Id$
  */
 
-#ifndef _INCLUDE_CONCOMMANDS_H
-#define _INCLUDE_CONCOMMANDS_H
+#ifndef _INCLUDE_METAMOD_LOADER_PUBLIC_H_
+#define _INCLUDE_METAMOD_LOADER_PUBLIC_H_
 
-#include "metamod_provider.h"
+enum MetamodBackend
+{
+	MMBackend_Episode1 = 0,
+	MMBackend_DarkMessiah,
+	MMBackend_Episode2,
+	MMBackend_BloodyGoodTime,
+	MMBackend_EYE,
+	MMBackend_CSS,
+	MMBackend_Episode2Valve_OBSOLETE,
+	MMBackend_Left4Dead,
+	MMBackend_Left4Dead2,
+	MMBackend_AlienSwarm,
+	MMBackend_Portal2,
+	MMBackend_CSGO,
+	MMBackend_DOTA,
+	MMBackend_HL2DM,
+	MMBackend_DODS,
+	MMBackend_TF2,
+	MMBackend_NuclearDawn,
+	MMBackend_SDK2013,
+	MMBackend_Blade,
+	MMBackend_Insurgency,
+	MMBackend_Contagion,
+	MMBackend_BMS,
+	MMBackend_Source2,
 
-bool Command_Meta(IMetamodSourceCommandInfo *info);
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
-bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info);
-#else
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);
-#endif
+	MMBackend_UNKNOWN
+};
 
-#endif //_INCLUDE_CONCOMMANDS_H
+#endif // _INCLUDE_METAMOD_LOADER_PUBLIC_H_

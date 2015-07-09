@@ -44,7 +44,7 @@ using namespace SourceHook;
 #define CLIENT_CONMSG	g_Metamod.ClientConPrintf
 template <typename ... Ts>
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void CMDMSG(int client, const char *pMsg, Ts ... ts)
 #else
 void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
@@ -100,11 +100,13 @@ void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
 #define MMS_ENGINE_NAME "Counter-Strike: Global Offensive (2012)"
 #elif SOURCE_ENGINE == SE_DOTA
 #define MMS_ENGINE_NAME "Dota 2 (2013)"
+#elif SOURCE_ENGINE == SE_SOURCE2
+#define MMS_ENGINE_NAME "Source 2"
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 static void ReplyCredits(int client = 0)
 #else
 static void ReplyCredits(edict_t *client = nullptr)
@@ -118,7 +120,7 @@ static void ReplyCredits(edict_t *client = nullptr)
 	CMDMSG(client, "http://www.metamodsource.net/\n");
 }
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 static void ReplyVersion(int client = 0)
 #else
 static void ReplyVersion(edict_t *client = nullptr)
@@ -698,7 +700,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 	return true;
 }
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info)
 #else
 bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)

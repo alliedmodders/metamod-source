@@ -76,7 +76,7 @@ public:
 	void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 	const char *GetBaseDir();
 	size_t PathFormat(char *buffer, size_t len, const char *fmt, ...);
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 	// Shim
 	void ClientConPrintf(int clientIndex, const char *fmt, ...);
 #endif

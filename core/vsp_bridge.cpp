@@ -46,7 +46,7 @@ ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 SourceHook::String vsp_desc("Metamod:Source");
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void InterceptPluginUnloads(const CCommandContext &context, const CCommand &args)
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads(const CCommand &args)
@@ -57,7 +57,7 @@ void InterceptPluginUnloads()
 	g_bIsTryingToUnload = true;
 }
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void InterceptPluginUnloads_Post(const CCommandContext &context, const CCommand &args)
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads_Post(const CCommand &args)
@@ -164,11 +164,14 @@ public:
 
 	virtual void Unload()
 	{
+		// Source2 doesn't have the Error function (nor VSP support).
+#if SOURCE_ENGINE != SE_SOURCE2
 		if (g_bIsTryingToUnload)
 		{
 			Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
 			return;
 		}
+#endif
 		if (g_plugin_unload != NULL)
 		{
 			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);

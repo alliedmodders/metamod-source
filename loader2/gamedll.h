@@ -2,7 +2,7 @@
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -25,16 +25,15 @@
  * Version: $Id$
  */
 
-#ifndef _INCLUDE_CONCOMMANDS_H
-#define _INCLUDE_CONCOMMANDS_H
+#ifndef _INCLUDE_METAMOD_SOURCE_GAMEDLLS_H_
+#define _INCLUDE_METAMOD_SOURCE_GAMEDLLS_H_
 
-#include "metamod_provider.h"
+#include "loader_bridge.h"
 
-bool Command_Meta(IMetamodSourceCommandInfo *info);
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
-bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info);
-#else
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);
-#endif
+extern void *
+mm_GameDllRequest(const char *name, int *ret);
 
-#endif //_INCLUDE_CONCOMMANDS_H
+extern IGameDllBridge* gamedll_bridge;
+
+#endif /* _INCLUDE_METAMOD_SOURCE_GAMEDLLS_H_ */
+

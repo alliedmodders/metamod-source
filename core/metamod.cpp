@@ -98,7 +98,6 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-static CGlobalVars *gpGlobals = NULL;
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
 static META_RES last_meta_res;
 static IServerPluginCallbacks *vsp_callbacks = NULL;
@@ -143,6 +142,21 @@ SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 		} \
 	}
 
+#if SOURCE_ENGINE == SE_SOURCE2
+void meta_game_init(const CCommand &args)
+{
+	Handler_GameInit();
+}
+void meta_level_init(const CCommand &args)
+{
+	Handler_LevelInit("dummy_level", "", "", "", false, false);
+}
+void meta_level_shutdown(const CCommand &args)
+{
+	Handler_LevelShutdown();
+}
+#endif
+
 /* Initialize everything here */
 void
 mm_InitializeForLoad()
@@ -157,6 +171,7 @@ mm_InitializeForLoad()
 	 */
 	in_first_level = true;
 
+#if SOURCE_ENGINE != SE_SOURCE2
 	SourceHook::MemFuncInfo info;
 
 	if (!provider->GetHookInfo(ProvidedHook_GameInit, &info))
@@ -179,6 +194,7 @@ mm_InitializeForLoad()
 	}
 	SH_MANUALHOOK_RECONFIGURE(SGD_LevelShutdown, info.vtblindex, info.vtbloffs, info.thisptroffs);
 	SH_ADD_MANUALHOOK_STATICFUNC(SGD_LevelShutdown, server, Handler_LevelShutdown, true);
+#endif
 }
 
 bool
@@ -411,6 +427,15 @@ DoInitialPluginLoads()
 	mm_LoadPlugins(filepath, vdfpath);
 }
 
+ConVar *net_maxroutable;
+ConCommand *map;
+extern ConCommand meta_local_cmd;
+
+CON_COMMAND(meta_test, "")
+{
+	Msg("hi\n");
+}
+
 void
 mm_StartupMetamod(bool is_vsp_load)
 {
@@ -421,6 +446,17 @@ mm_StartupMetamod(bool is_vsp_load)
 		"%s%s",
 		METAMOD_VERSION,
 		is_vsp_load ? "V" : "");
+
+	net_maxroutable = g_pCVar->FindVar("net_maxroutable");
+	map = g_pCVar->FindCommand("logaddress_add");
+	meta_local_cmd.AddFlags(0);
+	meta_test_command.AddFlags(0);
+	CCommand cmd;
+	cmd.Tokenize("logaddress_add 192.168.5.9:33333");
+	map->Dispatch(CCommandContext(0), cmd);
+
+	Msg("logaddress_add is at 0x%p\n", map);
+	Msg("meta_local_cmd is at 0x%p\n", &meta_local_cmd);
 
 	metamod_version = provider->CreateConVar("metamod_version", 
 		METAMOD_VERSION, 
@@ -773,7 +809,7 @@ size_t MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 	return mylen;
 }
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void MetamodSource::ClientConPrintf(int clientIndex, const char *fmt, ...)
 {
 	va_list ap;

@@ -83,6 +83,7 @@ extern IVEngineServer *engine;
 extern IServerGameDLL *server;
 extern IServerGameClients *gameclients;
 extern ICvar *icvar;
+extern CGlobalVars *gpGlobals;
 
 #endif //_INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
 

@@ -62,9 +62,18 @@ DLL_IMPORT ICommandLine *CommandLine();
 /* Functions */
 void CacheUserMessages();
 void Detour_Error(const tchar *pMsg, ...);
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void ClientCommand(CEntityIndex index, const CCommand &args);
+#if SOURCE_ENGINE == SE_DOTA
 void LocalCommand_Meta(const CCommandContext &context, const CCommand &args);
+#else
+void LocalCommand_Meta(const CCommand &args);
+#endif
+#if SOURCE_ENGINE == SE_SOURCE2
+void meta_game_init(const CCommand &args);
+void meta_level_init(const CCommand &args);
+void meta_level_shutdown(const CCommand &args);
+#endif
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
 void LocalCommand_Meta(const CCommand &args);
@@ -83,12 +92,21 @@ static jmp_buf usermsg_end;
 ICvar *icvar = NULL;
 IFileSystem *baseFs = NULL;
 IServerGameDLL *server = NULL;
+#if SOURCE_ENGINE == SE_SOURCE2
+static ISource2ServerConfig *serverconfig = NULL;
+#endif
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
+CGlobalVars *gpGlobals = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
+#if SOURCE_ENGINE == SE_SOURCE2
+ConCommand _meta_game_init("meta_game_init", meta_game_init);
+ConCommand _meta_level_init("meta_level_init", meta_level_init);
+ConCommand _meta_level_shutdown("meta_level_shutdown", meta_level_shutdown);
+#endif
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CEntityIndex, const CCommand &);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
@@ -114,6 +132,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		DisplayError("Could not find IVEngineServer! Metamod cannot load.");
 		return;
 	}
+#if SOURCE_ENGINE == SE_SOURCE2
+	gpGlobals = engine->GetServerGlobals();
+	serverconfig = (ISource2ServerConfig *) ((serverFactory) (INTERFACEVERSION_SERVERCONFIG, NULL));
+#endif
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	icvar = (ICvar *)((engineFactory)(CVAR_INTERFACE_VERSION, NULL));
 #else
@@ -125,12 +147,15 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		return;
 	}
 
-
+#if SOURCE_ENGINE == SE_SOURCE2
+	gameclients = (IServerGameClients *)(serverFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
+#else
 	if ((gameclients = (IServerGameClients *)(serverFactory("ServerGameClients003", NULL)))
 		== NULL)
 	{
 		gameclients = (IServerGameClients *)(serverFactory("ServerGameClients004", NULL));
 	}
+#endif
 
 	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
 	if (baseFs == NULL)
@@ -142,7 +167,8 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	g_pCVar = icvar;
 #endif
 
-	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+	ConVar_Register(0, &g_SMConVarAccessor);
+	//g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 	CacheUserMessages();
 
@@ -163,6 +189,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void BaseProvider::Notify_DLLShutdown_Pre()
 {
+
 	g_SMConVarAccessor.RemoveMetamodCommands();
 
 #if SOURCE_ENGINE == SE_DARKMESSIAH
@@ -180,8 +207,8 @@ bool BaseProvider::IsRemotePrintingAvailable()
 
 void BaseProvider::ClientConsolePrint(edict_t *pEdict, const char *message)
 {
-#if SOURCE_ENGINE == SE_DOTA
-	int client = (int)(pEdict - g_Metamod.GetCGlobals()->pEdicts);
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+	int client = (int)(pEdict - gpGlobals->pEdicts);
 	engine->ClientPrintf(client, message);
 #else
 	engine->ClientPrintf(pEdict, message);
@@ -264,6 +291,7 @@ bool BaseProvider::LogMessage(const char *buffer)
 
 bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo)
 {
+#if SOURCE_ENGINE != SE_SOURCE2
 	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
 
 	if (hook == ProvidedHook_LevelInit)
@@ -282,6 +310,9 @@ bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInf
 	*pInfo = mfi;
 
 	return (mfi.thisptroffs >= 0);
+#else
+	return false;
+#endif
 }
 
 void BaseProvider::DisplayError(const char *fmt, ...)
@@ -293,7 +324,11 @@ void BaseProvider::DisplayError(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
+#if SOURCE_ENGINE == SE_SOURCE2
+	Msg("ERROR: %s", buffer);
+#else
 	Error("%s", buffer);
+#endif
 }
 
 void BaseProvider::DisplayWarning(const char *fmt, ...)
@@ -325,7 +360,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -371,7 +406,7 @@ void BaseProvider::GetGamePath(char *pszBuffer, int len)
 
 const char *BaseProvider::GetGameDescription()
 {
-	return server->GetGameDescription();
+	return serverconfig->GetGameDescription();
 }
 
 int BaseProvider::DetermineSourceEngine()
@@ -416,6 +451,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_DOTA;
 #elif SOURCE_ENGINE == SE_BMS
 	return SOURCE_ENGINE_BMS;
+#elif SOURCE_ENGINE == SE_SOURCE2
+	return SOURCE_ENGINE_SOURCE2;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -529,7 +566,7 @@ public:
 };
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA// || SOURCE_ENGINE == SE_SOURCE2
 void LocalCommand_Meta(const CCommandContext &context, const CCommand &args)
 {
 	GlobCommand cmd(&args);
@@ -545,7 +582,7 @@ void LocalCommand_Meta()
 	Command_Meta(&cmd);
 }
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 void ClientCommand(CEntityIndex index, const CCommand &_cmd)
 {
 	int client = index.Get();
@@ -568,7 +605,7 @@ void ClientCommand(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 
 void CacheUserMessages()
 {

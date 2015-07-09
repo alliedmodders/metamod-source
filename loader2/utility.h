@@ -2,7 +2,7 @@
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -25,16 +25,46 @@
  * Version: $Id$
  */
 
-#ifndef _INCLUDE_CONCOMMANDS_H
-#define _INCLUDE_CONCOMMANDS_H
+#ifndef _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_
+#define _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_
 
-#include "metamod_provider.h"
+#include <stddef.h>
 
-bool Command_Meta(IMetamodSourceCommandInfo *info);
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
-bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info);
-#else
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);
-#endif
+extern size_t
+mm_Format(char *buffer, size_t maxlength, const char *fmt, ...);
 
-#endif //_INCLUDE_CONCOMMANDS_H
+extern void *
+mm_LoadLibrary(const char *path, char *buffer, size_t maxlength);
+
+extern void *
+mm_GetLibAddress(void *lib, const char *name);
+
+extern void
+mm_UnloadLibrary(void *lib);
+
+extern bool
+mm_ResolvePath(const char *path, char *buffer, size_t maxlength);
+
+extern size_t
+mm_PathFormat(char *buffer, size_t len, const char *fmt, ...);
+
+extern void
+mm_TrimLeft(char *buffer);
+
+extern void
+mm_TrimRight(char *buffer);
+
+extern void
+mm_TrimComments(char *buffer);
+
+extern void
+mm_KeySplit(const char *str, char *buf1, size_t len1, char *buf2, size_t len2);
+
+extern bool
+mm_PathCmp(const char *path1, const char *path2);
+
+extern bool
+mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
+
+#endif /* _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_ */
+

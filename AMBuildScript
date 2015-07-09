@@ -38,6 +38,7 @@ PossibleSDKs = {
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
+  's2': SDK('HL2SDKS2', '2.s2', '22', 'SOURCE2', WinOnly, 's2'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -111,6 +112,9 @@ class MMSConfig(object):
 
     cfg = builder.DetectCompilers()
     cxx = cfg.cxx
+
+    if builder.options.source2 == '1':
+      cfg.defines += ['SOURCE2_BUILD=1']
 
     if cxx.behavior == 'gcc':
       cfg.defines += [
@@ -246,7 +250,7 @@ class MMSConfig(object):
     compiler.cxxincludes += [
       os.path.join(context.currentSourcePath),
       os.path.join(context.currentSourcePath, 'sourcehook'),
-      os.path.join(context.sourcePath, 'loader'),
+      os.path.join(context.sourcePath, 'public', 'loader'),
     ]
 
     defines = ['SE_' + self.sdks[i].define + '=' + self.sdks[i].code for i in self.sdks]
@@ -278,13 +282,13 @@ class MMSConfig(object):
     else:
       compiler.defines += ['COMPILER_GCC']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 's2']:
       if builder.target_platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
-    
+
     if sdk.name == 'csgo' and builder.target_platform == 'linux':
       compiler.linkflags += ['-lstdc++']
-      
+
 
     for path in paths:
       compiler.cxxincludes += [os.path.join(sdk.path, *path)]
@@ -335,7 +339,7 @@ class MMSConfig(object):
       else:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
 
-      if sdk.name in ['blade', 'insurgency', 'csgo', 'dota']:
+      if sdk.name in ['blade', 'insurgency', 'csgo', 'dota', 's2']:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
 
     binary = self.LibraryBuilder(compiler, name)
@@ -345,7 +349,7 @@ class MMSConfig(object):
       compiler.linkflags[0:0] = ['-lm']
       if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota']:
+      elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota', 's2']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
@@ -354,7 +358,7 @@ class MMSConfig(object):
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif builder.target_platform == 'windows':
       libs = ['tier0', 'tier1', 'vstdlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'csgo', 'dota']:
+      if sdk.name in ['swarm', 'blade', 'insurgency', 'csgo', 'dota', 's2']:
         libs.append('interfaces')
       for lib in libs:
         lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
@@ -391,9 +395,10 @@ if MMS.use_auto_versioning():
   )
 
 BuildScripts = [
-    'loader/AMBuilder',
-    'core-legacy/AMBuilder',
-    'core/AMBuilder',
+#  'loader/AMBuilder',
+  'loader2/AMBuilder',
+  'core-legacy/AMBuilder',
+  'core/AMBuilder',
 ]
 
 if builder.backend == 'amb2':
