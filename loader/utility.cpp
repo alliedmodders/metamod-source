@@ -2,7 +2,7 @@
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -275,8 +275,14 @@ mm_PathCmp(const char *path1, const char *path2)
 }
 
 bool
-mm_ResolvePath(const char *path, char *buffer, size_t maxlength)
+mm_ResolvePath(const char *path, char *buffer, size_t maxlength, bool bSource2)
 {
+	char tmp[PLATFORM_MAX_PATH];
+	if (bSource2)
+	{
+		mm_Format(tmp, sizeof(tmp), "../../%s", path);
+		path = tmp;
+	}
 #if defined _WIN32
 	return _fullpath(buffer, path, maxlength) != NULL;
 #elif defined __linux__ || defined __APPLE__

@@ -405,7 +405,11 @@ void BaseProvider::GetGamePath(char *pszBuffer, int len)
 
 const char *BaseProvider::GetGameDescription()
 {
+#if SOURCE_ENGINE == SE_SOURCE2
 	return serverconfig->GetGameDescription();
+#else
+	return server->GetGameDescription();
+#endif
 }
 
 int BaseProvider::DetermineSourceEngine()

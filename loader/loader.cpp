@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2010 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -90,6 +90,7 @@ static const char *backend_names[] =
 	"2.insurgency",
 	"2.contagion",
 	"2.bms",
+	"2.source2"
 };
 
 #if defined _WIN32
@@ -267,7 +268,9 @@ mm_GetGameName(char *buffer, size_t size)
 
 	if (buffer[0] == 0)
 	{
-		strncpy(buffer, ".", size);
+		// FIXME: this was "." and is now "dota" for Source2. 
+		// That breaks Dark Messiah compatibility.
+		strncpy(buffer, "dota", size);
 	}
 }
 

@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -36,6 +36,7 @@
 #include "gamedll.h"
 
 class IServerGameDLL;
+class ISource2ServerConfig;
 
 #define MAX_GAMEDLL_PATHS	10
 
@@ -47,10 +48,13 @@ static void *gamedll_libs[MAX_GAMEDLL_PATHS];
 static unsigned int gamedll_path_count = 0;
 static void *gamedll_lib = NULL;
 static IServerGameDLL *gamedll_iface = NULL;
+static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
+static int is2sc_allowdedi_index = 20;
 static char mm_path[PLATFORM_MAX_PATH];
+static bool g_is_source2 = false;
 
 #if defined _WIN32
 #define SERVER_NAME			"server.dll"
@@ -78,7 +82,7 @@ mm_DetectGameInformation()
 		return false;
 	}
 
-	if (!mm_ResolvePath(game_name, game_path, sizeof(game_path)))
+	if (!mm_ResolvePath(game_name, game_path, sizeof(game_path), g_is_source2))
 	{
 		mm_LogFatal("Could not resolve path: %s", game_name);
 		return false;
@@ -87,11 +91,21 @@ mm_DetectGameInformation()
 	FILE *fp;
 	char gameinfo_path[PLATFORM_MAX_PATH];
 
+	bool is_source2 = false;
 	mm_PathFormat(gameinfo_path, sizeof(gameinfo_path), "%s/gameinfo.txt", game_path);
 	if ((fp = fopen(gameinfo_path, "rt")) == NULL)
 	{
-		mm_LogFatal("Could not read file: %s", gameinfo_path);
-		return false;
+		// Try Source2 gameinfo
+		mm_PathFormat(gameinfo_path, sizeof(gameinfo_path), "%s/gameinfo.gi", game_path);
+		if ((fp = fopen(gameinfo_path, "rt")) == NULL)
+		{
+			mm_LogFatal("Could not read file: %s", gameinfo_path);
+			return false;
+		}
+		else
+		{
+			is_source2 = true;
+		}
 	}
 
 	char temp_path[PLATFORM_MAX_PATH];
@@ -131,12 +145,14 @@ mm_DetectGameInformation()
 			lptr = cur_path;
 		}
 
+		char *pRelPath = is_source2 ? "../../" : "";
+		char *pOSDir = is_source2 ? "win32/" : "";
 		if (stricmp(key, "GameBin") == 0)
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s/" SERVER_NAME, lptr, ptr);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
 		else if (!ptr[0])
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/bin/" SERVER_NAME, lptr);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%sbin/%s" SERVER_NAME, lptr, pRelPath, pOSDir);
 		else
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s/bin/" SERVER_NAME, lptr, ptr);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/bin/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
 
 		if (mm_PathCmp(mm_path, temp_path))
 			continue;
@@ -174,7 +190,7 @@ mm_DetectGameInformation()
 
 	if (gamedll_path_count == 0)
 	{
-		mm_LogFatal("Could not detect any valid game paths in gameinfo.txt");
+		mm_LogFatal("Could not detect any valid game paths in gameinfo file");
 		return false;
 	}
 
@@ -198,11 +214,213 @@ mm_PatchDllInit(bool patch);
 static void
 mm_PatchDllShutdown();
 
+static void
+mm_PatchAllowDedicated(bool patch);
+
+static void
+mm_PatchConnect(bool patch);
+
 static void *isgd_orig_init = NULL;
 static void *isgd_orig_shutdown = NULL;
+static void *is2sc_orig_allowdedi = NULL;
+static void *is2sc_orig_connect = NULL;
 
 class VEmptyClass
 {
+};
+
+gamedll_bridge_info g_bridge_info;
+
+// Source2 - Rough start order
+// CreateInterfaceFn (IS2SC) - hook Connect and AllowDedicatedServer
+// IS2SC::Connect - save factory pointer. return orig. remove hook.
+// IS2SC::AllowDedicatedServer - return true. remove hook.
+// CreateInterfaceFn (IS2S) - hook Init and Shutdown
+// IS2S::Init - do same as old ISGD::DLLInit, including core load. return orig. remove hook.
+// IS2S::Shutdown - <-- this
+
+enum InitReturnVal_t
+{
+	INIT_FAILED = 0,
+	INIT_OK,
+
+	INIT_LAST_VAL,
+};
+
+class ISource2ServerConfig
+{
+public:
+	virtual bool	Connect(QueryValveInterface factory)
+	{
+		g_bridge_info.engineFactory = factory;
+		g_bridge_info.fsFactory = factory;
+		g_bridge_info.physicsFactory = factory;
+
+
+		/* Call the original */
+		bool result;
+		{
+			union
+			{
+				bool(VEmptyClass::*mfpnew)(QueryValveInterface factory);
+#if defined _WIN32
+				void *addr;
+			} u;
+			u.addr = is2sc_orig_connect;
+#else
+				struct
+				{
+					void *addr;
+					intptr_t adjustor;
+				} s;
+		} u;
+			u.s.addr = is2sc_orig_connect;
+			u.s.adjustor = 0;
+#endif
+			result = (((VEmptyClass *) config_iface)->*u.mfpnew)(factory);
+		}
+
+		mm_PatchConnect(false);
+
+		return result;
+	}
+	virtual bool	AllowDedicatedServers(int universe) const
+	{
+		mm_PatchAllowDedicated(false);
+		return true;
+	}
+};
+
+class ISource2Server
+{
+public:
+	virtual bool Connect(QueryValveInterface factory) { return true; }
+	virtual void Disconnect() {}
+	virtual void *QueryInterface(const char *pInterfaceName) { return nullptr; }
+
+	virtual InitReturnVal_t Init()
+	{
+		char error[255];
+		if (mm_backend == MMBackend_UNKNOWN)
+		{
+			mm_LogFatal("Could not detect engine version");
+		}
+		else
+		{
+			if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
+			{
+				mm_LogFatal("Detected engine %d but could not load: %s", mm_backend, error);
+			}
+			else
+			{
+				typedef IGameDllBridge *(*GetGameDllBridge)();
+				GetGameDllBridge get_bridge = (GetGameDllBridge)mm_GetProcAddress("GetGameDllBridge");
+				if (get_bridge == NULL)
+				{
+					mm_UnloadMetamodLibrary();
+					mm_LogFatal("Detected engine %d but could not find GetGameDllBridge callback", mm_backend);
+				}
+				else
+				{
+					gamedll_bridge = get_bridge();
+				}
+			}
+		}
+
+		if (gamedll_bridge)
+		{
+			g_bridge_info.pGlobals = nullptr;// pGlobals;
+			g_bridge_info.dllVersion = gamedll_version;
+			g_bridge_info.isgd = gamedll_iface;
+			g_bridge_info.gsFactory = gamedll_qvi;
+			g_bridge_info.vsp_listener_path = mm_path;
+
+			strcpy(error, "Unknown error");
+			if (!gamedll_bridge->DLLInit_Pre(&g_bridge_info, error, sizeof(error)))
+			{
+				gamedll_bridge = NULL;
+				mm_UnloadMetamodLibrary();
+				mm_LogFatal("Unknown error loading Metamod for engine %d: %s", mm_backend, error);	
+			}
+		}
+
+		/* Call the original */
+		InitReturnVal_t result;
+		{
+			union
+			{
+				InitReturnVal_t(VEmptyClass::*mfpnew)();
+#if defined _WIN32
+				void *addr;
+			} u;
+			u.addr = isgd_orig_init;
+#else
+				struct
+				{
+					void *addr;
+					intptr_t adjustor;
+				} s;
+		} u;
+			u.s.addr = isgd_orig_init;
+			u.s.adjustor = 0;
+#endif
+			result = (((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
+		}
+
+		/**
+		 * :TODO: possible logic hole here, what happens if the gamedll REALLY returns false? 
+		 * I'm pretty sure we'll die horribly.
+		 */
+
+		if (!result)
+		{
+			gamedll_bridge->Unload();
+			mm_UnloadMetamodLibrary();
+			gamedll_bridge = NULL;
+		}
+		else if (gamedll_bridge != NULL)
+		{
+			gamedll_bridge->DLLInit_Post(&isgd_shutdown_index);
+			assert(isgd_shutdown_index != -1);
+			mm_PatchDllShutdown();
+		}
+
+		mm_PatchDllInit(false);
+
+		return result;
+	}
+
+	virtual void Shutdown()
+	{
+		gamedll_bridge->Unload();
+		gamedll_bridge = NULL;
+		mm_UnloadMetamodLibrary();
+
+		/* Call original function */
+		{
+			union
+			{
+				void (VEmptyClass::*mfpnew)();
+#if defined _WIN32
+				void *addr;
+			} u;
+			u.addr = isgd_orig_shutdown;
+#else
+				struct
+				{
+					void *addr;
+					intptr_t adjustor;
+				} s;
+			} u;
+			u.s.addr = isgd_orig_shutdown;
+			u.s.adjustor = 0;
+#endif
+			(((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
+		}
+
+		mm_UnloadLibrary(gamedll_lib);
+		gamedll_lib = NULL;
+	}
 };
 
 class IServerGameDLL
@@ -244,19 +462,17 @@ public:
 
 		if (gamedll_bridge)
 		{
-			gamedll_bridge_info info;
-
-			info.engineFactory = (QueryValveInterface)engineFactory;
-			info.physicsFactory = (QueryValveInterface)physicsFactory;
-			info.fsFactory = (QueryValveInterface)fileSystemFactory;
-			info.pGlobals = pGlobals;
-			info.dllVersion = gamedll_version;
-			info.isgd = gamedll_iface;
-			info.gsFactory = gamedll_qvi;
-			info.vsp_listener_path = mm_path;
+			g_bridge_info.engineFactory = (QueryValveInterface)engineFactory;
+			g_bridge_info.physicsFactory = (QueryValveInterface)physicsFactory;
+			g_bridge_info.fsFactory = (QueryValveInterface)fileSystemFactory;
+			g_bridge_info.pGlobals = pGlobals;
+			g_bridge_info.dllVersion = gamedll_version;
+			g_bridge_info.isgd = gamedll_iface;
+			g_bridge_info.gsFactory = gamedll_qvi;
+			g_bridge_info.vsp_listener_path = mm_path;
 
 			strcpy(error, "Unknown error");
-			if (!gamedll_bridge->DLLInit_Pre(&info, error, sizeof(error)))
+			if (!gamedll_bridge->DLLInit_Pre(&g_bridge_info, error, sizeof(error)))
 			{
 				gamedll_bridge = NULL;
 				mm_UnloadMetamodLibrary();
@@ -350,6 +566,8 @@ public:
 };
 
 static IServerGameDLL isgd_thunk;
+static ISource2Server is2s_thunk;
+static ISource2ServerConfig is2sc_thunk;
 
 static void
 mm_PatchDllInit(bool patch)
@@ -358,13 +576,27 @@ mm_PatchDllInit(bool patch)
 	void **vtable_dest;
 	SourceHook::MemFuncInfo mfp;
 
-	SourceHook::GetFuncInfo(&IServerGameDLL::DLLInit, mfp);
+	if (g_is_source2)
+	{
+		SourceHook::GetFuncInfo(&ISource2Server::Init, mfp);
+	}
+	else
+	{
+		SourceHook::GetFuncInfo(&IServerGameDLL::DLLInit, mfp);
+	}
 
 	assert(mfp.isVirtual);
 	assert(mfp.thisptroffs == 0);
 	assert(mfp.vtbloffs == 0);
 
-	vtable_src = (void **)*(void **)&isgd_thunk;
+	if (g_is_source2)
+	{
+		vtable_src = (void **)*(void **)&is2s_thunk;
+	}
+	else
+	{
+		vtable_src = (void **)*(void **)&isgd_thunk;
+	}
 	vtable_dest = (void **)*(void **)gamedll_iface;
 
 	SourceHook::SetMemAccess(&vtable_dest[mfp.vtblindex],
@@ -393,12 +625,26 @@ mm_PatchDllShutdown()
 	SourceHook::MemFuncInfo mfp;
 
 	mfp.isVirtual = false;
-	SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfp);
+	if (g_is_source2)
+	{
+		SourceHook::GetFuncInfo(&ISource2Server::Shutdown, mfp);
+	}
+	else
+	{
+		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfp);
+	}
 	assert(mfp.isVirtual);
 	assert(mfp.thisptroffs == 0);
 	assert(mfp.vtbloffs == 0);
 
-	vtable_src = (void **)*(void **)&isgd_thunk;
+	if (g_is_source2)
+	{
+		vtable_src = (void **)*(void **)&is2s_thunk;
+	}
+	else
+	{
+		vtable_src = (void **)*(void **)&isgd_thunk;
+	}
 	vtable_dest = (void **)*(void **)gamedll_iface;
 
 	isgd_orig_shutdown = vtable_dest[isgd_shutdown_index];
@@ -406,20 +652,138 @@ mm_PatchDllShutdown()
 }
 
 static void
-mm_PrepForGameLoad()
+mm_PatchAllowDedicated(bool patch)
 {
-	mm_PatchDllInit(true);
+	void **vtable_src;
+	void **vtable_dest;
+	SourceHook::MemFuncInfo mfp;
+
+	SourceHook::GetFuncInfo(&ISource2ServerConfig::AllowDedicatedServers, mfp);
+
+	assert(mfp.isVirtual);
+	assert(mfp.thisptroffs == 0);
+	assert(mfp.vtbloffs == 0);
+
+	vtable_src = (void **) *(void **) &is2sc_thunk;
+	vtable_dest = (void **) *(void **) config_iface;
+
+	SourceHook::SetMemAccess(&vtable_dest[is2sc_allowdedi_index],
+		sizeof(void*),
+		SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+
+	if (patch)
+	{
+		assert(is2sc_orig_allowdedi == NULL);
+		is2sc_orig_allowdedi = vtable_dest[is2sc_allowdedi_index];
+		vtable_dest[is2sc_allowdedi_index] = vtable_src[mfp.vtblindex];
+	}
+	else
+	{
+		assert(is2sc_orig_allowdedi != NULL);
+		vtable_dest[is2sc_allowdedi_index] = is2sc_orig_allowdedi;
+		is2sc_orig_allowdedi = NULL;
+	}
 }
+
+static void
+mm_PatchConnect(bool patch)
+{
+	void **vtable_src;
+	void **vtable_dest;
+	SourceHook::MemFuncInfo mfp;
+
+	SourceHook::GetFuncInfo(&ISource2ServerConfig::Connect, mfp);
+
+	assert(mfp.isVirtual);
+	assert(mfp.thisptroffs == 0);
+	assert(mfp.vtbloffs == 0);
+
+	vtable_src = (void **) *(void **) &is2sc_thunk;
+	vtable_dest = (void **) *(void **) config_iface;
+
+	SourceHook::SetMemAccess(&vtable_dest[mfp.vtblindex],
+		sizeof(void*),
+		SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+
+	if (patch)
+	{
+		assert(is2sc_orig_connect == NULL);
+		is2sc_orig_connect = vtable_dest[mfp.vtblindex];
+		vtable_dest[mfp.vtblindex] = vtable_src[mfp.vtblindex];
+	}
+	else
+	{
+		assert(is2sc_orig_connect != NULL);
+		vtable_dest[mfp.vtblindex] = is2sc_orig_connect;
+		is2sc_orig_connect = NULL;
+	}
+}
+
 
 void *
 mm_GameDllRequest(const char *name, int *ret)
 {
-	if (gamedll_lib != NULL && gamedll_bridge == NULL)
+	if (strncmp(name, "Source2ServerConfig", 19) == 0)
 	{
-		return gamedll_qvi(name, ret);
-	}
+		g_is_source2 = true;
+		if (!mm_DetectGameInformation())
+		{
+			if (ret != NULL)
+				*ret = 1;
+			return NULL;
+		}
 
-	if (strncmp(name, "ServerGameDLL", 13) == 0)
+		void *lib;
+		char error[255];
+		void *ptr = NULL;
+		QueryValveInterface qvi;
+		for (unsigned int i = 0; i < gamedll_path_count; i++)
+		{
+			if (gamedll_libs[i] == NULL)
+			{
+				lib = mm_LoadLibrary(gamedll_paths[i], error, sizeof(error));
+				if (lib == NULL)
+					continue;
+				gamedll_libs[i] = lib;
+			}
+			lib = gamedll_libs[i];
+			qvi = (QueryValveInterface)mm_GetLibAddress(lib, "CreateInterface");
+			if (qvi == NULL)
+				continue;
+			ptr = qvi(name, ret);
+			if (ptr != NULL)
+			{
+				gamedll_libs[i] = NULL;
+				break;
+			}
+		}
+
+		if (ptr != NULL)
+		{
+			mm_FreeCachedLibraries();
+			gamedll_lib = lib;
+			config_iface = (ISource2ServerConfig *) ptr;
+			gamedll_qvi = qvi;
+
+			mm_PatchConnect(true);
+			mm_PatchAllowDedicated(true);
+
+			if (ret != NULL)
+				*ret = 0;
+			return ptr;
+		}
+	}
+	else if (strncmp(name, "Source2Server0", 14) == 0)
+	{
+		gamedll_iface = (IServerGameDLL *)gamedll_qvi(name, ret);
+		gamedll_version = atoi(&name[13]);
+		mm_PatchDllInit(true);
+
+		if (ret != NULL)
+			*ret = 0;
+		return gamedll_iface;
+	}
+	else if (strncmp(name, "ServerGameDLL", 13) == 0)
 	{
 		if (!mm_DetectGameInformation())
 		{
@@ -460,12 +824,16 @@ mm_GameDllRequest(const char *name, int *ret)
 			gamedll_iface = (IServerGameDLL *)ptr;
 			gamedll_qvi = qvi;
 			gamedll_version = atoi(&name[13]);
-			mm_PrepForGameLoad();
+			mm_PatchDllInit(true);
 
 			if (ret != NULL)
 				*ret = 0;
 			return ptr;
 		}
+	}
+	else if (gamedll_lib != NULL && gamedll_bridge == NULL)
+	{
+		return gamedll_qvi(name, ret);
 	}
 	else if (game_info_detected == 0)
 	{

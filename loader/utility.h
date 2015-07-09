@@ -2,7 +2,7 @@
  * vim: set ts=4 :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2008 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2015 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -43,7 +43,7 @@ extern void
 mm_UnloadLibrary(void *lib);
 
 extern bool
-mm_ResolvePath(const char *path, char *buffer, size_t maxlength);
+mm_ResolvePath(const char *path, char *buffer, size_t maxlength, bool bSource2);
 
 extern size_t
 mm_PathFormat(char *buffer, size_t len, const char *fmt, ...);
