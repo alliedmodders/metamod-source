@@ -39,6 +39,14 @@
 #include <filesystem.h>
 #include "metamod.h"
 
+#if SOURCE_ENGINE == SE_SOURCE2
+SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
+bool BaseProvider::AllowDedicatedServers(EUniverse universe) const
+{
+	RETURN_META_VALUE(MRES_SUPERCEDE, true);
+}
+#endif
+
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
 struct UsrMsgInfo
@@ -189,6 +197,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	{
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, gameclients, ClientCommand, false);
 	}
+
+#if SOURCE_ENGINE == SE_SOURCE2
+	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &BaseProvider::AllowDedicatedServers), false);
+#endif
 }
 
 void BaseProvider::Notify_DLLShutdown_Pre()

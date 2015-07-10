@@ -77,6 +77,9 @@ public:
 	virtual const char *GetUserMessage(int index, int *size=NULL);
 	virtual int DetermineSourceEngine();
 	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
+#if SOURCE_ENGINE == SE_SOURCE2
+	bool AllowDedicatedServers(EUniverse universe) const;
+#endif
 };
 
 extern IVEngineServer *engine;
