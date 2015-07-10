@@ -168,6 +168,11 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 #endif
 
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+#if SOURCE_ENGINE == SE_SOURCE2
+	g_SMConVarAccessor.RegisterConCommandBase(&_meta_game_init);
+	g_SMConVarAccessor.RegisterConCommandBase(&_meta_level_init);
+	g_SMConVarAccessor.RegisterConCommandBase(&_meta_level_shutdown);
+#endif
 
 	CacheUserMessages();
 

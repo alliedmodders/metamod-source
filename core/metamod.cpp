@@ -502,8 +502,11 @@ Handler_GameInit()
 	}
 
 	is_game_init = true;
-
+#if SOURCE_ENGINE == SE_SOURCE2
+	return true;
+#else
 	RETURN_META_VALUE(MRES_IGNORED, true);
+#endif
 }
 
 void
@@ -551,7 +554,10 @@ Handler_LevelShutdown(void)
 
 	ITER_EVENT(OnLevelShutdown, ());
 
+#if SOURCE_ENGINE == SE_SOURCE2
+#else
 	RETURN_META(MRES_IGNORED);
+#endif
 }
 
 static bool
@@ -564,7 +570,11 @@ Handler_LevelInit(char const *pMapName,
 {
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 
+#if SOURCE_ENGINE == SE_SOURCE2
+	return false;
+#else
 	RETURN_META_VALUE(MRES_IGNORED, false);
+#endif
 }
 
 void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
