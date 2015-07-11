@@ -46,6 +46,8 @@
 using namespace SourceMM;
 using namespace SourceHook;
 
+class INetworkGameServer;
+
 class BaseProvider : public IMetamodSourceProvider
 {
 public:
@@ -89,6 +91,10 @@ extern IServerGameDLL *server;
 extern IServerGameClients *gameclients;
 extern ICvar *icvar;
 extern CGlobalVars *gpGlobals;
+#if SOURCE_ENGINE == SE_SOURCE2
+extern INetworkServerService *netservice;
+extern IEngineServiceMgr *enginesvcmgr;
+#endif
 
 #endif //_INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
 

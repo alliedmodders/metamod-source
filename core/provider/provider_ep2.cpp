@@ -39,6 +39,9 @@
 #include <filesystem.h>
 #include "metamod.h"
 #include <tier1/KeyValues.h>
+#if SOURCE_ENGINE == SE_SOURCE2
+#include <iserver.h>
+#endif
 
 #if SOURCE_ENGINE == SE_SOURCE2
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
@@ -103,17 +106,14 @@ IFileSystem *baseFs = NULL;
 IServerGameDLL *server = NULL;
 #if SOURCE_ENGINE == SE_SOURCE2
 static ISource2ServerConfig *serverconfig = NULL;
+INetworkServerService *netservice = NULL;
+IEngineServiceMgr *enginesvcmgr = NULL;
 #endif
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
 CGlobalVars *gpGlobals = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
-#if SOURCE_ENGINE == SE_SOURCE2
-ConCommand _meta_game_init("meta_game_init", meta_game_init);
-ConCommand _meta_level_init("meta_level_init", meta_level_init);
-ConCommand _meta_level_shutdown("meta_level_shutdown", meta_level_shutdown);
-#endif
 
 #if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CEntityIndex, const CCommand &);
@@ -144,6 +144,8 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 #if SOURCE_ENGINE == SE_SOURCE2
 	gpGlobals = engine->GetServerGlobals();
 	serverconfig = (ISource2ServerConfig *) ((serverFactory) (INTERFACEVERSION_SERVERCONFIG, NULL));
+	netservice = (INetworkServerService *) ((engineFactory) (NETWORKSERVERSERVICE_INTERFACE_VERSION, NULL));
+	enginesvcmgr = (IEngineServiceMgr *) ((engineFactory) (ENGINESERVICEMGR_INTERFACE_VERSION, NULL));
 #endif
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	icvar = (ICvar *)((engineFactory)(CVAR_INTERFACE_VERSION, NULL));
@@ -177,11 +179,6 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 #endif
 
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
-#if SOURCE_ENGINE == SE_SOURCE2
-	g_SMConVarAccessor.RegisterConCommandBase(&_meta_game_init);
-	g_SMConVarAccessor.RegisterConCommandBase(&_meta_level_init);
-	g_SMConVarAccessor.RegisterConCommandBase(&_meta_level_shutdown);
-#endif
 
 	CacheUserMessages();
 
@@ -308,7 +305,34 @@ bool BaseProvider::LogMessage(const char *buffer)
 
 bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo)
 {
-#if SOURCE_ENGINE != SE_SOURCE2
+#if SOURCE_ENGINE == SE_SOURCE2
+	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
+
+	switch (hook)
+	{
+	case ProvidedHook_StartupServer:
+		SourceHook::GetFuncInfo(&INetworkServerService::StartupServer, mfi);
+		break;
+	case ProvidedHook_StartChangeLevel:
+		SourceHook::GetFuncInfo(&INetworkGameServer::StartChangeLevel, mfi);
+		break;
+	case ProvidedHook_Init:
+		SourceHook::GetFuncInfo(&INetworkGameServer::Init, mfi);
+		break;
+	case ProvidedHook_SwitchToLoop:
+		SourceHook::GetFuncInfo(&IEngineServiceMgr::SwitchToLoop, mfi);
+		break;
+	case ProvidedHook_AllocateServer:
+		SourceHook::GetFuncInfo(&INetworkGameServerFactory::Allocate, mfi);
+		break;
+	default:
+		return false;
+	}
+
+	*pInfo = mfi;
+
+	return (mfi.thisptroffs >= 0);
+#else
 	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
 
 	if (hook == ProvidedHook_LevelInit)
@@ -327,8 +351,6 @@ bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInf
 	*pInfo = mfi;
 
 	return (mfi.thisptroffs >= 0);
-#else
-	return false;
 #endif
 }
 
