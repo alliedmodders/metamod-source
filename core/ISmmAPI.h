@@ -39,7 +39,6 @@
 
 #if defined META_NO_HL2SDK
 class CGlobalVars;
-class IServerPluginCallbacks;
 struct edict_t;
 class ConCommandBase;
 #else
@@ -61,6 +60,8 @@ class ConCommandBase;
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
 
 typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
+
+class IServerPluginCallbacks;
 
 namespace SourceMM
 {

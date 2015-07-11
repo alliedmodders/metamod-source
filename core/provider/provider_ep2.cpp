@@ -38,6 +38,7 @@
 #include "metamod_console.h"
 #include <filesystem.h>
 #include "metamod.h"
+#include <tier1/KeyValues.h>
 
 #if SOURCE_ENGINE == SE_SOURCE2
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);

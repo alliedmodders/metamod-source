@@ -32,7 +32,9 @@
 #endif
 #include <sourcehook.h>
 #include <sh_memfuncinfo.h>
+#if SOURCE_ENGINE != SE_SOURCE2
 #include <iserverplugin.h>
+#endif
 #include "ISmmAPI.h"
 #include "metamod_provider.h"
 #include "metamod_oslink.h"
