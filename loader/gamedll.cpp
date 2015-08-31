@@ -52,7 +52,6 @@ static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
-static int is2sc_allowdedi_index = 20;
 static char mm_path[PLATFORM_MAX_PATH];
 static bool g_is_source2 = false;
 
@@ -230,14 +229,10 @@ static void
 mm_PatchDllShutdown();
 
 static void
-mm_PatchAllowDedicated(bool patch);
-
-static void
 mm_PatchConnect(bool patch);
 
 static void *isgd_orig_init = NULL;
 static void *isgd_orig_shutdown = NULL;
-static void *is2sc_orig_allowdedi = NULL;
 static void *is2sc_orig_connect = NULL;
 
 class VEmptyClass
@@ -247,9 +242,8 @@ class VEmptyClass
 gamedll_bridge_info g_bridge_info;
 
 // Source2 - Rough start order
-// CreateInterfaceFn (IS2SC) - hook Connect and AllowDedicatedServer
+// CreateInterfaceFn (IS2SC) - hook Connect
 // IS2SC::Connect - save factory pointer. return orig. remove hook.
-// IS2SC::AllowDedicatedServer - return true. remove hook.
 // CreateInterfaceFn (IS2S) - hook Init and Shutdown
 // IS2S::Init - do same as old ISGD::DLLInit, including core load. return orig. remove hook.
 // IS2S::Shutdown - <-- this
@@ -298,11 +292,6 @@ public:
 		mm_PatchConnect(false);
 
 		return result;
-	}
-	virtual bool	AllowDedicatedServers(int universe) const
-	{
-		mm_PatchAllowDedicated(false);
-		return true;
 	}
 };
 
@@ -662,40 +651,6 @@ mm_PatchDllShutdown()
 }
 
 static void
-mm_PatchAllowDedicated(bool patch)
-{
-	void **vtable_src;
-	void **vtable_dest;
-	SourceHook::MemFuncInfo mfp;
-
-	SourceHook::GetFuncInfo(&ISource2ServerConfig::AllowDedicatedServers, mfp);
-
-	assert(mfp.isVirtual);
-	assert(mfp.thisptroffs == 0);
-	assert(mfp.vtbloffs == 0);
-
-	vtable_src = (void **) *(void **) &is2sc_thunk;
-	vtable_dest = (void **) *(void **) config_iface;
-
-	SourceHook::SetMemAccess(&vtable_dest[is2sc_allowdedi_index],
-		sizeof(void*),
-		SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
-
-	if (patch)
-	{
-		assert(is2sc_orig_allowdedi == NULL);
-		is2sc_orig_allowdedi = vtable_dest[is2sc_allowdedi_index];
-		vtable_dest[is2sc_allowdedi_index] = vtable_src[mfp.vtblindex];
-	}
-	else
-	{
-		assert(is2sc_orig_allowdedi != NULL);
-		vtable_dest[is2sc_allowdedi_index] = is2sc_orig_allowdedi;
-		is2sc_orig_allowdedi = NULL;
-	}
-}
-
-static void
 mm_PatchConnect(bool patch)
 {
 	void **vtable_src;
@@ -776,7 +731,6 @@ mm_GameDllRequest(const char *name, int *ret)
 			gamedll_qvi = qvi;
 
 			mm_PatchConnect(true);
-			mm_PatchAllowDedicated(true);
 
 			if (ret != NULL)
 				*ret = 0;
