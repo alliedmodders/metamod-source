@@ -114,6 +114,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	if (!engine)
 	{
 		engine = (IVEngineServer *)((engineFactory)("VEngineServer022", NULL));
+		if (!engine)
+		{
+			engine = (IVEngineServer *)((engineFactory)("VEngineServer021", NULL));
+		}
 	}
 #else
 	engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
