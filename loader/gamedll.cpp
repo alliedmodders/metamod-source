@@ -36,6 +36,7 @@
 #include "gamedll.h"
 
 class IServerGameDLL;
+class ISource2ServerConfig;
 
 #define MAX_GAMEDLL_PATHS	10
 
@@ -47,6 +48,7 @@ static void *gamedll_libs[MAX_GAMEDLL_PATHS];
 static unsigned int gamedll_path_count = 0;
 static void *gamedll_lib = NULL;
 static IServerGameDLL *gamedll_iface = NULL;
+static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
@@ -231,7 +233,7 @@ mm_PatchConnect(bool patch);
 
 static void *isgd_orig_init = NULL;
 static void *isgd_orig_shutdown = NULL;
-static void *is2s_orig_connect = NULL;
+static void *is2sc_orig_connect = NULL;
 
 class VEmptyClass
 {
@@ -254,10 +256,10 @@ enum InitReturnVal_t
 	INIT_LAST_VAL,
 };
 
-class ISource2Server
+class ISource2ServerConfig
 {
 public:
-	virtual bool Connect(QueryValveInterface factory)
+	virtual bool	Connect(QueryValveInterface factory)
 	{
 		g_bridge_info.engineFactory = factory;
 		g_bridge_info.fsFactory = factory;
@@ -273,7 +275,7 @@ public:
 #if defined _WIN32
 				void *addr;
 			} u;
-			u.addr = is2s_orig_connect;
+			u.addr = is2sc_orig_connect;
 #else
 				struct
 				{
@@ -281,16 +283,22 @@ public:
 					intptr_t adjustor;
 				} s;
 		} u;
-			u.s.addr = is2s_orig_connect;
+			u.s.addr = is2sc_orig_connect;
 			u.s.adjustor = 0;
 #endif
-			result = (((VEmptyClass *) gamedll_iface)->*u.mfpnew)(factory);
-	}
+			result = (((VEmptyClass *) config_iface)->*u.mfpnew)(factory);
+		}
 
 		mm_PatchConnect(false);
 
 		return result;
 	}
+};
+
+class ISource2Server
+{
+public:
+	virtual bool Connect(QueryValveInterface factory) { return true; }
 	virtual void Disconnect() {}
 	virtual void *QueryInterface(const char *pInterfaceName) { return nullptr; }
 
@@ -558,6 +566,7 @@ public:
 
 static IServerGameDLL isgd_thunk;
 static ISource2Server is2s_thunk;
+static ISource2ServerConfig is2sc_thunk;
 
 static void
 mm_PatchDllInit(bool patch)
@@ -648,14 +657,14 @@ mm_PatchConnect(bool patch)
 	void **vtable_dest;
 	SourceHook::MemFuncInfo mfp;
 
-	SourceHook::GetFuncInfo(&ISource2Server::Connect, mfp);
+	SourceHook::GetFuncInfo(&ISource2ServerConfig::Connect, mfp);
 
 	assert(mfp.isVirtual);
 	assert(mfp.thisptroffs == 0);
 	assert(mfp.vtbloffs == 0);
 
-	vtable_src = (void **) *(void **) &is2s_thunk;
-	vtable_dest = (void **) *(void **) gamedll_iface;
+	vtable_src = (void **) *(void **) &is2sc_thunk;
+	vtable_dest = (void **) *(void **) config_iface;
 
 	SourceHook::SetMemAccess(&vtable_dest[mfp.vtblindex],
 		sizeof(void*),
@@ -663,15 +672,15 @@ mm_PatchConnect(bool patch)
 
 	if (patch)
 	{
-		assert(is2s_orig_connect == NULL);
-		is2s_orig_connect = vtable_dest[mfp.vtblindex];
+		assert(is2sc_orig_connect == NULL);
+		is2sc_orig_connect = vtable_dest[mfp.vtblindex];
 		vtable_dest[mfp.vtblindex] = vtable_src[mfp.vtblindex];
 	}
 	else
 	{
-		assert(is2s_orig_connect != NULL);
-		vtable_dest[mfp.vtblindex] = is2s_orig_connect;
-		is2s_orig_connect = NULL;
+		assert(is2sc_orig_connect != NULL);
+		vtable_dest[mfp.vtblindex] = is2sc_orig_connect;
+		is2sc_orig_connect = NULL;
 	}
 }
 
@@ -718,7 +727,10 @@ mm_GameDllRequest(const char *name, int *ret)
 		{
 			mm_FreeCachedLibraries();
 			gamedll_lib = lib;
+			config_iface = (ISource2ServerConfig *) ptr;
 			gamedll_qvi = qvi;
+
+			mm_PatchConnect(true);
 
 			if (ret != NULL)
 				*ret = 0;
@@ -729,7 +741,6 @@ mm_GameDllRequest(const char *name, int *ret)
 	{
 		gamedll_iface = (IServerGameDLL *)gamedll_qvi(name, ret);
 		gamedll_version = atoi(&name[13]);
-		mm_PatchConnect(true);
 		mm_PatchDllInit(true);
 
 		if (ret != NULL)
