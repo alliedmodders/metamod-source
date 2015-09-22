@@ -52,7 +52,7 @@ static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
-static int is2sc_allowdedi_index = 20;
+static int is2sc_allowdedi_index = 22;
 static char mm_path[PLATFORM_MAX_PATH];
 static bool g_is_source2 = false;
 
