@@ -1464,31 +1464,30 @@ namespace SourceHook
 	{
 		return OverrideFunctor<RetType>();
 	}
-@[$1,0,$a:
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))
+
+	template <class Iface, class RetType, class ... Params>
+	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(Params...))
 	{
 		return OverrideFunctor<RetType>();
 	}
 
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(@[$2,1,$1:Param$2, @]...))
+	template <class Iface, class RetType, class ... Params>
+	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(Params..., ...))
 	{
 		return OverrideFunctor<RetType>();
 	}
 
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))
+	template <class Iface, class RetType, class ... Params>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Params...))
 	{
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1:Param$2, @]...))
+	template <class Iface, class RetType, class ... Params>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Params..., ...))
 	{
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
-@]
 }
 
 #endif
