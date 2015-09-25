@@ -109,6 +109,19 @@ namespace
 	SH_DECL_MANUALHOOK1_void(IBase_Func3_Manual, 2, 0, 0, int);
 }
 
+// Clang is smart enough to see:
+// 	CDerived1 a;
+// 	IBase *p = &a;
+//	p->Func1()
+//
+// May bypass the vtable, since p_d1i2 has exactly one assignment. We try to
+// defeat the analysis that produces this result here.
+template <typename T>
+T defeat_ssa(const T& t)
+{
+	return time(NULL) ? t : nullptr;
+}
+
 bool TestVPHooks(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
@@ -118,9 +131,9 @@ bool TestVPHooks(std::string &error)
 	CDerived1 d1i2;
 	CDerived2 d2i1;
 
-	IBase *p_d1i1 = &d1i1;
-	IBase *p_d1i2 = &d1i2;
-	IBase *p_d2i1 = &d2i1;
+	IBase *p_d1i1 = defeat_ssa(&d1i1);
+	IBase *p_d1i2 = defeat_ssa(&d1i2);
+	IBase *p_d2i1 = defeat_ssa(&d2i1);
 	
 	int hook1 = SH_ADD_VPHOOK(IBase, Func1, p_d1i1, SH_STATIC(Handler_Func1_Pre), false);
 
