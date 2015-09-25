@@ -326,8 +326,8 @@ namespace
 
 	THGM_MAKE_TEST2_void(11, Object<3>, Object<600>&);
 	THGM_SETUP_PI2(11,
-		Object<3>, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor | SourceHook::PassInfo::PassFlag_CCtor,
-		Object<600> &, SourceHook::PassInfo::PassType_Object, SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor | SourceHook::PassInfo::PassFlag_CCtor
+		Object<3>, SourceHook::PassInfo::PassType_Object, (SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor | SourceHook::PassInfo::PassFlag_CCtor),
+		Object<600> &, SourceHook::PassInfo::PassType_Object, (SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor | SourceHook::PassInfo::PassFlag_CCtor)
 		);
 
 	THGM_MAKE_TEST0(101, char);
@@ -385,8 +385,8 @@ namespace
 		int, SourceHook::PassInfo::PassType_Basic, SourceHook::PassInfo::PassFlag_ByVal
 		);
 	THGM_SETUP_RI(110, ObjRet13, SourceHook::PassInfo::PassType_Object,
-		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
-		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+		(SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		 SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp));
 
 	MAKE_OBJRET(111);
 	ObjRet111 g_O111_0;
@@ -419,8 +419,8 @@ namespace
 	THGM_MAKE_TEST0(111, ObjRet111& );
 	THGM_SETUP_PI0(111);
 	THGM_SETUP_RI(111, ObjRet111& , SourceHook::PassInfo::PassType_Object,
-		SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
-		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+		(SourceHook::PassInfo::PassFlag_ByRef | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		 SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp));
 
 
 	THGM_MAKE_TEST3_void(150, int, double, int);
@@ -480,8 +480,8 @@ namespace
 
 	THGM_MAKE_TEST1_vafmt_void(214, Object<133>);
 	THGM_SETUP_PI1(214, Object<133>, SourceHook::PassInfo::PassType_Object,
-		SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
-		SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp);
+		(SourceHook::PassInfo::PassFlag_ByVal | SourceHook::PassInfo::PassFlag_OCtor | SourceHook::PassInfo::PassFlag_ODtor |
+		 SourceHook::PassInfo::PassFlag_CCtor | SourceHook::PassInfo::PassFlag_AssignOp));
 
 
 	MAKE_STATE(State_Hello_Func4_Called);

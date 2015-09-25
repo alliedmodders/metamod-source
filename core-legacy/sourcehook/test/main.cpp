@@ -47,7 +47,7 @@ public:
 		}
 	}
 
-	static void DoTests()
+	static bool DoTests()
 	{
 		int passed=0, failed=0;
 		for (SourceHook::List<Test*>::iterator iter = ms_Tests.begin(); iter != ms_Tests.end(); ++iter)
@@ -59,6 +59,7 @@ public:
 		}
 		cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
 		cout << "Total: " << passed + failed << endl;
+		return failed == 0;
 	}
 };
 
@@ -88,12 +89,9 @@ int main(int argc, char *argv[])
 
 	g_Verbose = argc > 1 && strcmp(argv[1], "-v") == 0;
 
-	Test::DoTests();
-
-	cout << "Press enter to continue" << endl;
-
-	char x;
-	cin.read(&x, 1);
+	if (!Test::DoTests())
+		return 1;
+	return 0;
 }
 
 SourceHook::ISourceHook *Test_Factory()

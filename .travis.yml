@@ -22,3 +22,13 @@ script:
   - PATH="~/.local/bin:$PATH"
   - CC=clang CXX=clang python ../configure.py --enable-optimize --sdks=episode1,tf2,l4d2,csgo,dota
   - ambuild
+  - cd .. && mkdir build-sh-opt && cd build-sh-opt
+  - CC=clang CXX=clang python ../configure.py --enable-optimize --enable-tests --sdks=
+  - ambuild
+  - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
+  - ./core-legacy/sourcehook/test/test_sourcehook/test_sourcehook -v
+  - cd .. && mkdir build-sh-debug && cd build-sh-debug
+  - CC=clang CXX=clang python ../configure.py --enable-debug --enable-tests --sdks=
+  - ambuild
+  - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
+  - ./core-legacy/sourcehook/test/test_sourcehook/test_sourcehook -v
