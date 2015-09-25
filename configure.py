@@ -23,4 +23,6 @@ run.options.add_option('--enable-optimize', action='store_const', const='1', des
 run.options.add_option('-s', '--sdks', default='all', dest='sdks',
                        help='Build against specified SDKs; valid args are "all", "present", or '
                             'comma-delimited list of engine names (default: %default)')
+run.options.add_option('--enable-tests', default=False, dest='enable_tests', action='store_true',
+                       help='Build tests.')
 run.Configure()

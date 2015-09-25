@@ -87,6 +87,8 @@ class MMSConfig(object):
     sdk_list = builder.options.sdks.split(',')
     use_all = sdk_list[0] == 'all'
     use_present = sdk_list[0] == 'present'
+    if sdk_list[0] == '':
+        sdk_list = []
 
     for sdk_name in PossibleSDKs:
       sdk = PossibleSDKs[sdk_name]
@@ -103,7 +105,7 @@ class MMSConfig(object):
           sdk.path = sdk_path
           self.sdks[sdk_name] = sdk
 
-    if len(self.sdks) < 1:
+    if len(self.sdks) < 1 and len(sdk_list):
       raise Exception('At least one SDK must be available.')
 
   def configure(self):
@@ -291,8 +293,7 @@ class MMSConfig(object):
 
     return compiler
 
-  def LibraryBuilder(self, compiler, name):
-    binary = compiler.Library(name)
+  def AddVersioning(self, binary):
     if builder.target_platform == 'windows':
       binary.sources += ['version.rc']
       binary.compiler.rcdefines += [
@@ -309,9 +310,29 @@ class MMSConfig(object):
       binary.compiler.sourcedeps += MMS.generated_headers
     return binary
 
+  def LibraryBuilder(self, compiler, name):
+    binary = compiler.Library(name)
+    self.AddVersioning(binary)
+    return binary
+
+  def ProgramBuilder(self, compiler, name):
+    binary = compiler.Program(name)
+    self.AddVersioning(binary)
+    if '-static-libgcc' in binary.compiler.linkflags:
+      binary.compiler.linkflags.remove('-static-libgcc')
+    if '-lgcc_eh' in binary.compiler.linkflags:
+      binary.compiler.linkflags.remove('-lgcc_eh')
+    if binary.compiler.like('gcc'):
+      binary.compiler.linkflags += ['-lstdc++']
+    return binary
+
   def Library(self, context, name):
     compiler = context.compiler.clone()
     return self.LibraryBuilder(compiler, name)
+
+  def Program(self, context, name):
+    compiler = context.compiler.clone()
+    return self.ProgramBuilder(compiler, name)
 
   def HL2Library(self, context, name, sdk):
     compiler = self.HL2Compiler(context, sdk)
@@ -395,6 +416,11 @@ BuildScripts = [
     'core-legacy/AMBuilder',
     'core/AMBuilder',
 ]
+if getattr(builder.options, 'enable_tests', False):
+    BuildScripts += [
+        'core/sourcehook/test/AMBuilder',
+        'core-legacy/sourcehook/test/AMBuilder',
+    ]
 
 if builder.backend == 'amb2':
   BuildScripts += [

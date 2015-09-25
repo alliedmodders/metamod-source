@@ -1,0 +1,35 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
+import os
+
+binary = MMS.Program(builder, "test_sourcehook")
+binary.compiler.cxxincludes += [
+  os.path.join(builder.sourcePath, 'core', 'sourcehook'),
+]
+
+binary.sources += [
+  'main.cpp',
+  '../sourcehook.cpp',
+  '../sourcehook_hookmangen.cpp',
+  '../sourcehook_impl_chookmaninfo.cpp',
+  '../sourcehook_impl_chookidman.cpp',
+  '../sourcehook_impl_cproto.cpp',
+  '../sourcehook_impl_cvfnptr.cpp',
+  'test1.cpp',
+  'test2.cpp',
+  'test3.cpp',
+  'test4.cpp',
+  'testbail.cpp',
+  'testbail2.cpp',
+  'testhookmangen.cpp',
+  'testlist.cpp',
+  'testmanual.cpp',
+  'testmulti.cpp',
+  'testoddthunks.cpp',
+  'testrecall.cpp',
+  'testreentr.cpp',
+  'testref.cpp',
+  'testrefret.cpp',
+  'testvphooks.cpp',
+]
+
+builder.Add(binary)

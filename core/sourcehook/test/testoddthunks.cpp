@@ -1,4 +1,6 @@
 #include <string>
+#include <stdint.h>
+#include <stddef.h>
 #include "sourcehook_test.h"
 #include "sh_pagealloc.h"
 #include "testevents.h"
