@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	DO_TEST(Multi);
 	DO_TEST(Ref);
 	DO_TEST(RefRet);
-	// DO_TEST(VPHooks); -- Known failures
+	DO_TEST(VPHooks);
 	DO_TEST(CPageAlloc);
 	DO_TEST(HookManGen);
 	DO_TEST(OddThunks);
