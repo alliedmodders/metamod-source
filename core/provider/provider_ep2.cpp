@@ -174,6 +174,41 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 	}
 
+#if SOURCE_ENGINE == SE_SOURCE2
+	// Since we have to be added as a Game path (cannot add GameBin directly), we
+	// automatically get added to other paths as well, including having the MM:S
+	// dir become the default write path for logs and more. We can fix some of these.
+
+	char searchPath[260];
+	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
+	for (int i = 0; i < sizeof(searchPath); ++i)
+	{
+		if (searchPath[i] == ';')
+		{
+			searchPath[i] = '\0';
+			break;
+		}
+	}
+	baseFs->RemoveSearchPath(searchPath, "GAME");
+
+	// TODO: figure out why these calls get ignored and path remains
+	//baseFs->RemoveSearchPath(searchPath, "CONTENT");
+	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE");
+	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE_MOD");
+
+	baseFs->RemoveSearchPaths("DEFAULT_WRITE_PATH");
+	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
+	for (int i = 0; i < sizeof(searchPath); ++i)
+	{
+		if (searchPath[i] == ';')
+		{
+			searchPath[i] = '\0';
+			break;
+		}
+	}
+	baseFs->AddSearchPath(searchPath, "DEFAULT_WRITE_PATH");
+#endif
+
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
 #endif
