@@ -525,9 +525,7 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 
 bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len)
 {
-#if SOURCE_ENGINE != SE_SOURCE2
 	if (baseFs == NULL)
-#endif
 	{
 		return false;
 	}
