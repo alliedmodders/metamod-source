@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2008 Metamod:Source Development Team
+* Copyright (C) 2004-2015 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -3277,7 +3277,6 @@ namespace SourceHook
 // SH_CALL needs to deduce the return type -> it uses templates and function overloading
 // That's why SH_CALL takes two parameters: "mfp2" of type RetType(X::*mfp)(params), and "mfp" of type MFP
 // The only purpose of the mfp2 parameter is to extract the return type
-
 
 template <class X, class Y, class MFP, class RetType, class ... Params>
 SourceHook::ExecutableClassN<typename SourceHook::CCW<Y>::type, MFP, RetType, Params...>
