@@ -1072,6 +1072,43 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	buf[sizeof(buf) - 1] = 0; \
 	va_end(ap);
 
+// MSVC will automatically remove a trailing comma if __VA_ARGS__ is empty. GCC requires using ## to do this.
+#if defined(_MSC_VER)
+# define SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, ...) \
+	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
+		fastdelegate::FastDelegate<rettype, __VA_ARGS__> handler); \
+	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
+		fastdelegate::FastDelegate<rettype, __VA_ARGS__> handler);
+
+# define SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, void, __VA_ARGS__)
+
+# define SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, __VA_ARGS__, const char *)
+
+# define SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, void, __VA_ARGS__, const char *)
+
+// GCC Implementation.
+#else
+# define SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, ...) \
+	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
+		fastdelegate::FastDelegate<rettype, ##__VA_ARGS__> handler); \
+	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
+		fastdelegate::FastDelegate<rettype, ##__VA_ARGS__> handler);
+
+# define SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, void, ##__VA_ARGS__)
+
+# define SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, ##__VA_ARGS__, const char *)
+
+# define SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, ...) \
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, void, ##__VA_ARGS__, const char *)
+
+#endif
+
+// Compatibility wrappers around modern variadic macros.
 
 // ********* Support for 0 arguments *********
 #define SH_DECL_HOOK0(ifacetype, ifacefunc, attr, overload, rettype) \
@@ -1090,10 +1127,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN0(ifacetype, ifacefunc, attr, overload, rettype) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype)
 
 #define SH_DECL_HOOK0_void(ifacetype, ifacefunc, attr, overload) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)() attr> \
@@ -1111,10 +1145,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN0_void(ifacetype, ifacefunc, attr, overload) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload)
 
 #define SH_DECL_HOOK0_vafmt(ifacetype, ifacefunc, attr, overload, rettype) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(const char *, ...) attr> \
@@ -1135,10 +1166,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN0_vafmt(ifacetype, ifacefunc, attr, overload, rettype) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype)
 
 #define SH_DECL_HOOK0_void_vafmt(ifacetype, ifacefunc, attr, overload) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(const char *, ...) attr> \
@@ -1159,10 +1187,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN0_void_vafmt(ifacetype, ifacefunc, attr, overload) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload)
 
 #define SH_DECL_MANUALHOOK0(hookname, vtblidx, vtbloffs, thisptroffs, rettype) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -1295,10 +1320,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN1(ifacetype, ifacefunc, attr, overload, rettype, param1) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1)
 
 #define SH_DECL_HOOK1_void(ifacetype, ifacefunc, attr, overload, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1) attr> \
@@ -1316,10 +1338,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN1_void(ifacetype, ifacefunc, attr, overload, param1) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1)
 
 #define SH_DECL_HOOK1_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, const char *, ...) attr> \
@@ -1340,10 +1359,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN1_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1)
 
 #define SH_DECL_HOOK1_void_vafmt(ifacetype, ifacefunc, attr, overload, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, const char *, ...) attr> \
@@ -1364,10 +1380,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN1_void_vafmt(ifacetype, ifacefunc, attr, overload, param1) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1)
 
 #define SH_DECL_MANUALHOOK1(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -1500,10 +1513,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN2(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2)
 
 #define SH_DECL_HOOK2_void(ifacetype, ifacefunc, attr, overload, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2) attr> \
@@ -1521,10 +1531,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN2_void(ifacetype, ifacefunc, attr, overload, param1, param2) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2)
 
 #define SH_DECL_HOOK2_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, const char *, ...) attr> \
@@ -1545,10 +1552,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN2_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2)
 
 #define SH_DECL_HOOK2_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, const char *, ...) attr> \
@@ -1569,10 +1573,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN2_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2)
 
 #define SH_DECL_MANUALHOOK2(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -1705,10 +1706,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN3(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3)
 
 #define SH_DECL_HOOK3_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3) attr> \
@@ -1726,10 +1724,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN3_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3)
 
 #define SH_DECL_HOOK3_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, const char *, ...) attr> \
@@ -1750,10 +1745,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN3_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3)
 
 #define SH_DECL_HOOK3_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, const char *, ...) attr> \
@@ -1774,10 +1766,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN3_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3)
 
 #define SH_DECL_MANUALHOOK3(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -1910,10 +1899,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN4(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4)
 
 #define SH_DECL_HOOK4_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4) attr> \
@@ -1931,10 +1917,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN4_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4)
 
 #define SH_DECL_HOOK4_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr> \
@@ -1955,10 +1938,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN4_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4)
 
 #define SH_DECL_HOOK4_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, const char *, ...) attr> \
@@ -1979,10 +1959,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN4_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4)
 
 #define SH_DECL_MANUALHOOK4(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -2115,10 +2092,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN5(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5)
 
 #define SH_DECL_HOOK5_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5) attr> \
@@ -2136,10 +2110,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN5_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5)
 
 #define SH_DECL_HOOK5_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr> \
@@ -2160,10 +2131,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN5_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5)
 
 #define SH_DECL_HOOK5_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, const char *, ...) attr> \
@@ -2184,10 +2152,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN5_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5)
 
 #define SH_DECL_MANUALHOOK5(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -2320,10 +2285,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN6(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6)
 
 #define SH_DECL_HOOK6_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6) attr> \
@@ -2341,10 +2303,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN6_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6)
 
 #define SH_DECL_HOOK6_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr> \
@@ -2365,10 +2324,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN6_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6)
 
 #define SH_DECL_HOOK6_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, const char *, ...) attr> \
@@ -2389,10 +2345,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN6_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6)
 
 #define SH_DECL_MANUALHOOK6(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -2525,10 +2478,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN7(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7)
 
 #define SH_DECL_HOOK7_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7) attr> \
@@ -2546,10 +2496,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN7_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7)
 
 #define SH_DECL_HOOK7_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr> \
@@ -2570,10 +2517,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN7_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7)
 
 #define SH_DECL_HOOK7_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, const char *, ...) attr> \
@@ -2594,10 +2538,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN7_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7)
 
 #define SH_DECL_MANUALHOOK7(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -2730,10 +2671,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN8(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8)
 
 #define SH_DECL_HOOK8_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8) attr> \
@@ -2751,10 +2689,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN8_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8)
 
 #define SH_DECL_HOOK8_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr> \
@@ -2775,10 +2710,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN8_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8)
 
 #define SH_DECL_HOOK8_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, const char *, ...) attr> \
@@ -2799,10 +2731,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN8_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8)
 
 #define SH_DECL_MANUALHOOK8(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -2935,10 +2864,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN9(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9)
 
 #define SH_DECL_HOOK9_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9) attr> \
@@ -2956,10 +2882,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN9_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9)
 
 #define SH_DECL_HOOK9_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr> \
@@ -2980,10 +2903,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN9_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9)
 
 #define SH_DECL_HOOK9_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *, ...) attr> \
@@ -3004,10 +2924,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN9_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9)
 
 #define SH_DECL_MANUALHOOK9(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -3140,10 +3057,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN10(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)
 
 #define SH_DECL_HOOK10_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) attr> \
@@ -3161,10 +3075,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN10_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)
 
 #define SH_DECL_HOOK10_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr> \
@@ -3185,10 +3096,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN10_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)
 
 #define SH_DECL_HOOK10_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *, ...) attr> \
@@ -3209,10 +3117,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN10_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)
 
 #define SH_DECL_MANUALHOOK10(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -3345,10 +3250,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN11(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11)
 
 #define SH_DECL_HOOK11_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) attr> \
@@ -3366,10 +3268,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN11_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11)
 
 #define SH_DECL_HOOK11_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr> \
@@ -3390,10 +3289,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN11_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11)
 
 #define SH_DECL_HOOK11_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *, ...) attr> \
@@ -3414,10 +3310,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN11_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11)
 
 #define SH_DECL_MANUALHOOK11(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -3550,10 +3443,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN12(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12)
 
 #define SH_DECL_HOOK12_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) attr> \
@@ -3571,10 +3461,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN12_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12)
 
 #define SH_DECL_HOOK12_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr> \
@@ -3595,10 +3482,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN12_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12)
 
 #define SH_DECL_HOOK12_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *, ...) attr> \
@@ -3619,10 +3503,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN12_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12)
 
 #define SH_DECL_MANUALHOOK12(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -3755,10 +3636,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN13(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13)
 
 #define SH_DECL_HOOK13_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) attr> \
@@ -3776,10 +3654,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN13_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13)
 
 #define SH_DECL_HOOK13_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr> \
@@ -3800,10 +3675,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN13_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13)
 
 #define SH_DECL_HOOK13_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *, ...) attr> \
@@ -3824,10 +3696,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN13_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13)
 
 #define SH_DECL_MANUALHOOK13(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -3960,10 +3829,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN14(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14)
 
 #define SH_DECL_HOOK14_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) attr> \
@@ -3981,10 +3847,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN14_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14)
 
 #define SH_DECL_HOOK14_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr> \
@@ -4005,10 +3868,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN14_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14)
 
 #define SH_DECL_HOOK14_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *, ...) attr> \
@@ -4029,10 +3889,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN14_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14)
 
 #define SH_DECL_MANUALHOOK14(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -4165,10 +4022,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN15(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15)
 
 #define SH_DECL_HOOK15_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) attr> \
@@ -4186,10 +4040,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN15_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15)
 
 #define SH_DECL_HOOK15_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr> \
@@ -4210,10 +4061,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN15_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15)
 
 #define SH_DECL_HOOK15_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *, ...) attr> \
@@ -4234,10 +4082,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN15_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15)
 
 #define SH_DECL_MANUALHOOK15(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -4370,10 +4215,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN16(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16)
 
 #define SH_DECL_HOOK16_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) attr> \
@@ -4391,10 +4233,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN16_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16)
 
 #define SH_DECL_HOOK16_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr> \
@@ -4415,10 +4254,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN16_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16)
 
 #define SH_DECL_HOOK16_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *, ...) attr> \
@@ -4439,10 +4275,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN16_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16)
 
 #define SH_DECL_MANUALHOOK16(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
@@ -4575,10 +4408,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN17(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> handler);
+	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17)
 
 #define SH_DECL_HOOK17_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) attr> \
@@ -4596,10 +4426,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN17_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17> handler);
+	SH_DECL_EXTERN_void(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17)
 
 #define SH_DECL_HOOK17_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<rettype (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
@@ -4620,10 +4447,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN17_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *> handler);
+	SH_DECL_EXTERN_vafmt(ifacetype, ifacefunc, attr, overload, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17)
 
 #define SH_DECL_HOOK17_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *, ...) attr> \
@@ -4644,10 +4468,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		__SourceHook_ParamInfos_##ifacetype##ifacefunc##overload, 0, __SH_EPI, __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload };
 
 #define SH_DECL_EXTERN17_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
-	int __SourceHook_FHAdd##ifacetype##ifacefunc(void *iface, ::SourceHook::ISourceHook::AddHookMode mode, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *> handler); \
-	bool __SourceHook_FHRemove##ifacetype##ifacefunc(void *iface, bool post, \
-		fastdelegate::FastDelegate<void, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17, const char *> handler);
+	SH_DECL_EXTERN_void_vafmt(ifacetype, ifacefunc, attr, overload, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17)
 
 #define SH_DECL_MANUALHOOK17(hookname, vtblidx, vtbloffs, thisptroffs, rettype, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15, param16, param17) \
 	SHINT_MAKE_GENERICSTUFF_BEGIN_MANUAL(hookname, vtbloffs, vtblidx, thisptroffs) \
