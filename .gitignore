@@ -25,3 +25,4 @@ Release.*/
 # AMBuild build directories
 build/
 obj-*/
+.gdb_history
