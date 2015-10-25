@@ -1,5 +1,5 @@
 /* ======== SourceHook ========
-* Copyright (C) 2004-2007 Metamod:Source Development Team
+* Copyright (C) 2004-2015 Metamod:Source Development Team
 * No warranties of any kind
 *
 * License: zlib/libpng
@@ -27,9 +27,9 @@
 // ???
 // 4 - addition of hook ids and vp hooks (with them, AddHookNew and RemoveHookNew)
 //     This is not a SH_IFACE_VERSION change so that old plugins continue working!
-// 5 - addition of direct vp hooks (new hook mode; from now on AddHookNew checks for
+//     addition of direct vp hooks (new hook mode; from now on AddHookNew checks for
 //	   invalid hookmode -> impl version won't have to change because of things like this)
-#define SH_IMPL_VERSION 5
+#define SH_IMPL_VERSION 4
 
 // Hookman version:
 //  1 - Support for recalls, performance optimisations
@@ -68,11 +68,21 @@
 // System
 #define SH_SYS_WIN32 1
 #define SH_SYS_LINUX 2
+#define SH_SYS_APPLE 3
+
+// OS
+#define SH_XP_POSIX  10
+#define SH_XP_WINAPI 20
 
 #ifdef _WIN32
 # define SH_SYS SH_SYS_WIN32
+# define SH_XP  SH_XP_WINAPI
 #elif defined __linux__
 # define SH_SYS SH_SYS_LINUX
+# define SH_XP  SH_XP_POSIX
+#elif defined __APPLE__
+# define SH_SYS SH_SYS_APPLE
+# define SH_XP  SH_XP_POSIX
 #else
 # error Unsupported system
 #endif
@@ -1276,25 +1286,6 @@ namespace SourceHook
 //////////////////////////////////////////////////////////////////////////
 // SH_CALL
 
-#define SH_MAKE_EXECUTABLECLASS_OB(call, prms) \
-{ \
-	using namespace ::SourceHook; \
-	\
-	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
-	RetType tmpret = (m_ThisPtr->*m_MFP)call; \
-	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
-	return tmpret; \
-}
-
-#define SH_MAKE_EXECUTABLECLASS_OB_void(call, prms) \
-{ \
-	using namespace ::SourceHook; \
-	\
-	m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr); \
-	(m_ThisPtr->*m_MFP)call; \
-	m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr); \
-}
-
 namespace SourceHook
 {
 	// Call Class Wrapper!
@@ -1320,9 +1311,8 @@ namespace SourceHook
 		}
 	};
 
-@[$1,0,$a:
-	// Support for $1 arguments
-	template<class ObjType, class MFP, class RetType@[$2,1,$1:, class Param$2@]> class ExecutableClass$1
+	template <class ObjType, class MFP, class RetType, class ... Params>
+	class ExecutableClassN
 	{
 		ObjType *m_ThisPtr;
 		void *m_VfnPtr;
@@ -1330,39 +1320,64 @@ namespace SourceHook
 		ISourceHook *m_pSH;
 		Plugin m_Plug;
 	public:
-		ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
-			m_VfnPtr(vp), m_MFP(mfp), m_pSH(pSH), m_Plug(plug) { }
-	
-		RetType operator()(@[$2,1,$1|, :Param$2 p$2@]) const
-			SH_MAKE_EXECUTABLECLASS_OB((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
-	         
-		@[$2,$1+1,$a:
-		template <@[$3,$1+1,$2|, :class Param$3@]> RetType operator()(@[$3,1,$2|, :Param$3 p$3@]) const
-			SH_MAKE_EXECUTABLECLASS_OB((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
-		@]
+		ExecutableClassN(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug)
+			: m_ThisPtr(tp),
+			  m_VfnPtr(vp),
+			  m_MFP(mfp),
+			  m_pSH(pSH),
+			  m_Plug(plug)
+		{ }
+
+		RetType operator()(Params... params) const {
+			using namespace ::SourceHook;
+			m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr);
+			RetType tmpret = (m_ThisPtr->*m_MFP)(params...);
+			m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr);
+			return tmpret;
+		}
+
+		template <class ... MoreParams>
+		RetType operator()(Params... params, MoreParams... more) const {
+			using namespace ::SourceHook;
+			m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr);
+			RetType tmpret = (m_ThisPtr->*m_MFP)(params..., more...);
+			m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr);
+			return tmpret;
+		}
 	};
 
-	template<class ObjType, class MFP@[$2,1,$1:, class Param$2@]> class ExecutableClass$1<ObjType, MFP, void@[$2,1,$1:, Param$2@]>
+	template <class ObjType, class MFP, class ... Params>
+	class ExecutableClassN<ObjType, MFP, void, Params...>
 	{
-	   ObjType *m_ThisPtr;
-	   void *m_VfnPtr;
-	   MFP m_MFP;
-	   ISourceHook *m_pSH;
-	   Plugin m_Plug;
+		ObjType *m_ThisPtr;
+		void *m_VfnPtr;
+		MFP m_MFP;
+		ISourceHook *m_pSH;
+		Plugin m_Plug;
 	public:
-	   ExecutableClass$1(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug) : m_ThisPtr(tp),
-		   m_VfnPtr(vp), m_MFP(mfp), m_pSH(pSH), m_Plug(plug) { }
-	
-	   void operator()(@[$2,1,$1|, :Param$2 p$2@]) const
-	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$2,1,$1|, :p$2@]), (@[$2,1,$1|, :Param$2@]))
-	         
-	   @[$2,$1+1,$a:
-	   template <@[$3,$1+1,$2|, :class Param$3@]> void operator()(@[$3,1,$2|, :Param$3 p$3@]) const
-	      SH_MAKE_EXECUTABLECLASS_OB_void((@[$3,1,$2|, :p$3@]), (@[$3,1,$2|, :Param$3@]))
-	   @]
-	};
-@]
+		ExecutableClassN(ObjType *tp, MFP mfp, void *vp, ISourceHook *pSH, Plugin plug)
+			: m_ThisPtr(tp),
+			  m_VfnPtr(vp),
+			  m_MFP(mfp),
+			  m_pSH(pSH),
+			  m_Plug(plug)
+		{ }
 
+		void operator()(Params... params) const {
+			using namespace ::SourceHook;
+			m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr);
+			(m_ThisPtr->*m_MFP)(params...);
+			m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr);
+		}
+
+		template <class ... MoreParams>
+		void operator()(Params... params, MoreParams... more) const {
+			using namespace ::SourceHook;
+			m_pSH->SetIgnoreHooks(m_Plug, m_VfnPtr);
+			(m_ThisPtr->*m_MFP)(params..., more...);
+			m_pSH->ResetIgnoreHooks(m_Plug, m_VfnPtr);
+		}
+	};
 }
 
 #define SH__CALL_GET_VFNPTR_NORMAL \
@@ -1383,69 +1398,64 @@ namespace SourceHook
 // That's why SH_CALL takes two parameters: "mfp2" of type RetType(X::*mfp)(params), and "mfp" of type MFP
 // The only purpose of the mfp2 parameter is to extract the return type
 
-@[$1,0,$a:
-// Support for $1 arguments
-template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<typename SourceHook::CCW<Y>::type, MFP, RetType, Params...>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+	return SourceHook::ExecutableClassN<typename CCW<Y>::type, MFP, RetType, Params...>(CCW<Y>::GRP(ptr),
 		mfp, vfnptr, shptr, plug);
 }
 
-template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@])const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<typename SourceHook::CCW<Y>::type, MFP, RetType, Params...>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params..., ...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
+	return SourceHook::ExecutableClassN<typename CCW<Y>::type, MFP, RetType, Params...>(CCW<Y>::GRP(ptr),
 		mfp, vfnptr, shptr, plug);
 }
 
-template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<SourceHook::EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<typename SourceHook::CCW<Y>::type, MFP, RetType, Params...>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClassN<typename CCW<Y>::type, MFP, RetType, Params...>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
+}
+
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<typename SourceHook::CCW<Y>::type, MFP, RetType, Params...>
+SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params..., ...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+{
+	SH__CALL_GET_VFNPTR_NORMAL
+	return SourceHook::ExecutableClassN<typename CCW<Y>::type, MFP, RetType, Params...>(CCW<Y>::GRP(ptr),
+		mfp, vfnptr, shptr, plug);
+}
+
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<SourceHook::EmptyClass, MFP, RetType, Params...>
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params...), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
 	SH__CALL_GET_VFNPTR_MANUAL
-	return SourceHook::ExecutableClass$1<EmptyClass, MFP, RetType@[$2,1,$1:, Param$2@]>(
+	return SourceHook::ExecutableClassN<EmptyClass, MFP, RetType, Params...>(
 		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
-@]
 
-#if SH_COMP != SH_COMP_MSVC || _MSC_VER > 1300
-// GCC & MSVC 7.1 need this, MSVC 7.0 doesn't like it
-
-@[$1,0,$a:
-// Support for $1 arguments
-template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...), SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
+template <class X, class Y, class MFP, class RetType, class ... Params>
+SourceHook::ExecutableClassN<SourceHook::EmptyClass, MFP, RetType, Params...>
+SH_MCALL3(Y *ptr, MFP mfp, RetType(X::*mfp2)(Params..., ...), int vtblidx, int vtbloffs, int thisptroffs, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
-		mfp, vfnptr, shptr, plug);
+	SH__CALL_GET_VFNPTR_MANUAL
+	return SourceHook::ExecutableClassN<EmptyClass, MFP, RetType, Params...>(
+		reinterpret_cast<SourceHook::EmptyClass*>(CCW<Y>::GRP(ptr)), mfp, vfnptr, shptr, plug);
 }
-
-template <class X, class Y, class MFP, class RetType@[$2,1,$1:, class Param$2@]>
-SourceHook::ExecutableClass$1<typename SourceHook::CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>
-SH_CALL2(Y *ptr, MFP mfp, RetType(X::*mfp2)(@[$2,1,$1|, :Param$2@]@[$1!=0:, @]...)const, SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	SH__CALL_GET_VFNPTR_NORMAL
-	return SourceHook::ExecutableClass$1<typename CCW<Y>::type, MFP, RetType@[$2,1,$1:, Param$2@]>(CCW<Y>::GRP(ptr),
-		mfp, vfnptr, shptr, plug);
-}
-
-@]
-
-#endif
 
 #define SH_CALL(ptr, mfp) SH_CALL2((ptr), (mfp), (mfp), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
 #define SH_MCALL2(ptr, mfp, vtblidx, vtbloffs, thisptroffs) SH_MCALL3((ptr), (mfp), (mfp), (vtblidx), (vtbloffs), (thisptroffs), SH_GLOB_SHPTR, SH_GLOB_PLUGPTR)
 #define SH_MCALL(ptr, mhookname) SH_MCALL2((ptr), SH_MFHCls(mhookname)::ECMFP(), SH_MFHCls(mhookname)::ms_MFI.vtblindex, \
 	SH_MFHCls(mhookname)::ms_MFI.vtbloffs, SH_MFHCls(mhookname)::ms_MFI.thisptroffs)
-
-#undef SH_MAKE_EXECUTABLECLASS_OB
 
 //////////////////////////////////////////////////////////////////////////
 // SetOverrideRet and RecallGetIface for recalls
@@ -1484,19 +1494,38 @@ namespace SourceHook
 			*reinterpret_cast<typename ReferenceCarrier<T&>::type *>(shptr->GetOverrideRetPtr()) = res;
 		}
 	};
-@[$1,0,$a:
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))
+
+	// For manual hooks:
+	// The rettype is passed in manually
+	template <class RetType>
+	OverrideFunctor<RetType> SetOverrideResult()
 	{
 		return OverrideFunctor<RetType>();
 	}
 
-	template <class Iface, class RetType@[$2,1,$1:, class Param$2@]>
-	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(@[$2,1,$1|, :Param$2@]))
+	template <class Iface, class RetType, class ... Params>
+	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(Params...))
+	{
+		return OverrideFunctor<RetType>();
+	}
+
+	template <class Iface, class RetType, class ... Params>
+	OverrideFunctor<RetType> SetOverrideResult(RetType (Iface::*mfp)(Params..., ...))
+	{
+		return OverrideFunctor<RetType>();
+	}
+
+	template <class Iface, class RetType, class ... Params>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Params...))
 	{
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
-@]
+
+	template <class Iface, class RetType, class ... Params>
+	Iface *RecallGetIface(ISourceHook *shptr, RetType (Iface::*mfp)(Params..., ...))
+	{
+		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
+	}
 }
 
 #endif
