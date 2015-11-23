@@ -135,7 +135,20 @@ void BaseProvider::ConsolePrint(const char *str)
 void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, 
 									  CreateInterfaceFn serverFactory)
 {
+#if SOURCE_ENGINE == SE_TF2 || SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_DODS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_SDK2013
+	// Shim to avoid hooking shims
+	engine = (IVEngineServer *)((engineFactory)("VEngineServer023", NULL));
+	if (!engine)
+	{
+		engine = (IVEngineServer *)((engineFactory)("VEngineServer022", NULL));
+		if (!engine)
+		{
+			engine = (IVEngineServer *)((engineFactory)("VEngineServer021", NULL));
+		}
+	}
+#else
 	engine = (IVEngineServer *)((engineFactory)(INTERFACEVERSION_VENGINESERVER, NULL));
+#endif
 	if (!engine)
 	{
 		DisplayError("Could not find IVEngineServer! Metamod cannot load.");

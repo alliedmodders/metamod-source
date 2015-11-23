@@ -283,6 +283,11 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 	}
 	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
+		if (engineFactory("EngineTraceServer004", NULL) == NULL)
+		{
+			goto TF2branch;
+		}
+
 		if (engineFactory("IEngineSoundServer004", NULL) != NULL)
 		{
 			return MMBackend_Insurgency;
@@ -361,6 +366,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 				}
 				else
 				{
+	TF2branch:
 					void *lib = (void *)serverFactory;
 					void *addr;
 					if (strcmp(game_name, "cstrike") == 0

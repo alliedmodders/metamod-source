@@ -90,10 +90,10 @@ public:
 
 			pGlobals = playerInfoManager->GetGlobalVars();
 
-			char gamedll_iface[] = "ServerGameDLL000";
+			char gamedll_iface[24];
 			for (unsigned int i = 3; i <= 50; i++)
 			{
-				gamedll_iface[15] = '0' + i;
+				UTIL_Format(gamedll_iface, sizeof(gamedll_iface), "ServerGameDLL%03d", i);
 				if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface, NULL)) != NULL)
 				{
 					g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, i, false);

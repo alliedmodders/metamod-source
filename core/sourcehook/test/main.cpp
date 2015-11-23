@@ -86,10 +86,9 @@ int main(int argc, char *argv[])
 	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
 	cout << "Total: " << passed + failed << endl;
 
-	cout << "Press enter to continue" << endl;
-
-	char x;
-	cin.read(&x, 1);
+	if (failed)
+		return 1;
+	return 0;
 }
 
 SourceHook::ISourceHook *Test_Factory()
@@ -107,9 +106,16 @@ void Test_CompleteShutdown(SourceHook::ISourceHook *shptr)
 	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->CompleteShutdown();
 }
 
+class Listener : public SourceHook::Impl::UnloadListener
+{
+public:
+	void ReadyToUnload(SourceHook::Plugin plug) override {
+	}
+} sListener;
+
 void Test_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 {
-	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnloadPlugin(plug, &g_UnloadListener);
+	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnloadPlugin(plug, &sListener);
 }
 
 void Test_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)

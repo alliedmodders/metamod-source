@@ -32,7 +32,7 @@ PossibleSDKs = {
   'bgt':  SDK('HL2SDK-BGT', '2.bgt', '4', 'BLOODYGOODTIME', WinOnly, 'bgt'),
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '20', 'CSGO', WinLinuxMac, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', WinLinuxMac, 'dota'),
+  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', [], 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
@@ -88,6 +88,8 @@ class MMSConfig(object):
     sdk_list = builder.options.sdks.split(',')
     use_all = sdk_list[0] == 'all'
     use_present = sdk_list[0] == 'present'
+    if sdk_list[0] == '':
+        sdk_list = []
 
     for sdk_name in PossibleSDKs:
       sdk = PossibleSDKs[sdk_name]
@@ -104,7 +106,7 @@ class MMSConfig(object):
           sdk.path = sdk_path
           self.sdks[sdk_name] = sdk
 
-    if len(self.sdks) < 1:
+    if len(self.sdks) < 1 and len(sdk_list):
       raise Exception('At least one SDK must be available.')
 
   def configure(self):
@@ -295,8 +297,7 @@ class MMSConfig(object):
 
     return compiler
 
-  def LibraryBuilder(self, compiler, name):
-    binary = compiler.Library(name)
+  def AddVersioning(self, binary):
     if builder.target_platform == 'windows':
       binary.sources += ['version.rc']
       binary.compiler.rcdefines += [
@@ -313,9 +314,29 @@ class MMSConfig(object):
       binary.compiler.sourcedeps += MMS.generated_headers
     return binary
 
+  def LibraryBuilder(self, compiler, name):
+    binary = compiler.Library(name)
+    self.AddVersioning(binary)
+    return binary
+
+  def ProgramBuilder(self, compiler, name):
+    binary = compiler.Program(name)
+    self.AddVersioning(binary)
+    if '-static-libgcc' in binary.compiler.linkflags:
+      binary.compiler.linkflags.remove('-static-libgcc')
+    if '-lgcc_eh' in binary.compiler.linkflags:
+      binary.compiler.linkflags.remove('-lgcc_eh')
+    if binary.compiler.like('gcc'):
+      binary.compiler.linkflags += ['-lstdc++']
+    return binary
+
   def Library(self, context, name):
     compiler = context.compiler.clone()
     return self.LibraryBuilder(compiler, name)
+
+  def Program(self, context, name):
+    compiler = context.compiler.clone()
+    return self.ProgramBuilder(compiler, name)
 
   def HL2Library(self, context, name, sdk):
     compiler = self.HL2Compiler(context, sdk)
@@ -347,7 +368,7 @@ class MMSConfig(object):
     dynamic_libs = []
     if builder.target_platform == 'linux':
       compiler.linkflags[0:0] = ['-lm']
-      if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2']:
+      if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
       elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota', 'source2']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
@@ -399,6 +420,11 @@ BuildScripts = [
   'core-legacy/AMBuilder',
   'core/AMBuilder',
 ]
+if getattr(builder.options, 'enable_tests', False):
+    BuildScripts += [
+        'core/sourcehook/test/AMBuilder',
+        'core-legacy/sourcehook/test/AMBuilder',
+    ]
 
 if builder.backend == 'amb2':
   BuildScripts += [
