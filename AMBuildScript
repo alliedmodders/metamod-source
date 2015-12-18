@@ -115,9 +115,6 @@ class MMSConfig(object):
     cfg = builder.DetectCompilers()
     cxx = cfg.cxx
 
-    if builder.options.source2 == '1':
-      cfg.defines += ['SOURCE2_BUILD=1']
-
     if cxx.behavior == 'gcc':
       cfg.defines += [
         'stricmp=strcasecmp',
