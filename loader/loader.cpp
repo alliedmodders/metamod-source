@@ -280,7 +280,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 	}
 	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
-		if (engineFactory("EngineTraceServer004", NULL) == NULL)
+		if (engineFactory("EngineTraceServer004", NULL) == NULL || serverFactory("ServerGameDLL010", NULL) != NULL)
 		{
 			goto TF2branch;
 		}
