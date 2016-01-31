@@ -1,0 +1,43 @@
+# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+import os, sys
+
+builder.SetBuildFolder('symbols')
+
+UPLOAD_SCRIPT = os.path.join(builder.sourcePath, 'support', 'buildbot', 'upload_symbols.py')
+
+cxx_tasks = MMS.binaries
+for cxx_task in cxx_tasks:
+	if builder.target_platform in ['windows']:
+		debug_entry = cxx_task.debug
+	else:
+		debug_entry = cxx_task.binary
+
+	debug_file = os.path.join(builder.buildPath, debug_entry.path)
+	if builder.target_platform == 'linux':
+		argv = ['dump_syms', debug_file, os.path.dirname(debug_file)]
+	elif builder.target_platform == 'mac':
+		argv = ['dump_syms', debug_file]
+	elif builder.target_platform == 'windows':
+		argv = ['dump_syms.exe', debug_file]
+
+	base_file = os.path.splitext(os.path.basename(debug_file))[0]
+	symbol_file = base_file + '.breakpad'
+
+	argv = [sys.executable, UPLOAD_SCRIPT, symbol_file] + argv
+	builder.AddCommand(
+		inputs = [UPLOAD_SCRIPT, debug_entry],
+		argv = argv,
+		outputs = [symbol_file]
+	)
+
+	def run(self, master, job):
+		ShellCommand.run(self, master, job)
+		if self.stdout != None and len(self.stdout) > 0:
+			request = urllib.Request(symbolServer, self.stdout.encode('utf-8'))
+			request.add_header("Content-Type", "text/plain")
+			self.serverResponse = urllib.urlopen(request).read().decode('utf-8')
+	def spew(self, runner):
+		if self.stderr != None and len(self.stderr) > 0:
+			runner.PrintOut(self.stderr)
+		if self.serverResponse != None and len(self.serverResponse) > 0:
+			runner.PrintOut(self.serverResponse)
