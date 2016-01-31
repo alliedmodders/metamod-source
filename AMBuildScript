@@ -429,3 +429,5 @@ if builder.backend == 'amb2':
 
 builder.RunBuildScripts(BuildScripts, { 'MMS': MMS })
 
+if builder.options.breakpad_dump:
+    builder.RunScript('support/buildbot/BreakpadSymbols', { 'MMS': MMS })
