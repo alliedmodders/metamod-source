@@ -217,7 +217,7 @@ class MMSConfig(object):
 
     # Platform-specifics
     if builder.target_platform == 'linux':
-      cfg.defines += ['_LINUX', 'POSIX']
+      cfg.defines += ['_LINUX', 'POSIX', '_FILE_OFFSET_BITS=64']
       if cxx.name == 'gcc':
         cfg.linkflags += ['-static-libgcc']
       elif cxx.name == 'clang':
