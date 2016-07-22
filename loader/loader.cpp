@@ -281,11 +281,7 @@ mm_GetGameName(char *buffer, size_t size)
 MetamodBackend
 mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serverFactory, const char *game_name)
 {
-	if (engineFactory("VEngineServer024", NULL) != NULL)
-	{
-		return MMBackend_DOTA;
-	}
-	else if (engineFactory("VEngineServer023", NULL) != NULL)
+	if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
 		if (engineFactory("EngineTraceServer004", NULL) == NULL)
 		{
