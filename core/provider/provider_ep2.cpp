@@ -189,7 +189,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	char searchPath[260];
 	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
-	for (int i = 0; i < sizeof(searchPath); ++i)
+	for (size_t i = 0; i < sizeof(searchPath); ++i)
 	{
 		if (searchPath[i] == ';')
 		{
@@ -206,7 +206,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	baseFs->RemoveSearchPaths("DEFAULT_WRITE_PATH");
 	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
-	for (int i = 0; i < sizeof(searchPath); ++i)
+	for (size_t i = 0; i < sizeof(searchPath); ++i)
 	{
 		if (searchPath[i] == ';')
 		{

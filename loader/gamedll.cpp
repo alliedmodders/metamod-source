@@ -165,8 +165,8 @@ mm_DetectGameInformation()
 			lptr = cur_path;
 		}
 
-		char *pRelPath = is_source2 ? "../../" : "";
-		char *pOSDir = is_source2 ? PLATFORM_NAME "/" : "";
+		const char *pRelPath = is_source2 ? "../../" : "";
+		const char *pOSDir = is_source2 ? PLATFORM_NAME "/" : "";
 		if (stricmp(key, "GameBin") == 0)
 			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
 		else if (!ptr[0])
