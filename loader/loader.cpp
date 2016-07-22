@@ -114,7 +114,12 @@ mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 		return false;
 
 	len = strlen(mm_path);
-	temp_len = strlen("server" LIBRARY_EXT);
+	
+	const char *pLastSlash = strrchr(mm_path, PATH_SEP_CHAR);
+	if (!pLastSlash)
+		return false;
+
+	temp_len = strlen(&pLastSlash[1]);
 	if (len < temp_len)
 		return false;
 

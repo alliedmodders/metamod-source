@@ -73,10 +73,13 @@ static bool g_is_source2 = false;
 #define PLATFORM_NAME		"osx32"
 #endif
 #elif defined __linux__
-#define SERVER_NAME			"server" LIB_SUFFIX
 #if defined __amd64__
+// hackhack - source2 uses libserver as name on POSIX, but source1 x64 does not
+//              (but source1 x64 is also client-only right now so what-ev)
+#define SERVER_NAME                     "libserver" LIB_SUFFIX
 #define PLATFORM_NAME		"linuxsteamrt64"
 #else
+#define SERVER_NAME                     "server" LIB_SUFFIX
 #define PLATFORM_NAME		"linuxsteamrt32"
 #endif
 #endif
