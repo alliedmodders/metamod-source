@@ -43,7 +43,7 @@
 #include <iserver.h>
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
 bool BaseProvider::AllowDedicatedServers(EUniverse universe) const
 {
@@ -239,7 +239,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, gameclients, ClientCommand, false);
 	}
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
 	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &BaseProvider::AllowDedicatedServers), false);
 #endif
 }

@@ -52,7 +52,9 @@ static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
+#if defined _WIN32
 static int is2sc_allowdedi_index = 21;
+#endif
 static char mm_path[PLATFORM_MAX_PATH];
 static bool g_is_source2 = false;
 
@@ -229,15 +231,19 @@ mm_PatchDllInit(bool patch);
 static void
 mm_PatchDllShutdown();
 
+#if defined _WIN32
 static void
 mm_PatchAllowDedicated(bool patch);
+#endif
 
 static void
 mm_PatchConnect(bool patch);
 
 static void *isgd_orig_init = NULL;
 static void *isgd_orig_shutdown = NULL;
+#if defined _WIN32
 static void *is2sc_orig_allowdedi = NULL;
+#endif
 static void *is2sc_orig_connect = NULL;
 
 class VEmptyClass
@@ -299,11 +305,13 @@ public:
 
 		return result;
 	}
+#if defined _WIN32
 	virtual bool	AllowDedicatedServers(int universe) const
 	{
 		mm_PatchAllowDedicated(false);
 		return true;
 	}
+#endif
 };
 
 class ISource2Server
@@ -661,6 +669,7 @@ mm_PatchDllShutdown()
 	vtable_dest[isgd_shutdown_index] = vtable_src[mfp.vtblindex];
 }
 
+#if defined _WIN32
 static void
 mm_PatchAllowDedicated(bool patch)
 {
@@ -694,6 +703,7 @@ mm_PatchAllowDedicated(bool patch)
 		is2sc_orig_allowdedi = NULL;
 	}
 }
+#endif
 
 static void
 mm_PatchConnect(bool patch)
@@ -776,7 +786,9 @@ mm_GameDllRequest(const char *name, int *ret)
 			gamedll_qvi = qvi;
 
 			mm_PatchConnect(true);
+#if defined _WIN32
 			mm_PatchAllowDedicated(true);
+#endif
 
 			if (ret != NULL)
 				*ret = 0;
