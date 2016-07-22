@@ -32,13 +32,12 @@ PossibleSDKs = {
   'bgt':  SDK('HL2SDK-BGT', '2.bgt', '4', 'BLOODYGOODTIME', WinOnly, 'bgt'),
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '20', 'CSGO', WinLinuxMac, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', [], 'dota'),
+  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', WinLinux, 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
-  'source2': SDK('HL2SDKSOURCE2', '2.source2', '22', 'SOURCE2', WinOnly, 'source2'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -281,7 +280,7 @@ class MMSConfig(object):
     else:
       compiler.defines += ['COMPILER_GCC']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'source2']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
       if builder.target_platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
 
@@ -357,7 +356,7 @@ class MMSConfig(object):
       else:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
 
-      if sdk.name in ['blade', 'insurgency', 'csgo', 'dota', 'source2']:
+      if sdk.name in ['blade', 'insurgency', 'csgo', 'dota']:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
 
     binary = self.LibraryBuilder(compiler, name)
@@ -367,7 +366,7 @@ class MMSConfig(object):
       compiler.linkflags[0:0] = ['-lm']
       if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota', 'source2']:
+      elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
@@ -376,7 +375,7 @@ class MMSConfig(object):
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif builder.target_platform == 'windows':
       libs = ['tier0', 'tier1', 'vstdlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'csgo', 'dota', 'source2']:
+      if sdk.name in ['swarm', 'blade', 'insurgency', 'csgo', 'dota']:
         libs.append('interfaces')
       for lib in libs:
         lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'

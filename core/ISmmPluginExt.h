@@ -59,7 +59,6 @@
 #define SOURCE_ENGINE_INSURGENCY		21				/**< Insurgency */
 #define SOURCE_ENGINE_CONTAGION			22				/**< Contagion */
 #define SOURCE_ENGINE_BMS				23				/**< Black Mesa Multiplayer */
-#define SOURCE_ENGINE_SOURCE2			24
 
 #define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */

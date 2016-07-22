@@ -37,7 +37,7 @@ namespace SourceMM
 
 	enum ProvidedHooks
 	{
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 		ProvidedHook_StartChangeLevel = 0,
 		ProvidedHook_Init = 1,
 		ProvidedHook_StartupServer = 2,

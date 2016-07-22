@@ -31,7 +31,7 @@
 #include "metamod_provider.h"
 
 bool Command_Meta(IMetamodSourceCommandInfo *info);
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info);
 #else
 bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);

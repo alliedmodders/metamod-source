@@ -37,7 +37,7 @@
 #if defined __linux__
 #include <sys/stat.h>
 #endif
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 #include <iserver.h>
 #endif
 
@@ -50,7 +50,7 @@ using namespace SourceHook::Impl;
  * @file sourcemm.cpp
  */
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 // Hack to make hook decl compile when only having forward decl in header.
 // (we have class structure but it requires protobuf which we don't want to include here)
 class GameSessionConfiguration_t { };
@@ -189,7 +189,7 @@ mm_InitializeForLoad()
 	 */
 	in_first_level = true;
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	SourceHook::MemFuncInfo info;
 
 	if (!provider->GetHookInfo(ProvidedHook_StartupServer, &info))
@@ -537,7 +537,7 @@ mm_HandleGameInit()
 	if (is_game_init)
 		return;
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	Msg("MMS: GameInit\n");
 #endif
 
@@ -557,7 +557,7 @@ mm_HandleGameInit()
 static void
 mm_HandleLevelShutdown()
 {
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	Msg("MMS: LevelShutdown\n");
 #endif
 
@@ -601,14 +601,14 @@ char const *pLandmarkName,
 bool loadGame,
 bool background)
 {
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	Msg("MMS: LevelInit\n");
 #endif
 
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
 }
 #include <utlbuffer.h>
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 static void
 Handler_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const char *pszUnk, bool bUnk)
 {
@@ -943,7 +943,7 @@ size_t MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 	return mylen;
 }
 
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 void MetamodSource::ClientConPrintf(int clientIndex, const char *fmt, ...)
 {
 	va_list ap;

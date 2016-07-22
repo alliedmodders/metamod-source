@@ -315,7 +315,7 @@ public:
 
 	virtual InitReturnVal_t Init()
 	{
-		mm_backend = MMBackend_Source2;
+		mm_backend = MMBackend_DOTA;
 
 		char error[255];
 		if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))

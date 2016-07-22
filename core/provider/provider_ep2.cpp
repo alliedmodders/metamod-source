@@ -39,11 +39,11 @@
 #include <filesystem.h>
 #include "metamod.h"
 #include <tier1/KeyValues.h>
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 #include <iserver.h>
 #endif
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
 bool BaseProvider::AllowDedicatedServers(EUniverse universe) const
 {
@@ -74,23 +74,18 @@ DLL_IMPORT ICommandLine *CommandLine();
 /* Functions */
 void CacheUserMessages();
 void Detour_Error(const tchar *pMsg, ...);
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
-void ClientCommand(CEntityIndex index, const CCommand &args);
+
 #if SOURCE_ENGINE == SE_DOTA
-void LocalCommand_Meta(const CCommandContext &context, const CCommand &args);
-#else
-void LocalCommand_Meta(const CCommand &args);
-#endif
-#if SOURCE_ENGINE == SE_SOURCE2
-void meta_game_init(const CCommand &args);
-void meta_level_init(const CCommand &args);
-void meta_level_shutdown(const CCommand &args);
-#endif
+void ClientCommand(CEntityIndex index, const CCommand &args);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
-void LocalCommand_Meta(const CCommand &args);
 #else
 void ClientCommand(edict_t *pEdict);
+#endif
+
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+void LocalCommand_Meta(const CCommand &args);
+#else
 void LocalCommand_Meta();
 #endif
 
@@ -104,7 +99,7 @@ static jmp_buf usermsg_end;
 ICvar *icvar = NULL;
 IFileSystem *baseFs = NULL;
 IServerGameDLL *server = NULL;
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 static ISource2ServerConfig *serverconfig = NULL;
 INetworkServerService *netservice = NULL;
 IEngineServiceMgr *enginesvcmgr = NULL;
@@ -115,7 +110,7 @@ CGlobalVars *gpGlobals = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CEntityIndex, const CCommand &);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
@@ -154,7 +149,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		DisplayError("Could not find IVEngineServer! Metamod cannot load.");
 		return;
 	}
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	gpGlobals = engine->GetServerGlobals();
 	serverconfig = (ISource2ServerConfig *) ((serverFactory) (INTERFACEVERSION_SERVERCONFIG, NULL));
 	netservice = (INetworkServerService *) ((engineFactory) (NETWORKSERVERSERVICE_INTERFACE_VERSION, NULL));
@@ -171,7 +166,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		return;
 	}
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	gameclients = (IServerGameClients *)(serverFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
 #else
 	if ((gameclients = (IServerGameClients *)(serverFactory("ServerGameClients003", NULL)))
@@ -187,7 +182,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 	}
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	// Since we have to be added as a Game path (cannot add GameBin directly), we
 	// automatically get added to other paths as well, including having the MM:S
 	// dir become the default write path for logs and more. We can fix some of these.
@@ -244,7 +239,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, gameclients, ClientCommand, false);
 	}
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &BaseProvider::AllowDedicatedServers), false);
 #endif
 }
@@ -269,7 +264,7 @@ bool BaseProvider::IsRemotePrintingAvailable()
 
 void BaseProvider::ClientConsolePrint(edict_t *pEdict, const char *message)
 {
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	int client = (int)(pEdict - gpGlobals->pEdicts);
 	engine->ClientPrintf(client, message);
 #else
@@ -353,7 +348,7 @@ bool BaseProvider::LogMessage(const char *buffer)
 
 bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo)
 {
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
 
 	switch (hook)
@@ -411,7 +406,7 @@ void BaseProvider::DisplayError(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	Msg("ERROR: %s", buffer);
 #else
 	Error("%s", buffer);
@@ -447,7 +442,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -493,7 +488,7 @@ void BaseProvider::GetGamePath(char *pszBuffer, int len)
 
 const char *BaseProvider::GetGameDescription()
 {
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	return serverconfig->GetGameDescription();
 #else
 	return server->GetGameDescription();
@@ -542,8 +537,6 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_DOTA;
 #elif SOURCE_ENGINE == SE_BMS
 	return SOURCE_ENGINE_BMS;
-#elif SOURCE_ENGINE == SE_SOURCE2
-	return SOURCE_ENGINE_SOURCE2;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -657,11 +650,7 @@ public:
 };
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA// || SOURCE_ENGINE == SE_SOURCE2
-void LocalCommand_Meta(const CCommandContext &context, const CCommand &args)
-{
-	GlobCommand cmd(&args);
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand &args)
 {
 	GlobCommand cmd(&args);
@@ -673,7 +662,7 @@ void LocalCommand_Meta()
 	Command_Meta(&cmd);
 }
 
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 void ClientCommand(CEntityIndex index, const CCommand &_cmd)
 {
 	int client = index.Get();
@@ -696,7 +685,7 @@ void ClientCommand(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
 
 void CacheUserMessages()
 {

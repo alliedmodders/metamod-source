@@ -89,8 +89,7 @@ static const char *backend_names[] =
 	"2.blade",
 	"2.insurgency",
 	"2.contagion",
-	"2.bms",
-	"2.source2"
+	"2.bms"
 };
 
 #if defined _WIN32

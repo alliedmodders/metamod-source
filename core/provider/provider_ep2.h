@@ -32,7 +32,7 @@
 #endif
 #include <sourcehook.h>
 #include <sh_memfuncinfo.h>
-#if SOURCE_ENGINE != SE_SOURCE2
+#if SOURCE_ENGINE != SE_DOTA
 #include <iserverplugin.h>
 #endif
 #include "ISmmAPI.h"
@@ -81,7 +81,7 @@ public:
 	virtual const char *GetUserMessage(int index, int *size=NULL);
 	virtual int DetermineSourceEngine();
 	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 	bool AllowDedicatedServers(EUniverse universe) const;
 #endif
 };
@@ -91,7 +91,7 @@ extern IServerGameDLL *server;
 extern IServerGameClients *gameclients;
 extern ICvar *icvar;
 extern CGlobalVars *gpGlobals;
-#if SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 extern INetworkServerService *netservice;
 extern IEngineServiceMgr *enginesvcmgr;
 #endif
