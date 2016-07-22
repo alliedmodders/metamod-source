@@ -13,6 +13,11 @@ def configure_library(name, linux_defines):
 
   if builder.target_platform == 'linux':
     binary.compiler.defines += linux_defines
+    # Temporary Source2 hack. Always build linux with -m64
+    binary.compiler.cflags.remove('-m32')
+    binary.compiler.cflags += ['-m64', '-fPIC']
+    binary.compiler.linkflags.remove('-m32')
+    binary.compiler.linkflags += ['-m64']
 
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
