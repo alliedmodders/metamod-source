@@ -12,8 +12,12 @@ except:
     sys.stderr.write('http://www.alliedmods.net/ambuild\n')
   sys.exit(1)
 
+def make_objdir_name(p):
+  return 'obj-linux-' + p.target_arch
+
 parser = run.BuildParser(sourcePath=sys.path[0], api='2.1')
-parser.default_build_folder = 'obj-' + parser.host.platform
+parser.default_arch = 'x86'
+parser.default_build_folder = make_objdir_name
 parser.options.add_option('--hl2sdk-root', type=str, dest='hl2sdk_root', default=None,
                        help='Root search folder for HL2SDKs')
 parser.options.add_option('--enable-debug', action='store_const', const='1', dest='debug',

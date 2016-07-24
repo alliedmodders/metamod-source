@@ -12,14 +12,26 @@ class SDK(object):
     self.path = None # Actual path
     self.platformSpec = platform
 
+    # By default, nothing supports x64.
+    if type(platform) is list:
+      self.platformSpec = {p: ['x86'] for p in platform}
+    else:
+      self.platformSpec = platform
+
   def shouldBuild(self, target):
     if target.platform not in self.platformSpec:
+      return False
+    if target.arch not in self.platformSpec[target.platform]:
       return False
     return True
 
 WinOnly = ['windows']
 WinLinux = ['windows', 'linux']
 WinLinuxMac = ['windows', 'linux', 'mac']
+Source2 = {
+  'windows': ['x86', 'x86_64'],
+  'linux': ['x86_64'],
+}
 
 PossibleSDKs = {
   'episode1':  SDK('HL2SDK', '1.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
@@ -37,7 +49,7 @@ PossibleSDKs = {
   'bgt':  SDK('HL2SDK-BGT', '2.bgt', '4', 'BLOODYGOODTIME', WinOnly, 'bgt'),
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '20', 'CSGO', WinLinuxMac, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', WinLinux, 'dota'),
+  'dota': SDK('HL2SDKDOTA', '2.dota', '21', 'DOTA', Source2, 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
@@ -111,10 +123,14 @@ class MMSConfig(object):
           self.sdks[sdk_name] = sdk
 
     if len(self.sdks) < 1 and len(sdk_list):
-      raise Exception('At least one SDK must be available.')
+      raise Exception('No SDKs were found that build on {0}-{1}, nothing to do.'.format(
+        builder.target.platform, builder.target.arch))
 
   def configure(self):
     builder.AddConfigureFile('pushbuild.txt')
+
+    if builder.target.arch not in ['x86', 'x86_64']:
+      raise Exception('Unknown target architecture: {0}'.format(builder.target.arch))
 
     cxx = builder.DetectCxx()
 
@@ -136,13 +152,19 @@ class MMSConfig(object):
         '-Wno-unused',
         '-Wno-switch',
         '-msse',
-        '-m32',
       ]
+
+      if builder.target.arch == 'x86':
+        cxx.cflags += ['-m32']
+        cxx.linkflags += ['-m32']
+      elif builder.target.arch == 'x86_64':
+        cxx.cflags += ['-m64', '-fPIC']
+        cxx.linkflags += ['-m64']
+
       cxx.cxxflags += [ '-std=c++11' ]
       if (cxx.version >= 'gcc-4.0') or cxx.family == 'clang':
         cxx.cflags += ['-fvisibility=hidden']
         cxx.cxxflags += ['-fvisibility-inlines-hidden']
-      cxx.linkflags += ['-m32']
       cxx.cxxflags += [
         '-fno-exceptions',
         '-fno-rtti',
@@ -287,11 +309,8 @@ class MMSConfig(object):
       compiler.defines += ['COMPILER_GCC']
 
     if sdk.name == 'dota' and builder.target.platform in ['linux', 'mac']:
-      compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
-      compiler.cflags.remove('-m32')
-      compiler.cflags += ['-m64', '-fPIC']
-      compiler.linkflags.remove('-m32')
-      compiler.linkflags += ['-m64']
+      if builder.target.arch == 'x86_64':
+        compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
     if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
       if builder.target.platform in ['linux', 'mac']:

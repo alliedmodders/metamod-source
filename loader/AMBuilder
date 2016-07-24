@@ -13,15 +13,15 @@ def configure_library(name, linux_defines):
 
   if builder.target.platform == 'linux':
     binary.compiler.defines += linux_defines
-    # Temporary Source2 hack. Always build linux with -m64
-    binary.compiler.cflags.remove('-m32')
-    binary.compiler.cflags += ['-m64', '-fPIC']
-    binary.compiler.linkflags.remove('-m32')
-    binary.compiler.linkflags += ['-m64']
 
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
 
-configure_library('server', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
-if builder.target.platform == 'linux':
+libname = 'server'
+if builder.target.platform == 'linux' and builder.target.arch == 'x86_64':
+  libname = 'libserver'
+
+configure_library(libname, ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
+
+if builder.target.platform == 'linux' and builder.target.arch == 'x86':
   configure_library('server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'])

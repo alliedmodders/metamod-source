@@ -7,12 +7,6 @@ lib.sources += [
   'versionlib.cpp'
 ]
 
-# Temporary Source2 hack. Always build linux with -m64
-if builder.target.platform == 'linux':
-  lib.compiler.cflags.remove('-m32')
-  lib.compiler.cflags += ['-m64', '-fPIC']
-
-
 cmd = builder.Add(lib)
 
 rvalue = cmd.binary
