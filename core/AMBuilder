@@ -27,7 +27,7 @@ for sdk_name in MMS.sdks:
   ]
 
   # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
-  if sdk.name != 'dota' or builder.target_platform == 'windows':
+  if sdk.name != 'dota' or builder.target.platform == 'windows':
     binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]

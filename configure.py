@@ -12,17 +12,17 @@ except:
     sys.stderr.write('http://www.alliedmods.net/ambuild\n')
   sys.exit(1)
 
-run = run.PrepareBuild(sourcePath=sys.path[0])
-run.default_build_folder = 'obj-' + run.target_platform
-run.options.add_option('--hl2sdk-root', type=str, dest='hl2sdk_root', default=None,
+parser = run.BuildParser(sourcePath=sys.path[0], api='2.1')
+parser.default_build_folder = 'obj-' + parser.host.platform
+parser.options.add_option('--hl2sdk-root', type=str, dest='hl2sdk_root', default=None,
                        help='Root search folder for HL2SDKs')
-run.options.add_option('--enable-debug', action='store_const', const='1', dest='debug',
+parser.options.add_option('--enable-debug', action='store_const', const='1', dest='debug',
                        help='Enable debugging symbols')
-run.options.add_option('--enable-optimize', action='store_const', const='1', dest='opt',
+parser.options.add_option('--enable-optimize', action='store_const', const='1', dest='opt',
                        help='Enable optimization')
-run.options.add_option('-s', '--sdks', default='all', dest='sdks',
+parser.options.add_option('-s', '--sdks', default='all', dest='sdks',
                        help='Build against specified SDKs; valid args are "all", "present", or '
                             'comma-delimited list of engine names (default: %default)')
-run.options.add_option('--enable-tests', default=False, dest='enable_tests', action='store_true',
+parser.options.add_option('--enable-tests', default=False, dest='enable_tests', action='store_true',
                        help='Build tests.')
-run.Configure()
+parser.Configure()
