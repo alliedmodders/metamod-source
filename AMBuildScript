@@ -186,7 +186,7 @@ class MMSConfig(object):
         else:
           cxx.cxxflags += ['-Wno-deprecated']
 
-    elif cxx.name == 'msvc':
+    elif cxx.like('msvc'):
       if builder.options.debug == '1':
         cxx.cflags += ['/MTd']
         cxx.linkflags += ['/NODEFAULTLIB:libcmt']
@@ -248,7 +248,7 @@ class MMSConfig(object):
         cxx.linkflags += ['-static-libgcc']
       elif cxx.family == 'clang':
         cxx.linkflags += ['-lgcc_eh']
-    elif builder.target_platform == 'mac':
+    elif builder.target.platform == 'mac':
       cxx.defines += ['OSX', '_OSX', 'POSIX']
       cxx.cflags += ['-mmacosx-version-min=10.5']
       cxx.linkflags += [
@@ -256,7 +256,7 @@ class MMSConfig(object):
         '-arch', 'i386',
         '-lstdc++',
       ]
-    elif builder.target_platform == 'windows':
+    elif builder.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
 
     # Finish up.
@@ -376,7 +376,7 @@ class MMSConfig(object):
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'linux')
-    elif builder.target_platform == 'mac':
+    elif builder.target.platform == 'mac':
       if sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'osx32')
       else:
