@@ -304,13 +304,16 @@ class MMSConfig(object):
       compiler.defines.remove('_vsnprintf=vsnprintf')
 
     if compiler.family == 'msvc':
-      compiler.defines += ['COMPILER_MSVC', 'COMPILER_MSVC32']
+      compiler.defines += ['COMPILER_MSVC']
+      if builder.target.arch == 'x86':
+        compiler.defines += ['COMPILER_MSVC32']
+      elif builder.target.arch == 'x86_64':
+        compiler.defines += ['COMPILER_MSVC64']
     else:
       compiler.defines += ['COMPILER_GCC']
 
-    if sdk.name == 'dota' and builder.target.platform in ['linux', 'mac']:
-      if builder.target.arch == 'x86_64':
-        compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
+    if sdk.name == 'dota' and builder.target.arch == 'x86_64':
+      compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
     if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
       if builder.target.platform in ['linux', 'mac']:
