@@ -202,8 +202,13 @@ class MMSConfig(object):
         '/Zi',
       ]
       cxx.cxxflags += ['/TP']
+	  
+      if builder.target.arch == 'x86':
+        cxx.linkflags += ['/MACHINE:X86']
+      elif builder.target.arch == 'x86_64':
+        cxx.linkflags += ['/MACHINE:X64']
+      
       cxx.linkflags += [
-        '/MACHINE:X86',
         '/SUBSYSTEM:WINDOWS',
         'kernel32.lib',
         'user32.lib',
@@ -217,7 +222,7 @@ class MMSConfig(object):
         'uuid.lib',
         'odbc32.lib',
         'odbccp32.lib',
-      ] 
+      ]
 
     # Optimization
     if builder.options.opt == '1':
@@ -413,7 +418,10 @@ class MMSConfig(object):
       if sdk.name in ['swarm', 'blade', 'insurgency', 'csgo', 'dota']:
         libs.append('interfaces')
       for lib in libs:
-        lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
+        if builder.target.arch == 'x86':
+          lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
+        elif builder.target.arch == 'x86_64':
+          lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
         binary.compiler.linkflags.append(binary.Dep(lib_path))
 
     for library in dynamic_libs:
