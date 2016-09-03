@@ -2,11 +2,8 @@
 #include <metamod.h>
 
 #include "asm\asm.h"
-//#include "asmjit\asmjit.h"
 
 using namespace DetourHook;
-//using namespace asmjit;
-//using namespace asmjit::x86;
 
 int CDetourHookImpl::GetIfaceVersion()
 {
@@ -25,16 +22,16 @@ CDetourHook::CDetourHook(void *addr, void *callback)
 	SourceHook::SetMemAccess(this->pFunc, this->bytes, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
 	memcpy(this->pOrginalBytes, this->pFunc, this->bytes);
 
-	this->pTrampoline = malloc(this->bytes + OP_JMP_SIZE + 1); //Allocate space
+	this->pTrampoline = malloc(this->bytes + OP_JMP_SIZE); //Allocate space
 
-	SourceHook::SetMemAccess(this->pTrampoline, bytes + OP_JMP_SIZE + 1, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+	SourceHook::SetMemAccess(this->pTrampoline, bytes + OP_JMP_SIZE, SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
 
 	//Copy our original bytes to our trampoline
 	//We use this to fix JMP's and whatever else is relative to the function.
 	copy_bytes((unsigned char *)this->pFunc, (unsigned char *)this->pTrampoline, this->bytes);
 
 	//JMP from trampoline +bytes to function + bytes
-	inject_abs_jmp((unsigned char*)this->pTrampoline + this->bytes, (unsigned char*)this->pFunc + this->bytes);
+	inject_jmp((unsigned char*)this->pTrampoline + this->bytes, (unsigned char*)this->pFunc + this->bytes);
 }
 
 CDetourHook::~CDetourHook()
