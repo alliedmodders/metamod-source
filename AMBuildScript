@@ -250,6 +250,7 @@ class MMSConfig(object):
     compiler.cxxincludes += [
       os.path.join(context.currentSourcePath),
       os.path.join(context.currentSourcePath, 'sourcehook'),
+	  os.path.join(context.currentSourcePath, 'detourhook'),
       os.path.join(context.sourcePath, 'loader'),
     ]
 

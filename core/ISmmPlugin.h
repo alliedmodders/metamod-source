@@ -35,6 +35,7 @@
  */
 
 #include <sourcehook.h>
+#include <detourhook.h>
 #include <IPluginManager.h>
 #include <ISmmAPI.h>
 #include <ISmmPluginExt.h>
@@ -433,8 +434,8 @@ using namespace SourceMM;
  *
  * @param name		Deprecated - should be a variable name (like name).
  * @param var		Name of the variable that contains the singleton.
- *					This macro automatically takes the address of it, so 
- * 					you should not pass a pointer to your plugin's 
+ *					This macro automatically takes the address of it, so
+ * 					you should not pass a pointer to your plugin's
  *					singleton.
  */
 #define PLUGIN_EXPOSE(name, var) \
@@ -442,6 +443,7 @@ using namespace SourceMM;
 	ISmmPlugin *g_PLAPI = NULL; \
 	PluginId g_PLID = (PluginId)0; \
 	SourceHook::ISourceHook *g_SHPtr = NULL; \
+	DetourHook::IDetourHook *g_DHPtr = NULL; \
 	SMM_API void *PL_EXPOSURE(const char *name, int *code) { \
 		if (name && !strcmp(name, METAMOD_PLAPI_NAME)) { \
 			return static_cast<void *>(&var); \
@@ -450,12 +452,13 @@ using namespace SourceMM;
 	}
 
 
-/**
- * @brief This should be in one of your header files, if you wish 
- * to use values like g_SHPtr in other files.
- */
+ /**
+  * @brief This should be in one of your header files, if you wish
+  * to use values like g_SHPtr in other files.
+  */
 #define PLUGIN_GLOBALVARS()	\
 	extern SourceHook::ISourceHook *g_SHPtr; \
+	extern DetourHook::IDetourHook *g_DHPtr; \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
 	extern PluginId g_PLID; 
@@ -466,6 +469,7 @@ using namespace SourceMM;
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
 	g_SHPtr = static_cast<SourceHook::ISourceHook *>(ismm->MetaFactory(MMIFACE_SOURCEHOOK, NULL, NULL)); \
+	g_DHPtr = static_cast<DetourHook::IDetourHook *>(ismm->MetaFactory(MMIFACE_DETOURHOOK, NULL, NULL)); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 

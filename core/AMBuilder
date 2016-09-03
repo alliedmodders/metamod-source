@@ -24,7 +24,9 @@ for sdk_name in MMS.sdks:
     'sourcehook/sourcehook_impl_cproto.cpp',
     'sourcehook/sourcehook_impl_cvfnptr.cpp',
     'gamedll_bridge.cpp',
-    'vsp_bridge.cpp'
+    'vsp_bridge.cpp',
+	'detourhook/detourhook.cpp',
+	'detourhook/asm/asm.c'
   ]
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]

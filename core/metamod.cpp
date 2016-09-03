@@ -37,6 +37,7 @@
 #if defined __linux__
 #include <sys/stat.h>
 #endif
+#include "detourhook\detourhook_impl.h"
 
 using namespace SourceMM;
 using namespace SourceHook;
@@ -109,6 +110,8 @@ MetamodSource g_Metamod;
 PluginId g_PLID = Pl_Console;
 CSourceHookImpl g_SourceHook;
 ISourceHook *g_SHPtr = &g_SourceHook;
+DetourHook::CDetourHookImpl g_DetourHook;
+DetourHook::IDetourHook *g_DHPtr = &g_DetourHook;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
 /* Helper Macro */
@@ -844,6 +847,14 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
+	}
+	else if (strcmp(iface, MMIFACE_DETOURHOOK) == 0)
+	{
+		if (ret)
+		{
+			*ret = META_IFACE_OK;
+		}
+		return static_cast<void *>(static_cast<DetourHook::IDetourHook *>(&g_DetourHook));
 	}
 	else if (strcmp(iface, MMIFACE_PLMANAGER) == 0)
 	{
