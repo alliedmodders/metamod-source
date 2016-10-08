@@ -26,9 +26,7 @@ script:
   - CC=clang-3.7 CXX=clang-3.7 python ../configure.py --enable-optimize --enable-tests --sdks=
   - ambuild
   - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
-  - ./core-legacy/sourcehook/test/test_sourcehook/test_sourcehook -v
   - cd .. && mkdir build-sh-debug && cd build-sh-debug
   - CC=clang-3.7 CXX=clang-3.7 python ../configure.py --enable-debug --enable-tests --sdks=
   - ambuild
   - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
-  - ./core-legacy/sourcehook/test/test_sourcehook/test_sourcehook -v
