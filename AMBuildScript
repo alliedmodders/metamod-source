@@ -253,7 +253,7 @@ class MMSConfig(object):
       os.path.join(context.sourcePath, 'loader'),
     ]
 
-    defines = ['SE_' + self.sdks[i].define + '=' + self.sdks[i].code for i in self.sdks]
+    defines = ['SE_' + PossibleSDKs[i].define + '=' + PossibleSDKs[i].code for i in PossibleSDKs]
     compiler.defines += defines
     paths = [['public'],
              ['public', 'engine'],
