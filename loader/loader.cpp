@@ -68,7 +68,7 @@ mm_LogFatal(const char *message, ...)
 
 static const char *backend_names[] =
 {
-	"1.ep1",
+	"2.ep1",
 	"2.darkm",
 	"2.ep2",
 	"2.bgt",

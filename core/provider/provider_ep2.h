@@ -77,6 +77,7 @@ public:
 	virtual const char *GetUserMessage(int index, int *size=NULL);
 	virtual int DetermineSourceEngine();
 	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
+	virtual const char *GetEngineDescription() const;
 };
 
 extern IVEngineServer *engine;
