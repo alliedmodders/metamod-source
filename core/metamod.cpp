@@ -57,7 +57,7 @@ class GameSessionConfiguration_t { };
 
 SH_DECL_MANUALHOOK4_void(SGD_StartupServer, 0, 0, 0, const GameSessionConfiguration_t &, INetworkGameServerFactory *, ISource2WorldSession *, const char *);
 SH_DECL_MANUALHOOK2_void(SGD_Init, 0, 0, 0, GameSessionConfiguration_t *, const char *);
-SH_DECL_MANUALHOOK1(SGD_StartChangeLevel, 0, 0, 0, CUtlVector<INetworkGameClient *> *, int);
+SH_DECL_MANUALHOOK2(SGD_StartChangeLevel, 0, 0, 0, CUtlVector<INetworkGameClient *> *, const char *, void *);
 SH_DECL_MANUALHOOK5_void(SGD_SwitchToLoop, 0, 0, 0, const char *, KeyValues *, uint32, const char *, bool);
 SH_DECL_MANUALHOOK3(SGD_AllocateServer, 0, 0, 0, INetworkGameServer *, int, INetworkServerService *, ISource2WorldSession *);
 
@@ -77,7 +77,7 @@ static void
 Handler_Init(GameSessionConfiguration_t *, const char *);
 
 static CUtlVector<INetworkGameClient *> *
-Handler_StartChangeLevel(int unknown);
+Handler_StartChangeLevel(const char *, void *);
 #else
 SH_DECL_MANUALHOOK0(SGD_GameInit, 0, 0, 0, bool);
 SH_DECL_MANUALHOOK6(SGD_LevelInit, 0, 0, 0, bool, const char *, const char *, const char *, const char *, bool, bool);
@@ -684,7 +684,7 @@ Handler_Init(GameSessionConfiguration_t *pConfig, const char *pszMapName)
 }
 
 static CUtlVector<INetworkGameClient *> *
-Handler_StartChangeLevel(int unknown)
+Handler_StartChangeLevel(const char *, void *)
 {
 	mm_HandleLevelShutdown();
 
