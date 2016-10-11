@@ -54,13 +54,14 @@ struct UsrMsgInfo
 };
 
 /* Imports */
-#if SOURCE_ENGINE == SE_DARKMESSIAH
+#if SOURCE_ENGINE < SE_ORANGEBOX
 #undef CommandLine
 DLL_IMPORT ICommandLine *CommandLine();
 #endif
 
 /* Functions */
 void CacheUserMessages();
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
 void Detour_Error(const tchar *pMsg, ...);
 #if SOURCE_ENGINE == SE_DOTA
 void ClientCommand(CEntityIndex index, const CCommand &args);
@@ -79,6 +80,7 @@ static BaseProvider g_Ep1Provider;
 static List<ConCommandBase *> conbases_unreg;
 static CVector<UsrMsgInfo> usermsgs_list;
 static jmp_buf usermsg_end;
+static bool g_bOriginalEngine = false;
 
 ICvar *icvar = NULL;
 IFileSystem *baseFs = NULL;
@@ -156,10 +158,15 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 #endif
 
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+	
+#if SOURCE_ENGINE == SE_EPISODEONE
+	/* The Ship is the only game known at this time that uses the pre-Episode One engine */
+	g_bOriginalEngine = strcmp(CommandLine()->ParmValue("-game", "hl2"), "ship") == 0;
+#endif
 
 	CacheUserMessages();
 
-#if SOURCE_ENGINE == SE_DARKMESSIAH
+#if SOURCE_ENGINE < SE_ORANGEBOX
 	if (!g_SMConVarAccessor.InitConCommandBaseList())
 	{
 		/* This is very unlikely considering it's old engine */
@@ -178,7 +185,7 @@ void BaseProvider::Notify_DLLShutdown_Pre()
 {
 	g_SMConVarAccessor.RemoveMetamodCommands();
 
-#if SOURCE_ENGINE == SE_DARKMESSIAH
+#if SOURCE_ENGINE < SE_ORANGEBOX
 	if (g_Metamod.IsLoadedAsGameDLL())
 	{
 		icvar->UnlinkVariables(FCVAR_GAMEDLL);
@@ -429,6 +436,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_DOTA;
 #elif SOURCE_ENGINE == SE_BMS
 	return SOURCE_ENGINE_BMS;
+#elif SOURCE_ENGINE == SE_EPISODEONE
+	return g_bOriginalEngine ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -464,11 +473,22 @@ bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, ch
 	}
 
 	KeyValues *pValues;
+	bool bKVLoaded = false;
 	const char *plugin_file, *p_alias;
 
 	pValues = new KeyValues("Metamod Plugin");
 
-	if (!pValues->LoadFromFile(baseFs, file))
+	if (g_bOriginalEngine)
+	{
+		/* The Ship must use a special version of this function */
+		bKVLoaded = KVLoadFromFile(pValues, baseFs, file);
+	}
+	else
+	{
+		bKVLoaded = pValues->LoadFromFile(baseFs, file);
+	}
+	
+	if (!bKVLoaded)
 	{
 		pValues->deleteThis();
 		return false;
@@ -494,6 +514,62 @@ bool BaseProvider::ProcessVDF(const char *file, char path[], size_t path_len, ch
 	pValues->deleteThis();
 
 	return true;
+}
+
+const char *BaseProvider::GetEngineDescription() const
+{
+#if SOURCE_ENGINE == SE_BLOODYGOODTIME
+	return "Bloody Good Time (2010)";
+#elif SOURCE_ENGINE == SE_ALIENSWARM
+	return "Alien Swarm (2010)";
+#elif SOURCE_ENGINE == SE_LEFT4DEAD2
+	return "Left 4 Dead 2 (2009)";
+#elif SOURCE_ENGINE == SE_NUCLEARDAWN
+	return "Nuclear Dawn (2011)";
+#elif SOURCE_ENGINE == SE_CONTAGION
+	return "Contagion (2013)";
+#elif SOURCE_ENGINE == SE_LEFT4DEAD
+	return "Left 4 Dead (2008)";
+#elif SOURCE_ENGINE == SE_ORANGEBOX
+	return "Episode 2 (Orange Box, 2007)";
+#elif SOURCE_ENGINE == SE_CSS
+	return "Counter-Strike: Source (Valve Orange Box)";
+#elif SOURCE_ENGINE == SE_HL2DM
+	return "Half-Life 2 Deathmatch (Valve Orange Box)";
+#elif SOURCE_ENGINE == SE_DODS
+	return "Day of Defeat: Source (Valve Orange Box)";
+#elif SOURCE_ENGINE == SE_SDK2013
+	return "Source SDK 2013 (2013)";
+#elif SOURCE_ENGINE == SE_BMS
+	return "Black Mesa (2015)";
+#elif SOURCE_ENGINE == SE_TF2
+	return "Team Fortress 2 (Valve Orange Box)";
+#elif SOURCE_ENGINE == SE_DARKMESSIAH
+	return "Dark Messiah (2006)";
+#elif SOURCE_ENGINE == SE_EYE
+	return "E.Y.E. Divine Cybermancy (2011)";
+#elif SOURCE_ENGINE == SE_PORTAL2
+	return "Portal 2 (2011)";
+#elif SOURCE_ENGINE == SE_BLADE
+	return "Blade Symphony (2013)";
+#elif SOURCE_ENGINE == SE_INSURGENCY
+	return "Insurgency (2013)";
+#elif SOURCE_ENGINE == SE_CSGO
+	return "Counter-Strike: Global Offensive (2012)";
+#elif SOURCE_ENGINE == SE_DOTA
+	return "Dota 2 (2013)";
+#elif SOURCE_ENGINE == SE_EPISODEONE
+	if (g_bOriginalEngine)
+	{
+		return "Original (pre-Episode 1)";
+	}
+	else
+	{
+		return "Episode 1 (2004)";
+	}
+#else
+#error "SOURCE_ENGINE not defined to a known value"
+#endif
 }
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
@@ -647,3 +723,33 @@ void CacheUserMessages()
 }
 
 #endif
+
+bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID)
+{
+	Assert(filesystem);
+#ifdef _MSC_VER
+	Assert(_heapchk() == _HEAPOK);
+#endif
+
+	FileHandle_t f = filesystem->Open(resourceName, "rb", pathID);
+	if (!f)
+		return false;
+
+	// load file into a null-terminated buffer
+	int fileSize = filesystem->Size(f);
+	char *buffer = (char *)MemAllocScratch(fileSize + 1);
+	
+	Assert(buffer);
+	
+	filesystem->Read(buffer, fileSize, f); // read into local buffer
+
+	buffer[fileSize] = 0; // null terminate file as EOF
+
+	filesystem->Close( f );	// close file after reading
+
+	bool retOK = kv->LoadFromBuffer( resourceName, buffer, filesystem );
+
+	MemFreeScratch();
+
+	return retOK;
+}

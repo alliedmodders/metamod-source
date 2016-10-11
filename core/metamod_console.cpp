@@ -60,50 +60,6 @@ void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
 	}
 }
 
-#if SOURCE_ENGINE == SE_BLOODYGOODTIME
-#define MMS_ENGINE_NAME "Bloody Good Time (2010)"
-#elif SOURCE_ENGINE == SE_ALIENSWARM
-#define MMS_ENGINE_NAME "Alien Swarm (2010)"
-#elif SOURCE_ENGINE == SE_LEFT4DEAD2
-#define MMS_ENGINE_NAME "Left 4 Dead 2 (2009)"
-#elif SOURCE_ENGINE == SE_NUCLEARDAWN
-#define MMS_ENGINE_NAME "Nuclear Dawn (2011)"
-#elif SOURCE_ENGINE == SE_CONTAGION
-#define MMS_ENGINE_NAME "Contagion (2013)"
-#elif SOURCE_ENGINE == SE_LEFT4DEAD
-#define MMS_ENGINE_NAME "Left 4 Dead (2008)"
-#elif SOURCE_ENGINE == SE_ORANGEBOX
-#define MMS_ENGINE_NAME "Episode 2 (Orange Box, 2007)"
-#elif SOURCE_ENGINE == SE_CSS
-#define MMS_ENGINE_NAME "Counter-Strike: Source (Valve Orange Box)"
-#elif SOURCE_ENGINE == SE_HL2DM
-#define MMS_ENGINE_NAME "Half-Life 2 Deathmatch (Valve Orange Box)"
-#elif SOURCE_ENGINE == SE_DODS
-#define MMS_ENGINE_NAME "Day of Defeat: Source (Valve Orange Box)"
-#elif SOURCE_ENGINE == SE_SDK2013
-#define MMS_ENGINE_NAME "Source SDK 2013 (2013)"
-#elif SOURCE_ENGINE == SE_BMS
-#define MMS_ENGINE_NAME "Black Mesa (2015)"
-#elif SOURCE_ENGINE == SE_TF2
-#define MMS_ENGINE_NAME "Team Fortress 2 (Valve Orange Box)"
-#elif SOURCE_ENGINE == SE_DARKMESSIAH
-#define MMS_ENGINE_NAME "Dark Messiah (2006)"
-#elif SOURCE_ENGINE == SE_EYE
-#define MMS_ENGINE_NAME "E.Y.E. Divine Cybermancy (2011)"
-#elif SOURCE_ENGINE == SE_PORTAL2
-#define MMS_ENGINE_NAME "Portal 2 (2011)"
-#elif SOURCE_ENGINE == SE_BLADE
-#define MMS_ENGINE_NAME "Blade Symphony (2013)"
-#elif SOURCE_ENGINE == SE_INSURGENCY
-#define MMS_ENGINE_NAME "Insurgency (2013)"
-#elif SOURCE_ENGINE == SE_CSGO
-#define MMS_ENGINE_NAME "Counter-Strike: Global Offensive (2012)"
-#elif SOURCE_ENGINE == SE_DOTA
-#define MMS_ENGINE_NAME "Dota 2 (2013)"
-#else
-#error "SOURCE_ENGINE not defined to a known value"
-#endif
-
 #if SOURCE_ENGINE == SE_DOTA
 static void ReplyCredits(int client = 0)
 #else
@@ -176,7 +132,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Mod Path: %s\n", g_Metamod.GetBaseDir());
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
 			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
-			CONMSG("  Engine: " MMS_ENGINE_NAME "\n");
+			CONMSG("  Engine: %s\n", provider->GetEngineDescription());
 
 			// Display user messages
 			const char *msgname;

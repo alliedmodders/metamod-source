@@ -17,7 +17,7 @@ WinLinux = ['windows', 'linux']
 WinLinuxMac = ['windows', 'linux', 'mac']
 
 PossibleSDKs = {
-  'episode1':  SDK('HL2SDK', '1.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
+  'episode1':  SDK('HL2SDK', '2.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
   'ep2':  SDK('HL2SDKOB', '2.ep2', '3', 'ORANGEBOX', WinLinux, 'orangebox'),
   'css':  SDK('HL2SDKCSS', '2.css', '6', 'CSS', WinLinuxMac, 'css'),
   'hl2dm':  SDK('HL2SDKHL2DM', '2.hl2dm', '7', 'HL2DM', WinLinuxMac, 'hl2dm'),
@@ -253,7 +253,7 @@ class MMSConfig(object):
       os.path.join(context.sourcePath, 'loader'),
     ]
 
-    defines = ['SE_' + self.sdks[i].define + '=' + self.sdks[i].code for i in self.sdks]
+    defines = ['SE_' + PossibleSDKs[i].define + '=' + PossibleSDKs[i].code for i in PossibleSDKs]
     compiler.defines += defines
     paths = [['public'],
              ['public', 'engine'],
@@ -415,13 +415,11 @@ if MMS.use_auto_versioning():
 
 BuildScripts = [
     'loader/AMBuilder',
-    'core-legacy/AMBuilder',
     'core/AMBuilder',
 ]
 if getattr(builder.options, 'enable_tests', False):
     BuildScripts += [
         'core/sourcehook/test/AMBuilder',
-        'core-legacy/sourcehook/test/AMBuilder',
     ]
 
 if builder.backend == 'amb2':

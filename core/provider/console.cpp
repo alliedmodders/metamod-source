@@ -69,7 +69,7 @@ void SMConVarAccessor::RemoveMetamodCommands()
 	}
 }
 
-#if SOURCE_ENGINE == SE_DARKMESSIAH
+#if SOURCE_ENGINE < SE_ORANGEBOX
 /* Signature for ICvar::GetCommands() in vstdlib for Win32 and Linux.
  *
  * 20226EE0 A1 50 5C 5A 20   mov         eax,dword ptr ds:[205A5C50h] <-- What we want
