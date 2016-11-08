@@ -280,7 +280,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 	}
 	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
-		if (engineFactory("EngineTraceServer004", NULL) == NULL || serverFactory("ServerGameDLL010", NULL) != NULL)
+		if (engineFactory("EngineTraceServer004", NULL) == NULL)
 		{
 			goto TF2branch;
 		}
@@ -289,6 +289,12 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 		{
 			return MMBackend_Insurgency;
 		}
+		
+		if (serverFactory("ServerGameDLL010", NULL) != NULL)
+		{
+			return MMBackend_BMS;
+		}
+		
 		return MMBackend_CSGO;
 	}
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
@@ -385,11 +391,6 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 						|| (addr = mm_FindPattern(lib, "Half-Life 2 Deathmatch", sizeof("Half-Life 2 Deathmatch") - 1)))
 					{
 						return MMBackend_HL2DM;
-					}
-					else if (strcmp(game_name, "bms") == 0
-						|| (addr = mm_FindPattern(lib, "DT_BlackMesaPlayer", sizeof("DT_BlackMesaPlayer") - 1)))
-					{
-						return MMBackend_BMS;
 					}
 					else
 					{
