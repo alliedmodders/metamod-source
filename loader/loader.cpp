@@ -146,7 +146,7 @@ mm_UnloadMetamodLibrary()
 #if defined _WIN32
 #define EXPORT extern "C" __declspec(dllexport)
 #elif defined __GNUC__
-#if __GNUC__ == 4
+#if __GNUC__ >= 4
 #define EXPORT extern "C" __attribute__ ((visibility("default")))
 #else
 #define EXPORT extern "C"
