@@ -152,8 +152,8 @@ class MMSConfig(object):
       if cxx.name == 'gcc':
         cfg.cflags += ['-mfpmath=sse']
       if cxx.name == 'clang':
-	if cfg.version >= 'clang-3.6':
-		cfg.cxxflags += ['-Wno-inconsistent-missing-override']
+        if cfg.version >= 'clang-3.6':
+          cfg.cxxflags += ['-Wno-inconsistent-missing-override']
         cfg.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
         if cfg.version >= 'apple-clang-5.1' or cfg.version >= 'clang-3.4':
           cfg.cxxflags += ['-Wno-deprecated-register']
