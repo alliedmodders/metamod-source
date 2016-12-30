@@ -26,7 +26,7 @@ OBJECTS = stub_mm.cpp
 ##############################################
 
 OPT_FLAGS = -O3 -funroll-loops -pipe
-GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
+GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=delete-non-virtual-dtor
 DEBUG_FLAGS = -g -ggdb3 -D_DEBUG
 CPP = gcc
 CPP_OSX = clang
