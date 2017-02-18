@@ -221,6 +221,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	g_pCVar = icvar;
 #endif
 
+#if SOURCE_ENGINE == SE_DOTA
+	ConVar_Register(0, &g_SMConVarAccessor);
+#endif
+
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 	CacheUserMessages();
@@ -246,6 +250,9 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void BaseProvider::Notify_DLLShutdown_Pre()
 {
+#if SOURCE_ENGINE == SE_DOTA
+	ConVar_Unregister();
+#endif
 
 	g_SMConVarAccessor.RemoveMetamodCommands();
 
@@ -364,9 +371,6 @@ bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInf
 		break;
 	case ProvidedHook_SwitchToLoop:
 		SourceHook::GetFuncInfo(&IEngineServiceMgr::SwitchToLoop, mfi);
-		break;
-	case ProvidedHook_AllocateServer:
-		SourceHook::GetFuncInfo(&INetworkGameServerFactory::Allocate, mfi);
 		break;
 	default:
 		return false;

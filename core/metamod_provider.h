@@ -42,7 +42,6 @@ namespace SourceMM
 		ProvidedHook_Init = 1,
 		ProvidedHook_StartupServer = 2,
 		ProvidedHook_SwitchToLoop = 3,
-		ProvidedHook_AllocateServer = 4,
 #else
 		ProvidedHook_LevelInit = 0,			/**< IServerGameDLL::LevelInit */
 		ProvidedHook_LevelShutdown = 1,		/**< IServerGameDLL::LevelShutdown */

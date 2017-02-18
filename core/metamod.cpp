@@ -55,23 +55,16 @@ using namespace SourceHook::Impl;
 // (we have class structure but it requires protobuf which we don't want to include here)
 class GameSessionConfiguration_t { };
 
-SH_DECL_MANUALHOOK4_void(SGD_StartupServer, 0, 0, 0, const GameSessionConfiguration_t &, INetworkGameServerFactory *, ISource2WorldSession *, const char *);
+SH_DECL_MANUALHOOK3_void(SGD_StartupServer, 0, 0, 0, const GameSessionConfiguration_t &, ISource2WorldSession *, const char *);
 SH_DECL_MANUALHOOK2_void(SGD_Init, 0, 0, 0, GameSessionConfiguration_t *, const char *);
 SH_DECL_MANUALHOOK3(SGD_StartChangeLevel, 0, 0, 0, CUtlVector<INetworkGameClient *> *, const char *, const char *, void *);
 SH_DECL_MANUALHOOK5_void(SGD_SwitchToLoop, 0, 0, 0, const char *, KeyValues *, uint32, const char *, bool);
-SH_DECL_MANUALHOOK3(SGD_AllocateServer, 0, 0, 0, INetworkGameServer *, int, INetworkServerService *, ISource2WorldSession *);
-
-static INetworkGameServer *
-Handler_AllocateServer(int, INetworkServerService *, ISource2WorldSession *);
 
 static void
 Handler_SwitchToLoop(const char *, KeyValues *, uint32, const char *, bool);
 
 static void
-Handler_StartupServer(const GameSessionConfiguration_t &, INetworkGameServerFactory *, ISource2WorldSession *, const char *);
-
-static void
-Handler_StartupServer_Post(const GameSessionConfiguration_t &, INetworkGameServerFactory *, ISource2WorldSession *, const char *);
+Handler_StartupServer_Post(const GameSessionConfiguration_t &, ISource2WorldSession *, const char *);
 
 static void
 Handler_Init(GameSessionConfiguration_t *, const char *);
@@ -199,7 +192,6 @@ mm_InitializeForLoad()
 		provider->DisplayError("Metamod:Source could not find a valid hook for INetworkServerService::StartupServer");
 	}
 	SH_MANUALHOOK_RECONFIGURE(SGD_StartupServer, info.vtblindex, info.vtbloffs, info.thisptroffs);
-	SH_ADD_MANUALHOOK(SGD_StartupServer, netservice, SH_STATIC(Handler_StartupServer), false);
 	SH_ADD_MANUALHOOK(SGD_StartupServer, netservice, SH_STATIC(Handler_StartupServer_Post), true);
 
 	if (!provider->GetHookInfo(ProvidedHook_SwitchToLoop, &info))
@@ -623,34 +615,12 @@ Handler_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const 
 }
 
 static void
-Handler_StartupServer(const GameSessionConfiguration_t &config, INetworkGameServerFactory *pFactory, ISource2WorldSession *, const char *)
-{
-	SourceHook::MemFuncInfo info;
-	if (!provider->GetHookInfo(ProvidedHook_AllocateServer, &info))
-	{
-		provider->DisplayError("Metamod:Source could not find a valid hook for INetworkGameServerFactory::Allocate");
-	}
-	SH_MANUALHOOK_RECONFIGURE(SGD_AllocateServer, info.vtblindex, info.vtbloffs, info.thisptroffs);
-	SH_ADD_MANUALHOOK(SGD_AllocateServer, pFactory, SH_STATIC(Handler_AllocateServer), true);
-
-	RETURN_META(MRES_IGNORED);
-}
-
-static void
-Handler_StartupServer_Post(const GameSessionConfiguration_t &config, INetworkGameServerFactory *pFactory, ISource2WorldSession *, const char *)
-{
-	SH_REMOVE_MANUALHOOK(SGD_AllocateServer, pFactory, SH_STATIC(Handler_AllocateServer), true);
-
-	RETURN_META(MRES_IGNORED);
-}
-
-static INetworkGameServer *
-Handler_AllocateServer(int, INetworkServerService *, ISource2WorldSession *)
+Handler_StartupServer_Post(const GameSessionConfiguration_t &config, ISource2WorldSession *, const char *)
 {
 	static bool bGameServerHooked = false;
 	if (!bGameServerHooked)
 	{
-		INetworkGameServer *netserver = META_RESULT_ORIG_RET(INetworkGameServer *);
+		INetworkGameServer *netserver = (META_IFACEPTR(INetworkServerService))->GetIGameServer();
 
 		SourceHook::MemFuncInfo info;
 		if (!provider->GetHookInfo(ProvidedHook_Init, &info))
@@ -670,7 +640,7 @@ Handler_AllocateServer(int, INetworkServerService *, ISource2WorldSession *)
 		bGameServerHooked = true;
 	}
 
-	RETURN_META_VALUE(MRES_IGNORED, nullptr);
+	RETURN_META(MRES_IGNORED);
 }
 
 static void
