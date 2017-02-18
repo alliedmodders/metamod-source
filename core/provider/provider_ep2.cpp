@@ -221,10 +221,6 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	g_pCVar = icvar;
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA
-	ConVar_Register(0, &g_SMConVarAccessor);
-#endif
-
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 	CacheUserMessages();
@@ -250,10 +246,6 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void BaseProvider::Notify_DLLShutdown_Pre()
 {
-#if SOURCE_ENGINE == SE_DOTA
-	ConVar_Unregister();
-#endif
-
 	g_SMConVarAccessor.RemoveMetamodCommands();
 
 #if SOURCE_ENGINE == SE_DARKMESSIAH
