@@ -409,11 +409,7 @@ void BaseProvider::DisplayError(const char *fmt, ...)
 	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-#if SOURCE_ENGINE == SE_DOTA
-	Msg("ERROR: %s", buffer);
-#else
 	Error("%s", buffer);
-#endif
 }
 
 void BaseProvider::DisplayWarning(const char *fmt, ...)
