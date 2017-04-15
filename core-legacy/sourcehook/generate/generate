@@ -1,5 +1,0 @@
-#/bin/sh
-
-./shworker.bin iter sourcehook.hxx sourcehook.h $1
-
-cp *.h ..

@@ -486,11 +486,7 @@ using namespace SourceMM;
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define SMM_API extern "C" __declspec(dllexport)
 #elif defined __GNUC__
-	#if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 1)
-		#define SMM_API extern "C" __attribute__ ((visibility("default")))	
-	#else
-		#define SMM_API	extern "C" 
-	#endif	
+	#define SMM_API extern "C" __attribute__ ((visibility("default")))	
 #endif
 #endif //!defined SMM_API
 

@@ -68,7 +68,7 @@ mm_LogFatal(const char *message, ...)
 
 static const char *backend_names[] =
 {
-	"1.ep1",
+	"2.ep1",
 	"2.darkm",
 	"2.ep2",
 	"2.bgt",
@@ -151,11 +151,7 @@ mm_UnloadMetamodLibrary()
 #if defined _WIN32
 #define EXPORT extern "C" __declspec(dllexport)
 #elif defined __GNUC__
-#if __GNUC__ == 4
 #define EXPORT extern "C" __attribute__ ((visibility("default")))
-#else
-#define EXPORT extern "C"
-#endif
 #endif
 
 EXPORT void *
@@ -292,6 +288,12 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 		{
 			return MMBackend_Insurgency;
 		}
+		
+		if (serverFactory("ServerGameDLL010", NULL) != NULL)
+		{
+			return MMBackend_BMS;
+		}
+		
 		return MMBackend_CSGO;
 	}
 	else if (engineFactory("VEngineServer022", NULL) != NULL &&
@@ -388,11 +390,6 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 						|| (addr = mm_FindPattern(lib, "Half-Life 2 Deathmatch", sizeof("Half-Life 2 Deathmatch") - 1)))
 					{
 						return MMBackend_HL2DM;
-					}
-					else if (strcmp(game_name, "bms") == 0
-						|| (addr = mm_FindPattern(lib, "DT_BlackMesaPlayer", sizeof("DT_BlackMesaPlayer") - 1)))
-					{
-						return MMBackend_BMS;
 					}
 					else
 					{

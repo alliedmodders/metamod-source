@@ -60,7 +60,7 @@
 #define SOURCE_ENGINE_CONTAGION			22				/**< Contagion */
 #define SOURCE_ENGINE_BMS				23				/**< Black Mesa Multiplayer */
 
-#define METAMOD_PLAPI_VERSION			15				/**< Version of this header file */
+#define METAMOD_PLAPI_VERSION			16				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
 
 namespace SourceMM

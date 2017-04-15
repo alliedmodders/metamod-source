@@ -90,11 +90,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define SMM_API extern "C" __declspec(dllexport)
 #elif defined __GNUC__
-	#if (__GNUC__ == 4)
-		#define SMM_API extern "C" __attribute__ ((visibility("default")))	
-	#else
-		#define SMM_API	extern "C" 
-	#endif	
+	#define SMM_API extern "C" __attribute__ ((visibility("default")))	
 #endif
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32

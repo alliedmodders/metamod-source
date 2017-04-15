@@ -303,6 +303,13 @@ namespace SourceMM
 		 *
 		 */
 		virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len) =0;
+		
+		/**
+		 * @brief				Returns string that describes engine version.
+		 *
+		 * @return				Description.
+		 */
+		virtual const char *GetEngineDescription() const =0;
 	};
 };
 

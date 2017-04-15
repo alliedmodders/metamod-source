@@ -29,4 +29,6 @@ parser.options.add_option('-s', '--sdks', default='all', dest='sdks',
                             'comma-delimited list of engine names (default: %default)')
 parser.options.add_option('--enable-tests', default=False, dest='enable_tests', action='store_true',
                        help='Build tests.')
+parser.options.add_option('--breakpad-dump', action='store_true', dest='breakpad_dump',
+                       default=False, help='Dump and upload breakpad symbols')
 parser.Configure()

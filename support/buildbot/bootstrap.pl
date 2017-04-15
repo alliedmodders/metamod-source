@@ -31,6 +31,7 @@ print "Attempting to reconfigure...\n";
 
 my @conf_argv = (
 	'--enable-optimize',
+	'--breakpad-dump',
 	'--no-color',
 	'--symbol-files'
 );
