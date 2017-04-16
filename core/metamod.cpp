@@ -532,7 +532,7 @@ mm_HandleGameInit()
 		return;
 
 #if SOURCE_ENGINE == SE_DOTA
-	Msg("MMS: GameInit\n");
+	DevMsg("MMS: GameInit\n");
 #endif
 
 	if (vsp_load_requested)
@@ -552,7 +552,7 @@ static void
 mm_HandleLevelShutdown()
 {
 #if SOURCE_ENGINE == SE_DOTA
-	Msg("MMS: LevelShutdown\n");
+	DevMsg("MMS: LevelShutdown\n");
 #endif
 
 	if (g_bIsVspBridged && !were_plugins_loaded)
@@ -596,7 +596,7 @@ bool loadGame,
 bool background)
 {
 #if SOURCE_ENGINE == SE_DOTA
-	Msg("MMS: LevelInit\n");
+	DevMsg("MMS: LevelInit\n");
 #endif
 
 	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
