@@ -38,6 +38,18 @@
 #include "metamod_console.h"
 #include <filesystem.h>
 #include "metamod.h"
+#include <tier1/KeyValues.h>
+#if SOURCE_ENGINE == SE_DOTA
+#include <iserver.h>
+#endif
+
+#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
+SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
+bool BaseProvider::AllowDedicatedServers(EUniverse universe) const
+{
+	RETURN_META_VALUE(MRES_SUPERCEDE, true);
+}
+#endif
 
 /* Types */
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
@@ -63,14 +75,18 @@ DLL_IMPORT ICommandLine *CommandLine();
 void CacheUserMessages();
 bool KVLoadFromFile(KeyValues *kv, IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
 void Detour_Error(const tchar *pMsg, ...);
+
 #if SOURCE_ENGINE == SE_DOTA
 void ClientCommand(CEntityIndex index, const CCommand &args);
-void LocalCommand_Meta(const CCommandContext &context, const CCommand &args);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 void ClientCommand(edict_t *pEdict, const CCommand &args);
-void LocalCommand_Meta(const CCommand &args);
 #else
 void ClientCommand(edict_t *pEdict);
+#endif
+
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+void LocalCommand_Meta(const CCommand &args);
+#else
 void LocalCommand_Meta();
 #endif
 
@@ -85,8 +101,14 @@ static bool g_bOriginalEngine = false;
 ICvar *icvar = NULL;
 IFileSystem *baseFs = NULL;
 IServerGameDLL *server = NULL;
+#if SOURCE_ENGINE == SE_DOTA
+static ISource2ServerConfig *serverconfig = NULL;
+INetworkServerService *netservice = NULL;
+IEngineServiceMgr *enginesvcmgr = NULL;
+#endif
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
+CGlobalVars *gpGlobals = NULL;
 IMetamodSourceProvider *provider = &g_Ep1Provider;
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
@@ -129,6 +151,12 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		DisplayError("Could not find IVEngineServer! Metamod cannot load.");
 		return;
 	}
+#if SOURCE_ENGINE == SE_DOTA
+	gpGlobals = engine->GetServerGlobals();
+	serverconfig = (ISource2ServerConfig *) ((serverFactory) (INTERFACEVERSION_SERVERCONFIG, NULL));
+	netservice = (INetworkServerService *) ((engineFactory) (NETWORKSERVERSERVICE_INTERFACE_VERSION, NULL));
+	enginesvcmgr = (IEngineServiceMgr *) ((engineFactory) (ENGINESERVICEMGR_INTERFACE_VERSION, NULL));
+#endif
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	icvar = (ICvar *)((engineFactory)(CVAR_INTERFACE_VERSION, NULL));
 #else
@@ -140,18 +168,56 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		return;
 	}
 
-
+#if SOURCE_ENGINE == SE_DOTA
+	gameclients = (IServerGameClients *)(serverFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL));
+#else
 	if ((gameclients = (IServerGameClients *)(serverFactory("ServerGameClients003", NULL)))
 		== NULL)
 	{
 		gameclients = (IServerGameClients *)(serverFactory("ServerGameClients004", NULL));
 	}
+#endif
 
 	baseFs = (IFileSystem *)((engineFactory)(FILESYSTEM_INTERFACE_VERSION, NULL));
 	if (baseFs == NULL)
 	{
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 	}
+
+#if SOURCE_ENGINE == SE_DOTA
+	// Since we have to be added as a Game path (cannot add GameBin directly), we
+	// automatically get added to other paths as well, including having the MM:S
+	// dir become the default write path for logs and more. We can fix some of these.
+
+	char searchPath[260];
+	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
+	for (size_t i = 0; i < sizeof(searchPath); ++i)
+	{
+		if (searchPath[i] == ';')
+		{
+			searchPath[i] = '\0';
+			break;
+		}
+	}
+	baseFs->RemoveSearchPath(searchPath, "GAME");
+
+	// TODO: figure out why these calls get ignored and path remains
+	//baseFs->RemoveSearchPath(searchPath, "CONTENT");
+	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE");
+	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE_MOD");
+
+	baseFs->RemoveSearchPaths("DEFAULT_WRITE_PATH");
+	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
+	for (size_t i = 0; i < sizeof(searchPath); ++i)
+	{
+		if (searchPath[i] == ';')
+		{
+			searchPath[i] = '\0';
+			break;
+		}
+	}
+	baseFs->AddSearchPath(searchPath, "DEFAULT_WRITE_PATH");
+#endif
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
@@ -179,6 +245,10 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	{
 		SH_ADD_HOOK_STATICFUNC(IServerGameClients, ClientCommand, gameclients, ClientCommand, false);
 	}
+
+#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
+	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &BaseProvider::AllowDedicatedServers), false);
+#endif
 }
 
 void BaseProvider::Notify_DLLShutdown_Pre()
@@ -201,7 +271,7 @@ bool BaseProvider::IsRemotePrintingAvailable()
 void BaseProvider::ClientConsolePrint(edict_t *pEdict, const char *message)
 {
 #if SOURCE_ENGINE == SE_DOTA
-	int client = (int)(pEdict - g_Metamod.GetCGlobals()->pEdicts);
+	int client = (int)(pEdict - gpGlobals->pEdicts);
 	engine->ClientPrintf(client, message);
 #else
 	engine->ClientPrintf(pEdict, message);
@@ -284,6 +354,31 @@ bool BaseProvider::LogMessage(const char *buffer)
 
 bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo)
 {
+#if SOURCE_ENGINE == SE_DOTA
+	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
+
+	switch (hook)
+	{
+	case ProvidedHook_StartupServer:
+		SourceHook::GetFuncInfo(&INetworkServerService::StartupServer, mfi);
+		break;
+	case ProvidedHook_StartChangeLevel:
+		SourceHook::GetFuncInfo(&INetworkGameServer::StartChangeLevel, mfi);
+		break;
+	case ProvidedHook_Init:
+		SourceHook::GetFuncInfo(&INetworkGameServer::Init, mfi);
+		break;
+	case ProvidedHook_SwitchToLoop:
+		SourceHook::GetFuncInfo(&IEngineServiceMgr::SwitchToLoop, mfi);
+		break;
+	default:
+		return false;
+	}
+
+	*pInfo = mfi;
+
+	return (mfi.thisptroffs >= 0);
+#else
 	SourceHook::MemFuncInfo mfi = {true, -1, 0, 0};
 
 	if (hook == ProvidedHook_LevelInit)
@@ -302,6 +397,7 @@ bool BaseProvider::GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInf
 	*pInfo = mfi;
 
 	return (mfi.thisptroffs >= 0);
+#endif
 }
 
 void BaseProvider::DisplayError(const char *fmt, ...)
@@ -391,7 +487,11 @@ void BaseProvider::GetGamePath(char *pszBuffer, int len)
 
 const char *BaseProvider::GetGameDescription()
 {
+#if SOURCE_ENGINE == SE_DOTA
+	return serverconfig->GetGameDescription();
+#else
 	return server->GetGameDescription();
+#endif
 }
 
 int BaseProvider::DetermineSourceEngine()
@@ -618,11 +718,7 @@ public:
 };
 #endif
 
-#if SOURCE_ENGINE == SE_DOTA
-void LocalCommand_Meta(const CCommandContext &context, const CCommand &args)
-{
-	GlobCommand cmd(&args);
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand &args)
 {
 	GlobCommand cmd(&args);

@@ -32,7 +32,9 @@
 #endif
 #include <sourcehook.h>
 #include <sh_memfuncinfo.h>
+#if SOURCE_ENGINE != SE_DOTA
 #include <iserverplugin.h>
+#endif
 #include "ISmmAPI.h"
 #include "metamod_provider.h"
 #include "metamod_oslink.h"
@@ -43,6 +45,8 @@
 
 using namespace SourceMM;
 using namespace SourceHook;
+
+class INetworkGameServer;
 
 class BaseProvider : public IMetamodSourceProvider
 {
@@ -78,12 +82,20 @@ public:
 	virtual int DetermineSourceEngine();
 	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
 	virtual const char *GetEngineDescription() const;
+#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
+	bool AllowDedicatedServers(EUniverse universe) const;
+#endif
 };
 
 extern IVEngineServer *engine;
 extern IServerGameDLL *server;
 extern IServerGameClients *gameclients;
 extern ICvar *icvar;
+extern CGlobalVars *gpGlobals;
+#if SOURCE_ENGINE == SE_DOTA
+extern INetworkServerService *netservice;
+extern IEngineServiceMgr *enginesvcmgr;
+#endif
 
 #endif //_INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
 

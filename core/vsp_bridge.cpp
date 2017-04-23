@@ -34,7 +34,7 @@
 #include <sh_string.h>
 #include "provider/provider_ep2.h"
 
-#if SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_SOURCE2
+#if SOURCE_ENGINE == SE_DOTA
 SH_DECL_HOOK2_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommandContext &, const CCommand &);
 #elif SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
@@ -164,11 +164,14 @@ public:
 
 	virtual void Unload()
 	{
+		// Source2 doesn't have the Error function (nor VSP support).
+#if SOURCE_ENGINE != SE_DOTA
 		if (g_bIsTryingToUnload)
 		{
 			Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
 			return;
 		}
+#endif
 		if (g_plugin_unload != NULL)
 		{
 			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);

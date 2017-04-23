@@ -100,10 +100,6 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 	typedef unsigned __int32	uint32_t;
 #elif defined __GNUC__
 #include <stdint.h>
-#if !__GLIBC_HAVE_LONG_LONG
-	typedef long long			int64_t;
-	typedef unsigned long long	uint64_t;
-#endif
 #endif
 
 #if !defined __linux__ && !defined __APPLE__

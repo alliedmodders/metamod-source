@@ -37,6 +37,9 @@
 #if defined __linux__
 #include <sys/stat.h>
 #endif
+#if SOURCE_ENGINE == SE_DOTA
+#include <iserver.h>
+#endif
 
 using namespace SourceMM;
 using namespace SourceHook;
@@ -47,6 +50,28 @@ using namespace SourceHook::Impl;
  * @file sourcemm.cpp
  */
 
+#if SOURCE_ENGINE == SE_DOTA
+// Hack to make hook decl compile when only having forward decl in header.
+// (we have class structure but it requires protobuf which we don't want to include here)
+class GameSessionConfiguration_t { };
+
+SH_DECL_MANUALHOOK3_void(SGD_StartupServer, 0, 0, 0, const GameSessionConfiguration_t &, ISource2WorldSession *, const char *);
+SH_DECL_MANUALHOOK2_void(SGD_Init, 0, 0, 0, GameSessionConfiguration_t *, const char *);
+SH_DECL_MANUALHOOK3(SGD_StartChangeLevel, 0, 0, 0, CUtlVector<INetworkGameClient *> *, const char *, const char *, void *);
+SH_DECL_MANUALHOOK5_void(SGD_SwitchToLoop, 0, 0, 0, const char *, KeyValues *, uint32, const char *, bool);
+
+static void
+Handler_SwitchToLoop(const char *, KeyValues *, uint32, const char *, bool);
+
+static void
+Handler_StartupServer_Post(const GameSessionConfiguration_t &, ISource2WorldSession *, const char *);
+
+static void
+Handler_Init(GameSessionConfiguration_t *, const char *);
+
+static CUtlVector<INetworkGameClient *> *
+Handler_StartChangeLevel(const char *, const char *, void *);
+#else
 SH_DECL_MANUALHOOK0(SGD_GameInit, 0, 0, 0, bool);
 SH_DECL_MANUALHOOK6(SGD_LevelInit, 0, 0, 0, bool, const char *, const char *, const char *, const char *, bool, bool);
 SH_DECL_MANUALHOOK0_void(SGD_LevelShutdown, 0, 0, 0);
@@ -64,6 +89,7 @@ Handler_LevelInit(char const *pMapName,
 
 static bool
 Handler_GameInit();
+#endif
 
 static void
 InitializeVSP();
@@ -98,8 +124,9 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-static CGlobalVars *gpGlobals = NULL;
+#if !defined( __amd64__ )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
+#endif
 static META_RES last_meta_res;
 static IServerPluginCallbacks *vsp_callbacks = NULL;
 static bool were_plugins_loaded = false;
@@ -157,6 +184,23 @@ mm_InitializeForLoad()
 	 */
 	in_first_level = true;
 
+#if SOURCE_ENGINE == SE_DOTA
+	SourceHook::MemFuncInfo info;
+
+	if (!provider->GetHookInfo(ProvidedHook_StartupServer, &info))
+	{
+		provider->DisplayError("Metamod:Source could not find a valid hook for INetworkServerService::StartupServer");
+	}
+	SH_MANUALHOOK_RECONFIGURE(SGD_StartupServer, info.vtblindex, info.vtbloffs, info.thisptroffs);
+	SH_ADD_MANUALHOOK(SGD_StartupServer, netservice, SH_STATIC(Handler_StartupServer_Post), true);
+
+	if (!provider->GetHookInfo(ProvidedHook_SwitchToLoop, &info))
+	{
+		provider->DisplayError("Metamod:Source could not find a valid hook for IEngineServiceMgr::SwitchToLoop");
+	}
+	SH_MANUALHOOK_RECONFIGURE(SGD_SwitchToLoop, info.vtblindex, info.vtbloffs, info.thisptroffs);
+	SH_ADD_MANUALHOOK(SGD_SwitchToLoop, enginesvcmgr, SH_STATIC(Handler_SwitchToLoop), false);
+#else
 	SourceHook::MemFuncInfo info;
 
 	if (!provider->GetHookInfo(ProvidedHook_GameInit, &info))
@@ -179,6 +223,7 @@ mm_InitializeForLoad()
 	}
 	SH_MANUALHOOK_RECONFIGURE(SGD_LevelShutdown, info.vtblindex, info.vtbloffs, info.thisptroffs);
 	SH_ADD_MANUALHOOK_STATICFUNC(SGD_LevelShutdown, server, Handler_LevelShutdown, true);
+#endif
 }
 
 bool
@@ -469,27 +514,6 @@ mm_InitializeGlobals(CreateInterfaceFn engineFactory,
 	provider->Notify_DLLInit_Pre(engineFactory, gamedll_info.factory);
 }
 
-static bool
-Handler_GameInit()
-{
-	if (is_game_init)
-		return true;
-
-	if (vsp_load_requested)
-		InitializeVSP();
-
-	if (g_bIsVspBridged && !were_plugins_loaded)
-	{
-		DoInitialPluginLoads();
-		g_PluginMngr.SetAllLoaded();
-		were_plugins_loaded = true;
-	}
-
-	is_game_init = true;
-
-	RETURN_META_VALUE(MRES_IGNORED, true);
-}
-
 void
 mm_UnloadMetamod()
 {
@@ -502,8 +526,35 @@ mm_UnloadMetamod()
 }
 
 static void
-Handler_LevelShutdown(void)
+mm_HandleGameInit()
 {
+	if (is_game_init)
+		return;
+
+#if SOURCE_ENGINE == SE_DOTA
+	DevMsg("MMS: GameInit\n");
+#endif
+
+	if (vsp_load_requested)
+		InitializeVSP();
+
+	if (g_bIsVspBridged && !were_plugins_loaded)
+	{
+		DoInitialPluginLoads();
+		g_PluginMngr.SetAllLoaded();
+		were_plugins_loaded = true;
+	}
+
+	is_game_init = true;
+}
+
+static void
+mm_HandleLevelShutdown()
+{
+#if SOURCE_ENGINE == SE_DOTA
+	DevMsg("MMS: LevelShutdown\n");
+#endif
+
 	if (g_bIsVspBridged && !were_plugins_loaded)
 	{
 		DoInitialPluginLoads();
@@ -534,6 +585,96 @@ Handler_LevelShutdown(void)
 	}
 
 	ITER_EVENT(OnLevelShutdown, ());
+}
+
+static void
+mm_HandleLevelInit(char const *pMapName,
+char const *pMapEntities,
+char const *pOldLevel,
+char const *pLandmarkName,
+bool loadGame,
+bool background)
+{
+#if SOURCE_ENGINE == SE_DOTA
+	DevMsg("MMS: LevelInit\n");
+#endif
+
+	ITER_EVENT(OnLevelInit, (pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
+}
+#include <utlbuffer.h>
+#if SOURCE_ENGINE == SE_DOTA
+static void
+Handler_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const char *pszUnk, bool bUnk)
+{
+	if (strcmp(pszLoopName, "levelload") == 0)
+	{
+		mm_HandleGameInit();
+	}
+
+	RETURN_META(MRES_IGNORED);
+}
+
+static void
+Handler_StartupServer_Post(const GameSessionConfiguration_t &config, ISource2WorldSession *, const char *)
+{
+	static bool bGameServerHooked = false;
+	if (!bGameServerHooked)
+	{
+		INetworkGameServer *netserver = (META_IFACEPTR(INetworkServerService))->GetIGameServer();
+
+		SourceHook::MemFuncInfo info;
+		if (!provider->GetHookInfo(ProvidedHook_Init, &info))
+		{
+			provider->DisplayError("Metamod:Source could not find a valid hook for INetworkGameServer::Init");
+		}
+		SH_MANUALHOOK_RECONFIGURE(SGD_Init, info.vtblindex, info.vtbloffs, info.thisptroffs);
+		SH_ADD_MANUALVPHOOK(SGD_Init, netserver, SH_STATIC(Handler_Init), false);
+
+		if (!provider->GetHookInfo(ProvidedHook_StartChangeLevel, &info))
+		{
+			provider->DisplayError("Metamod:Source could not find a valid hook for INetworkGameServer::StartChangeLevel");
+		}
+		SH_MANUALHOOK_RECONFIGURE(SGD_StartChangeLevel, info.vtblindex, info.vtbloffs, info.thisptroffs);
+		SH_ADD_MANUALVPHOOK(SGD_StartChangeLevel, netserver, SH_STATIC(Handler_StartChangeLevel), false);
+
+		bGameServerHooked = true;
+	}
+
+	RETURN_META(MRES_IGNORED);
+}
+
+static void
+Handler_Init(GameSessionConfiguration_t *pConfig, const char *pszMapName)
+{
+	static char szLastMap[260] = "";
+	mm_HandleLevelInit(pszMapName, "", szLastMap, "", false, false);
+	UTIL_Format(szLastMap, sizeof(szLastMap), "%s", pszMapName);
+
+	RETURN_META(MRES_IGNORED);
+}
+
+static CUtlVector<INetworkGameClient *> *
+Handler_StartChangeLevel(const char *, const char *, void *)
+{
+	mm_HandleLevelShutdown();
+
+	RETURN_META_VALUE(MRES_IGNORED, nullptr);
+}
+
+#else
+
+static bool
+Handler_GameInit()
+{
+	mm_HandleGameInit();
+
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+static void
+Handler_LevelShutdown(void)
+{
+	mm_HandleLevelShutdown();
 
 	RETURN_META(MRES_IGNORED);
 }
@@ -550,6 +691,7 @@ Handler_LevelInit(char const *pMapName,
 
 	RETURN_META_VALUE(MRES_IGNORED, false);
 }
+#endif
 
 void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
 {
@@ -855,11 +997,19 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	}
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
+#if defined( __amd64__ )
+		if (ret)
+		{
+			*ret = META_IFACE_FAILED;
+		}
+		return nullptr;
+#else
 		if (ret)
 		{
 			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
+#endif
 	}
 
 	CPluginManager::CPlugin *pl;

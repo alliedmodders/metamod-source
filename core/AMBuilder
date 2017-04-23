@@ -16,7 +16,6 @@ for sdk_name in MMS.sdks:
     'provider/console.cpp',
     'provider/provider_ep2.cpp',
     'sourcehook/sourcehook.cpp',
-    'sourcehook/sourcehook_hookmangen.cpp',
     'sourcehook/sourcehook_impl_chookidman.cpp',
     'sourcehook/sourcehook_impl_chookmaninfo.cpp',
     'sourcehook/sourcehook_impl_cproto.cpp',
@@ -24,5 +23,9 @@ for sdk_name in MMS.sdks:
     'gamedll_bridge.cpp',
     'vsp_bridge.cpp'
   ]
+
+  # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
+  if builder.target.arch == 'x86':
+    binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
