@@ -172,14 +172,14 @@ class MMSConfig(object):
         '-Wno-non-virtual-dtor',
         '-Wno-overloaded-virtual',
       ]
-      if (cxx.version >= 'gcc-4.7' or cxx.version >= 'clang-3.0'):
+      if (cxx.version >= 'gcc-4.7' or cxx.family == 'clang'):
         cxx.cxxflags += ['-Wno-delete-non-virtual-dtor']
       if cxx.family == 'gcc':
         cxx.cflags += ['-mfpmath=sse']
       if cxx.family == 'clang':
+        cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
         if cxx.version >= 'clang-3.6':
           cxx.cxxflags += ['-Wno-inconsistent-missing-override']
-          cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
         if cxx.version >= 'apple-clang-5.1' or cxx.version >= 'clang-3.4':
           cxx.cxxflags += ['-Wno-deprecated-register']
         else:
