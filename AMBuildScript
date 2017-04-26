@@ -177,14 +177,13 @@ class MMSConfig(object):
       if cxx.family == 'gcc':
         cxx.cflags += ['-mfpmath=sse']
       if cxx.family == 'clang':
-        cxx.cxxflags += [
-          '-Wno-implicit-exception-spec-mismatch',
-          '-Wno-inconsistent-missing-override',
-        ]
-        if cxx.version >= 'apple-clang-5.1' or cxx.version >= 'clang-3.4':
-          cxx.cxxflags += ['-Wno-deprecated-register']
+        if cfg.version >= 'clang-3.6':
+          cfg.cxxflags += ['-Wno-inconsistent-missing-override']
+          cfg.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
+        if cfg.version >= 'apple-clang-5.1' or cfg.version >= 'clang-3.4':
+          cfg.cxxflags += ['-Wno-deprecated-register']
         else:
-          cxx.cxxflags += ['-Wno-deprecated']
+          cfg.cxxflags += ['-Wno-deprecated']
 
     elif cxx.like('msvc'):
       if builder.options.debug == '1':
