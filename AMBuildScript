@@ -474,7 +474,5 @@ if builder.backend == 'amb2':
 
 builder.Build(BuildScripts, { 'MMS': MMS })
 
-# TODO: Symbol dumping temporarily broken on Mac
-if builder.target.platform != 'mac':
-  if builder.options.breakpad_dump:
-    builder.Build('support/buildbot/BreakpadSymbols', { 'MMS': MMS })
+if builder.options.breakpad_dump:
+  builder.Build('support/buildbot/BreakpadSymbols', { 'MMS': MMS })
