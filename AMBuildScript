@@ -350,6 +350,8 @@ class MMSConfig(object):
     if self.use_auto_versioning():
       binary.compiler.linkflags += [self.versionlib]
       binary.compiler.sourcedeps += MMS.generated_headers
+    if builder.options.breakpad_dump:
+      binary.compiler.symbol_files = 'separate'
     return binary
 
   def LibraryBuilder(self, compiler, name):
