@@ -407,8 +407,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 					{
 						return MMBackend_DODS;
 					}
-					else if (strcmp(game_name, "hl2mp") == 0
-						|| (addr = mm_FindPattern(lib, "Half-Life 2 Deathmatch", sizeof("Half-Life 2 Deathmatch") - 1)))
+					else if (strcmp(game_name, "hl2mp") == 0)
 					{
 						return MMBackend_HL2DM;
 					}
