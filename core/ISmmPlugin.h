@@ -39,6 +39,10 @@
 #include <ISmmAPI.h>
 #include <ISmmPluginExt.h>
 
+#ifndef META_NO_HL2SDK
+#include <tier1/interface.h>
+#endif
+
 // Interface return status, binary-compatible with HL2SDK's IFACE_OK and IFACE_FAILED.
 enum 
 {
@@ -437,17 +441,29 @@ using namespace SourceMM;
  * 					you should not pass a pointer to your plugin's 
  *					singleton.
  */
-#define PLUGIN_EXPOSE(name, var) \
-	ISmmAPI *g_SMAPI = NULL; \
-	ISmmPlugin *g_PLAPI = NULL; \
-	PluginId g_PLID = (PluginId)0; \
-	SourceHook::ISourceHook *g_SHPtr = NULL; \
+#ifdef META_NO_HL2SDK
+#define PL_EXPOSURE_FUNC(name, var) \
 	SMM_API void *PL_EXPOSURE(const char *name, int *code) { \
 		if (name && !strcmp(name, METAMOD_PLAPI_NAME)) { \
 			return static_cast<void *>(&var); \
 		} \
 		return NULL; \
 	}
+
+#else
+// First param should be actual classname, not iface name, but we don't have that and it doesn't matter here.
+#define PL_EXPOSURE_FUNC(name, var)	EXPOSE_SINGLE_INTERFACE_GLOBALVAR(ISmmPlugin, ISmmPlugin, METAMOD_PLAPI_NAME, var);
+#endif
+
+#define PLUGIN_EXPOSE(name, var) \
+	ISmmAPI *g_SMAPI = NULL; \
+	ISmmPlugin *g_PLAPI = NULL; \
+	PluginId g_PLID = (PluginId)0; \
+	SourceHook::ISourceHook *g_SHPtr = NULL; \
+	PL_EXPOSURE_FUNC(name, var)
+	
+	
+	
 
 
 /**
