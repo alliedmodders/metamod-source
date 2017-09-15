@@ -26,7 +26,7 @@ OBJECTS = stub_mm.cpp
 ##############################################
 
 OPT_FLAGS = -O3 -funroll-loops -pipe
-GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
+GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden -std=c++11
 DEBUG_FLAGS = -g -ggdb3 -D_DEBUG
 CPP = gcc
 CPP_OSX = clang
@@ -85,7 +85,11 @@ OS := $(shell uname -s)
 
 ifeq "$(OS)" "Darwin"
 	LIB_EXT = dylib
-	HL2LIB = $(HL2SDK)/lib/mac
+	ifeq "$(ENGINE)" "csgo"
+		HL2LIB = $(HL2SDK)/lib/osx64
+	else
+		HL2LIB = $(HL2SDK)/lib/mac
+	endif
 else
 	LIB_EXT = so
 	ifeq "$(ENGINE)" "original"
@@ -111,14 +115,24 @@ else
 	endif
 endif
 
+ifeq "$(OS)" "Darwin"
+	ifeq "$(ENGINE)" "csgo"
+		STATIC_SUFFIX = 
+	else
+		STATIC_SUFFIX = _i486
+	endif
+else
+	STATIC_SUFFIX = _i486
+endif
+
 CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODTIME=4 -DSE_EYE=5 \
 	-DSE_CSS=6 -DSE_ORANGEBOXVALVE=7 -DSE_LEFT4DEAD=8 -DSE_LEFT4DEAD2=9 -DSE_ALIENSWARM=10 \
 	-DSE_PORTAL2=11 -DSE_CSGO=12
 
-LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX)
+LINK += $(HL2LIB)/tier1$(STATIC_SUFFIX).a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX)
 
 ifeq "$(ENGINE)" "csgo"
-	LINK += $(HL2LIB)/interfaces_i486.a
+	LINK += $(HL2LIB)/interfaces$(STATIC_SUFFIX).a
 endif
 
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
@@ -138,16 +152,22 @@ else
 	CFLAGS += $(OPT_FLAGS)
 endif
 
-
 ifeq "$(OS)" "Darwin"
 	CPP = $(CPP_OSX)
 	LIB_EXT = dylib
-	CFLAGS += -DOSX -D_OSX
-	LINK += -dynamiclib -lstdc++ -mmacosx-version-min=10.5
+	CFLAGS += -DOSX -D_OSX -mmacosx-version-min=10.9
+	LINK += -dynamiclib -lc++ -mmacosx-version-min=10.9
+	ifeq "$(ENGINE)" "csgo"
+		CFLAGS += -m64 -DX64BITS -DPLATFORM_64BITS
+		LINK += -m64
+	else
+		CFLAGS += -m32
+		LINK += -m32
+	endif
 else
 	LIB_EXT = so
-	CFLAGS += -D_LINUX
-	LINK += -shared
+	CFLAGS += -D_LINUX -m32
+	LINK += -shared -m32
 endif
 
 IS_CLANG := $(shell $(CPP) --version | head -1 | grep clang > /dev/null && echo "1" || echo "0")
@@ -163,7 +183,7 @@ endif
 CFLAGS += -DPOSIX -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp \
 	-Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca \
 	-Dstrcmpi=strcasecmp -DCOMPILER_GCC -Wall -Wno-non-virtual-dtor -Wno-overloaded-virtual \
-	-Werror -fPIC -fno-exceptions -fno-rtti -msse -m32 -fno-strict-aliasing
+	-Werror -fPIC -fno-exceptions -fno-rtti -msse -fno-strict-aliasing
 
 # Clang || GCC >= 4
 ifeq "$(shell expr $(IS_CLANG) \| $(CPP_MAJOR) \>= 4)" "1"
@@ -172,7 +192,7 @@ endif
 
 # Clang >= 3 || GCC >= 4.7
 ifeq "$(shell expr $(IS_CLANG) \& $(CPP_MAJOR) \>= 3 \| $(CPP_MAJOR) \>= 4 \& $(CPP_MINOR) \>= 7)" "1"
-	CFLAGS += -Wno-delete-non-virtual-dtor
+	CFLAGS += -Wno-delete-non-virtual-dtor -Wno-unused-private-field -Wno-deprecated-register
 endif
 
 # OS is Linux and not using clang
@@ -199,7 +219,7 @@ check:
 	fi
 
 stub_mm: check $(OBJ_BIN)
-	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
+	$(CPP) $(INCLUDE) $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
 
 default: all
 
