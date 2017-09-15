@@ -1,8 +1,9 @@
 # vim: set ts=8 sts=2 sw=2 tw=99 et ft=python: 
 import os.path
 
-def configure_library(name, linux_defines):
-  binary = MMS.Library(builder, name)
+def configure_library(name, linux_defines, arch):
+  libname = name
+  binary = MMS.Library(builder, libname, arch)
   binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'core', 'sourcehook')]
   binary.sources += [
     'loader.cpp',
@@ -10,6 +11,8 @@ def configure_library(name, linux_defines):
     'serverplugin.cpp',
     'utility.cpp',
   ]
+  if arch == 'x86_64':
+    binary.localFolder = name + ".x64"
 
   if builder.target.platform == 'linux':
     binary.compiler.defines += linux_defines
@@ -17,11 +20,11 @@ def configure_library(name, linux_defines):
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
 
-libname = 'server'
-if builder.target.platform == 'linux' and builder.target.arch == 'x86_64':
-  libname = 'libserver'
+for arch in MMS.archs:
+  if builder.target.platform == 'linux':
+    if arch == 'x86_64':
+      configure_library('libserver', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'], arch)
+    elif arch == 'x86':
+      configure_library('server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'], arch)
 
-configure_library(libname, ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
-
-if builder.target.platform == 'linux' and builder.target.arch == 'x86':
-  configure_library('server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'])
+  configure_library('server', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'], arch)

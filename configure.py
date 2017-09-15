@@ -1,7 +1,7 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et:
 import sys
 try:
-  from ambuild2 import run
+  from ambuild2 import run, util
 except:
   try:
     import ambuild
@@ -13,7 +13,7 @@ except:
   sys.exit(1)
 
 def make_objdir_name(p):
-  return 'obj-linux-' + p.target_arch
+    return 'obj-' + util.Platform() + '-' + p.target_arch
 
 parser = run.BuildParser(sourcePath=sys.path[0], api='2.1')
 parser.default_arch = 'x86'
