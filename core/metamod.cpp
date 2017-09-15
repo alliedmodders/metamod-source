@@ -34,11 +34,18 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_ep2.h"
-#if defined __linux__
 #include <sys/stat.h>
-#endif
 #if SOURCE_ENGINE == SE_DOTA
 #include <iserver.h>
+#endif
+
+#define X64_SUFFIX ".x64"
+#if defined(WIN32) || defined(_WIN32)
+#define BINARY_EXT ".dll"
+#elif defined(__linux__)
+#define BINARY_EXT ".so"
+#elif defined(__APPLE__)
+#define BINARY_EXT ".dylib"
 #endif
 
 using namespace SourceMM;
@@ -1235,12 +1242,24 @@ size_t MetamodSource::GetFullPluginPath(const char *plugin, char *buffer, size_t
 	/* Add an extension if there's none there */
 	if (!pext)
 	{
-#if defined WIN32 || defined _WIN32
-		ext = ".dll";
-#elif defined __APPLE__
-		ext = ".dylib";
+#if defined(WIN32) || defined(_WIN32)
+#if defined(WIN64) || defined(_WIN64)
+		ext = X64_SUFFIX BINARY_EXT;
 #else
-		ext = "_i486.so";
+		ext = BINARY_EXT;
+#endif
+#elif defined __APPLE__
+#if defined (__x86_64__)
+		ext = X64_SUFFIX BINARY_EXT;
+#else
+		ext = BINARY_EXT;
+#endif
+#else
+#if defined(__x86_64__)
+		ext = X64_SUFFIX BINARY_EXT;
+#else
+		ext = "_i486" BINARY_EXT;
+#endif
 #endif
 	}
 	else
@@ -1251,12 +1270,12 @@ size_t MetamodSource::GetFullPluginPath(const char *plugin, char *buffer, size_t
 	/* Format the new path */
 	num = PathFormat(buffer, len, "%s/%s%s", mod_path.c_str(), plugin, ext);
 
-#if defined __linux__
-	/* If path was passed without extension and it doesn't exist with "_i486.so" try ".so" */
+	/* If path was passed without extension and it doesn't exist with "<suffix>.<ext>" try ".<ext>" */
+#if defined(WIN64) || defined (_WIN64) || defined(__linux__) || defined(__x86_64__)
 	struct stat s;
 	if (!pext && stat(buffer, &s) != 0)
 	{
-		num = PathFormat(buffer, len, "%s/%s.so", mod_path.c_str(), plugin);
+		num = PathFormat(buffer, len, "%s/%s" BINARY_EXT, mod_path.c_str(), plugin);
 	}
 #endif
 
