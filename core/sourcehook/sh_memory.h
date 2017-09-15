@@ -340,7 +340,7 @@ namespace SourceHook
 
 			return false;
 #elif SH_SYS == SH_SYS_APPLE
-			struct sigaction sa, osa;
+			struct sigaction sa, osa, osa2;
 			sa.sa_sigaction = BadReadHandler;
 			sa.sa_flags = SA_SIGINFO | SA_RESTART;
 
@@ -350,6 +350,8 @@ namespace SourceHook
 				return false;
 
 			if (sigaction(SIGBUS, &sa, &osa) == -1)
+				return false;
+			if (sigaction(SIGSEGV, &sa, &osa) == -1)
 				return false;
 
 			volatile const char *p = reinterpret_cast<const char *>(addr);
@@ -361,6 +363,7 @@ namespace SourceHook
 			g_BadReadCalled = false;
 
 			sigaction(SIGBUS, &osa, NULL);
+			sigaction(SIGSEGV, &osa2, NULL);
 
 			return true;
 #elif SH_XP == SH_XP_WINAPI

@@ -1093,7 +1093,7 @@ namespace
 	}
 }
 
-
+#if !defined( _M_AMD64 ) && !defined( __amd64__ ) && !defined(__x86_64__)
 bool TestHookManGen(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);
@@ -1133,6 +1133,7 @@ bool TestHookManGen(std::string &error)
 
 	return true;
 }
+#endif
 
 bool TestCPageAlloc(std::string &error)
 {

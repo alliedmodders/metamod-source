@@ -353,7 +353,7 @@ class MMSConfig(object):
         'BINARY_NAME="{0}"'.format(binary.outputFile),
         'RC_COMPILE'
       ]
-    elif builder.target.platform == 'mac':
+    elif builder.target.platform == 'mac' and binary.type == 'library':
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
