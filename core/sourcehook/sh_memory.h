@@ -351,7 +351,7 @@ namespace SourceHook
 
 			if (sigaction(SIGBUS, &sa, &osa) == -1)
 				return false;
-			if (sigaction(SIGSEGV, &sa, &osa) == -1)
+			if (sigaction(SIGSEGV, &sa, &osa2) == -1)
 				return false;
 
 			volatile const char *p = reinterpret_cast<const char *>(addr);
