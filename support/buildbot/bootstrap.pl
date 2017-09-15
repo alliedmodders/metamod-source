@@ -34,6 +34,7 @@ my @conf_argv = (
 	'--breakpad-dump',
 	'--no-color',
 	'--symbol-files'
+	'--target-arch=x86,x86_64'
 );
 
 if ($^O =~ /darwin/) {
