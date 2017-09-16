@@ -131,7 +131,7 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-#if !defined( __amd64__ )
+#if !defined( _WIN64 ) && !defined( __amd64__ )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
 #endif
 static META_RES last_meta_res;
@@ -1004,7 +1004,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	}
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
-#if defined( __amd64__ )
+#if defined( _WIN64 ) || defined( __amd64__ )
 		if (ret)
 		{
 			*ret = META_IFACE_FAILED;
