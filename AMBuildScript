@@ -91,9 +91,9 @@ def SetArchFlags(compiler, arch, platform):
       if platform == 'mac':
         compiler.linkflags = ['-arch', 'x86_64']
   elif compiler.like('msvc'):
-    if builder.target.arch == 'x86':
+    if arch == 'x86':
       compiler.linkflags += ['/MACHINE:X86']
-    elif builder.target.arch == 'x86_64':
+    elif arch == 'x86_64':
       compiler.linkflags += ['/MACHINE:X64']
 
 def AppendArchSuffix(binary, name, arch):
