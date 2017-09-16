@@ -84,12 +84,12 @@ def SetArchFlags(compiler, arch, platform):
       compiler.cflags += ['-m32']
       compiler.linkflags += ['-m32']
       if platform == 'mac':
-        compiler.linkflags = ['-arch', 'i386']
+        compiler.linkflags += ['-arch', 'i386']
     elif arch == 'x86_64':
       compiler.cflags += ['-m64', '-fPIC']
       compiler.linkflags += ['-m64']
       if platform == 'mac':
-        compiler.linkflags = ['-arch', 'x86_64']
+        compiler.linkflags += ['-arch', 'x86_64']
   elif compiler.like('msvc'):
     if arch == 'x86':
       compiler.linkflags += ['/MACHINE:X86']
