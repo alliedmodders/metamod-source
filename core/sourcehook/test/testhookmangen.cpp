@@ -1,4 +1,5 @@
 #include <string>
+#include <cstdlib>
 #include "sourcehook.h"
 #include "sourcehook_test.h"
 #include "testevents.h"
@@ -1180,13 +1181,13 @@ bool TestCPageAlloc(std::string &error)
 		test4[i] = (char*) alloc.AllocIsolated(ps / 4);
 
 	// -> The difference is at least one page
-	CHECK_COND(static_cast<size_t>(abs(test4[1] - test4[0])) >= ps, "Part 3.1");
-	CHECK_COND(static_cast<size_t>(abs(test4[2] - test4[1])) >= ps, "Part 3.2");
-	CHECK_COND(static_cast<size_t>(abs(test4[3] - test4[2])) >= ps, "Part 3.3");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[1] - test4[0])) >= ps, "Part 3.1");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[2] - test4[1])) >= ps, "Part 3.2");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[3] - test4[2])) >= ps, "Part 3.3");
 
-	CHECK_COND(static_cast<size_t>(abs(test4[5] - test4[4])) >= ps, "Part 3.4");
-	CHECK_COND(static_cast<size_t>(abs(test4[6] - test4[5])) >= ps, "Part 3.5");
-	CHECK_COND(static_cast<size_t>(abs(test4[7] - test4[6])) >= ps, "Part 3.6");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[5] - test4[4])) >= ps, "Part 3.4");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[6] - test4[5])) >= ps, "Part 3.5");
+	CHECK_COND(static_cast<size_t>(std::abs(test4[7] - test4[6])) >= ps, "Part 3.6");
 
 	// Thus i can set everything except for test4[2] to RE and still write to test4[2]
 
