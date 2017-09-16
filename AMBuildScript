@@ -96,6 +96,10 @@ def SetArchFlags(compiler, arch, platform):
     elif builder.target.arch == 'x86_64':
       compiler.linkflags += ['/MACHINE:X64']
 
+def AppendArchSuffix(binary, name, arch):
+  if arch == 'x86_64':
+    binary.localFolder = name + '.x64'
+
 class MMSConfig(object):
   def __init__(self):
     self.sdks = {}
@@ -367,11 +371,13 @@ class MMSConfig(object):
 
   def LibraryBuilder(self, compiler, name, arch):
     binary = compiler.Library(name)
+    AppendArchSuffix(binary, name, arch)
     self.AddVersioning(binary, arch)
     return binary
 
   def ProgramBuilder(self, compiler, name, arch):
     binary = compiler.Program(name)
+    AppendArchSuffix(binary, name, arch)
     self.AddVersioning(binary, arch)
     if '-static-libgcc' in binary.compiler.linkflags:
       binary.compiler.linkflags.remove('-static-libgcc')
@@ -381,8 +387,9 @@ class MMSConfig(object):
       binary.compiler.linkflags += ['-lstdc++']
     return binary
     
-  def StaticLibraryBuilder(self, compiler, name):
+  def StaticLibraryBuilder(self, compiler, name, arch):
     binary = compiler.StaticLibrary(name)
+    AppendArchSuffix(binary, name, arch)
     return binary;
 
   def Library(self, context, name, arch):
@@ -398,7 +405,7 @@ class MMSConfig(object):
   def StaticLibrary(self, context, name, arch):
     compiler = context.cxx.clone()
     SetArchFlags(compiler, arch, builder.target.platform)
-    return self.StaticLibraryBuilder(compiler, name)
+    return self.StaticLibraryBuilder(compiler, name, arch)
 
   def HL2Library(self, context, name, sdk, arch):
     compiler = self.HL2Compiler(context, sdk, arch)
@@ -435,9 +442,6 @@ class MMSConfig(object):
           compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
 
     binary = self.LibraryBuilder(compiler, name, arch)
-
-    if arch == 'x86_64':
-      binary.localFolder = name + ".x64"
 
     dynamic_libs = []
     if builder.target.platform == 'linux':

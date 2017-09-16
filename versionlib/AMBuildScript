@@ -9,8 +9,6 @@ for arch in MMS.archs:
   lib.sources += [
     'versionlib.cpp'
   ]
-  if arch == 'x86_64':
-    lib.localFolder = libname + '.x64'
 
   cmd = builder.Add(lib)
 

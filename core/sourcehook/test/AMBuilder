@@ -9,8 +9,6 @@ for arch in MMS.archs:
   ]
   if binary.compiler.version >= 'clang-2.9' or binary.compiler.version >= 'apple-clang-3.0':
     binary.compiler.cxxflags += ['-Wno-null-dereference']
-  if arch == 'x86_64':
-    binary.localFolder = name + ".x64"
 
   binary.sources += [
     'main.cpp',

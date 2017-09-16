@@ -11,8 +11,6 @@ def configure_library(name, linux_defines, arch):
     'serverplugin.cpp',
     'utility.cpp',
   ]
-  if arch == 'x86_64':
-    binary.localFolder = name + ".x64"
 
   if builder.target.platform == 'linux':
     binary.compiler.defines += linux_defines
