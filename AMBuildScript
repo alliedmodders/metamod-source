@@ -161,6 +161,9 @@ class MMSConfig(object):
       raise Exception('Unknown target architecture: {0}'.format(builder.target.arch))
 
     cxx = builder.DetectCxx()
+    
+    if cxx.like('msvc') and len(self.archs) > 1:
+      raise Exception('Building multiple archs with MSVC is not currently supported')
 
     if cxx.behavior == 'gcc':
       cxx.defines += [
