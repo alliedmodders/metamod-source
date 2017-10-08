@@ -34,7 +34,6 @@ my @conf_argv = (
 	'--breakpad-dump',
 	'--no-color',
 	'--symbol-files'
-	'--target-arch=x86,x86_64'
 );
 
 if ($^O =~ /darwin/) {
@@ -43,6 +42,12 @@ if ($^O =~ /darwin/) {
 	push(@conf_argv, '--hl2sdk-root=/hgshare');
 } elsif ($^O =~ /MSWin/) {
 	push(@conf_argv, '--hl2sdk-root=H:\\');
+}
+
+if ($^O !~ /MSWin/) {
+	push(@conf_argv, '--target-arch=x86,x64');
+} else {
+	push(@conf_argv, '--target-arch=x86');
 }
 
 my $conf_args = join(' ', @conf_argv);

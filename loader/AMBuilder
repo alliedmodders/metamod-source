@@ -20,7 +20,7 @@ def configure_library(name, linux_defines, arch):
 
 for arch in MMS.archs:
   if builder.target.platform == 'linux':
-    if arch == 'x86_64':
+    if arch == 'x64':
       configure_library('libserver', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'], arch)
     elif arch == 'x86':
       configure_library('server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'], arch)

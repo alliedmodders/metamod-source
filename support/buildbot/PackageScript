@@ -8,7 +8,7 @@ metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
 bin_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin'))
 
 for arch in MMS.archs:
-	if arch == 'x86_64':
+	if arch == 'x64':
 		if builder.target.platform == 'windows':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'win64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_win64.vdf'), 

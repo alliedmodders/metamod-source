@@ -30,12 +30,12 @@ WinLinux = ['windows', 'linux']
 WinLinuxMac = ['windows', 'linux', 'mac']
 CSGO = {
   'windows': ['x86'],
-  'linux': ['x86', 'x86_64'],
-  'mac': ['x86_64']
+  'linux': ['x86', 'x64'],
+  'mac': ['x64']
 }
 Source2 = {
-  'windows': ['x86', 'x86_64'],
-  'linux': ['x86_64'],
+  'windows': ['x86', 'x64'],
+  'linux': ['x64'],
 }
 
 PossibleSDKs = {
@@ -85,7 +85,7 @@ def SetArchFlags(compiler, arch, platform):
       compiler.linkflags += ['-m32']
       if platform == 'mac':
         compiler.linkflags += ['-arch', 'i386']
-    elif arch == 'x86_64':
+    elif arch == 'x64':
       compiler.cflags += ['-m64', '-fPIC']
       compiler.linkflags += ['-m64']
       if platform == 'mac':
@@ -93,11 +93,11 @@ def SetArchFlags(compiler, arch, platform):
   elif compiler.like('msvc'):
     if arch == 'x86':
       compiler.linkflags += ['/MACHINE:X86']
-    elif arch == 'x86_64':
+    elif arch == 'x64':
       compiler.linkflags += ['/MACHINE:X64']
 
 def AppendArchSuffix(binary, name, arch):
-  if arch == 'x86_64':
+  if arch == 'x64':
     binary.localFolder = name + '.x64'
 
 class MMSConfig(object):
@@ -106,13 +106,12 @@ class MMSConfig(object):
     self.binaries = []
     self.generated_headers = None
     self.versionlib = None
-    self.archs = builder.target.arch.split(',')
+    self.archs = builder.target.arch.replace('x86_64', 'x64').split(',')
 
   def use_auto_versioning(self):
     if builder.backend != 'amb2':
       return False
     return not getattr(builder.options, 'disable_auto_versioning', False)
-
 
   def detectProductVersion(self):
     builder.AddConfigureFile('product.version')
@@ -157,7 +156,7 @@ class MMSConfig(object):
   def configure(self):
     builder.AddConfigureFile('pushbuild.txt')
 
-    if not set(self.archs).issubset(['x86', 'x86_64']):
+    if not set(self.archs).issubset(['x86', 'x64']):
       raise Exception('Unknown target architecture: {0}'.format(builder.target.arch))
 
     cxx = builder.DetectCxx()
@@ -329,7 +328,7 @@ class MMSConfig(object):
       compiler.defines += ['COMPILER_MSVC']
       if arch == 'x86':
         compiler.defines += ['COMPILER_MSVC32']
-      elif arch == 'x86_64':
+      elif arch == 'x64':
         compiler.defines += ['COMPILER_MSVC64']
       
       if compiler.version >= 1900:
@@ -337,7 +336,7 @@ class MMSConfig(object):
     else:
       compiler.defines += ['COMPILER_GCC']
       
-    if arch == 'x86_64':
+    if arch == 'x64':
       compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
     if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
@@ -420,26 +419,26 @@ class MMSConfig(object):
         lib_folder = os.path.join(sdk.path, 'linux_sdk')
       elif sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
-      elif arch == 'x86_64':
+      elif arch == 'x64':
         lib_folder = os.path.join(sdk.path, 'lib', 'linux64')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'linux')
     elif builder.target.platform == 'mac':
       if sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'osx32')
-      elif arch == 'x86_64':
+      elif arch == 'x64':
         lib_folder = os.path.join(sdk.path, 'lib', 'osx64')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'mac')
 
     if builder.target.platform in ['linux', 'mac']:
-      if sdk.name in ['sdk2013', 'bms'] or arch == 'x86_64':
+      if sdk.name in ['sdk2013', 'bms'] or arch == 'x64':
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1.a'))]
       else:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
 
       if sdk.name in ['blade', 'insurgency', 'csgo', 'dota']:
-        if arch == 'x86_64':
+        if arch == 'x64':
           compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces.a'))]
         else:
           compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
@@ -451,7 +450,7 @@ class MMSConfig(object):
       compiler.linkflags[0:0] = ['-lm']
       if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
-      elif arch == 'x86_64' and sdk.name == 'csgo':
+      elif arch == 'x64' and sdk.name == 'csgo':
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
       elif sdk.name in ['l4d', 'blade', 'insurgency', 'csgo', 'dota']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
@@ -467,7 +466,7 @@ class MMSConfig(object):
       for lib in libs:
         if arch == 'x86':
           lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
-        elif arch == 'x86_64':
+        elif arch == 'x64':
           lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
         binary.compiler.linkflags.append(binary.Dep(lib_path))
 
