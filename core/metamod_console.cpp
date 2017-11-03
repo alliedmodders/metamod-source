@@ -151,6 +151,8 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Blade Symphony (2013)\n");
 #elif SOURCE_ENGINE == SE_INSURGENCY
 			CONMSG("  Engine: Insurgency (2013)\n");
+#elif SOURCE_ENGINE == SE_DOI
+			CONMSG("  Engine: Day of Infamy (2016)\n");
 #elif SOURCE_ENGINE == SE_CSGO
 			CONMSG("  Engine: Counter-Strike: Global Offensive (2012)\n");
 #elif SOURCE_ENGINE == SE_DOTA
