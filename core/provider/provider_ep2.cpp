@@ -530,6 +530,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_BLADE;
 #elif SOURCE_ENGINE == SE_INSURGENCY
 	return SOURCE_ENGINE_INSURGENCY;
+#elif SOURCE_ENGINE == SE_DOI
+	return SOURCE_ENGINE_DOI;
 #elif SOURCE_ENGINE == SE_CSGO
 	return SOURCE_ENGINE_CSGO;
 #elif SOURCE_ENGINE == SE_DOTA
@@ -654,6 +656,8 @@ const char *BaseProvider::GetEngineDescription() const
 	return "Blade Symphony (2013)";
 #elif SOURCE_ENGINE == SE_INSURGENCY
 	return "Insurgency (2013)";
+#elif SOURCE_ENGINE == SE_DOI
+	return "Day of Infamy (2016)";
 #elif SOURCE_ENGINE == SE_CSGO
 	return "Counter-Strike: Global Offensive (2012)";
 #elif SOURCE_ENGINE == SE_DOTA
