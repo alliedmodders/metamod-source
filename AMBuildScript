@@ -35,7 +35,7 @@ CSGO = {
 }
 Source2 = {
   'windows': ['x86', 'x64'],
-  'linux': ['x64'],
+#  'linux': ['x64'],
 }
 
 PossibleSDKs = {
