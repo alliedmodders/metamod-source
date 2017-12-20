@@ -18,19 +18,24 @@ class SDK(object):
     else:
       self.platformSpec = platform
 
-  def shouldBuild(self, target):
+  def shouldBuild(self, target, archs):
     if target.platform not in self.platformSpec:
       return False
-    if target.arch not in self.platformSpec[target.platform]:
+    if not len([i for i in self.platformSpec[target.platform] if i in archs]):
       return False
     return True
 
 WinOnly = ['windows']
 WinLinux = ['windows', 'linux']
 WinLinuxMac = ['windows', 'linux', 'mac']
+CSGO = {
+  'windows': ['x86'],
+  'linux': ['x86', 'x64'],
+  'mac': ['x64']
+}
 Source2 = {
-  'windows': ['x86', 'x86_64'],
-  'linux': ['x86_64'],
+  'windows': ['x86', 'x64'],
+  'linux': ['x64'],
 }
 
 PossibleSDKs = {
@@ -48,7 +53,7 @@ PossibleSDKs = {
   'swarm':  SDK('HL2SDK-SWARM', '2.swarm', '16', 'ALIENSWARM', WinOnly, 'swarm'),
   'bgt':  SDK('HL2SDK-BGT', '2.bgt', '4', 'BLOODYGOODTIME', WinOnly, 'bgt'),
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
-  'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', WinLinuxMac, 'csgo'),
+  'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', CSGO, 'csgo'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '22', 'DOTA', Source2, 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
@@ -73,6 +78,28 @@ def ResolveEnvPath(env, folder):
       oldhead = head
       head, tail = os.path.split(head)
   return None
+  
+def SetArchFlags(compiler, arch, platform):
+  if compiler.behavior == 'gcc':
+    if arch == 'x86':
+      compiler.cflags += ['-m32']
+      compiler.linkflags += ['-m32']
+      if platform == 'mac':
+        compiler.linkflags += ['-arch', 'i386']
+    elif arch == 'x64':
+      compiler.cflags += ['-m64', '-fPIC']
+      compiler.linkflags += ['-m64']
+      if platform == 'mac':
+        compiler.linkflags += ['-arch', 'x86_64']
+  elif compiler.like('msvc'):
+    if arch == 'x86':
+      compiler.linkflags += ['/MACHINE:X86']
+    elif arch == 'x64':
+      compiler.linkflags += ['/MACHINE:X64']
+
+def AppendArchSuffix(binary, name, arch):
+  if arch == 'x64':
+    binary.localFolder = name + '.x64'
 
 class MMSConfig(object):
   def __init__(self):
@@ -80,12 +107,12 @@ class MMSConfig(object):
     self.binaries = []
     self.generated_headers = None
     self.versionlib = None
+    self.archs = builder.target.arch.replace('x86_64', 'x64').split(',')
 
   def use_auto_versioning(self):
     if builder.backend != 'amb2':
       return False
     return not getattr(builder.options, 'disable_auto_versioning', False)
-
 
   def detectProductVersion(self):
     builder.AddConfigureFile('product.version')
@@ -110,7 +137,7 @@ class MMSConfig(object):
 
     for sdk_name in PossibleSDKs:
       sdk = PossibleSDKs[sdk_name]
-      if sdk.shouldBuild(builder.target):
+      if sdk.shouldBuild(builder.target, self.archs):
         if builder.options.hl2sdk_root:
           sdk_path = os.path.join(builder.options.hl2sdk_root, sdk.folder)
         else:
@@ -130,10 +157,13 @@ class MMSConfig(object):
   def configure(self):
     builder.AddConfigureFile('pushbuild.txt')
 
-    if builder.target.arch not in ['x86', 'x86_64']:
+    if not set(self.archs).issubset(['x86', 'x64']):
       raise Exception('Unknown target architecture: {0}'.format(builder.target.arch))
 
     cxx = builder.DetectCxx()
+    
+    if cxx.like('msvc') and len(self.archs) > 1:
+      raise Exception('Building multiple archs with MSVC is not currently supported')
 
     if cxx.behavior == 'gcc':
       cxx.defines += [
@@ -155,13 +185,6 @@ class MMSConfig(object):
         '-msse',
       ]
 
-      if builder.target.arch == 'x86':
-        cxx.cflags += ['-m32']
-        cxx.linkflags += ['-m32']
-      elif builder.target.arch == 'x86_64':
-        cxx.cflags += ['-m64', '-fPIC']
-        cxx.linkflags += ['-m64']
-
       cxx.cxxflags += [ '-std=c++11' ]
       if (cxx.version >= 'gcc-4.0') or cxx.family == 'clang':
         cxx.cflags += ['-fvisibility=hidden']
@@ -179,7 +202,7 @@ class MMSConfig(object):
         cxx.cflags += ['-mfpmath=sse']
       if cxx.family == 'clang':
         cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
-        if cxx.version >= 'clang-3.6':
+        if cxx.version >= 'clang-3.6' or cxx.version >= 'apple-clang-7.0':
           cxx.cxxflags += ['-Wno-inconsistent-missing-override']
         if cxx.version >= 'apple-clang-5.1' or cxx.version >= 'clang-3.4':
           cxx.cxxflags += ['-Wno-deprecated-register']
@@ -202,11 +225,6 @@ class MMSConfig(object):
         '/Zi',
       ]
       cxx.cxxflags += ['/TP']
-	  
-      if builder.target.arch == 'x86':
-        cxx.linkflags += ['/MACHINE:X86']
-      elif builder.target.arch == 'x86_64':
-        cxx.linkflags += ['/MACHINE:X64']
       
       cxx.linkflags += [
         '/SUBSYSTEM:WINDOWS',
@@ -258,8 +276,7 @@ class MMSConfig(object):
       cxx.cflags += ['-mmacosx-version-min=10.5']
       cxx.linkflags += [
         '-mmacosx-version-min=10.5',
-        '-arch', 'i386',
-        '-lstdc++',
+        '-lc++',
       ]
     elif builder.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
@@ -276,7 +293,7 @@ class MMSConfig(object):
         os.path.join(builder.sourcePath, 'versionlib'),
       ]
 
-  def HL2Compiler(self, context, sdk):
+  def HL2Compiler(self, context, sdk, arch):
     compiler = context.cxx.clone()
     compiler.cxxincludes += [
       os.path.join(context.currentSourcePath),
@@ -310,17 +327,17 @@ class MMSConfig(object):
 
     if compiler.family == 'msvc':
       compiler.defines += ['COMPILER_MSVC']
-      if builder.target.arch == 'x86':
+      if arch == 'x86':
         compiler.defines += ['COMPILER_MSVC32']
-      elif builder.target.arch == 'x86_64':
+      elif arch == 'x64':
         compiler.defines += ['COMPILER_MSVC64']
       
       if compiler.version >= 1900:
         compiler.linkflags += ['legacy_stdio_definitions.lib']
     else:
       compiler.defines += ['COMPILER_GCC']
-
-    if sdk.name == 'dota' and builder.target.arch == 'x86_64':
+      
+    if arch == 'x64':
       compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
     if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
@@ -336,33 +353,35 @@ class MMSConfig(object):
 
     return compiler
 
-  def AddVersioning(self, binary):
+  def AddVersioning(self, binary, arch):
     if builder.target.platform == 'windows':
       binary.sources += ['version.rc']
       binary.compiler.rcdefines += [
         'BINARY_NAME="{0}"'.format(binary.outputFile),
         'RC_COMPILE'
       ]
-    elif builder.target.platform == 'mac':
+    elif builder.target.platform == 'mac' and binary.type == 'library':
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
       ]
     if self.use_auto_versioning():
-      binary.compiler.linkflags += [self.versionlib]
+      binary.compiler.linkflags += [self.versionlib[arch]]
       binary.compiler.sourcedeps += MMS.generated_headers
     if builder.options.breakpad_dump:
       binary.compiler.symbol_files = 'separate'
     return binary
 
-  def LibraryBuilder(self, compiler, name):
+  def LibraryBuilder(self, compiler, name, arch):
     binary = compiler.Library(name)
-    self.AddVersioning(binary)
+    AppendArchSuffix(binary, name, arch)
+    self.AddVersioning(binary, arch)
     return binary
 
-  def ProgramBuilder(self, compiler, name):
+  def ProgramBuilder(self, compiler, name, arch):
     binary = compiler.Program(name)
-    self.AddVersioning(binary)
+    AppendArchSuffix(binary, name, arch)
+    self.AddVersioning(binary, arch)
     if '-static-libgcc' in binary.compiler.linkflags:
       binary.compiler.linkflags.remove('-static-libgcc')
     if '-lgcc_eh' in binary.compiler.linkflags:
@@ -370,47 +389,70 @@ class MMSConfig(object):
     if binary.compiler.like('gcc'):
       binary.compiler.linkflags += ['-lstdc++']
     return binary
+    
+  def StaticLibraryBuilder(self, compiler, name, arch):
+    binary = compiler.StaticLibrary(name)
+    AppendArchSuffix(binary, name, arch)
+    return binary;
 
-  def Library(self, context, name):
+  def Library(self, context, name, arch):
     compiler = context.cxx.clone()
-    return self.LibraryBuilder(compiler, name)
+    SetArchFlags(compiler, arch, builder.target.platform)
+    return self.LibraryBuilder(compiler, name, arch)
 
-  def Program(self, context, name):
+  def Program(self, context, name, arch):
     compiler = context.cxx.clone()
-    return self.ProgramBuilder(compiler, name)
+    SetArchFlags(compiler, arch, builder.target.platform)
+    return self.ProgramBuilder(compiler, name, arch)
+    
+  def StaticLibrary(self, context, name, arch):
+    compiler = context.cxx.clone()
+    SetArchFlags(compiler, arch, builder.target.platform)
+    return self.StaticLibraryBuilder(compiler, name, arch)
 
-  def HL2Library(self, context, name, sdk):
-    compiler = self.HL2Compiler(context, sdk)
+  def HL2Library(self, context, name, sdk, arch):
+    compiler = self.HL2Compiler(context, sdk, arch)
+    
+    SetArchFlags(compiler, arch, builder.target.platform)
 
     if builder.target.platform == 'linux':
       if sdk.name == 'episode1':
         lib_folder = os.path.join(sdk.path, 'linux_sdk')
       elif sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
+      elif arch == 'x64':
+        lib_folder = os.path.join(sdk.path, 'lib', 'linux64')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'linux')
     elif builder.target.platform == 'mac':
       if sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'osx32')
+      elif arch == 'x64':
+        lib_folder = os.path.join(sdk.path, 'lib', 'osx64')
       else:
         lib_folder = os.path.join(sdk.path, 'lib', 'mac')
 
     if builder.target.platform in ['linux', 'mac']:
-      if sdk.name in ['sdk2013', 'bms']:
+      if sdk.name in ['sdk2013', 'bms'] or arch == 'x64':
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1.a'))]
       else:
         compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
 
       if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
+        if arch == 'x64':
+          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces.a'))]
+        else:
+          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
 
-    binary = self.LibraryBuilder(compiler, name)
+    binary = self.LibraryBuilder(compiler, name, arch)
 
     dynamic_libs = []
     if builder.target.platform == 'linux':
       compiler.linkflags[0:0] = ['-lm']
       if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency', 'doi']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
+      elif arch == 'x64' and sdk.name == 'csgo':
+        dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
       elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
       else:
@@ -423,9 +465,9 @@ class MMSConfig(object):
       if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
         libs.append('interfaces')
       for lib in libs:
-        if builder.target.arch == 'x86':
+        if arch == 'x86':
           lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
-        elif builder.target.arch == 'x86_64':
+        elif arch == 'x64':
           lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
         binary.compiler.linkflags.append(binary.Dep(lib_path))
 

@@ -48,25 +48,35 @@ namespace SourceHook
 #if SH_COMP==SH_COMP_GCC
 			if ((((ptrdiff_t)m_OrigEntry) & 1) != 0)
 			{
-				// Odd orig entry.
-				if (SH_PTRSIZE != 4)
-				{
-					// We only have code for IA32 atm!
-					return false;
-				}
-
 				// Generate a new thunk
-				m_OrigCallThunk = ms_AlignedPageAllocator.Alloc(5);
+				m_OrigCallThunk = ms_AlignedPageAllocator.Alloc(12);
 				ms_AlignedPageAllocator.SetRW(m_OrigCallThunk);
 
 				unsigned char* thunkBase = reinterpret_cast<unsigned char*>(m_OrigCallThunk);
-				*(thunkBase + 0) = 0xE9;		// offset jump, immediate operand
-				ptrdiff_t *offsetAddr = reinterpret_cast<ptrdiff_t*>(thunkBase + 1);
+				ptrdiff_t offset = reinterpret_cast<unsigned char*>(m_OrigEntry) - thunkBase - 5;
+
+				if (offset >= INT_MIN && offset <= INT_MAX)
+				{
+					*(thunkBase + 0) = 0xE9;		// offset jump, immediate operand
+					ptrdiff_t *offsetAddr = reinterpret_cast<ptrdiff_t*>(thunkBase + 1);
 				
-				// destination = src + offset + 5
-				// <=>  offset = destination - src - 5
-				*offsetAddr =
-					(reinterpret_cast<unsigned char*>(m_OrigEntry) - thunkBase) - 5;
+					// destination = src + offset + 5
+					// <=>  offset = destination - src - 5
+					*offsetAddr = offset;
+				}
+				else
+				{
+					// mov rax, m_origEntry
+					*(thunkBase + 0) = 0x48;
+					*(thunkBase + 1) = 0xB8;
+					void **offsetAddr = reinterpret_cast<void**>(thunkBase + 2);
+
+					*offsetAddr = m_OrigEntry;
+
+					// jmp rax
+					*(thunkBase + 10) = 0xFF;
+					*(thunkBase + 11) = 0xE0;
+				}
 
 				ms_AlignedPageAllocator.SetRE(m_OrigCallThunk);
 			}

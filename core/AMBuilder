@@ -2,30 +2,34 @@
 import os
 
 for sdk_name in MMS.sdks:
-  sdk = MMS.sdks[sdk_name]
+  for arch in MMS.archs:
+    sdk = MMS.sdks[sdk_name]
 
-  name = 'metamod.' + sdk.ext
-  binary = MMS.HL2Library(builder, name, sdk)
+    if not arch in sdk.platformSpec[builder.target.platform]:
+      continue
 
-  binary.sources += [
-    'metamod.cpp',
-    'metamod_console.cpp',
-    'metamod_oslink.cpp',
-    'metamod_plugins.cpp',
-    'metamod_util.cpp',
-    'provider/console.cpp',
-    'provider/provider_ep2.cpp',
-    'sourcehook/sourcehook.cpp',
-    'sourcehook/sourcehook_impl_chookidman.cpp',
-    'sourcehook/sourcehook_impl_chookmaninfo.cpp',
-    'sourcehook/sourcehook_impl_cproto.cpp',
-    'sourcehook/sourcehook_impl_cvfnptr.cpp',
-    'gamedll_bridge.cpp',
-    'vsp_bridge.cpp'
-  ]
+    name = 'metamod.' + sdk.ext
+    binary = MMS.HL2Library(builder, name, sdk, arch)
 
-  # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
-  if builder.target.arch == 'x86':
-    binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
-  nodes = builder.Add(binary)
-  MMS.binaries += [nodes]
+    binary.sources += [
+      'metamod.cpp',
+      'metamod_console.cpp',
+      'metamod_oslink.cpp',
+      'metamod_plugins.cpp',
+      'metamod_util.cpp',
+      'provider/console.cpp',
+      'provider/provider_ep2.cpp',
+      'sourcehook/sourcehook.cpp',
+      'sourcehook/sourcehook_impl_chookidman.cpp',
+      'sourcehook/sourcehook_impl_chookmaninfo.cpp',
+      'sourcehook/sourcehook_impl_cproto.cpp',
+      'sourcehook/sourcehook_impl_cvfnptr.cpp',
+      'gamedll_bridge.cpp',
+      'vsp_bridge.cpp'
+    ]
+
+    # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
+    if arch == 'x86':
+      binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
+    nodes = builder.Add(binary)
+    MMS.binaries += [nodes]
