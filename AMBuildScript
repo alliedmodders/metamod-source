@@ -443,6 +443,9 @@ class MMSConfig(object):
           compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces.a'))]
         else:
           compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
+      
+      if sdk.name == 'bms':
+        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'mathlib.a'))]
 
     binary = self.LibraryBuilder(compiler, name, arch)
 
@@ -464,6 +467,8 @@ class MMSConfig(object):
       libs = ['tier0', 'tier1', 'vstdlib']
       if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
         libs.append('interfaces')
+      if sdk.name == 'bms':
+        libs.append('mathlib')
       for lib in libs:
         if arch == 'x86':
           lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
