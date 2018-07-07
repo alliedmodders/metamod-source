@@ -2297,7 +2297,7 @@ private:	// Invoker for static functions
 	return (*(m_Closure.GetStaticFunction()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16); }
 };
 
-//N=17 (!)
+//N=17
 template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class RetType=detail::DefaultVoid>
 class FastDelegate17 {
 private:
@@ -2380,6 +2380,261 @@ public:
 private:	// Invoker for static functions
 	RetType InvokeStaticFunction(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17) const {
 	return (*(m_Closure.GetStaticFunction()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17); }
+};
+
+//N=18
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class RetType=detail::DefaultVoid>
+class FastDelegate18 {
+private:
+	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18);
+	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18);
+	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18);
+	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	ClosureType m_Closure;
+public:
+	// Typedefs to aid generic programming
+	typedef FastDelegate18 type;
+
+	// Construction and comparison functions
+	FastDelegate18() { clear(); }
+	FastDelegate18(const FastDelegate18 &x) {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	void operator = (const FastDelegate18 &x)  {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	bool operator ==(const FastDelegate18 &x) const {
+		return m_Closure.IsEqual(x.m_Closure);	}
+	bool operator !=(const FastDelegate18 &x) const {
+		return !m_Closure.IsEqual(x.m_Closure); }
+	bool operator <(const FastDelegate18 &x) const {
+		return m_Closure.IsLess(x.m_Closure);	}
+	bool operator >(const FastDelegate18 &x) const {
+		return x.m_Closure.IsLess(m_Closure);	}
+	// Binding to non-const member functions
+	template < class X, class Y >
+	FastDelegate18(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) ) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); }
+	template < class X, class Y >
+	inline void bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18)) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	}
+	// Binding to const member functions.
+	template < class X, class Y >
+	FastDelegate18(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	}
+	template < class X, class Y >
+	inline void bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	}
+	// Static functions. We convert them into a member function call.
+	// This constructor also provides implicit conversion
+	FastDelegate18(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) ) {
+		bind(function_to_bind);	}
+	// for efficiency, prevent creation of a temporary
+	void operator = (DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) ) {
+		bind(function_to_bind);	}
+	inline void bind(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18)) {
+		m_Closure.bindstaticfunc(this, &FastDelegate18::InvokeStaticFunction,
+			function_to_bind); }
+	// Invoke the delegate
+	RetType operator() (Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const {
+	return (m_Closure.GetClosureThis()->*(m_Closure.GetClosureMemPtr()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18); }
+	// Implicit conversion to "bool" using the safe_bool idiom
+private:
+	typedef struct SafeBoolStruct {
+		int a_data_pointer_to_this_is_0_on_buggy_compilers;
+		StaticFunctionPtr m_nonzero;
+	} UselessTypedef;
+    typedef StaticFunctionPtr SafeBoolStruct::*unspecified_bool_type;
+public:
+	operator unspecified_bool_type() const {
+        return empty()? 0: &SafeBoolStruct::m_nonzero;
+    }
+	// necessary to allow ==0 to work despite the safe_bool idiom
+	inline bool operator==(StaticFunctionPtr funcptr) {
+		return m_Closure.IsEqualToStaticFuncPtr(funcptr);	}
+	inline bool operator!=(StaticFunctionPtr funcptr) { 
+		return !m_Closure.IsEqualToStaticFuncPtr(funcptr);    }
+	inline bool operator ! () const	{	// Is it bound to anything?
+			return !m_Closure; }
+	inline bool empty() const	{
+			return !m_Closure; }
+	void clear() { m_Closure.clear();}
+	// Conversion to and from the DelegateMemento storage class
+	const DelegateMemento & GetMemento() { return m_Closure; }
+	void SetMemento(const DelegateMemento &any) { m_Closure.CopyFrom(this, any); }
+
+private:	// Invoker for static functions
+	RetType InvokeStaticFunction(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const {
+	return (*(m_Closure.GetStaticFunction()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18); }
+};
+
+//N=19
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class RetType=detail::DefaultVoid>
+class FastDelegate19 {
+private:
+	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19);
+	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19);
+	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19);
+	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	ClosureType m_Closure;
+public:
+	// Typedefs to aid generic programming
+	typedef FastDelegate19 type;
+
+	// Construction and comparison functions
+	FastDelegate19() { clear(); }
+	FastDelegate19(const FastDelegate19 &x) {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	void operator = (const FastDelegate19 &x)  {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	bool operator ==(const FastDelegate19 &x) const {
+		return m_Closure.IsEqual(x.m_Closure);	}
+	bool operator !=(const FastDelegate19 &x) const {
+		return !m_Closure.IsEqual(x.m_Closure); }
+	bool operator <(const FastDelegate19 &x) const {
+		return m_Closure.IsLess(x.m_Closure);	}
+	bool operator >(const FastDelegate19 &x) const {
+		return x.m_Closure.IsLess(m_Closure);	}
+	// Binding to non-const member functions
+	template < class X, class Y >
+	FastDelegate19(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) ) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); }
+	template < class X, class Y >
+	inline void bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19)) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	}
+	// Binding to const member functions.
+	template < class X, class Y >
+	FastDelegate19(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	}
+	template < class X, class Y >
+	inline void bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	}
+	// Static functions. We convert them into a member function call.
+	// This constructor also provides implicit conversion
+	FastDelegate19(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) ) {
+		bind(function_to_bind);	}
+	// for efficiency, prevent creation of a temporary
+	void operator = (DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) ) {
+		bind(function_to_bind);	}
+	inline void bind(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19)) {
+		m_Closure.bindstaticfunc(this, &FastDelegate19::InvokeStaticFunction,
+			function_to_bind); }
+	// Invoke the delegate
+	RetType operator() (Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const {
+	return (m_Closure.GetClosureThis()->*(m_Closure.GetClosureMemPtr()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19); }
+	// Implicit conversion to "bool" using the safe_bool idiom
+private:
+	typedef struct SafeBoolStruct {
+		int a_data_pointer_to_this_is_0_on_buggy_compilers;
+		StaticFunctionPtr m_nonzero;
+	} UselessTypedef;
+    typedef StaticFunctionPtr SafeBoolStruct::*unspecified_bool_type;
+public:
+	operator unspecified_bool_type() const {
+        return empty()? 0: &SafeBoolStruct::m_nonzero;
+    }
+	// necessary to allow ==0 to work despite the safe_bool idiom
+	inline bool operator==(StaticFunctionPtr funcptr) {
+		return m_Closure.IsEqualToStaticFuncPtr(funcptr);	}
+	inline bool operator!=(StaticFunctionPtr funcptr) { 
+		return !m_Closure.IsEqualToStaticFuncPtr(funcptr);    }
+	inline bool operator ! () const	{	// Is it bound to anything?
+			return !m_Closure; }
+	inline bool empty() const	{
+			return !m_Closure; }
+	void clear() { m_Closure.clear();}
+	// Conversion to and from the DelegateMemento storage class
+	const DelegateMemento & GetMemento() { return m_Closure; }
+	void SetMemento(const DelegateMemento &any) { m_Closure.CopyFrom(this, any); }
+
+private:	// Invoker for static functions
+	RetType InvokeStaticFunction(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const {
+	return (*(m_Closure.GetStaticFunction()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19); }
+};
+
+//N=20
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20, class RetType=detail::DefaultVoid>
+class FastDelegate20 {
+private:
+	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20);
+	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20);
+	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20);
+	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	ClosureType m_Closure;
+public:
+	// Typedefs to aid generic programming
+	typedef FastDelegate20 type;
+
+	// Construction and comparison functions
+	FastDelegate20() { clear(); }
+	FastDelegate20(const FastDelegate20 &x) {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	void operator = (const FastDelegate20 &x)  {
+		m_Closure.CopyFrom(this, x.m_Closure); }
+	bool operator ==(const FastDelegate20 &x) const {
+		return m_Closure.IsEqual(x.m_Closure);	}
+	bool operator !=(const FastDelegate20 &x) const {
+		return !m_Closure.IsEqual(x.m_Closure); }
+	bool operator <(const FastDelegate20 &x) const {
+		return m_Closure.IsLess(x.m_Closure);	}
+	bool operator >(const FastDelegate20 &x) const {
+		return x.m_Closure.IsLess(m_Closure);	}
+	// Binding to non-const member functions
+	template < class X, class Y >
+	FastDelegate20(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) ) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); }
+	template < class X, class Y >
+	inline void bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20)) {
+		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	}
+	// Binding to const member functions.
+	template < class X, class Y >
+	FastDelegate20(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	}
+	template < class X, class Y >
+	inline void bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const) {
+		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	}
+	// Static functions. We convert them into a member function call.
+	// This constructor also provides implicit conversion
+	FastDelegate20(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) ) {
+		bind(function_to_bind);	}
+	// for efficiency, prevent creation of a temporary
+	void operator = (DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) ) {
+		bind(function_to_bind);	}
+	inline void bind(DesiredRetType (*function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20)) {
+		m_Closure.bindstaticfunc(this, &FastDelegate20::InvokeStaticFunction,
+			function_to_bind); }
+	// Invoke the delegate
+	RetType operator() (Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const {
+	return (m_Closure.GetClosureThis()->*(m_Closure.GetClosureMemPtr()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20); }
+	// Implicit conversion to "bool" using the safe_bool idiom
+private:
+	typedef struct SafeBoolStruct {
+		int a_data_pointer_to_this_is_0_on_buggy_compilers;
+		StaticFunctionPtr m_nonzero;
+	} UselessTypedef;
+    typedef StaticFunctionPtr SafeBoolStruct::*unspecified_bool_type;
+public:
+	operator unspecified_bool_type() const {
+        return empty()? 0: &SafeBoolStruct::m_nonzero;
+    }
+	// necessary to allow ==0 to work despite the safe_bool idiom
+	inline bool operator==(StaticFunctionPtr funcptr) {
+		return m_Closure.IsEqualToStaticFuncPtr(funcptr);	}
+	inline bool operator!=(StaticFunctionPtr funcptr) { 
+		return !m_Closure.IsEqualToStaticFuncPtr(funcptr);    }
+	inline bool operator ! () const	{	// Is it bound to anything?
+			return !m_Closure; }
+	inline bool empty() const	{
+			return !m_Closure; }
+	void clear() { m_Closure.clear();}
+	// Conversion to and from the DelegateMemento storage class
+	const DelegateMemento & GetMemento() { return m_Closure; }
+	void SetMemento(const DelegateMemento &any) { m_Closure.CopyFrom(this, any); }
+
+private:	// Invoker for static functions
+	RetType InvokeStaticFunction(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const {
+	return (*(m_Closure.GetStaticFunction()))(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20); }
 };
 
 
@@ -3067,6 +3322,117 @@ public:
 		*static_cast<BaseType*>(this) = x; }
 };
 
+//N=18
+// Specialization to allow use of
+// FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18 ) >
+// instead of
+// FastDelegate18 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, R >
+template<typename R, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18>
+class FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18 ) >
+  // Inherit from FastDelegate18 so that it can be treated just like a FastDelegate18
+  : public FastDelegate18 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, R >
+{
+public:
+  // Make using the base type a bit easier via typedef.
+  typedef FastDelegate18 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, R > BaseType;
+
+  // Allow users access to the specific type of this delegate.
+  typedef FastDelegate SelfType;
+
+  // Mimic the base class constructors.
+  FastDelegate() : BaseType() { }
+
+  template < class X, class Y >
+  FastDelegate(Y * pthis,
+    R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18 ))
+    : BaseType(pthis, function_to_bind)  { }
+
+  template < class X, class Y >
+  FastDelegate(const Y *pthis,
+      R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18 ) const)
+    : BaseType(pthis, function_to_bind)
+  {  }
+
+  FastDelegate(R (*function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18 ))
+    : BaseType(function_to_bind)  { }
+  void operator = (const BaseType &x)  {
+		*static_cast<BaseType*>(this) = x; }
+};
+
+//N=19
+// Specialization to allow use of
+// FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19 ) >
+// instead of
+// FastDelegate19 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, R >
+template<typename R, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19>
+class FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19 ) >
+  // Inherit from FastDelegate19 so that it can be treated just like a FastDelegate19
+  : public FastDelegate19 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, R >
+{
+public:
+  // Make using the base type a bit easier via typedef.
+  typedef FastDelegate19 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, R > BaseType;
+
+  // Allow users access to the specific type of this delegate.
+  typedef FastDelegate SelfType;
+
+  // Mimic the base class constructors.
+  FastDelegate() : BaseType() { }
+
+  template < class X, class Y >
+  FastDelegate(Y * pthis,
+    R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19 ))
+    : BaseType(pthis, function_to_bind)  { }
+
+  template < class X, class Y >
+  FastDelegate(const Y *pthis,
+      R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19 ) const)
+    : BaseType(pthis, function_to_bind)
+  {  }
+
+  FastDelegate(R (*function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19 ))
+    : BaseType(function_to_bind)  { }
+  void operator = (const BaseType &x)  {
+		*static_cast<BaseType*>(this) = x; }
+};
+
+//N=20
+// Specialization to allow use of
+// FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20 ) >
+// instead of
+// FastDelegate20 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, R >
+template<typename R, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20>
+class FastDelegate< R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20 ) >
+  // Inherit from FastDelegate20 so that it can be treated just like a FastDelegate20
+  : public FastDelegate20 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, R >
+{
+public:
+  // Make using the base type a bit easier via typedef.
+  typedef FastDelegate20 < Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, R > BaseType;
+
+  // Allow users access to the specific type of this delegate.
+  typedef FastDelegate SelfType;
+
+  // Mimic the base class constructors.
+  FastDelegate() : BaseType() { }
+
+  template < class X, class Y >
+  FastDelegate(Y * pthis,
+    R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20 ))
+    : BaseType(pthis, function_to_bind)  { }
+
+  template < class X, class Y >
+  FastDelegate(const Y *pthis,
+      R (X::* function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20 ) const)
+    : BaseType(pthis, function_to_bind)
+  {  }
+
+  FastDelegate(R (*function_to_bind)( Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20 ))
+    : BaseType(function_to_bind)  { }
+  void operator = (const BaseType &x)  {
+		*static_cast<BaseType*>(this) = x; }
+};
+
 
 #endif //FASTDELEGATE_ALLOW_FUNCTION_TYPE_SYNTAX
 
@@ -3386,6 +3752,54 @@ FastDelegate17<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, P
 template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class RetType>
 FastDelegate17<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17)) {
 	return FastDelegate17<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, FASTDLGT_RETTYPE>(func);
+}
+
+//N=18
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class RetType>
+FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18)) {
+	return FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class RetType>
+FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18) const) {
+	return FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class RetType>
+FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18)) {
+	return FastDelegate18<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, FASTDLGT_RETTYPE>(func);
+}
+
+//N=19
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class RetType>
+FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19)) {
+	return FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class RetType>
+FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19) const) {
+	return FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class RetType>
+FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19)) {
+	return FastDelegate19<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, FASTDLGT_RETTYPE>(func);
+}
+
+//N=20
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20, class RetType>
+FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20)) {
+	return FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class X, class Y, class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20, class RetType>
+FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE> MakeDelegate(Y* x, RetType (X::*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20) const) {
+	return FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE>(x, func);
+}
+
+template <class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class Param9, class Param10, class Param11, class Param12, class Param13, class Param14, class Param15, class Param16, class Param17, class Param18, class Param19, class Param20, class RetType>
+FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE> MakeDelegate(RetType (*func)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9, Param10 p10, Param11 p11, Param12 p12, Param13 p13, Param14 p14, Param15 p15, Param16 p16, Param17 p17, Param18 p18, Param19 p19, Param20 p20)) {
+	return FastDelegate20<Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9, Param10, Param11, Param12, Param13, Param14, Param15, Param16, Param17, Param18, Param19, Param20, FASTDLGT_RETTYPE>(func);
 }
 
 
