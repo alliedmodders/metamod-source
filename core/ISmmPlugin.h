@@ -40,7 +40,11 @@
 #include <ISmmPluginExt.h>
 
 #ifndef META_NO_HL2SDK
+#if SOURCE_ENGINE == SE_DOTA
+#include <interfaces/interfaces.h>
+#else
 #include <tier1/interface.h>
+#endif
 #endif
 
 class IServerPluginCallbacks;
