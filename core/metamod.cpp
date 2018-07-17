@@ -375,7 +375,13 @@ void InitializeVSP()
 			break;
 		}
 	}
-	abspath(engine_path, engine_file);
+
+	/* If this fails the file either does not exist or
+	 * on Windows the buffer may be too small. */
+	if (abspath(engine_path, engine_file) == NULL)
+	{
+		engine_path[0] = '\0';
+	}
 
 	const char *usepath = metamod_path.c_str();
 	if (UTIL_Relatize(rel_path, sizeof(rel_path), engine_path, metamod_path.c_str()))
