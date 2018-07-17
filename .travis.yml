@@ -80,15 +80,6 @@ matrix:
           packages: ['clang-5.0', 'lib32stdc++6', 'lib32z1-dev', 'libc6-dev-i386', 'linux-libc-dev', 'g++-multilib']
       env: ['MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"']
 
-    - os: linux
-      sudo: false
-      language: cpp
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-6', 'g++-6-multilib', 'lib32stdc++6', 'lib32z1-dev', 'libc6-dev-i386', 'linux-libc-dev', 'g++-multilib']
-      env: ['MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"']
-
   allow_failures:
     - env: MATRIX_EVAL="CC=clang-3.7 && CXX=clang++-3.7"
     - env: MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
