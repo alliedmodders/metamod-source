@@ -127,6 +127,8 @@ class MMSConfig(object):
         '-msse',
         '-m32',
       ]
+
+      cfg.cxxflags += [ '-std=c++11' ]
       if (cxx.name == 'gcc' and cxx.majorVersion >= 4) or cxx.name == 'clang':
         cfg.cflags += ['-fvisibility=hidden']
         cfg.cxxflags += ['-fvisibility-inlines-hidden']
