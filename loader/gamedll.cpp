@@ -130,7 +130,6 @@ mm_DetectGameInformation()
 
 	char temp_path[PLATFORM_MAX_PATH];
 	char cur_path[PLATFORM_MAX_PATH];
-	getcwd(cur_path, sizeof(cur_path));
 
 	char *ptr;
 	const char *lptr;
@@ -162,7 +161,10 @@ mm_DetectGameInformation()
 		else
 		{
 			ptr = val;
-			lptr = cur_path;
+			if (getcwd(cur_path, sizeof(cur_path)))
+				lptr = cur_path;
+			else
+				lptr = "";
 		}
 
 		const char *pRelPath = is_source2 ? "../../" : "";

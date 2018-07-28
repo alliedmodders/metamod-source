@@ -202,6 +202,8 @@ class MMSConfig(object):
         cxx.cflags += ['-mfpmath=sse']
       if cxx.family == 'clang':
         cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
+        if cxx.version >= 'clang-3.9':
+          cxx.cxxflags += ['-Wno-expansion-to-defined']
         if cxx.version >= 'clang-3.6' or cxx.version >= 'apple-clang-7.0':
           cxx.cxxflags += ['-Wno-inconsistent-missing-override']
         if cxx.version >= 'apple-clang-5.1' or cxx.version >= 'clang-3.4':
