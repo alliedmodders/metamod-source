@@ -255,7 +255,7 @@ namespace SourceHook
 	*/
 	namespace
 	{
-		bool ModuleInMemory(char *addr, size_t len)
+		inline bool ModuleInMemory(char *addr, size_t len)
 		{
 #if SH_SYS == SH_SYS_LINUX
 			// On linux, first check /proc/self/maps
@@ -327,12 +327,6 @@ namespace SourceHook
 				return true;
 
 			prevHandler = signal(SIGSEGV, BadReadHandler);
-
-			volatile const char *p = reinterpret_cast<const char*>(addr);
-			char dummy;
-
-			for (size_t i = 0; i < len; i++)
-				dummy = p[i];
 
 			g_BadReadCalled = false;
 
