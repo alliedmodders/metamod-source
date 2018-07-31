@@ -7,6 +7,8 @@ for arch in MMS.archs:
   binary.compiler.cxxincludes += [
     os.path.join(builder.sourcePath, 'core', 'sourcehook'),
   ]
+  if binary.compiler.version >= 'gcc-4.9':
+    binary.compiler.cxxflags += ['-fno-devirtualize']
   if binary.compiler.version >= 'clang-2.9' or binary.compiler.version >= 'apple-clang-3.0':
     binary.compiler.cxxflags += ['-Wno-null-dereference']
 
