@@ -329,8 +329,11 @@ namespace SourceHook
 			prevHandler = signal(SIGSEGV, BadReadHandler);
 
 			volatile const char *p = reinterpret_cast<const char*>(addr);
+			char dummy;
+
 			for (size_t i = 0; i < len; i++)
-				p[i];
+				dummy = p[i];
+			(void)dummy; // silence unused var, we must read from p
 
 			g_BadReadCalled = false;
 
@@ -353,8 +356,11 @@ namespace SourceHook
 				return false;
 
 			volatile const char *p = reinterpret_cast<const char *>(addr);
+			char dummy;
+
 			for (size_t i = 0; i < len; i++)
-				p[i];
+				dummy = p[i];
+			(void)dummy; // silence unused var, we must read from p
 
 			g_BadReadCalled = false;
 
