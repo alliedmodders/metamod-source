@@ -255,7 +255,7 @@ namespace SourceHook
 	*/
 	namespace
 	{
-		bool ModuleInMemory(char *addr, size_t len)
+		static inline bool ModuleInMemory(char *addr, size_t len)
 		{
 #if SH_SYS == SH_SYS_LINUX
 			// On linux, first check /proc/self/maps
@@ -333,6 +333,7 @@ namespace SourceHook
 
 			for (size_t i = 0; i < len; i++)
 				dummy = p[i];
+			(void)dummy; // silence unused var, we must read from p
 
 			g_BadReadCalled = false;
 
@@ -359,6 +360,7 @@ namespace SourceHook
 
 			for (size_t i = 0; i < len; i++)
 				dummy = p[i];
+			(void)dummy; // silence unused var, we must read from p
 
 			g_BadReadCalled = false;
 
