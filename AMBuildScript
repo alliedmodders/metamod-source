@@ -275,9 +275,19 @@ class MMSConfig(object):
         cxx.linkflags += ['-lgcc_eh']
     elif builder.target.platform == 'mac':
       cxx.defines += ['OSX', '_OSX', 'POSIX']
-      cxx.cflags += ['-mmacosx-version-min=10.5']
+
+      if cxx.version >= 'apple-clang-10.0':
+        cxx.cflags += ['-mmacosx-version-min=10.9', '-stdlib=libc++']
+        cxx.linkflags += [
+          '-mmacosx-version-min=10.9',
+        ]
+      else:
+        cxx.cflags += ['-mmacosx-version-min=10.5']
+        cxx.linkflags += [
+          '-mmacosx-version-min=10.5',
+        ]
+
       cxx.linkflags += [
-        '-mmacosx-version-min=10.5',
         '-lc++',
       ]
     elif builder.target.platform == 'windows':
