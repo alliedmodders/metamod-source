@@ -382,7 +382,7 @@ class MMSConfig(object):
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
     elif builder.target.platform == 'mac':
-      # binary.compiler.linkflags.append('-liconv') # todo: I imagine we need this, but the Makefile didnt
+      binary.compiler.linkflags.append('-liconv')
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif builder.target.platform == 'windows':
       # todo: verify this for MSVC support
