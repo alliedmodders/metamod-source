@@ -180,12 +180,9 @@ class MMSConfig(object):
       cxx.defines += [
         'stricmp=strcasecmp',
         '_stricmp=strcasecmp',
-        '_strnicmp=strncasecmp',
-        'strnicmp=strncasecmp',
         '_snprintf=snprintf',
         '_vsnprintf=vsnprintf',
         '_alloca=alloca',
-        'strcmpi=strcasecmp',
       ]
       cxx.cflags += proj_c_flags
       cxx.cflags += [ # todo: what is the difference between cflags and cxxflags
