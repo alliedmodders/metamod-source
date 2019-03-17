@@ -184,7 +184,7 @@ void BaseProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 	}
 
-#if SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_DOTA && 0
 	// Since we have to be added as a Game path (cannot add GameBin directly), we
 	// automatically get added to other paths as well, including having the MM:S
 	// dir become the default write path for logs and more. We can fix some of these.
