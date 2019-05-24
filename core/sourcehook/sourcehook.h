@@ -196,11 +196,68 @@ namespace SourceHook
 			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
 			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
 		};
+		
+		enum RegisterType
+		{
+			// Don't change the register and use the stack
+			RegisterType_None=0,
+
+			// 128-bit XMM registers
+			RegisterType_XMM0,
+			RegisterType_XMM1,
+			RegisterType_XMM2,
+			RegisterType_XMM3,
+			RegisterType_XMM4,
+			RegisterType_XMM5,
+			RegisterType_XMM6,
+			RegisterType_XMM7
+
+			// 8-bit general purpose registers
+			RegisterType_AL,
+			RegisterType_CL,
+			RegisterType_DL,
+			RegisterType_BL,
+			RegisterType_AH,
+			RegisterType_CH,
+			RegisterType_DH,
+			RegisterType_BH,
+			
+			// 16-bit general purpose registers
+			RegisterType_AX,		
+			RegisterType_CX,
+			RegisterType_DX,
+			RegisterType_BX,
+			RegisterType_SP,
+			RegisterType_BP,
+			RegisterType_SI,
+			RegisterType_DI,
+
+			// 32-bit general purpose registers
+			RegisterType_EAX,
+			RegisterType_ECX,
+			RegisterType_EDX,
+			RegisterType_EBX,
+			RegisterType_ESP,
+			RegisterType_EBP,
+			RegisterType_ESI,
+			RegisterType_EDI,
+			
+			// 80-bit FPU registers
+			RegisterType_ST0,
+			RegisterType_ST1,
+			RegisterType_ST2,
+			RegisterType_ST3,
+			RegisterType_ST4,
+			RegisterType_ST5,
+			RegisterType_ST6,
+			RegisterType_ST7
+		};
 
 		size_t size;			//!< Size of the data being passed
 
 		// Extra info:
 		//  (might be used in future versions for automatic hookfunc generation)
+		int reg;				//!< RegisterType value
 		int type;				//!< PassType value
 		unsigned int flags;		//!< Pass/return flags
 
@@ -211,6 +268,9 @@ namespace SourceHook
 			void *pDtor;
 			void *pAssignOperator;
 		};
+		
+		// Sets the default value for back compatibility 
+		PassInfo(): reg(RegisterType_None) { }
 	};
 
 	struct ProtoInfo
