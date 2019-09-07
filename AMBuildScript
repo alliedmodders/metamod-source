@@ -55,7 +55,7 @@ PossibleSDKs = {
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', CSGO, 'csgo'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '22', 'DOTA', [], 'dota'),
-  'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
+  'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', WinLinuxMac, 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
   'doi':  SDK('HL2SDKDOI', '2.doi', '20', 'DOI', WinLinuxMac, 'doi'),
@@ -477,7 +477,7 @@ class MMSConfig(object):
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif builder.target.platform == 'windows':
       libs = ['tier0', 'tier1', 'vstdlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
+      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'csgo', 'dota', 'portal2']:
         libs.append('interfaces')
       if sdk.name == 'bms':
         libs.append('mathlib')
