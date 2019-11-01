@@ -31,5 +31,7 @@ for sdk_name in MMS.sdks:
     # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
     if arch == 'x86':
       binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
+    if binary.compiler.family == 'gcc' and binary.compiler.version >= 'gcc-8':
+      binary.compiler.cxxflags += ['-Wno-class-memaccess', '-Wno-format-truncation']
     nodes = builder.Add(binary)
     MMS.binaries += [nodes]

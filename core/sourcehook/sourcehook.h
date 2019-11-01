@@ -1541,14 +1541,14 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	SH_DECL_EXTERN(ifacetype, ifacefunc, attr, overload, rettype, param1, param2)
 
 #define SH_DECL_HOOK2_void(ifacetype, ifacefunc, attr, overload, param1, param2) \
-	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (static_cast<void (ifacetype::*)(param1, param2) attr> \
+	SHINT_MAKE_GENERICSTUFF_BEGIN(ifacetype, ifacefunc, overload, (reinterpret_cast<void (ifacetype::*)(param1, param2) attr> \
 		(&ifacetype::ifacefunc))) \
 		typedef fastdelegate::FastDelegate<void, param1, param2> FD; \
 		MAKE_DELEG_void((param1 p1, param2 p2), (p1, p2)); \
 		virtual void Func(param1 p1, param2 p2) \
 		{ SH_HANDLEFUNC_void((param1, param2), (p1, p2)); } \
 	SHINT_MAKE_GENERICSTUFF_END(ifacetype, ifacefunc, overload, \
-		(static_cast<void (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
+		(reinterpret_cast<void (ifacetype::*)(param1, param2) attr>(&ifacetype::ifacefunc))) \
 	\
 	const ::SourceHook::PassInfo __SourceHook_ParamInfos_##ifacetype##ifacefunc##overload[] = { {1, 0, 0},__SH_GPI(param1),__SH_GPI(param2) }; \
 	const ::SourceHook::PassInfo::V2Info __SourceHook_ParamInfos2_##ifacetype##ifacefunc##overload[] = { __SH_EPI, __SH_EPI, __SH_EPI }; \
