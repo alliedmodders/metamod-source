@@ -30,6 +30,7 @@
 #include <convar.h>
 #include <eiface.h>
 #include <tier0/icommandline.h>
+#include <tier0/mem.h>
 #include <sh_vector.h>
 #include <sh_string.h>
 #include "../metamod_util.h"
