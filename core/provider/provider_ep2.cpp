@@ -441,7 +441,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -757,7 +757,7 @@ void ClientCommand(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE
 
 void CacheUserMessages()
 {
