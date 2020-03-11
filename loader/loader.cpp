@@ -324,7 +324,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 			return MMBackend_BMS;
 		}
 
-		if (mm_FindPattern(engineFactory, " Blade Symphony ", sizeof(" Blade Symphony ") - 1))
+		if (mm_FindPattern((void *)engineFactory, " Blade Symphony ", sizeof(" Blade Symphony ") - 1))
 		{
 			return MMBackend_Blade;
 		}
