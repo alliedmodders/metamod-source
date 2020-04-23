@@ -7,6 +7,7 @@ proj_c_flags = [
   '-Wno-non-virtual-dtor',
   '-Wno-overloaded-virtual',
   '-Werror',
+  '-Wno-unused',
 ]
 proj_c_flags_opt = [
   '-O3',
@@ -98,6 +99,9 @@ def ResolveEnvPath(env, folder):
       head, tail = os.path.split(head)
   return None
 
+def Normalize(path):
+  return os.path.abspath(os.path.normpath(path))
+  
 def SetArchFlags(compiler, arch, platform):
   if compiler.behavior == 'gcc':
     if arch == 'x86':
@@ -125,6 +129,7 @@ class MMSConfig(object):
     self.sdks = {}
     self.binaries = []
     self.generated_headers = None
+    self.mms_root = None
     self.archs = builder.target.arch.replace('x86_64', 'x64').split(',')
 
   def detectProductVersion(self):
@@ -166,6 +171,19 @@ class MMSConfig(object):
     if len(self.sdks) < 1 and len(sdk_list):
       raise Exception('No SDKs were found that build on {0}-{1}, nothing to do.'.format(
         builder.target.platform, builder.target.arch))
+
+    if builder.options.mms_path:
+      self.mms_root = builder.options.mms_path
+    else:
+      self.mms_root = ResolveEnvPath('MMSOURCE110', 'mmsource-1.10')
+      if not self.mms_root:
+        self.mms_root = ResolveEnvPath('MMSOURCE_DEV', 'metamod-source')
+      if not self.mms_root:
+        self.mms_root = ResolveEnvPath('MMSOURCE_DEV', 'mmsource-central')
+
+    if not self.mms_root or not os.path.isdir(self.mms_root):
+      raise Exception('Could not find a source copy of Metamod:Source')
+    self.mms_root = Normalize(self.mms_root)
 
   def configure(self):
     if not set(self.archs).issubset(['x86', 'x64']):
@@ -255,8 +273,18 @@ class MMSConfig(object):
 
   def HL2Compiler(self, context, sdk, arch):
     compiler = context.cxx.clone()
-    compiler.cxxincludes += [
-      os.path.join(context.currentSourcePath),
+
+    if sdk.name == 'episode1' or sdk.name == 'darkm':
+      compiler.cxxincludes += [
+        os.path.join(context.currentSourcePath),
+        os.path.join(self.mms_root, 'core-legacy'),
+        os.path.join(self.mms_root, 'core-legacy', 'sourcehook'),
+    ]
+    else:
+      compiler.cxxincludes += [
+        os.path.join(context.currentSourcePath),
+        os.path.join(self.mms_root, 'core'),
+        os.path.join(self.mms_root, 'core', 'sourcehook'),
     ]
 
     defines = ['SE_' + PossibleSDKs[i].define + '=' + PossibleSDKs[i].code for i in PossibleSDKs]
@@ -270,17 +298,10 @@ class MMSConfig(object):
               ['public', 'tier1'],
             ]
 
-    if not builder.options.mms_path:
-      raise Exception('Metamod:Source path is missing. Supply a --mms_path flag')
-
     if sdk.name == 'episode1' or sdk.name == 'darkm':
       paths.append(['public', 'dlls'])
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core-legacy'))
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core-legacy', 'sourcehook'))
     else:
       paths.append(['public', 'game', 'server'])
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core'))
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core', 'sourcehook'))
 
     compiler.defines += ['SOURCE_ENGINE=' + sdk.code]
 
