@@ -148,33 +148,24 @@ mm_TrimRight(char *buffer)
 void
 mm_TrimComments(char *buffer)
 {
-	int num_sc = 0;
-	size_t len = strlen(buffer);
 	if (buffer)
 	{
-		for (size_t i = len - 1; i >= 0; i--)
+		int num_sc = 0;
+		size_t len = strlen(buffer);
+		for (size_t i = 0; i < len; i++)
 		{
 			if (buffer[i] == '/')
 			{
-				if (++num_sc >= 2 && i==0)
+				if (++num_sc >= 2)
 				{
-					buffer[i] = '\0';
+					buffer[i-1] = '\0';
 					return;
 				}
 			}
 			else
 			{
-				if (num_sc >= 2)
-				{
-					buffer[i] = '\0';
-					return;
-				}
 				num_sc = 0;
 			}
-			/* size_t won't go below 0, manually break out */
-			if (i == 0)
-				break;
-			
 		}
 	}
 }
