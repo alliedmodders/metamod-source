@@ -41,7 +41,7 @@ const char *UTIL_GetExtension(const char *file)
 	size_t len = strlen(file);
 	size_t i = 0;
 
-	for (i = len - 1; i >= 0; i--)
+	for (i = len - 1; i + 1 > 0; i--)
 	{
 		if (file[i] == '/' || file[i] == '\\')
 		{

@@ -798,7 +798,7 @@ int MetamodSource::FormatIface(char iface[], size_t maxlength)
 	size_t i;
 	int num = 0;
 
-	for (i = length - 1; i >= 0; i--)
+	for (i = length - 1; i + 1 > 0; i--)
 	{
 		if (!isdigit(iface[i]))
 		{
