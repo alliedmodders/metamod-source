@@ -139,7 +139,7 @@ public:
 		size_t len = size();
 		if (len < 1)
 			return npos;
-		if (index >= len || index < 0)
+		if (index >= len)
 			return npos;
 		size_t i = 0;
 		for (i=index; i<len; i++)
@@ -158,7 +158,7 @@ public:
 		size_t len = size();
 		if (len < 1)
 			return npos;
-		if (index >= len || index < npos)
+		if (index >= len)
 			return npos;
 		size_t i;
 		if (index == npos)
