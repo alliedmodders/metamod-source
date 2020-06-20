@@ -184,7 +184,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			const char *plname;
 			PluginIter i;
 			char buffer[256];
-			int len;
+			size_t len;
 			int plnum = g_PluginMngr.GetPluginCount();
 
 			if (!plnum)
@@ -688,7 +688,7 @@ bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
 				const char *plname;
 				PluginIter i;
 				char buffer[256];
-				int len = 0;
+				size_t len = 0;
 				int plnum = 0;
 
 				for (i = g_PluginMngr._begin(); i != g_PluginMngr._end(); i++, len=0)

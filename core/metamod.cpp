@@ -792,10 +792,10 @@ void MetamodSource::GetShVersions(int &shvers, int &shimpl)
 	shimpl = SH_IMPL_VERSION;
 }
 
-int MetamodSource::FormatIface(char iface[], unsigned int maxlength)
+int MetamodSource::FormatIface(char iface[], size_t maxlength)
 {
-	int length = (int)strlen(iface);
-	int i;
+	size_t length = strlen(iface);
+	size_t i;
 	int num = 0;
 
 	for (i = length - 1; i >= 0; i--)
@@ -810,7 +810,7 @@ int MetamodSource::FormatIface(char iface[], unsigned int maxlength)
 		}
 	}
 
-	if ( (num && ((int)maxlength <= length)) || (!num && ((int)maxlength <= length + 3)) )
+	if ( (num && (maxlength <= length)) || (!num && (maxlength <= length + 3)) )
 	{
 		return -1;
 	}

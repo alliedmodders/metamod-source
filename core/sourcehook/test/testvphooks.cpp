@@ -2,6 +2,7 @@
 #include "sourcehook.h"
 #include "sourcehook_test.h"
 #include "testevents.h"
+#include <ctime>
 
 // TEST VP HOOKS
 // Test vfnptr-wide hooks

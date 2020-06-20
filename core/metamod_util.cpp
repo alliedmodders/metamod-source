@@ -38,8 +38,8 @@
 
 const char *UTIL_GetExtension(const char *file)
 {
-	int len = strlen(file);
-	int i = 0;
+	size_t len = strlen(file);
+	size_t i = 0;
 
 	for (i = len - 1; i >= 0; i--)
 	{

@@ -206,7 +206,7 @@ namespace SourceMM
 		 * @return				The newly incremented iface version number.
 		 * @deprecated			Use InterfaceSearch() or VInterfaceMatch instead.
 		 */
-		virtual int FormatIface(char iface[], unsigned int maxlength) =0;
+		virtual int FormatIface(char iface[], size_t maxlength) =0;
 
 		/**
 		 * @brief Searches for an interface, eliminating the need to loop 
