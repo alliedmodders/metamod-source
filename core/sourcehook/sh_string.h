@@ -134,14 +134,14 @@ public:
 			return 0;
 	}
 
-	int find(const char c, int index = 0) const
+	size_t find(const char c, size_t index = 0) const
 	{
-		int len = static_cast<int>(size());
+		size_t len = size();
 		if (len < 1)
 			return npos;
-		if (index >= len || index < 0)
+		if (index >= len)
 			return npos;
-		int i = 0;
+		size_t i = 0;
 		for (i=index; i<len; i++)
 		{
 			if (v[i] == c)
@@ -153,20 +153,20 @@ public:
 		return npos;
 	}
 
-	int find_last_of(const char c, int index = npos) const
+	size_t find_last_of(const char c, size_t index = npos) const
 	{
-		int len = static_cast<int>(size());
+		size_t len = size();
 		if (len < 1)
 			return npos;
-		if (index >= len || index < npos)
+		if (index >= len)
 			return npos;
-		int i;
+		size_t i;
 		if (index == npos)
 			i = len - 1;
 		else
 			i = index;
 
-		for (; i>=0; i--)
+		for (; i+1>0; i--)
 		{
 			if (v[i] == c)
 			{
@@ -194,8 +194,8 @@ public:
 		if (!v)
 			return;
 
-		unsigned int i = 0;
-		unsigned int j = 0;
+		size_t i = 0;
+		size_t j = 0;
 		size_t len = strlen(v);
 
 		if (len == 1)
@@ -213,7 +213,7 @@ public:
 		{
 			for (i=0; i<len; i++)
 			{
-				if (!is_space(v[i]) || (is_space(v[i]) && ((unsigned char)i==len-1)))
+				if (!is_space(v[i]) || (is_space(v[i]) && (i==len-1)))
 				{
 					erase(0, i);
 					break;
@@ -252,11 +252,11 @@ public:
 		}
 	}
 
-	void erase(unsigned int start, int num = npos)
+	void erase(size_t start, size_t num = npos)
 	{
 		if (!v)
 			return;
-		unsigned int i = 0;
+		size_t i = 0;
 		size_t len = size();
 		//check for bounds
 		if (num == npos || start+num > len-start)
@@ -287,7 +287,7 @@ public:
 		v[len] = 0;
 	}
 
-	String substr(unsigned int index, int num = npos) const
+	String substr(size_t index, size_t num = npos) const
 	{
 		if (!v)
 		{
@@ -309,8 +309,8 @@ public:
 			num = len - index;
 		}
 
-		unsigned int i = 0;
-		unsigned int nslen = num + 2;
+		size_t i = 0;
+		size_t nslen = num + 2;
 
 		ns.Grow(nslen);
 
@@ -324,7 +324,7 @@ public:
 	{
 		if (!v)
 			return;
-		unsigned int i = 0;
+		size_t i = 0;
 		size_t len = strlen(v);
 		for (i=0; i<len; i++)
 		{
@@ -346,9 +346,9 @@ public:
 
 	}
 
-	char operator [] (unsigned int index) const
+	char operator [] (size_t index) const
 	{
-		if (index > size() || !v)
+		if (index >= size() || !v)
 		{
 			return -1;
 		} else {
@@ -356,17 +356,17 @@ public:
 		}
 	}
 
-	int at(int a) const
+	int at(size_t a) const
 	{
-		if (a < 0 || a >= (int)size() || !v)
+		if (a >= size() || !v)
 			return -1;
 
 		return v[a];
 	}
 
-	bool at(int at, char c)
+	bool at(size_t at, char c)
 	{
-		if (at < 0 || at >= (int)size() || !v)
+		if (at >= size() || !v)
 			return false;
 
 		v[at] = c;
@@ -375,7 +375,7 @@ public:
 	}
 
 private:
-	void Grow(unsigned int d, bool copy=true)
+	void Grow(size_t d, bool copy=true)
 	{
 		if (d <= a_size)
 			return;
@@ -385,15 +385,15 @@ private:
 		if (v)
 			delete [] v;
 		else
-			strcpy(n, "");			
+			strcpy(n, "");
 		v = n;
 		a_size = d + 1;
 	}
 
 	char *v;
-	unsigned int a_size;
+	size_t a_size;
 public:
-	static const int npos = -1;
+	static const size_t npos = static_cast<size_t>(-1);
 };
 
 };	//NAMESPACE

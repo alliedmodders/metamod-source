@@ -81,7 +81,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 	if (mem.AllocationBase == NULL)
 		return false;
 	HMODULE dll = (HMODULE)mem.AllocationBase;
-	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
+	GetModuleFileName(dll, (LPTSTR)buffer, static_cast<DWORD>(maxlength));
 #elif defined __linux__ || defined __APPLE__
 	Dl_info info;
 	if (!dladdr(pAddr, &info))

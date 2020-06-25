@@ -54,7 +54,7 @@ mm_GetPlatformError(char *buffer, size_t maxlength)
 		dw,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPSTR)buffer,
-		maxlength,
+		static_cast<DWORD>(maxlength),
 		NULL);
 }
 #endif
@@ -148,33 +148,24 @@ mm_TrimRight(char *buffer)
 void
 mm_TrimComments(char *buffer)
 {
-	int num_sc = 0;
-	size_t len = strlen(buffer);
 	if (buffer)
 	{
-		for (int i = len - 1; i >= 0; i--)
+		int num_sc = 0;
+		size_t len = strlen(buffer);
+		for (size_t i = 0; i < len; i++)
 		{
 			if (buffer[i] == '/')
 			{
-				if (++num_sc >= 2 && i==0)
+				if (++num_sc >= 2)
 				{
-					buffer[i] = '\0';
+					buffer[i-1] = '\0';
 					return;
 				}
 			}
 			else
 			{
-				if (num_sc >= 2)
-				{
-					buffer[i] = '\0';
-					return;
-				}
 				num_sc = 0;
 			}
-			/* size_t won't go below 0, manually break out */
-			if (i == 0)
-				break;
-			
 		}
 	}
 }
@@ -371,7 +362,7 @@ mm_GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 	if (mem.AllocationBase == NULL)
 		return false;
 	HMODULE dll = (HMODULE)mem.AllocationBase;
-	GetModuleFileName(dll, (LPTSTR)buffer, maxlength);
+	GetModuleFileName(dll, (LPTSTR)buffer, static_cast<DWORD>(maxlength));
 #elif defined __linux__ || defined __APPLE__
 	Dl_info info;
 	if (!dladdr(pAddr, &info))
@@ -402,6 +393,14 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 #ifdef _WIN32
 
+#ifdef _M_X64
+	const WORD PE_FILE_MACHINE = IMAGE_FILE_MACHINE_AMD64;
+	const WORD PE_NT_OPTIONAL_HDR_MAGIC = IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+#else
+	const WORD PE_FILE_MACHINE = IMAGE_FILE_MACHINE_I386;
+	const WORD PE_NT_OPTIONAL_HDR_MAGIC = IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+#endif
+
 	MEMORY_BASIC_INFORMATION info;
 	IMAGE_DOS_HEADER *dos;
 	IMAGE_NT_HEADERS *pe;
@@ -422,15 +421,13 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	opt = &pe->OptionalHeader;
 
 	/* Check PE magic and signature */
-	if (dos->e_magic != IMAGE_DOS_SIGNATURE || pe->Signature != IMAGE_NT_SIGNATURE || opt->Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+	if (dos->e_magic != IMAGE_DOS_SIGNATURE || pe->Signature != IMAGE_NT_SIGNATURE || opt->Magic != PE_NT_OPTIONAL_HDR_MAGIC)
 	{
 		return false;
 	}
 
-	/* Check architecture, which is 32-bit/x86 right now
-	* Should change this for 64-bit if Valve gets their act together
-	*/
-	if (file->Machine != IMAGE_FILE_MACHINE_I386)
+	/* Check architecture	*/
+	if (file->Machine != PE_FILE_MACHINE)
 	{
 		return false;
 	}
@@ -446,9 +443,21 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 #elif defined __linux__
 
+#ifdef __x86_64__
+	typedef Elf64_Ehdr ElfHeader;
+	typedef Elf64_Phdr ElfPHeader;
+	const unsigned char ELF_CLASS = ELFCLASS64;
+	const uint16_t ELF_MACHINE = EM_X86_64;
+#else
+	typedef Elf32_Ehdr ElfHeader;
+	typedef Elf32_Phdr ElfPHeader;
+	const unsigned char ELF_CLASS = ELFCLASS32;
+	const uint16_t ELF_MACHINE = EM_386;
+#endif
+
 	Dl_info info;
-	Elf32_Ehdr *file;
-	Elf32_Phdr *phdr;
+	ElfHeader *file;
+	ElfPHeader *phdr;
 	uint16_t phdrCount;
 
 	if (!dladdr(libPtr, &info))
@@ -463,7 +472,7 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 	/* This is for our insane sanity checks :o */
 	baseAddr = reinterpret_cast<uintptr_t>(info.dli_fbase);
-	file = reinterpret_cast<Elf32_Ehdr *>(baseAddr);
+	file = reinterpret_cast<ElfHeader *>(baseAddr);
 
 	/* Check ELF magic */
 	if (memcmp(ELFMAG, file->e_ident, SELFMAG) != 0)
@@ -477,10 +486,8 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 		return false;
 	}
 
-	/* Check ELF architecture, which is 32-bit/x86 right now
-	* Should change this for 64-bit if Valve gets their act together
-	*/
-	if (file->e_ident[EI_CLASS] != ELFCLASS32 || file->e_machine != EM_386 || file->e_ident[EI_DATA] != ELFDATA2LSB)
+	/* Check ELF architecture	*/
+	if (file->e_ident[EI_CLASS] != ELF_CLASS || file->e_machine != ELF_MACHINE || file->e_ident[EI_DATA] != ELFDATA2LSB)
 	{
 		return false;
 	}
@@ -492,11 +499,11 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	}
 
 	phdrCount = file->e_phnum;
-	phdr = reinterpret_cast<Elf32_Phdr *>(baseAddr + file->e_phoff);
+	phdr = reinterpret_cast<ElfPHeader *>(baseAddr + file->e_phoff);
 
 	for (uint16_t i = 0; i < phdrCount; i++)
 	{
-		Elf32_Phdr &hdr = phdr[i];
+		ElfPHeader &hdr = phdr[i];
 
 		/* We only really care about the segment with executable code */
 		if (hdr.p_type == PT_LOAD && hdr.p_flags == (PF_X|PF_R))
@@ -515,9 +522,25 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 #elif defined __APPLE__
 
+#ifdef __x86_64__
+	typedef struct mach_header_64 MachHeader;
+	typedef struct segment_command_64 MachSegment;
+	const uint32_t MACH_MAGIC = MH_MAGIC_64;
+	const uint32_t MACH_LOADCMD_SEGMENT = LC_SEGMENT_64;
+	const cpu_type_t MACH_CPU_TYPE = CPU_TYPE_X86_64;
+	const cpu_subtype_t MACH_CPU_SUBTYPE = CPU_SUBTYPE_X86_64_ALL;
+#else
+	typedef struct mach_header MachHeader;
+	typedef struct segment_command MachSegment;
+	const uint32_t MACH_MAGIC = MH_MAGIC;
+	const uint32_t MACH_LOADCMD_SEGMENT = LC_SEGMENT;
+	const cpu_type_t MACH_CPU_TYPE = CPU_TYPE_I386;
+	const cpu_subtype_t MACH_CPU_SUBTYPE = CPU_SUBTYPE_I386_ALL;
+#endif
+
 	Dl_info info;
-	struct mach_header *file;
-	struct segment_command *seg;
+	MachHeader *file;
+	MachSegment *seg;
 	uint32_t cmd_count;
 
 	if (!dladdr(libPtr, &info))
@@ -532,16 +555,16 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 	/* This is for our insane sanity checks :o */
 	baseAddr = (uintptr_t)info.dli_fbase;
-	file = (struct mach_header *)baseAddr;
+	file = (MachHeader *)baseAddr;
 
 	/* Check Mach-O magic */
-	if (file->magic != MH_MAGIC)
+	if (file->magic != MACH_MAGIC)
 	{
 		return false;
 	}
 
-	/* Check architecture (32-bit/x86) */
-	if (file->cputype != CPU_TYPE_I386 || file->cpusubtype != CPU_SUBTYPE_I386_ALL)
+	/* Check architecture */
+	if (file->cputype != MACH_CPU_TYPE || file->cpusubtype != MACH_CPU_SUBTYPE)
 	{
 		return false;
 	}
@@ -553,17 +576,17 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	}
 
 	cmd_count = file->ncmds;
-	seg = (struct segment_command *)(baseAddr + sizeof(struct mach_header));
+	seg = (MachSegment *)(baseAddr + sizeof(MachHeader));
 
 	/* Add up memory sizes of mapped segments */
 	for (uint32_t i = 0; i < cmd_count; i++)
 	{
-		if (seg->cmd == LC_SEGMENT)
+		if (seg->cmd == MACH_LOADCMD_SEGMENT)
 		{
 			lib.memorySize += seg->vmsize;
 		}
 
-		seg = (struct segment_command *)((uintptr_t)seg + seg->cmdsize);
+		seg = (MachSegment  *)((uintptr_t)seg + seg->cmdsize);
 	}
 
 #endif

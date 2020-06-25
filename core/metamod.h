@@ -72,7 +72,7 @@ public:
 	void GetShVersions(int &shvers, int &shimpl);
 	void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);
 	void *MetaFactory(const char *iface, int *ret, PluginId *id);
-	int FormatIface(char iface[], unsigned int maxlength);
+	int FormatIface(char iface[], size_t maxlength);
 	void *InterfaceSearch(CreateInterfaceFn fn, const char *iface, int max, int *ret);
 	const char *GetBaseDir();
 	size_t PathFormat(char *buffer, size_t len, const char *fmt, ...);
