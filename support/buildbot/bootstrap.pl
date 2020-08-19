@@ -19,6 +19,17 @@ our ($root) = getcwd();
 
 my $reconf = 0;
 
+my $trigger_file = 'support/buildbot/trigger_full_rebuild';
+if (-f $trigger_file) {
+	my $trigger_mtime = (stat $trigger_file)[9];
+	if (-f 'OUTPUT/.ambuild2/graph') {
+		my $graph_mtime = (stat 'OUTPUT/.ambuild2/graph')[9];
+		if ($trigger_mtime > $graph_mtime) {
+			print "Trigger time $trigger_mtime > $graph_mtime, cleaning objdir...\n";
+			rmtree('OUTPUT');
+		}
+	}
+}
 if (!(-f 'OUTPUT/.ambuild2/graph') || !(-f 'OUTPUT/.ambuild2/vars')) {
 	rmtree('OUTPUT');
 	mkdir('OUTPUT') or die("Failed to create output folder: $!\n");
@@ -49,6 +60,7 @@ if ($^O !~ /MSWin/) {
 } else {
 	push(@conf_argv, '--target-arch=x86');
 }
+push(@conf_argv, '--sdks=all');
 
 my $conf_args = join(' ', @conf_argv);
 
@@ -56,7 +68,7 @@ if ($argn > 0 && $^O !~ /MSWin/) {
 	$result = `CC=$ARGV[0] CXX=$ARGV[0] python ../build/configure.py $conf_args`;
 } else {
 	if ($^O =~ /MSWin/) {
-		$result = `C:\\Python27\\Python.exe ..\\build\\configure.py $conf_args`;
+		$result = `C:\\Python38\\Python.exe ..\\build\\configure.py $conf_args`;
 	} else {
 		$result = `CC=clang CXX=clang python ../build/configure.py $conf_args`;
 	}

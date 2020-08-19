@@ -1,9 +1,9 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
-for arch in MMS.archs:
+for cxx in MMS.all_targets:
   name = 'test_sourcehook'
-  binary = MMS.Program(builder, name, arch)
+  binary = MMS.Program(cxx, name)
   binary.compiler.cxxincludes += [
     os.path.join(builder.sourcePath, 'core', 'sourcehook'),
   ]
@@ -36,7 +36,7 @@ for arch in MMS.archs:
     'testrefret.cpp',
     'testvphooks.cpp',
   ]
-  if arch == 'x86':
+  if binary.compiler.target.arch == 'x86':
     binary.sources += ['../sourcehook_hookmangen.cpp']
 
   builder.Add(binary)
