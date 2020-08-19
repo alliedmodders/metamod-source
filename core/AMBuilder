@@ -2,14 +2,14 @@
 import os
 
 for sdk_name in MMS.sdks:
-  for arch in MMS.archs:
+  for cxx in MMS.all_targets:
     sdk = MMS.sdks[sdk_name]
 
-    if not arch in sdk.platformSpec[builder.target.platform]:
+    if not cxx.target.arch in sdk.platformSpec[cxx.target.platform]:
       continue
 
     name = 'metamod.' + sdk.ext
-    binary = MMS.HL2Library(builder, name, sdk, arch)
+    binary = MMS.HL2Library(builder, cxx, name, sdk)
 
     binary.sources += [
       'metamod.cpp',
@@ -29,7 +29,7 @@ for sdk_name in MMS.sdks:
     ]
 
     # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
-    if arch == 'x86':
+    if binary.compiler.target.arch == 'x86':
       binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
     nodes = builder.Add(binary)
     MMS.binaries += [nodes]

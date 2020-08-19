@@ -1,9 +1,9 @@
 # vim: sts=2 ts=8 sw=2 tw=99 et ft=python:
 
 rvalue = {}
-for arch in MMS.archs:
+for cxx in MMS.all_targets:
   libname = 'version'
-  lib = MMS.StaticLibrary(builder, libname, arch)
+  lib = MMS.StaticLibrary(cxx, libname)
   lib.compiler.defines.remove('MMS_USE_VERSIONLIB')
   lib.compiler.sourcedeps += MMS.generated_headers
   lib.sources += [
@@ -12,5 +12,4 @@ for arch in MMS.archs:
 
   cmd = builder.Add(lib)
 
-  rvalue[arch] = cmd.binary
-
+  rvalue[cxx.target.arch] = cmd.binary

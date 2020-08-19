@@ -7,17 +7,17 @@ addons_folder = builder.AddFolder('addons')
 metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
 bin_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin'))
 
-for arch in MMS.archs:
-	if arch == 'x64':
-		if builder.target.platform == 'windows':
+for cxx in MMS.all_targets:
+	if cxx.target.arch == 'x86_64':
+		if cxx.target.platform == 'windows':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'win64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_win64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
-		elif builder.target.platform == 'linux':
+		elif cxx.target.platform == 'linux':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linux64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_linux64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
-		elif builder.target.platform == 'mac':
+		elif cxx.target.platform == 'mac':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'osx64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_osx64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
@@ -28,7 +28,7 @@ builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'README.txt'), metam
 
 pdb_list = []
 for task in MMS.binaries:
-	if '.x64' + os.sep in task.binary.path:
+	if task.target.arch == 'x86_64':
 		builder.AddCopy(task.binary, bin64_folder)
 	else:
 		builder.AddCopy(task.binary, bin_folder)

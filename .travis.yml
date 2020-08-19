@@ -36,12 +36,6 @@ addons:
     cache:
       directories:
         - ../mysql-5.0
-env:
- - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
- - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
- - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
- - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
- - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
 
 matrix:
   fast_finish: true
@@ -67,36 +61,9 @@ matrix:
       language: cpp
       addons:
         apt:
-          sources: ['llvm-toolchain-trusty-4.0']
-          packages: ['clang-4.0', 'lib32stdc++6', 'lib32z1-dev', 'libc6-dev-i386', 'linux-libc-dev', 'g++-multilib']
-      env: ['MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"']
-
-    - os: linux
-      sudo: false
-      language: cpp
-      addons:
-        apt:
-          sources: ['llvm-toolchain-trusty-5.0']
-          packages: ['clang-5.0', 'lib32stdc++6', 'lib32z1-dev', 'libc6-dev-i386', 'linux-libc-dev', 'g++-multilib']
-      env: ['MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"']
-
-    - os: linux
-      sudo: false
-      language: cpp
-      addons:
-        apt:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-6', 'g++-6-multilib', 'lib32stdc++6', 'lib32z1-dev', 'libc6-dev-i386', 'linux-libc-dev', 'g++-multilib']
       env: ['MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"']
-
-  allow_failures:
-    - env: MATRIX_EVAL="CC=clang-3.7 && CXX=clang++-3.7"
-    - env: MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
-    - env: MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
-    - env: MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
-    - env: MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-    - env: MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-
 
 before_script:
   - CHECKOUT_DIR=$PWD && cd .. && $CHECKOUT_DIR/support/checkout-deps.sh && cd $CHECKOUT_DIR
@@ -109,8 +76,10 @@ script:
   - cd .. && mkdir build-sh-opt && cd build-sh-opt
   - python ../configure.py --enable-optimize --enable-tests --sdks=
   - ambuild
-  - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
+  - ./core/sourcehook/test/test_sourcehook/linux-x86/test_sourcehook -v
+  - ./core/sourcehook/test/test_sourcehook/linux-x86_64/test_sourcehook -v
   - cd .. && mkdir build-sh-debug && cd build-sh-debug
   - python ../configure.py --enable-debug --enable-tests --sdks=
   - ambuild
-  - ./core/sourcehook/test/test_sourcehook/test_sourcehook -v
+  - ./core/sourcehook/test/test_sourcehook/linux-x86/test_sourcehook -v
+  - ./core/sourcehook/test/test_sourcehook/linux-x86_64/test_sourcehook -v
