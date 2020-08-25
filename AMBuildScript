@@ -433,18 +433,18 @@ class MMSConfig(object):
 
     if compiler.target.platform in ['linux', 'mac']:
       if sdk.name in ['sdk2013', 'bms'] or compiler.target.arch == 'x86_64':
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1.a'))]
+        compiler.postlink += [os.path.join(lib_folder, 'tier1.a')]
       else:
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
+        compiler.postlink += [os.path.join(lib_folder, 'tier1_i486.a')]
 
       if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
         if compiler.target.arch == 'x86_64':
-          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces.a'))]
+          compiler.postlink += [os.path.join(lib_folder, 'interfaces.a')]
         else:
-          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
+          compiler.postlink += [os.path.join(lib_folder, 'interfaces_i486.a')]
       
       if sdk.name == 'bms':
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'mathlib.a'))]
+        compiler.postlink += [os.path.join(lib_folder, 'mathlib.a')]
 
     binary = self.Library(compiler, name)
     compiler = binary.compiler
@@ -474,20 +474,17 @@ class MMSConfig(object):
           lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
         elif compiler.target.arch == 'x86_64':
           lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
-        binary.compiler.linkflags.append(binary.Dep(lib_path))
+        binary.compiler.linkflags.append(lib_path)
 
     for library in dynamic_libs:
       source_path = os.path.join(lib_folder, library)
       output_path = os.path.join(binary.localFolder, library)
 
-      def make_linker(source_path, output_path):
-        def link(context, binary):
-          cmd_node, (output,) = context.AddSymlink(source_path, output_path)
-          return output
-        return link
+      context.AddFolder(binary.localFolder)
+      output = context.AddSymlink(source_path, output_path)
 
-      linker = make_linker(source_path, output_path)
-      binary.compiler.linkflags[0:0] = [binary.Dep(library, linker)]
+      binary.compiler.weaklinkdeps += [output]
+      binary.compiler.linkflags[0:0] = [library]
 
     return binary
 
