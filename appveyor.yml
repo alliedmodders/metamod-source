@@ -45,7 +45,7 @@ install:
     }
 
 
-    $SDKS = @( "csgo", "l4d2", "tf2", "episode1" )
+    $SDKS = @( "csgo", "l4d2", "tf2", "episode1", "insurgency" )
 
     if (-not (Test-Path "hl2sdk-proxy-repo" -PathType Container))
 
@@ -91,6 +91,6 @@ build_script:
 
     mkdir opt32 && cd opt32
 
-    C:\python27\python.exe ..\configure.py --enable-optimize --sdks=csgo,l4d2,tf2,episode1
+    C:\python27\python.exe ..\configure.py --enable-optimize --sdks=csgo,l4d2,tf2,episode1,insurgency
 
     C:\python27\Scripts\ambuild
