@@ -1,0 +1,96 @@
+version: 1.0.{build}
+image: Visual Studio 2015
+clone_folder: c:\projects\metamod-source
+install:
+- ps: >-
+    Function Checkout-Repo($name, $branch, $repo, $origin)
+
+    {
+        if (-not (Test-Path $name -PathType Container))
+        {
+            git clone $repo -b $branch $name 2>&1 | Write-Host
+            if ($origin)
+            {
+                cd $name
+                git remote rm origin 2>&1 | Write-Host
+                git remote add origin $origin 2>&1 | Write-Host
+                cd ..
+            }
+        }
+        else
+        {
+            cd $name
+            git checkout $branch 2>&1 | Write-Host
+            git pull origin $branch 2>&1 | Write-Host
+            cd ..
+        }
+    }
+
+
+    Set-Location $env:APPVEYOR_BUILD_FOLDER
+
+    [System.Environment]::CurrentDirectory = Get-Location
+
+
+    cd ..
+
+    [System.Environment]::CurrentDirectory = Get-Location
+
+
+    if (-not (Test-Path "metamod-source" -PathType Container))
+
+    {
+        Write-Error "Could not find a MetaMod:Source repository; make sure you aren't running this script inside it."
+        Exit 1
+    }
+
+
+    $SDKS = @( "csgo", "l4d2", "tf2", "episode1" )
+
+    if (-not (Test-Path "hl2sdk-proxy-repo" -PathType Container))
+
+    {
+        git clone --mirror https://github.com/alliedmodders/hl2sdk hl2sdk-proxy-repo 2>&1 | Write-Host
+    }
+
+    else
+
+    {
+        cd hl2sdk-proxy-repo
+        git fetch 2>&1 | Write-Host
+        cd ..
+    }
+
+
+    $SDKS | % {
+        Checkout-Repo "hl2sdk-$_" $_ "hl2sdk-proxy-repo" "https://github.com/alliedmodders/hl2sdk"
+    }
+
+
+    Checkout-Repo "ambuild" "master" "https://github.com/alliedmodders/ambuild"
+
+    cd ambuild
+
+    & c:\python27\python.exe setup.py install
+
+
+    [System.Environment]::CurrentDirectory = "c:\projects\"
+
+    Set-Location "c:\projects\"
+
+
+    #Checkout-Repo "amtl" "master" "https://github.com/alliedmodders/amtl"
+
+
+    Set-Location $env:APPVEYOR_BUILD_FOLDER
+
+    [System.Environment]::CurrentDirectory = Get-Location
+build_script:
+- cmd: >-
+    "%VS140COMNTOOLS%\vsvars32.bat"
+
+    mkdir opt32 && cd opt32
+
+    C:\python27\python.exe ..\configure.py --enable-optimize --sdks=csgo,l4d2,tf2,episode1
+
+    C:\python27\Scripts\ambuild
