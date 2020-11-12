@@ -9,7 +9,7 @@ install:
 - cmd: set PATH=C:\Python38;C:\Python38\Scripts;%PATH%
 - cmd: git pull
 - cmd: cd ..
-- ps: metamod-source/support/checkout-deps.ps1 -SDKs csgo,l4d2,tf2,episode1,insurgency
+- ps: metamod-source/support/checkout-deps.ps1 -SDKs ($env:SDKS -split ',')
 - cmd: cd metamod-source
 build_script:
 - cmd: mkdir build
