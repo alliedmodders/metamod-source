@@ -37,6 +37,15 @@ Source2 = {
   'windows': ['x86', 'x86_64'],
   'linux': ['x86_64'],
 }
+Insurgency = {
+  'windows': ['x86', 'x86_64'],
+  'linux': ['x86'],
+  'mac': ['x86', 'x86_64'],
+}
+Blade = {
+  'windows': ['x86', 'x86_64'],
+  'linux': ['x86_64']
+}
 
 PossibleSDKs = {
   'episode1':  SDK('HL2SDK', '2.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
@@ -56,8 +65,8 @@ PossibleSDKs = {
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', CSGO, 'csgo'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '22', 'DOTA', [], 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
-  'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinOnly, 'blade'),
-  'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
+  'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', Blade, 'blade'),
+  'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', Insurgency, 'insurgency'),
   'doi':  SDK('HL2SDKDOI', '2.doi', '20', 'DOI', WinLinuxMac, 'doi'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
