@@ -34,7 +34,7 @@ PossibleSDKs = {
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', WinLinuxMac, 'csgo'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '22', 'DOTA', [], 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
-  'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
+  'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', [], 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
   'doi':  SDK('HL2SDKDOI', '2.doi', '20', 'DOI', WinLinuxMac, 'doi'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
@@ -146,8 +146,8 @@ class MMSConfig(object):
       if cxx.name == 'gcc':
         cfg.cflags += ['-mfpmath=sse']
       if cxx.name == 'clang':
-	if cfg.version >= 'clang-3.6':
-		cfg.cxxflags += ['-Wno-inconsistent-missing-override']
+        if cfg.version >= 'clang-3.6':
+          cfg.cxxflags += ['-Wno-inconsistent-missing-override']
         cfg.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
         if cfg.version >= 'apple-clang-5.1' or cfg.version >= 'clang-3.4':
           cfg.cxxflags += ['-Wno-deprecated-register']
