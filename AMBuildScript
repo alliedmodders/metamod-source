@@ -207,9 +207,9 @@ class MMSConfig(object):
     # Don't omit the frame pointer.
     # This needs to be after our optimization flags which could otherwise disable it.
     if cxx.behavior == 'gcc':
-      cxx.cflags += ['-fno-omit-frame-pointer']
+      cfg.cflags += ['-fno-omit-frame-pointer']
     elif cxx.behavior == 'msvc':
-      cxx.cflags += ['/Oy-']
+      cfg.cflags += ['/Oy-']
 
     # Platform-specifics
     if builder.target_platform == 'linux':
