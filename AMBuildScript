@@ -225,6 +225,13 @@ class MMSConfig(object):
           cxx.cxxflags += ['-Wno-deprecated-register']
         else:
           cxx.cxxflags += ['-Wno-deprecated']
+      
+      # Work around SDK warnings.
+      if cxx.version >= 'clang-10.0' or cxx.version >= 'apple-clang-12.0':
+        cxx.cflags += [
+          '-Wno-implicit-int-float-conversion',
+          '-Wno-tautological-overlap-compare',
+        ]
 
     elif cxx.like('msvc'):
       if builder.options.debug == '1':
