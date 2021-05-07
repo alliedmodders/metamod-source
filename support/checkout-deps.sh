@@ -3,6 +3,17 @@
 
 trap "exit" INT
 
+# List of HL2SDK branch names to download.
+# ./checkout-deps.sh -s tf2,css
+while getopts ":s:" opt; do
+  case $opt in
+    s) IFS=', ' read -r -a sdks <<< "$OPTARG"
+    ;;
+    \?) echo "Invalid option -$OPTARG" >&2
+    ;;
+  esac
+done
+
 ismac=0
 iswin=0
 
@@ -28,27 +39,34 @@ checkout ()
     git clone $repo -b $branch $name
     if [ -n "$origin" ]; then
       cd $name
-      git remote rm origin
-      git remote add origin $origin
+      git remote set-url origin $origin
       cd ..
     fi
   else
     cd $name
+    if [ -n "$origin" ]; then
+      git remote set-url origin ../$repo
+    fi
     git checkout $branch
     git pull origin $branch
+    if [ -n "$origin" ]; then
+      git remote set-url origin $origin
+    fi
     cd ..
   fi
 }
 
-sdks=( csgo hl2dm nucleardawn l4d2 dods l4d css tf2 insurgency sdk2013 dota )
+if [ -z ${sdks+x} ]; then
+  sdks=( csgo hl2dm nucleardawn l4d2 dods l4d css tf2 insurgency sdk2013 dota doi )
 
-if [ $ismac -eq 0 ]; then
-  # Add these SDKs for Windows or Linux
-  sdks+=( orangebox blade episode1 bms )
+  if [ $ismac -eq 0 ]; then
+    # Add these SDKs for Windows or Linux
+    sdks+=( orangebox blade episode1 bms )
 
-  # Add more SDKs for Windows only
-  if [ $iswin -eq 1 ]; then
-    sdks+=( darkm swarm bgt eye contagion )
+    # Add more SDKs for Windows only
+    if [ $iswin -eq 1 ]; then
+      sdks+=( darkm swarm bgt eye contagion )
+    fi
   fi
 fi
 
@@ -80,11 +98,11 @@ if [ -z "$python_cmd" ]; then
   fi
 fi
 
-`$python_cmd -c "import ambuild2"` 2>&1 1>/dev/null
+$python_cmd -c "import ambuild2" 2>&1 1>/dev/null
 if [ $? -eq 1 ]; then
   echo "AMBuild is required to build Metamod:Source"
 
-  `$python_cmd -m pip --version` 2>&1 1>/dev/null
+  $python_cmd -m pip --version 2>&1 1>/dev/null
   if [ $? -eq 1 ]; then
     echo "The detected Python installation does not have PIP"
     echo "Installing the latest version of PIP available (VIA \"get-pip.py\")"

@@ -1,0 +1,141 @@
+name: Continuous Integration
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            os_short: windows
+            compiler_cc: msvc-vs2019
+          - os: windows-2016
+            os_short: windows
+            compiler_cc: msvc-vs2017
+          - os: ubuntu-latest
+            os_short: linux
+            compiler_cc: clang
+            compiler_cxx: clang++
+          - os: ubuntu-18.04
+            os_short: linux
+            compiler_cc: clang-3.9
+            compiler_cxx: clang++-3.9
+            compiler_install: clang-3.9
+          - os: ubuntu-18.04
+            os_short: linux
+            compiler_cc: gcc-6
+            compiler_cxx: g++-6
+            compiler_install: 'gcc-6 g++6 g++-6-multilib'
+          - os: macos-latest
+            os_short: mac
+            compiler_cc: clang
+            compiler_cxx: clang++
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os_short }}-${{ matrix.compiler_cc }}
+    env:
+      SDKS: '["episode1","tf2","l4d2","csgo","dota"]'
+      DEPENDENCIES_FOLDER: dependencies
+      DEPENDENCIES_ROOT: ${{ github.workspace }}/dependencies
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          path: metamod-source
+      
+      - name: Select HL2SDKs
+        if: startsWith(runner.os, 'Windows')
+        run: echo 'SDKS=["episode1","tf2","l4d2","csgo","dota","insurgency"]' >> $GITHUB_ENV
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: hl2sdk
+        with:
+          path: ${{ env.DEPENDENCIES_ROOT }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ join(fromJSON(env.SDKS), '') }}
+          restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}-
+
+      # Setup Python for AMBuild
+      - uses: actions/setup-python@v2
+        name: Setup Python 3.8
+        with:
+          python-version: 3.8
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          mkdir -p ${{ env.DEPENDENCIES_FOLDER }}
+          cd ${{ env.DEPENDENCIES_FOLDER }}
+
+          # Satisfy checkout-deps requirement for a "metamod-source" folder.
+          mkdir -p metamod-source
+          ../metamod-source/support/checkout-deps.sh -s ${{ join(fromJSON(env.SDKS)) }}
+
+      - name: Install Linux dependencies
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
+            libc6-dev libc6-dev-i386 linux-libc-dev \
+            linux-libc-dev:i386 lib32z1-dev ${{ matrix.compiler_install }}
+
+      - name: Select clang compiler
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        run: |
+          echo "CC=${{ matrix.compiler_cc }}" >> $GITHUB_ENV
+          echo "CXX=${{ matrix.compiler_cxx }}" >> $GITHUB_ENV
+          ${{ matrix.compiler_cc }} --version
+          ${{ matrix.compiler_cxx }} --version
+
+      - name: Build
+        working-directory: metamod-source
+        run: |
+          mkdir build
+          cd build
+          python ../configure.py --enable-optimize --sdks=${{ join(fromJSON(env.SDKS)) }} --hl2sdk-root=${{ env.DEPENDENCIES_ROOT }}
+          ambuild
+
+      - name: Test SourceHook (Optimized)
+        working-directory: metamod-source
+        shell: bash
+        # SourceHook tests are busted on Windows
+        continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
+        run: |
+          mkdir build-sh-opt && cd build-sh-opt
+          python ../configure.py --enable-optimize --enable-tests --sdks=
+          ambuild
+          cd ./core/sourcehook/test/test_sourcehook
+          if [ -d "${{ matrix.os_short }}-x86" ]; then
+            ./${{ matrix.os_short }}-x86/test_sourcehook -v
+          fi
+          if [ -d "${{ matrix.os_short }}-x86_64" ]; then
+            ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
+          fi
+
+      - name: Test SourceHook (Debug)
+        working-directory: metamod-source
+        shell: bash
+        # SourceHook tests are busted on Windows
+        continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
+        run: |
+          mkdir build-sh-debug && cd build-sh-debug
+          python ../configure.py --enable-debug --enable-tests --sdks=
+          ambuild
+          cd ./core/sourcehook/test/test_sourcehook
+          if [ -d "${{ matrix.os_short }}-x86" ]; then
+            ./${{ matrix.os_short }}-x86/test_sourcehook -v
+          fi
+          if [ -d "${{ matrix.os_short }}-x86_64" ]; then
+            ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
+          fi
