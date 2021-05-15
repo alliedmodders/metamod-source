@@ -196,11 +196,34 @@ namespace SourceHook
 			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
 			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
 		};
+		
+		enum RegisterType
+		{
+			// Don't change the register and use the stack
+			RegisterType_None=0,
+
+			// 32-bit general purpose registers
+			RegisterType_EAX,
+			RegisterType_ECX,
+			RegisterType_EDX,
+			RegisterType_EBX,
+
+			// 128-bit XMM registers
+			RegisterType_XMM0,
+			RegisterType_XMM1,
+			RegisterType_XMM2,
+			RegisterType_XMM3,
+			RegisterType_XMM4,
+			RegisterType_XMM5,
+			RegisterType_XMM6,
+			RegisterType_XMM7
+		};
 
 		size_t size;			//!< Size of the data being passed
 
 		// Extra info:
 		//  (might be used in future versions for automatic hookfunc generation)
+		int reg;				//!< RegisterType value
 		int type;				//!< PassType value
 		unsigned int flags;		//!< Pass/return flags
 
@@ -211,6 +234,9 @@ namespace SourceHook
 			void *pDtor;
 			void *pAssignOperator;
 		};
+		
+		// Sets the default value for back compatibility 
+		PassInfo(): reg(RegisterType_None) { }
 	};
 
 	struct ProtoInfo
