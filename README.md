@@ -5,7 +5,9 @@ Metamod:Source - A C++ Plugin Environment and Detour Library for the Source Engi
 
 Build instructions: See <https://wiki.alliedmods.net/Building_SourceMod>
 
-Build snapshots: <http://metamodsource.net/snapshots>
+Stable build snapshots: <http://www.metamodsource.net/downloads.php/?branch=stable>
+
+Development build snapshots: <http://www.metamodsource.net/downloads.php/?branch=master>
 
 General documentation: <https://wiki.alliedmods.net/Category:Metamod:Source_Documentation>
 
