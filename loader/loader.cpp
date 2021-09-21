@@ -91,6 +91,7 @@ static const char *backend_names[] =
 	"2.contagion",
 	"2.bms",
 	"2.doi",
+	"2.mock",
 };
 
 #if defined _WIN32
@@ -424,6 +425,10 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 					else if (strcmp(game_name, "hl2mp") == 0)
 					{
 						return MMBackend_HL2DM;
+					}
+					else if (strcmp(game_name, ".") == 0 && engineFactory("MOCK_ENGINE", NULL))
+					{
+						return MMBackend_Mock;
 					}
 					else
 					{

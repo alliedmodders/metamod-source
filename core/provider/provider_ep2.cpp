@@ -540,6 +540,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_BMS;
 #elif SOURCE_ENGINE == SE_EPISODEONE
 	return g_bOriginalEngine ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
+#elif SOURCE_ENGINE == SE_MOCK
+	return SOURCE_ENGINE_MOCK;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -671,6 +673,8 @@ const char *BaseProvider::GetEngineDescription() const
 	{
 		return "Episode 1 (2004)";
 	}
+#elif SOURCE_ENGINE == SE_MOCK
+	return "Mock";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif

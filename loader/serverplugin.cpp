@@ -91,6 +91,8 @@ public:
 			mm_GetGameName(game_name, sizeof(game_name));
 
 			mm_backend = mm_DetermineBackend(engineFactory, gsFactory, game_name);
+			if (mm_backend == MMBackend_Mock)
+				strcpy(game_name, "mock");
 		}
 
 		if (mm_backend == MMBackend_UNKNOWN)
