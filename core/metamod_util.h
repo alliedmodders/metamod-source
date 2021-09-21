@@ -80,10 +80,12 @@ size_t UTIL_FormatArgs(char *buffer, size_t maxlength, const char *fmt, va_list 
  * @param relFrom		Source file or folder to use as a target.
  * @return				True on success, false on failure.
  */
-bool UTIL_Relatize(char buffer[],
-				   size_t maxlength,
-				   const char *relTo,
-				   const char *relFrom);
+bool UTIL_Relatize(char buffer[], size_t maxlength, const char *relTo, const char *relFrom);
+
+// The previous version of Relatize is broken. Do not use it. We include it for
+// backwards compatibility in old engines only, in case there are weird path
+// scenarios going on.
+bool UTIL_Relatize2(char buffer[], size_t maxlength, const char *relTo, const char *relFrom);
 
 /**
  * @brief Compares memory address against a signature.
