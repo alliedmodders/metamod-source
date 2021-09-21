@@ -28,8 +28,19 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <string>
+#include <vector>
 #include "metamod_util.h"
 #include "metamod_oslink.h"
+
+#ifdef _WIN32
+# include <io.h>
+#else
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
+using namespace std::string_literals;
 
 /**
  * @brief Utility functions
@@ -239,10 +250,10 @@ inline bool pathchar_cmp(char a, char b)
  * @param relFrom		Source file or folder to use as a target.
  * @return				True on success, false on failure.
  */
-bool UTIL_Relatize(char buffer[],
-				   size_t maxlength,
-				   const char *relTo,
-				   const char *relFrom)
+bool UTIL_BadRelatize(char buffer[],
+				      size_t maxlength,
+				      const char *relTo,
+				      const char *relFrom)
 {
 	/* We don't allow relative paths in here, force
 	 * the user to resolve these himself!
@@ -356,4 +367,102 @@ bool UTIL_VerifySignature(const void *addr, const char *sig, size_t len)
 	}
 
 	return true;
+}
+
+static bool ComparePathComponent(const std::string& a, const std::string& b) {
+#ifdef _WIN32
+	if (a.size() != b.size())
+		return false;
+	for (size_t i = 0; i < a.size(); i++) {
+		if (!pathchar_cmp(a[i], b[i]))
+			return false;
+	}
+	return true;
+#else
+	return a == b;
+#endif
+}
+
+static std::vector<std::string> SplitPath(const char* path) {
+	std::vector<std::string> parts;
+
+	const char* iter = path;
+
+#ifdef _WIN32
+	if (isalpha(path[0]) && path[1] == ':' && pathchar_sep(path[2])) {
+		// Append drive only (eg C:)
+		parts.emplace_back(path, 2);
+		iter += 2;
+		while (pathchar_sep(*iter))
+			iter++;
+	}
+#endif
+
+	if (pathchar_sep(*iter)) {
+		parts.emplace_back(PATH_SEP_STR);
+		while (pathchar_sep(*iter))
+			iter++;
+	}
+
+	while (*iter) {
+		const char* start = iter;
+		while (*iter && !pathchar_sep(*iter))
+			iter++;
+		if (iter != start)
+			parts.emplace_back(start, iter - start);
+		while (pathchar_sep(*iter))
+			iter++;
+	}
+	return parts;
+}
+
+bool UTIL_Relatize2(char* buffer, size_t maxlen, const char* path1, const char* path2)
+{
+	auto parts1 = SplitPath(path1);
+	auto parts2 = SplitPath(path2);
+
+	// If this fails, paths were not relative or have different drives.
+	if (parts1[0] != parts2[0])
+		return false;
+
+	// Skip past identical paths.
+	size_t cursor = 1;
+	while (true) {
+		if (cursor >= parts1.size() || cursor >= parts2.size())
+			break;
+		if (!ComparePathComponent(parts1[cursor], parts2[cursor]))
+			break;
+		cursor++;
+	}
+
+	std::string new_path;
+	for (size_t i = cursor; i < parts1.size(); i++)
+		new_path += ".."s + PATH_SEP_STR;
+	for (size_t i = cursor; i < parts2.size(); i++) {
+		new_path += parts2[i];
+		if (i != parts2.size() - 1)
+			new_path += PATH_SEP_STR;
+	}
+	if (pathchar_sep(path2[strlen(path2) - 1]))
+		new_path += PATH_SEP_STR;
+
+	snprintf(buffer, maxlen, "%s", new_path.c_str());
+	return true;
+}
+
+static inline bool PathExists(const char* path) {
+#ifdef _WIN32
+	return _access(path, 0) == 0 || errno != ENOENT;
+#else
+	return access(path, F_OK) == 0 || errno != ENOENT;
+#endif
+}
+
+bool UTIL_Relatize(char buffer[], size_t maxlength, const char *relTo, const char *relFrom)
+{
+	if (UTIL_BadRelatize(buffer, maxlength, relTo, relFrom)) {
+		if (PathExists(buffer))
+			return true;
+	}
+	return UTIL_Relatize2(buffer, maxlength, relTo, relFrom);
 }

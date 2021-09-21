@@ -46,6 +46,11 @@ Blade = {
   'windows': ['x86', 'x86_64'],
   'linux': ['x86_64']
 }
+Mock = {
+  'windows': ['x86', 'x86_64'],
+  'linux': ['x86', 'x86_64'],
+  'mac': ['x86_64']
+}
 
 PossibleSDKs = {
   'episode1':  SDK('HL2SDK', '2.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
@@ -70,6 +75,7 @@ PossibleSDKs = {
   'doi':  SDK('HL2SDKDOI', '2.doi', '20', 'DOI', WinLinuxMac, 'doi'),
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
+  'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -200,7 +206,10 @@ class MMSConfig(object):
         '-fPIC',
       ]
 
-      cxx.cxxflags += [ '-std=c++11' ]
+      if cxx.version == 'apple-clang-6.0' or cxx.version == 'clang-3.4':
+        cxx.cxxflags += ['-std=c++1y']
+      else:
+        cxx.cxxflags += ['-std=c++14']
       if (cxx.version >= 'gcc-4.0') or cxx.family == 'clang':
         cxx.cflags += ['-fvisibility=hidden']
         cxx.cxxflags += ['-fvisibility-inlines-hidden']
@@ -450,10 +459,13 @@ class MMSConfig(object):
         lib_folder = os.path.join(sdk.path, 'lib', 'mac')
 
     if compiler.target.platform in ['linux', 'mac']:
-      if sdk.name in ['sdk2013', 'bms'] or compiler.target.arch == 'x86_64':
-        compiler.postlink += [os.path.join(lib_folder, 'tier1.a')]
+      if sdk.name in ['sdk2013', 'bms', 'mock'] or compiler.target.arch == 'x86_64':
+        tier1 = os.path.join(lib_folder, 'tier1.a')
       else:
-        compiler.postlink += [os.path.join(lib_folder, 'tier1_i486.a')]
+        tier1 = os.path.join(lib_folder, 'tier1_i486.a')
+      if sdk.name == 'mock' and compiler.target.platform == 'linux':
+        compiler.linkflags += ['-Wl,-z,origin']
+      compiler.postlink += [tier1]
 
       if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
         if compiler.target.arch == 'x86_64':
@@ -472,12 +484,14 @@ class MMSConfig(object):
       compiler.linkflags[0:0] = ['-lm']
       if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency', 'doi']:
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
-      elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'blade']:
+      elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'blade', 'mock']:
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
       elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
+      if sdk.name in ['csgo', 'blade']:
+        compiler.defines += ['_GLIBCXX_USE_CXX11_ABI=0']
     elif compiler.target.platform == 'mac':
       binary.compiler.linkflags.append('-liconv')
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
