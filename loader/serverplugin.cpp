@@ -284,6 +284,29 @@ public:
 										  const char *pCvarValue)
 	{
 	}
+	virtual void OnEdictAllocated(edict_t *edict)
+	{
+	}
+	virtual void OnEdictFreed(const edict_t *edict)
+	{
+	}
+	virtual bool BNetworkCryptKeyCheckRequired(unsigned int unFromIP,
+											   unsigned short usFromPort,
+											   unsigned int unAccountIdProvidedByClient,
+											   bool bClientWantsToUseCryptKey)
+	{
+		return false;
+	}
+	virtual bool BNetworkCryptKeyValidate(unsigned int unFromIP,
+										  unsigned short usFromPort,
+										  unsigned int unAccountIdProvidedByClient,
+										  int nEncryptionKeyIndexFromClient,
+										  int numEncryptedBytesFromClient,
+										  unsigned char *pbEncryptedBufferFromClient,
+										  unsigned char *pbPlainTextKeyForNetchan)
+	{
+		return false;
+	}
 	void PrepForLoad(unsigned int version)
 	{
 		vsp_version = version;
@@ -298,8 +321,8 @@ void *mm_GetVspCallbacks(unsigned int version)
 	if (vsp_bridge != NULL)
 		return NULL;
 
-	/* Only support versions 1 or 2 right now */
-	if (version > 2)
+	/* Only support versions 1 to 4 right now */
+	if (version > 4)
 		return NULL;
 
 	mm_vsp_callbacks.PrepForLoad(version);
