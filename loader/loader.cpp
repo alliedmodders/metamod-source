@@ -412,8 +412,7 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 					{
 						return MMBackend_CSS;
 					}
-					else if (strcmp(game_name, "tf") == 0
-						|| (addr = mm_FindPattern(lib, "DT_TFPlayerResource", sizeof("DT_TFPlayerResource") - 1)))
+					else if (strcmp(game_name, "tf") == 0)
 					{
 						return MMBackend_TF2;
 					}
