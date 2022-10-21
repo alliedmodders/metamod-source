@@ -103,8 +103,9 @@ enum MetamodBackend
 	MMBackend_Contagion,
 	MMBackend_BMS,
 	MMBackend_DOI,
-
 	MMBackend_Mock,
+	
+	MMBackend_PVKII,
 	MMBackend_UNKNOWN
 };
 

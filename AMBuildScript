@@ -76,6 +76,7 @@ PossibleSDKs = {
   'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
   'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
   'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
+  'pvkii': SDK('HL2SDKPVKII', '2.pvkii', '23', 'PVKII', WinLinux, 'pvkii'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -365,7 +366,7 @@ class MMSConfig(object):
 
     compiler.defines += ['SOURCE_ENGINE=' + sdk.code]
 
-    if sdk.name in ['sdk2013', 'bms'] and compiler.like('gcc'):
+    if sdk.name in ['sdk2013', 'bms', 'pvkii'] and compiler.like('gcc'):
       # The 2013 SDK already has these in public/tier0/basetypes.h
       compiler.defines.remove('stricmp=strcasecmp')
       compiler.defines.remove('_stricmp=strcasecmp')
@@ -387,7 +388,7 @@ class MMSConfig(object):
     if compiler.target.arch == 'x86_64':
       compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'pvkii']:
       if compiler.target.platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
 
@@ -446,7 +447,7 @@ class MMSConfig(object):
     if compiler.target.platform == 'linux':
       if sdk.name == 'episode1':
         lib_folder = os.path.join(sdk.path, 'linux_sdk')
-      elif sdk.name in ['sdk2013', 'bms']:
+      elif sdk.name in ['sdk2013', 'bms', 'pvkii']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
       elif compiler.target.arch == 'x86_64':
         lib_folder = os.path.join(sdk.path, 'lib', 'linux64')
@@ -461,7 +462,7 @@ class MMSConfig(object):
         lib_folder = os.path.join(sdk.path, 'lib', 'mac')
 
     if compiler.target.platform in ['linux', 'mac']:
-      if sdk.name in ['sdk2013', 'bms'] or compiler.target.arch == 'x86_64':
+      if sdk.name in ['sdk2013', 'bms', 'pvkii'] or compiler.target.arch == 'x86_64':
         tier1 = os.path.join(lib_folder, 'tier1.a')
       else:
         tier1 = os.path.join(lib_folder, 'tier1_i486.a')
@@ -488,7 +489,7 @@ class MMSConfig(object):
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
       elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'mock']:
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
+      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota', 'pvkii']:
         dynamic_libs = ['libtier0.so', 'libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
