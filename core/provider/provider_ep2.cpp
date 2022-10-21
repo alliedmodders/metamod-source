@@ -677,6 +677,8 @@ const char *BaseProvider::GetEngineDescription() const
 	}
 #elif SOURCE_ENGINE == SE_MOCK
 	return "Mock";
+#elif SOURCE_ENGINE == SE_PVKII
+	return "Pirates, Vikings, and Knights II";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
