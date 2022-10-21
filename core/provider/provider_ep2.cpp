@@ -543,7 +543,7 @@ int BaseProvider::DetermineSourceEngine()
 #elif SOURCE_ENGINE == SE_MOCK
 	return SOURCE_ENGINE_MOCK;
 #elif SOURCE_ENGINE == SE_PVKII
-	return SOURCE_ENGINE_PVKII
+	return SOURCE_ENGINE_PVKII;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
