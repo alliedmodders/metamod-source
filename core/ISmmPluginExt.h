@@ -62,6 +62,7 @@
 #define SOURCE_ENGINE_DOI				24				/**< Day of Infamy */
 #define SOURCE_ENGINE_MOCK				25				/**< Mock source engine */
 #define SOURCE_ENGINE_PVKII				26				/**< Pirates, Vikings, and Knights II */
+#define SOURCE_ENGINE_MCV				27				/**< Military Conflict: Vietnam */
 
 #define METAMOD_PLAPI_VERSION			16				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */

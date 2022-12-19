@@ -441,7 +441,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -544,6 +544,8 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_MOCK;
 #elif SOURCE_ENGINE == SE_PVKII
 	return SOURCE_ENGINE_PVKII;
+#elif SOURCE_ENGINE == SE_MCV
+	return SOURCE_ENGINE_MCV;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -679,6 +681,8 @@ const char *BaseProvider::GetEngineDescription() const
 	return "Mock";
 #elif SOURCE_ENGINE == SE_PVKII
 	return "Pirates, Vikings, and Knights II";
+#elif SOURCE_ENGINE == SE_MCV
+	return "Military Combat: Vietnam";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -765,7 +769,7 @@ void ClientCommand(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 
 void CacheUserMessages()
 {
