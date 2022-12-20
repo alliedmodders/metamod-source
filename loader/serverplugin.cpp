@@ -139,6 +139,7 @@ public:
 			&& mm_backend != MMBackend_Insurgency
 			&& mm_backend != MMBackend_DOI
 			&& mm_backend != MMBackend_CSGO
+			&& mm_backend != MMBackend_MCV
 			&& mm_backend != MMBackend_DOTA)
 		{
 			SourceHook::MemFuncInfo mfp_fconnect;

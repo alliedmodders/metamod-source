@@ -92,7 +92,8 @@ static const char *backend_names[] =
 	"2.bms",
 	"2.doi",
 	"2.mock",
-	"2.pvkii"
+	"2.pvkii",
+	"2.mcv"
 };
 
 #if defined _WIN32
@@ -329,6 +330,11 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 		if (mm_FindPattern((void *)engineFactory, " Blade Symphony ", sizeof(" Blade Symphony ") - 1))
 		{
 			return MMBackend_Blade;
+		}
+
+		if (mm_FindPattern((void *)engineFactory, "Military Conflict: Vietnam", sizeof("Military Conflict: Vietnam") - 1))
+		{
+			return MMBackend_MCV;
 		}
 		
 		return MMBackend_CSGO;
