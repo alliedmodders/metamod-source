@@ -40,13 +40,6 @@
 #endif
 
 #define X64_SUFFIX ".x64"
-#if defined(WIN32) || defined(_WIN32)
-#define BINARY_EXT ".dll"
-#elif defined(__linux__)
-#define BINARY_EXT ".so"
-#elif defined(__APPLE__)
-#define BINARY_EXT ".dylib"
-#endif
 
 using namespace SourceMM;
 using namespace SourceHook;

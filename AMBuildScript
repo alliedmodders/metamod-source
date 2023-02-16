@@ -334,6 +334,7 @@ class MMSConfig(object):
     cxx.defines += [ 'MMS_USE_VERSIONLIB' ]
     cxx.includes += [
       os.path.join(builder.sourcePath, 'public'),
+      os.path.join(builder.sourcePath, 'third_party', 'amtl'),
     ]
     if self.use_auto_versioning():
       cxx.defines += ['MMS_GENERATED_BUILD']
