@@ -24,6 +24,10 @@
  */
 
 #include <stdio.h>
+
+#include <memory>
+
+#include <amtl/am-string.h>
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include "metamod_plugins.h"
@@ -414,7 +418,7 @@ struct Unloader : public SourceHook::Impl::UnloadListener
 
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
-	FILE *fp;
+	std::unique_ptr<FILE, decltype(&::fclose)> fp(nullptr, ::fclose);
 	CPlugin *pl;
 
 	pl = new CPlugin();
@@ -426,21 +430,29 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	m_Plugins.push_back(pl);
 	m_LastId++;
 
-	//Check if the file even exists
-	fp = fopen(file, "r");
-	if (!fp)
+	if (ke::EndsWith(file, BINARY_EXT))
+	{
+		//Check if the file even exists
+		fp.reset(fopen(file, "r"));
+		if (!fp)
+		{
+			if (error)
+			{
+				UTIL_Format(error, maxlen, "File not found: %s", file);
+			}
+			pl->m_Status = Pl_NotFound;
+		}
+	}
+	else
 	{
 		if (error)
-		{
-			UTIL_Format(error, maxlen, "File not found: %s", file);
-		}
+			UTIL_Format(error, maxlen, "File type not supported");
 		pl->m_Status = Pl_NotFound;
 	}
 
 	if (fp)
 	{
-		fclose(fp);
-		fp = NULL;
+		fp.reset();
 		
 		//Load the file
 		pl->m_Lib = dlmount(file);
