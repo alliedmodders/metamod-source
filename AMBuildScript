@@ -69,7 +69,6 @@ PossibleSDKs = {
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'mcv': SDK('HL2SDKMCV', '2.mcv', '22', 'MCV', WinOnly, 'mcv'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '23', 'CSGO', CSGO, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', [], 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '18', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '19', 'BLADE', Blade, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '20', 'INSURGENCY', Insurgency, 'insurgency'),
@@ -78,6 +77,7 @@ PossibleSDKs = {
   'bms':  SDK('HL2SDKBMS', '2.bms', '11', 'BMS', WinLinux, 'bms'),
   'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
   'pvkii': SDK('HL2SDKPVKII', '2.pvkii', '10', 'PVKII', WinLinux, 'pvkii'),
+  'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', Source2, 'dota'),
 }
 
 def ResolveEnvPath(env, folder):
