@@ -33,7 +33,7 @@
 #include "metamod_plugins.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
-#include "provider/provider_ep2.h"
+#include "provider/provider_base.h"
 #include <sys/stat.h>
 #if SOURCE_ENGINE == SE_DOTA
 #include <iserver.h>

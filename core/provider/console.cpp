@@ -26,7 +26,7 @@
  */
 
 #include "console.h"
-#include "provider_ep2.h"
+#include "provider_base.h"
 #include "metamod_util.h"
 
 using namespace SourceHook;

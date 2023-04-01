@@ -18,7 +18,7 @@ for sdk_name in MMS.sdks:
       'metamod_plugins.cpp',
       'metamod_util.cpp',
       'provider/console.cpp',
-      'provider/provider_ep2.cpp',
+      'provider/provider_base.cpp',
       'sourcehook/sourcehook.cpp',
       'sourcehook/sourcehook_impl_chookidman.cpp',
       'sourcehook/sourcehook_impl_chookmaninfo.cpp',

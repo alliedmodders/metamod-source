@@ -33,7 +33,7 @@
 #include <sh_vector.h>
 #include <sh_string.h>
 #include "../metamod_util.h"
-#include "provider_ep2.h"
+#include "provider_base.h"
 #include "console.h"
 #include "metamod_console.h"
 #include <filesystem.h>
