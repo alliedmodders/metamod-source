@@ -29,10 +29,73 @@
 #define _INCLUDE_METAMOD_SOURCE_SOURCE1_PROVIDER_H_
 
 #include "../provider_base.h"
+#include <string>
+#include <vector>
 
 class SourceProvider : public BaseProvider
 {
-
+public:
+	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
+	virtual void Notify_DLLShutdown_Pre() override;
+	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override;
+	virtual int DetermineSourceEngine() override;
+	virtual const char* GetEngineDescription() const override;
+	virtual void GetGamePath(char* pszBuffer, int len) override;
+	virtual const char* GetGameDescription() override;
+	virtual void ConsolePrint(const char* msg) override;
+	virtual void ClientConsolePrint(edict_t* client, const char* msg) override;
+	virtual void ServerCommand(const char* cmd) override;
+	virtual ConVar* CreateConVar(const char* name,
+		const char* defval,
+		const char* help,
+		int flags) override;
+	virtual const char* GetConVarString(ConVar* convar) override;
+	virtual void SetConVarString(ConVar* convar, const char* str) override;
+	virtual IConCommandBaseAccessor* GetConCommandBaseAccessor() override;
+	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
+	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
+	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;
+	virtual int GetUserMessageCount() override;
+	virtual int FindUserMessage(const char* name, int* size = nullptr) override;
+	virtual const char* GetUserMessage(int index, int* size = nullptr) override;
+public: // Hook callbacks that map to provider callbacks
+	bool Hook_GameInit();
+	bool Hook_LevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel,
+		char const* pLandmarkName, bool loadGame, bool background);
+	void Hook_LevelShutdown();
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+	void Hook_ClientCommand(edict_t* pEdict, const CCommand& args);
+#else
+	void Hook_ClientCommand(edict_t* pEdict);
+#endif
+private:
+	struct UsrMsgInfo
+	{
+		UsrMsgInfo()
+		{
+		}
+		UsrMsgInfo(int s, const char* t) : size(s), name(t)
+		{
+		}
+		int size;
+		std::string name;
+	};
+private:
+	void CacheUserMessages();
+	void Detour_Error(const tchar* pMsg, ...);
+	bool KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID = nullptr);
+	inline bool IsUserMessageIterationSupported() const
+	{
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
+		return false;
+#else
+		return true;
+#endif
+	}
+private:
+	IFileSystem* baseFs = nullptr;
+	std::vector<UsrMsgInfo> usermsgs_list;
+	bool bOriginalEngine = false;
 };
 
 #endif

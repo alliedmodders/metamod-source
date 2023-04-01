@@ -50,41 +50,47 @@ class INetworkGameServer;
 
 class BaseProvider : public IMetamodSourceProvider
 {
-public:
+public: // Must implement
+	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override = 0;
+	virtual void Notify_DLLShutdown_Pre() override = 0;
+	virtual int DetermineSourceEngine() override = 0;
+	virtual const char *GetEngineDescription() const override = 0;
+	virtual void GetGamePath(char *pszBuffer, int len) override = 0;
+	virtual const char *GetGameDescription() override = 0;
+	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override = 0;
+	virtual void ConsolePrint(const char* msg) override = 0;
+	virtual void ClientConsolePrint(edict_t* client, const char* msg) override = 0;
+	virtual void ServerCommand(const char* cmd) override = 0;
+	virtual ConVar* CreateConVar(const char* name,
+		const char* defval,
+		const char* help,
+		int flags) override = 0;
+	virtual const char* GetConVarString(ConVar* convar) override = 0;
+	virtual void SetConVarString(ConVar* convar, const char* str) override = 0;
+	virtual IConCommandBaseAccessor* GetConCommandBaseAccessor() override = 0;
+	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override = 0;
+	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override = 0;
+	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override = 0;
+public: // May implement/override (stubbed)
+	virtual int GetUserMessageCount() override { return -1; }
+	virtual int FindUserMessage(const char *name, int *size=nullptr) override { return -1;}
+	virtual const char *GetUserMessage(int index, int *size=nullptr) override { return nullptr;}
+public: // May implement/override
 	virtual bool IsSourceEngineBuildCompatible(int build) override;
-	virtual bool GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo) override;
 	virtual bool LogMessage(const char *buffer) override;
 	virtual const char *GetCommandLineValue(const char *key, const char *defval) override;
-	virtual void ConsolePrint(const char *msg) override;
 	virtual bool IsRemotePrintingAvailable() override;
-	virtual void ClientConsolePrint(edict_t *client, const char *msg) override;
 	virtual void DisplayError(const char *fmt, ...) override;
 	virtual void DisplayWarning(const char *fmt, ...) override;
+	virtual void DisplayDevMsg(const char* fmt, ...) override;
 	virtual int TryServerGameDLL(const char *iface) override;
-	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
-	void Notify_DLLShutdown_Pre() override;
-	virtual void ServerCommand(const char *cmd) override;
-	virtual ConVar *CreateConVar(const char *name, 
-		const char *defval, 
-		const char *help,
-		int flags) override;
-	virtual const char *GetConVarString(ConVar *convar) override;
-	virtual void SetConVarString(ConVar *convar, const char *str) override;
-	virtual void GetGamePath(char *pszBuffer, int len) override;
-	virtual const char *GetGameDescription() override;
-	virtual IConCommandBaseAccessor *GetConCommandBaseAccessor() override;
-	virtual bool RegisterConCommandBase(ConCommandBase *pCommand) override;
-	virtual void UnregisterConCommandBase(ConCommandBase *pCommand) override;
-	virtual bool IsConCommandBaseACommand(ConCommandBase *pCommand) override;
-	virtual int GetUserMessageCount() override;
-	virtual int FindUserMessage(const char *name, int *size=NULL) override;
-	virtual const char *GetUserMessage(int index, int *size=NULL) override;
-	virtual int DetermineSourceEngine() override;
-	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len) override;
-	virtual const char *GetEngineDescription() const override;
-#if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
-	bool AllowDedicatedServers(EUniverse universe) const;
-#endif
+public:
+	void SetCallbacks(IMetamodSourceProviderCallbacks* pCallbacks) override final
+	{
+		m_pCallbacks = pCallbacks;
+	}
+protected:
+	IMetamodSourceProviderCallbacks* m_pCallbacks = nullptr;
 };
 
 extern IVEngineServer *engine;

@@ -50,6 +50,29 @@ namespace SourceMM
 	};
 
 	/**
+     * @brief Interface for Metamod:Source to provide callbacks to the 
+	 * provider.
+	 */
+	class IMetamodSourceProviderCallbacks
+	{
+	public:
+		/**
+		 * @brief Called before the server DLL handles game initialization.
+		 */
+		virtual void OnGameInit() = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map initialization.
+		 */
+		virtual void OnLevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel, char const* pLandmarkName, bool loadGame, bool background) = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map shut down.
+		 */
+		virtual void OnLevelShutdown() = 0;
+	};
+
+	/**
 	 * @brief Abstracts command information, since the new engine fixes the 
 	 * re-entrancy problems in the tokenization system.
 	 */
@@ -84,24 +107,19 @@ namespace SourceMM
 	{
 	public:
 		/**
+		 * @brief Set the callback interface for the provider to call into.
+		 * 
+		 * @param pCallbacks		Pointer to callback interface implementation.
+		 */
+		virtual void SetCallbacks(IMetamodSourceProviderCallbacks* pCallbacks) = 0;
+
+		/**
 		 * @brief Returns whether source engine build is compatible.
 		 *
 		 * @param build				Source engine build.
 		 * @return					True if compatible, false otherwise.
 		 */
 		virtual bool IsSourceEngineBuildCompatible(int build) =0;
-
-		/**
-		 * @brief Retrieves hook information for each callback.  Each hook 
-		 * must be implemented.
-		 *
-		 * @param hook				Hook information to provide.
-		 * @param pInfo				Non-NULL pointer to fill with information 
-		 * 							about the hook's virtual location.
-		 * @return					True if supported, false to fail, which 
-		 * 							will cause Metamod:Source to fail.
-		 */
-		virtual bool GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo) =0;
 
 		/**
 		 * @brief Logs a message via IVEngineServer::LogPrint.
@@ -166,6 +184,16 @@ namespace SourceMM
 		 * @param ...				Format parameters.
 		 */
 		virtual void DisplayWarning(const char *fmt, ...) =0;
+
+		/**
+		 * @brief Sends the server a developer message.
+		 *
+		 * No newline is appended.
+		 *
+		 * @param fmt				Formatted message string.
+		 * @param ...				Format parameters.
+		 */
+		virtual void DisplayDevMsg(const char* fmt, ...) = 0;
 
 		/**
 		 * @brief Attempts to notify the provider of the gamedll version being 
