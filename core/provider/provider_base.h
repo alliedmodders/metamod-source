@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2009 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2023 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -51,37 +51,37 @@ class INetworkGameServer;
 class BaseProvider : public IMetamodSourceProvider
 {
 public:
-	virtual bool IsSourceEngineBuildCompatible(int build);
-	virtual bool GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo);
-	virtual bool LogMessage(const char *buffer);
-	virtual const char *GetCommandLineValue(const char *key, const char *defval);
-	virtual void ConsolePrint(const char *msg);
-	virtual bool IsRemotePrintingAvailable();
-	virtual void ClientConsolePrint(edict_t *client, const char *msg);
-	virtual void DisplayError(const char *fmt, ...);
-	virtual void DisplayWarning(const char *fmt, ...);
-	virtual int TryServerGameDLL(const char *iface);
-	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory);
-	void Notify_DLLShutdown_Pre();
-	virtual void ServerCommand(const char *cmd);
+	virtual bool IsSourceEngineBuildCompatible(int build) override;
+	virtual bool GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo) override;
+	virtual bool LogMessage(const char *buffer) override;
+	virtual const char *GetCommandLineValue(const char *key, const char *defval) override;
+	virtual void ConsolePrint(const char *msg) override;
+	virtual bool IsRemotePrintingAvailable() override;
+	virtual void ClientConsolePrint(edict_t *client, const char *msg) override;
+	virtual void DisplayError(const char *fmt, ...) override;
+	virtual void DisplayWarning(const char *fmt, ...) override;
+	virtual int TryServerGameDLL(const char *iface) override;
+	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
+	void Notify_DLLShutdown_Pre() override;
+	virtual void ServerCommand(const char *cmd) override;
 	virtual ConVar *CreateConVar(const char *name, 
 		const char *defval, 
 		const char *help,
-		int flags);
-	virtual const char *GetConVarString(ConVar *convar);
-	virtual void SetConVarString(ConVar *convar, const char *str);
-	virtual void GetGamePath(char *pszBuffer, int len);
-	virtual const char *GetGameDescription();
-	virtual IConCommandBaseAccessor *GetConCommandBaseAccessor();
-	virtual bool RegisterConCommandBase(ConCommandBase *pCommand);
-	virtual void UnregisterConCommandBase(ConCommandBase *pCommand);
-	virtual bool IsConCommandBaseACommand(ConCommandBase *pCommand);
-	virtual int GetUserMessageCount();
-	virtual int FindUserMessage(const char *name, int *size=NULL);
-	virtual const char *GetUserMessage(int index, int *size=NULL);
-	virtual int DetermineSourceEngine();
-	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len);
-	virtual const char *GetEngineDescription() const;
+		int flags) override;
+	virtual const char *GetConVarString(ConVar *convar) override;
+	virtual void SetConVarString(ConVar *convar, const char *str) override;
+	virtual void GetGamePath(char *pszBuffer, int len) override;
+	virtual const char *GetGameDescription() override;
+	virtual IConCommandBaseAccessor *GetConCommandBaseAccessor() override;
+	virtual bool RegisterConCommandBase(ConCommandBase *pCommand) override;
+	virtual void UnregisterConCommandBase(ConCommandBase *pCommand) override;
+	virtual bool IsConCommandBaseACommand(ConCommandBase *pCommand) override;
+	virtual int GetUserMessageCount() override;
+	virtual int FindUserMessage(const char *name, int *size=NULL) override;
+	virtual const char *GetUserMessage(int index, int *size=NULL) override;
+	virtual int DetermineSourceEngine() override;
+	virtual bool ProcessVDF(const char *file, char path[], size_t path_len, char alias[], size_t alias_len) override;
+	virtual const char *GetEngineDescription() const override;
 #if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
 	bool AllowDedicatedServers(EUniverse universe) const;
 #endif
