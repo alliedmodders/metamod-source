@@ -78,6 +78,7 @@ PossibleSDKs = {
   'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
   'pvkii': SDK('HL2SDKPVKII', '2.pvkii', '10', 'PVKII', WinLinux, 'pvkii'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', Source2, 'dota'),
+  'cs2': SDK('HL2SDKCS2', '2.cs2', '25', 'CS2', [], 'cs2'),
 }
 
 def ResolveEnvPath(env, folder):
