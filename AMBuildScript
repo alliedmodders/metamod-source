@@ -34,7 +34,7 @@ CSGO = {
   'mac': ['x86_64']
 }
 Source2 = {
-  'windows': ['x86', 'x86_64'],
+  'windows': ['x86_64'],
   'linux': ['x86_64'],
 }
 Insurgency = {
