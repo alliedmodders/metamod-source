@@ -493,7 +493,9 @@ class MMSConfig(object):
       elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'mock']:
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
       elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota', 'pvkii']:
-        dynamic_libs = ['libtier0.so', 'libvstdlib.so']
+        dynamic_libs = ['libtier0.so']
+        if sdk.name not in ['dota', 'cs2']:
+          dynamic_libs += ['libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
       if sdk.name in ['csgo', 'blade']:
@@ -502,7 +504,9 @@ class MMSConfig(object):
       binary.compiler.linkflags.append('-liconv')
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif compiler.target.platform == 'windows':
-      libs = ['tier0', 'tier1', 'vstdlib']
+      libs = ['tier0', 'tier1']
+      if sdk.name not in ['dota', 'cs2']:
+        libs += ['vstdlib']
       if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'mcv', 'csgo', 'dota']:
         libs.append('interfaces')
       if sdk.name == 'bms':
