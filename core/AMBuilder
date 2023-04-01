@@ -28,6 +28,11 @@ for sdk_name in MMS.sdks:
       'vsp_bridge.cpp'
     ]
 
+    if sdk_name in ['dota']:
+      binary.sources += ['provider/source2/provider_source2.cpp']
+    else:
+      binary.sources += ['provider/source/provider_source.cpp']
+
     # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
     if binary.compiler.target.arch == 'x86':
       binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']

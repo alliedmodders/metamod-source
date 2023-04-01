@@ -109,7 +109,7 @@ IEngineServiceMgr *enginesvcmgr = NULL;
 IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
 CGlobalVars *gpGlobals = NULL;
-IMetamodSourceProvider *provider = &g_Ep1Provider;
+
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 #if SOURCE_ENGINE == SE_DOTA
