@@ -786,11 +786,6 @@ int MetamodSource::GetGameDLLVersion()
 	return gamedll_version;
 }
 
-bool MetamodSource::RemotePrintingAvailable()
-{
-	return provider->IsRemotePrintingAvailable();
-}
-
 void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 {
 	if (id)

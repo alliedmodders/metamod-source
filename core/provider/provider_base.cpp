@@ -55,10 +55,6 @@ IVEngineServer *engine = NULL;
 IServerGameClients *gameclients = NULL;
 CGlobalVars *gpGlobals = NULL;
 
-bool BaseProvider::IsRemotePrintingAvailable()
-{
-	return true;
-}
 
 bool BaseProvider::IsSourceEngineBuildCompatible(int build)
 {

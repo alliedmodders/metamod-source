@@ -150,14 +150,6 @@ namespace SourceMM
 		virtual void ConsolePrint(const char *msg) =0;
 
 		/**
-		 * @brief Returns whether remote printing is available.
-		 *
-		 * @return					True if remote printing is available, 
-		 * 							otherwise returns false.
-		 */
-		virtual bool IsRemotePrintingAvailable() =0;
-
-		/**
 		 * @brief Prints text in the specified client's console.
 		 *
 		 * @param client			Client edict pointer.

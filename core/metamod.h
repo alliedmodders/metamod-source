@@ -67,7 +67,6 @@ public:
 	void UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 	void ConPrint(const char *str);
 	void ConPrintf(const char *fmt, ...);
-	bool RemotePrintingAvailable();
 	void GetApiVersions(int &major, int &minor, int &plvers, int &plmin);
 	void GetShVersions(int &shvers, int &shimpl);
 	void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener);

@@ -79,7 +79,6 @@ public: // May implement/override
 	virtual bool IsSourceEngineBuildCompatible(int build) override;
 	virtual bool LogMessage(const char *buffer) override;
 	virtual const char *GetCommandLineValue(const char *key, const char *defval) override;
-	virtual bool IsRemotePrintingAvailable() override;
 	virtual void DisplayError(const char *fmt, ...) override;
 	virtual void DisplayWarning(const char *fmt, ...) override;
 	virtual void DisplayDevMsg(const char* fmt, ...) override;
