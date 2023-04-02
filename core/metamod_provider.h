@@ -37,20 +37,6 @@ namespace SourceMM
 		ConVarFlag_SpOnly = 2,
 	};
 
-	enum ProvidedHooks
-	{
-#if SOURCE_ENGINE == SE_DOTA
-		ProvidedHook_StartChangeLevel = 0,
-		ProvidedHook_Init = 1,
-		ProvidedHook_StartupServer = 2,
-		ProvidedHook_SwitchToLoop = 3,
-#else
-		ProvidedHook_LevelInit = 0,			/**< IServerGameDLL::LevelInit */
-		ProvidedHook_LevelShutdown = 1,		/**< IServerGameDLL::LevelShutdown */
-		ProvidedHook_GameInit = 4,			/**< IServerGameDLL::GameInit */
-#endif
-	};
-
 	/**
 	 * @brief Abstracts command information, since the new engine fixes the 
 	 * re-entrancy problems in the tokenization system.
