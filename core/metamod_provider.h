@@ -52,29 +52,6 @@ namespace SourceMM
 	};
 
 	/**
-     * @brief Interface for Metamod:Source to provide callbacks to the 
-	 * provider.
-	 */
-	class IMetamodSourceProviderCallbacks
-	{
-	public:
-		/**
-		 * @brief Called before the server DLL handles game initialization.
-		 */
-		virtual void OnGameInit() = 0;
-
-		/**
-		 * @brief Called after the server DLL has completed handling level/map initialization.
-		 */
-		virtual void OnLevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel, char const* pLandmarkName, bool loadGame, bool background) = 0;
-
-		/**
-		 * @brief Called after the server DLL has completed handling level/map shut down.
-		 */
-		virtual void OnLevelShutdown() = 0;
-	};
-
-	/**
 	 * @brief Abstracts command information, since the new engine fixes the 
 	 * re-entrancy problems in the tokenization system.
 	 */
@@ -103,6 +80,34 @@ namespace SourceMM
 		 * @return					Argument string.
 		 */
 		virtual const char *GetArgString() =0;
+	};
+
+	/**
+     * @brief Interface for Metamod:Source to provide callbacks to the 
+	 * provider.
+	 */
+	class IMetamodSourceProviderCallbacks
+	{
+	public:
+		/**
+		 * @brief Called before the server DLL handles game initialization.
+		 */
+		virtual void OnGameInit() = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map initialization.
+		 */
+		virtual void OnLevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel, char const* pLandmarkName, bool loadGame, bool background) = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map shut down.
+		 */
+		virtual void OnLevelShutdown() = 0;
+
+		/**
+		 * @brief Called when a client executes "meta" as a ClientCommand
+		 */
+		virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) = 0;
 	};
 
 	class IMetamodSourceProvider

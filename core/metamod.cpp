@@ -194,6 +194,11 @@ static class ProviderCallbacks : public IMetamodSourceProviderCallbacks
 
 		ITER_EVENT(OnLevelShutdown, ());
 	}
+
+	virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) override
+	{
+		return Command_ClientMeta(client, info);
+	}
 } s_ProviderCallbacks;
 
 /* Initialize everything here */
@@ -739,20 +744,6 @@ size_t MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 
 	return mylen;
 }
-
-#if SOURCE_ENGINE == SE_DOTA
-void MetamodSource::ClientConPrintf(int clientIndex, const char *fmt, ...)
-{
-	va_list ap;
-	char buffer[2048];
-
-	va_start(ap, fmt);
-	UTIL_FormatArgs(buffer, sizeof(buffer), fmt, ap);
-	va_end(ap);
-
-	ClientConPrintf((edict_t *)(gpGlobals->pEdicts + clientIndex), "%s", buffer);
-}
-#endif
 
 void MetamodSource::ClientConPrintf(edict_t *client, const char *fmt, ...)
 {

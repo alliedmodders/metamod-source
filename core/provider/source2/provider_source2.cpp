@@ -431,7 +431,12 @@ void Source2Provider::Hook_ClientCommand(CEntityIndex index, const CCommand& _cm
 
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
-		Command_ClientMeta(client, &cmd);
+		if (nullptr != m_pCallbacks)
+		{
+			auto pEdict = reinterpret_cast<edict_t *>(gpGlobals->pEdicts + (intp)client);
+			m_pCallbacks->OnCommand_ClientMeta(pEdict, &cmd);
+		}
+		
 		RETURN_META(MRES_SUPERCEDE);
 	}
 

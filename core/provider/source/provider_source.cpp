@@ -631,7 +631,11 @@ void SourceProvider::Hook_ClientCommand(edict_t * client)
 #endif
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
-		Command_ClientMeta(client, &cmd);
+		if (nullptr != m_pCallbacks)
+		{
+			m_pCallbacks->OnCommand_ClientMeta(client, &cmd);
+		}
+
 		RETURN_META(MRES_SUPERCEDE);
 	}
 
