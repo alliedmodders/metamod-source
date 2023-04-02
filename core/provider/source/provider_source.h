@@ -31,10 +31,11 @@
 #include "../provider_base.h"
 #include <string>
 #include <vector>
+#include <sh_list.h>
 
 class SourceProvider : public BaseProvider
 {
-public:
+public: // BaseProvider
 	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
 	virtual void Notify_DLLShutdown_Pre() override;
 	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override;
@@ -58,7 +59,25 @@ public:
 	virtual int GetUserMessageCount() override;
 	virtual int FindUserMessage(const char* name, int* size = nullptr) override;
 	virtual const char* GetUserMessage(int index, int* size = nullptr) override;
-public: // Hook callbacks that map to provider callbacks
+public: // IConCommandBaseAccessor
+	class SourceConVarAccessor : public IConCommandBaseAccessor
+	{
+		virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
+	private:
+		bool Register(ConCommandBase* pCommand);
+		void Unregister(ConCommandBase* pCommand);
+		void RemoveMetamodCommands();
+#if SOURCE_ENGINE < SE_ORANGEBOX
+		bool InitConCommandBaseList();
+	private:
+		ConCommandBase** m_TopConCommandBase = nullptr;
+#endif
+	private:
+		SourceHook::List<ConCommandBase*> m_RegisteredCommands;
+
+	friend class SourceProvider;
+	} m_ConVarAccessor;
+public:
 	bool Hook_GameInit();
 	bool Hook_LevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel,
 		char const* pLandmarkName, bool loadGame, bool background);

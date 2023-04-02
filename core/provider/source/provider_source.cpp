@@ -24,7 +24,6 @@
  */
 
 #include "provider_source.h"
-#include "../console.h"
 #include <metamod.h>
 #include <metamod_util.h>
 #include <metamod_console.h>
@@ -99,7 +98,7 @@ void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	g_pCVar = icvar;
 #endif
 
-	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+	m_ConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
 
 #if SOURCE_ENGINE == SE_EPISODEONE
 	/* The Ship is the only game known at this time that uses the pre-Episode One engine */
@@ -133,7 +132,7 @@ void SourceProvider::Notify_DLLShutdown_Pre()
 	SH_REMOVE_HOOK(IServerGameDLL, LevelInit, server, SH_MEMBER(this, &SourceProvider::Hook_LevelInit), true);
 	SH_REMOVE_HOOK(IServerGameDLL, LevelShutdown, server, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown), true);
 
-	g_SMConVarAccessor.RemoveMetamodCommands();
+	m_ConVarAccessor.RemoveMetamodCommands();
 
 #if SOURCE_ENGINE < SE_ORANGEBOX
 	if (g_Metamod.IsLoadedAsGameDLL())
@@ -362,17 +361,17 @@ bool SourceProvider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 
 IConCommandBaseAccessor* SourceProvider::GetConCommandBaseAccessor()
 {
-	return &g_SMConVarAccessor;
+	return &m_ConVarAccessor;
 }
 
 bool SourceProvider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
-	return g_SMConVarAccessor.Register(pCommand);
+	return m_ConVarAccessor.Register(pCommand);
 }
 
 void SourceProvider::UnregisterConCommandBase(ConCommandBase* pCommand)
 {
-	return g_SMConVarAccessor.Unregister(pCommand);
+	return m_ConVarAccessor.Unregister(pCommand);
 }
 
 ConVar* SourceProvider::CreateConVar(const char* name,
@@ -392,7 +391,7 @@ ConVar* SourceProvider::CreateConVar(const char* name,
 
 	ConVar* pVar = new ConVar(name, defval, newflags, help);
 
-	g_SMConVarAccessor.RegisterConCommandBase(pVar);
+	m_ConVarAccessor.RegisterConCommandBase(pVar);
 
 	return pVar;
 }

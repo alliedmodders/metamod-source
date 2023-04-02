@@ -25,20 +25,14 @@
  * Version: $Id$
  */
 
-#include "console.h"
-#include "provider_base.h"
-#include "metamod_util.h"
-
-using namespace SourceHook;
-
-SMConVarAccessor g_SMConVarAccessor;
+#include "provider_source.h"
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 #else
 #define RegisterConCommand RegisterConCommandBase
 #endif
 
-bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
+bool SourceProvider::SourceConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
 	m_RegisteredCommands.push_back(pCommand);
 #if SOURCE_ENGINE < SE_ALIENSWARM
@@ -49,7 +43,7 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 	return true;
 }
 
-bool SMConVarAccessor::Register(ConCommandBase *pCommand)
+bool SourceProvider::SourceConVarAccessor::Register(ConCommandBase *pCommand)
 {
 #if SOURCE_ENGINE < SE_ALIENSWARM
 	pCommand->SetNext(NULL);
@@ -59,7 +53,7 @@ bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 	return true;
 }
 
-void SMConVarAccessor::RemoveMetamodCommands()
+void SourceProvider::SourceConVarAccessor::RemoveMetamodCommands()
 {
 	List<ConCommandBase *>::iterator iter;
 
@@ -73,7 +67,7 @@ void SMConVarAccessor::RemoveMetamodCommands()
 /* Signature for ICvar::GetCommands() in vstdlib for Win32 and Linux.
  *
  * 20226EE0 A1 50 5C 5A 20   mov         eax,dword ptr ds:[205A5C50h] <-- What we want
- * 20226EE5 C3               ret              
+ * 20226EE5 C3               ret
  */
 #define CMDLIST_SIG "\xA1\x2A\x2A\x2A\x2A\xC3"
 #define CMDLIST_SIGLEN 6
@@ -87,7 +81,7 @@ void SMConVarAccessor::RemoveMetamodCommands()
  * This craziness eliminates the need for the eternal command/cvar used previously which
  * could have caused a crash as a result of registering commands/cvars more than once.
  */
-bool SMConVarAccessor::InitConCommandBaseList()
+bool SourceProvider::SourceConVarAccessor::InitConCommandBaseList()
 {
 	char *vfunc = (char *)SH_GET_ORIG_VFNPTR_ENTRY(icvar, &ICvar::GetCommands);
 
@@ -96,7 +90,7 @@ bool SMConVarAccessor::InitConCommandBaseList()
 		/* Get address from displacement...
 		*
 		* Add 5 because it's relative to next instruction:
-		* Opcode <1 byte> + 32-bit displacement <4 bytes> 
+		* Opcode <1 byte> + 32-bit displacement <4 bytes>
 		*/
 		vfunc += *reinterpret_cast<int *>(vfunc + 1) + 5;
 	}
@@ -140,7 +134,7 @@ bool SMConVarAccessor::InitConCommandBaseList()
 }
 #endif
 
-void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
+void SourceProvider::SourceConVarAccessor::Unregister(ConCommandBase *pCommand)
 {
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	icvar->UnregisterConCommand(pCommand);
@@ -166,7 +160,7 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 		pCommand->SetNext(NULL);
 		return;
 	}
-	
+
 	pPrev = pCur;
 	pCur = const_cast<ConCommandBase *>(pCur->GetNext());
 
@@ -183,4 +177,3 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	}
 #endif
 }
-

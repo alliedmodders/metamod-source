@@ -24,7 +24,6 @@
  */
 
 #include "provider_source2.h"
-#include "../console.h"
 #include <metamod.h>
 #include <metamod_util.h>
 #include <metamod_console.h>
@@ -122,7 +121,9 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	g_pCVar = icvar;
 
+#ifdef S2_CONVAR_UNFINISHED
 	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
+#endif
 
 	if (gameclients)
 	{
@@ -139,7 +140,9 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void Source2Provider::Notify_DLLShutdown_Pre()
 {
+#ifdef S2_CONVAR_UNFINISHED
 	g_SMConVarAccessor.RemoveMetamodCommands();
+#endif
 }
 
 bool Source2Provider::ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len)
@@ -241,37 +244,57 @@ void Source2Provider::ServerCommand(const char* cmd)
 
 const char* Source2Provider::GetConVarString(ConVar* convar)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	if (convar == NULL)
 	{
 		return NULL;
 	}
 
 	return convar->GetString();
+#else
+	return "";
+#endif
 }
 
 void Source2Provider::SetConVarString(ConVar* convar, const char* str)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	convar->SetValue(str);
+#endif
 }
 
 bool Source2Provider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	return pCommand->IsCommand();
+#else
+	return false;
+#endif
 }
 
 IConCommandBaseAccessor* Source2Provider::GetConCommandBaseAccessor()
 {
+#ifdef S2_CONVAR_UNFINISHED
 	return &g_SMConVarAccessor;
+#else
+	return nullptr;
+#endif
 }
 
 bool Source2Provider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	return g_SMConVarAccessor.Register(pCommand);
+#else
+	return true;
+#endif
 }
 
 void Source2Provider::UnregisterConCommandBase(ConCommandBase* pCommand)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	return g_SMConVarAccessor.Unregister(pCommand);
+#endif
 }
 
 ConVar* Source2Provider::CreateConVar(const char* name,
@@ -279,6 +302,7 @@ ConVar* Source2Provider::CreateConVar(const char* name,
 	const char* help,
 	int flags)
 {
+#ifdef S2_CONVAR_UNFINISHED
 	int newflags = 0;
 	if (flags & ConVarFlag_Notify)
 	{
@@ -294,6 +318,9 @@ ConVar* Source2Provider::CreateConVar(const char* name,
 	g_SMConVarAccessor.RegisterConCommandBase(pVar);
 
 	return pVar;
+#else
+	return nullptr;
+#endif
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

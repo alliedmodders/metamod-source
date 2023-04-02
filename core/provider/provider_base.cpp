@@ -32,7 +32,6 @@
 #include <tier0/icommandline.h>
 #include "../metamod_util.h"
 #include "provider_base.h"
-#include "console.h"
 #include "metamod_console.h"
 #include <filesystem.h>
 #include "metamod.h"
