@@ -226,6 +226,11 @@ bool Source2Provider::Hook_AllowDedicatedServers(EUniverse universe) const
 }
 #endif
 
+const char* Source2Provider::GetCommandLineValue(const char* key, const char* defval)
+{
+	return CommandLine()->ParmValue(key, defval);
+}
+
 void Source2Provider::ConsolePrint(const char* str)
 {
 	ConMsg("%s", str);

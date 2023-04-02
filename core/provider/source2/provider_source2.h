@@ -50,6 +50,7 @@ public:
 	virtual const char* GetEngineDescription() const override;
 	virtual void GetGamePath(char* pszBuffer, int len) override;
 	virtual const char* GetGameDescription() override;
+	virtual const char* GetCommandLineValue(const char* key, const char* defval) override;
 	virtual void ConsolePrint(const char* msg) override;
 	virtual void ClientConsolePrint(edict_t* client, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;

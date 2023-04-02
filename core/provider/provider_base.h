@@ -58,6 +58,7 @@ public: // Must implement
 	virtual void GetGamePath(char *pszBuffer, int len) override = 0;
 	virtual const char *GetGameDescription() override = 0;
 	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override = 0;
+	virtual const char* GetCommandLineValue(const char* key, const char* defval) override = 0;
 	virtual void ConsolePrint(const char* msg) override = 0;
 	virtual void ClientConsolePrint(edict_t* client, const char* msg) override = 0;
 	virtual void ServerCommand(const char* cmd) override = 0;
@@ -77,7 +78,6 @@ public: // May implement/override (stubbed)
 public: // May implement/override
 	virtual bool IsSourceEngineBuildCompatible(int build) override;
 	virtual bool LogMessage(const char *buffer) override;
-	virtual const char *GetCommandLineValue(const char *key, const char *defval) override;
 	virtual void DisplayError(const char *fmt, ...) override;
 	virtual void DisplayWarning(const char *fmt, ...) override;
 	virtual void DisplayDevMsg(const char* fmt, ...) override;

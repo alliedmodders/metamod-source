@@ -329,6 +329,26 @@ void SourceProvider::ConsolePrint(const char* str)
 #endif
 }
 
+const char* SourceProvider::GetCommandLineValue(const char* key, const char* defval)
+{
+	if (key[0] == '-' || key[0] == '+')
+	{
+		return CommandLine()->ParmValue(key, defval);
+	}
+	else if (icvar)
+	{
+		const char* val;
+		if ((val = icvar->GetCommandLineValue(key)) == NULL)
+		{
+			return defval;
+		}
+
+		return val;
+	}
+
+	return NULL;
+}
+
 void SourceProvider::ClientConsolePrint(edict_t* pEdict, const char* message)
 {
 	engine->ClientPrintf(pEdict, message);

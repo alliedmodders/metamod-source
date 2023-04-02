@@ -61,26 +61,6 @@ bool BaseProvider::IsSourceEngineBuildCompatible(int build)
 			|| build == SOURCE_ENGINE_EPISODEONE);
 }
 
-const char *BaseProvider::GetCommandLineValue(const char *key, const char *defval)
-{
-	if (key[0] == '-' || key[0] == '+')
-	{
-		return CommandLine()->ParmValue(key, defval);
-	}
-	else if (icvar)
-	{
-		const char *val;
-		if ((val = icvar->GetCommandLineValue(key)) == NULL)
-		{
-			return defval;
-		}
-
-		return val;
-	}
-
-	return NULL;
-}
-
 int BaseProvider::TryServerGameDLL(const char *iface)
 {
 	if (strncmp(iface, "ServerGameDLL", 13) != 0)
