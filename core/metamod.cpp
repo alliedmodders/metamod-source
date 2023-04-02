@@ -892,11 +892,6 @@ const char *MetamodSource::GetVDFDir()
 	return provider->GetConVarString(mm_basedir);
 }
 
-IConCommandBaseAccessor *MetamodSource::GetCvarBaseAccessor()
-{
-	return provider->GetConCommandBaseAccessor();
-}
-
 bool MetamodSource::RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
 	if (provider->IsConCommandBaseACommand(pCommand))

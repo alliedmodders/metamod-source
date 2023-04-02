@@ -258,13 +258,6 @@ namespace SourceMM
 		virtual const char *GetGameDescription() =0;
 
 		/**
-		 * @brief Returns the ConCommandBase accessor.
-		 *
-		 * @return				An IConCommandBaseAccessor pointer.
-		 */
-		virtual IConCommandBaseAccessor *GetConCommandBaseAccessor() =0;
-
-		/**
 		 * @brief Registers a ConCommandBase.
 		 *
 		 * @param pCommand		ConCommandBase to register.

@@ -359,11 +359,6 @@ bool SourceProvider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 	return pCommand->IsCommand();
 }
 
-IConCommandBaseAccessor* SourceProvider::GetConCommandBaseAccessor()
-{
-	return &m_ConVarAccessor;
-}
-
 bool SourceProvider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
 	return m_ConVarAccessor.Register(pCommand);

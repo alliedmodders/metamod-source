@@ -272,15 +272,6 @@ bool Source2Provider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 #endif
 }
 
-IConCommandBaseAccessor* Source2Provider::GetConCommandBaseAccessor()
-{
-#ifdef S2_CONVAR_UNFINISHED
-	return &g_SMConVarAccessor;
-#else
-	return nullptr;
-#endif
-}
-
 bool Source2Provider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
 #ifdef S2_CONVAR_UNFINISHED

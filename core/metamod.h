@@ -62,7 +62,6 @@ public:
 	CGlobalVars *GetCGlobals();
 	void SetLastMetaReturn(META_RES res);
 	META_RES GetLastMetaReturn();
-	IConCommandBaseAccessor *GetCvarBaseAccessor();
 	bool RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 	void UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand);
 	void ConPrint(const char *str);

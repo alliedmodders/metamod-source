@@ -65,7 +65,6 @@ public: // Must implement
 		const char* defval,
 		const char* help,
 		int flags) override = 0;
-	virtual IConCommandBaseAccessor* GetConCommandBaseAccessor() override = 0;
 	virtual const char* GetConVarString(MetamodSourceConVar *convar) override = 0;
 	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override = 0;
 	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override = 0;

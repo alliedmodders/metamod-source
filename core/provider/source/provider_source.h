@@ -50,7 +50,6 @@ public: // BaseProvider
 		const char* defval,
 		const char* help,
 		int flags) override;
-	virtual IConCommandBaseAccessor* GetConCommandBaseAccessor() override;
 	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
 	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
 	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
