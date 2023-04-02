@@ -53,13 +53,13 @@ public:
 	virtual void ConsolePrint(const char* msg) override;
 	virtual void ClientConsolePrint(edict_t* client, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;
-	virtual ConVar* CreateConVar(const char* name,
+	virtual MetamodSourceConVar *CreateConVar(const char* name,
 		const char* defval,
 		const char* help,
 		int flags) override;
-	virtual const char* GetConVarString(ConVar* convar) override;
-	virtual void SetConVarString(ConVar* convar, const char* str) override;
 	virtual IConCommandBaseAccessor* GetConCommandBaseAccessor() override;
+	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
+	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
 	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;

@@ -28,6 +28,8 @@
 
 namespace SourceMM
 {
+	class MetamodSourceConVar;
+
 	enum
 	{
 		ConVarFlag_None = 0,
@@ -219,7 +221,7 @@ namespace SourceMM
 		 * @param help				Help text.
 		 * @return					ConVar pointer.
 		 */
-		virtual ConVar *CreateConVar(const char *name, 
+		virtual MetamodSourceConVar *CreateConVar(const char *name,
 			const char *defval, 
 			const char *help,
 			int flags) =0;
@@ -230,7 +232,7 @@ namespace SourceMM
 		 * @param convar			ConVar pointer.
 		 * @return					String value.
 		 */
-		virtual const char *GetConVarString(ConVar *convar) =0;
+		virtual const char *GetConVarString(MetamodSourceConVar *convar) =0;
 
 		/**
 		 * @brief Sets a ConVar string.
@@ -238,7 +240,7 @@ namespace SourceMM
 		 * @param convar			ConVar pointer.
 		 * @param str				String pointer.
 		 */
-		virtual void SetConVarString(ConVar *convar, const char *str) =0;
+		virtual void SetConVarString(MetamodSourceConVar *convar, const char *str) =0;
 
 		/**
 		 * @brief Retrieves the absolute path to the game directory.

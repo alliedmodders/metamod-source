@@ -339,19 +339,19 @@ void SourceProvider::ServerCommand(const char* cmd)
 	engine->ServerCommand(cmd);
 }
 
-const char* SourceProvider::GetConVarString(ConVar* convar)
+const char* SourceProvider::GetConVarString(MetamodSourceConVar *convar)
 {
-	if (convar == NULL)
+	if (nullptr == convar)
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	return convar->GetString();
+	return reinterpret_cast<ConVar *>(convar)->GetString();
 }
 
-void SourceProvider::SetConVarString(ConVar* convar, const char* str)
+void SourceProvider::SetConVarString(MetamodSourceConVar *convar, const char* str)
 {
-	convar->SetValue(str);
+	reinterpret_cast<ConVar *>(convar)->SetValue(str);
 }
 
 bool SourceProvider::IsConCommandBaseACommand(ConCommandBase* pCommand)
@@ -374,7 +374,7 @@ void SourceProvider::UnregisterConCommandBase(ConCommandBase* pCommand)
 	return m_ConVarAccessor.Unregister(pCommand);
 }
 
-ConVar* SourceProvider::CreateConVar(const char* name,
+MetamodSourceConVar* SourceProvider::CreateConVar(const char* name,
 	const char* defval,
 	const char* help,
 	int flags)
@@ -393,7 +393,7 @@ ConVar* SourceProvider::CreateConVar(const char* name,
 
 	m_ConVarAccessor.RegisterConCommandBase(pVar);
 
-	return pVar;
+	return reinterpret_cast<MetamodSourceConVar *>(pVar);
 }
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX

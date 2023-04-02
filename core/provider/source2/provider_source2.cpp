@@ -242,7 +242,7 @@ void Source2Provider::ServerCommand(const char* cmd)
 	engine->ServerCommand(cmd);
 }
 
-const char* Source2Provider::GetConVarString(ConVar* convar)
+const char* Source2Provider::GetConVarString(MetamodSourceConVar *convar)
 {
 #ifdef S2_CONVAR_UNFINISHED
 	if (convar == NULL)
@@ -256,7 +256,7 @@ const char* Source2Provider::GetConVarString(ConVar* convar)
 #endif
 }
 
-void Source2Provider::SetConVarString(ConVar* convar, const char* str)
+void Source2Provider::SetConVarString(MetamodSourceConVar *convar, const char* str)
 {
 #ifdef S2_CONVAR_UNFINISHED
 	convar->SetValue(str);
@@ -297,7 +297,7 @@ void Source2Provider::UnregisterConCommandBase(ConCommandBase* pCommand)
 #endif
 }
 
-ConVar* Source2Provider::CreateConVar(const char* name,
+MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
 	const char* defval,
 	const char* help,
 	int flags)
