@@ -33,7 +33,11 @@
 #include <filesystem.h>
 #include <iserver.h>
 
-void LocalCommand_Meta(const CCommand& args);
+
+static Source2Provider g_Source2Provider;
+
+IMetamodSourceProvider* provider = &g_Source2Provider;
+
 
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
@@ -346,8 +350,11 @@ private:
 
 void LocalCommand_Meta(const CCommand& args)
 {
-	GlobCommand cmd(&args);
-	Command_Meta(&cmd);
+	if (nullptr != g_Source2Provider.m_pCallbacks)
+	{
+		GlobCommand cmd(&args);
+		g_Source2Provider.m_pCallbacks->OnCommand_Meta(&cmd);
+	}
 }
 
 bool Source2Provider::KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID)
@@ -447,7 +454,3 @@ void Source2Provider::Hook_ClientCommand(CEntityIndex index, const CCommand& _cm
 
 	RETURN_META(MRES_IGNORED);
 }
-
-static Source2Provider g_Source2Provider;
-
-IMetamodSourceProvider* provider = &g_Source2Provider;

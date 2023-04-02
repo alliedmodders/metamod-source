@@ -91,6 +91,11 @@ namespace SourceMM
 		virtual void OnLevelShutdown() = 0;
 
 		/**
+		 * @brief Called when the ConCommand "meta" is executed
+		 */
+		virtual bool OnCommand_Meta(IMetamodSourceCommandInfo* info) = 0;
+
+		/**
 		 * @brief Called when a client executes "meta" as a ClientCommand
 		 */
 		virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) = 0;

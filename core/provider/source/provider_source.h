@@ -115,6 +115,12 @@ private:
 	IFileSystem* baseFs = nullptr;
 	std::vector<UsrMsgInfo> usermsgs_list;
 	bool bOriginalEngine = false;
+
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+	friend void LocalCommand_Meta(const CCommand& args);
+#else
+	friend void LocalCommand_Meta();
+#endif
 };
 
 #endif

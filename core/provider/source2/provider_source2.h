@@ -77,6 +77,8 @@ private:
 private:
 	IFileSystem* baseFs = nullptr;
 	std::string sLastMap;
+
+	friend void LocalCommand_Meta(const CCommand& args);
 };
 
 #endif

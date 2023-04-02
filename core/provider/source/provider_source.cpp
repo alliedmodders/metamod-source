@@ -30,13 +30,11 @@
 #include <KeyValues.h>
 #include <filesystem.h>
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
-void LocalCommand_Meta(const CCommand& args);
-#else
-void LocalCommand_Meta();
-#endif
-
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
+
+static SourceProvider g_SourceProvider;
+
+IMetamodSourceProvider* provider = &g_SourceProvider;
 
 SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, 0, bool);
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, const char*, const char*, const char*, const char*, bool, bool);
@@ -466,7 +464,12 @@ void LocalCommand_Meta()
 {
 	GlobCommand cmd;
 #endif
-	Command_Meta(&cmd);
+
+	if (nullptr != g_SourceProvider.m_pCallbacks)
+	{
+		GlobCommand cmd(&args);
+		g_SourceProvider.m_pCallbacks->OnCommand_Meta(&cmd);
+	}
 }
 
 #if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
@@ -661,7 +664,3 @@ void SourceProvider::Hook_ClientCommand(edict_t * client)
 
 	RETURN_META(MRES_IGNORED);
 }
-
-static SourceProvider g_SourceProvider;
-
-IMetamodSourceProvider* provider = &g_SourceProvider;

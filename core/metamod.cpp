@@ -195,6 +195,11 @@ static class ProviderCallbacks : public IMetamodSourceProviderCallbacks
 		ITER_EVENT(OnLevelShutdown, ());
 	}
 
+	virtual bool OnCommand_Meta(IMetamodSourceCommandInfo* info) override
+	{
+		return Command_Meta(info);
+	}
+
 	virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) override
 	{
 		return Command_ClientMeta(client, info);
