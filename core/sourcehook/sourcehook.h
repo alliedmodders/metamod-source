@@ -1043,6 +1043,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	{ \
 		FD m_Deleg; \
 		CMyDelegateImpl(FD deleg) : m_Deleg(deleg) {} \
+		virtual ~CMyDelegateImpl() {} \
 		ret_type Call params_decl { return m_Deleg params_pass; } \
 		void DeleteThis() { delete this; } \
 		bool IsEqual(ISHDelegate *pOtherDeleg) { return m_Deleg == static_cast<CMyDelegateImpl*>(pOtherDeleg)->m_Deleg; } \
@@ -1054,6 +1055,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	{ \
 		FD m_Deleg; \
 		CMyDelegateImpl(FD deleg) : m_Deleg(deleg) {} \
+		virtual ~CMyDelegateImpl() {} \
 		void Call params_decl { m_Deleg params_pass; } \
 		void DeleteThis() { delete this; } \
 		bool IsEqual(ISHDelegate *pOtherDeleg) { return m_Deleg == static_cast<CMyDelegateImpl*>(pOtherDeleg)->m_Deleg; } \
