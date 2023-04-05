@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <stack>
 #include <map>
+#include <cstring>
 #include "stdio.h"
 
 #ifdef __linux__
