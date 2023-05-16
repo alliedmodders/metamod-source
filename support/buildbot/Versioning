@@ -16,7 +16,7 @@ outputs = [
   os.path.join(builder.buildFolder, 'includes', 'metamod_version_auto.h')
 ]
 
-with open(os.path.join(builder.sourcePath, '.git', 'HEAD')) as fp:
+with open(os.path.join(builder.sourcePath, '.git', 'HEAD'), encoding='utf-8') as fp:
   head_contents = fp.read().strip()
   if re.search('^[a-fA-F0-9]{40}$', head_contents):
     git_head_path = os.path.join(builder.sourcePath, '.git', 'HEAD')
