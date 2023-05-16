@@ -63,7 +63,7 @@ public:
 		SourceHook::MemFuncInfo mfi;
 
 		mfi.isVirtual = false;
-#if SOURCE_ENGINE == SE_DOTA
+#ifdef META_IS_SOURCE2
 		SourceHook::GetFuncInfo(&IServerGameDLL::Shutdown, mfi);
 #else
 		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfi);

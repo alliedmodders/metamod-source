@@ -398,6 +398,8 @@ class MMSConfig(object):
     if sdk.name in ['csgo', 'blade', 'pvkii'] and compiler.target.platform == 'linux':
       compiler.linkflags += ['-lstdc++']
 
+    if sdk.name in ['dota', 'cs2']:
+      compiler.defines += ['META_IS_SOURCE2']
 
     for path in paths:
       compiler.cxxincludes += [os.path.join(sdk.path, *path)]

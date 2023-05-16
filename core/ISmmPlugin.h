@@ -40,7 +40,7 @@
 #include <ISmmPluginExt.h>
 
 #ifndef META_NO_HL2SDK
-#if SOURCE_ENGINE == SE_DOTA
+#if META_IS_SOURCE2
 #include <interfaces/interfaces.h>
 #else
 #include <tier1/interface.h>

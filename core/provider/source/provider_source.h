@@ -105,7 +105,7 @@ private:
 	bool KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID = nullptr);
 	inline bool IsUserMessageIterationSupported() const
 	{
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 		return false;
 #else
 		return true;

@@ -32,7 +32,7 @@
 #endif
 #include <sourcehook.h>
 #include <sh_memfuncinfo.h>
-#if SOURCE_ENGINE != SE_DOTA
+#if !defined META_IS_SOURCE2
 #include <iserverplugin.h>
 #endif
 #include "ISmmAPI.h"
@@ -96,7 +96,7 @@ extern IServerGameDLL *server;
 extern IServerGameClients *gameclients;
 extern ICvar *icvar;
 extern CGlobalVars *gpGlobals;
-#if SOURCE_ENGINE == SE_DOTA
+#if defined META_IS_SOURCE2
 extern INetworkServerService *netservice;
 extern IEngineServiceMgr *enginesvcmgr;
 #endif
