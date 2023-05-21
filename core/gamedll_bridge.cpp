@@ -38,7 +38,8 @@ public:
 	virtual bool DLLInit_Pre(const gamedll_bridge_info *info, char *buffer, size_t maxlength)
 	{
 		server = (IServerGameDLL *) info->isgd;
-		g_Metamod.SetGameDLLInfo((CreateInterfaceFn) info->gsFactory,
+		g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory,
+			info->dllInterfaceName,
 			info->dllVersion,
 			true);
 		g_Metamod.SetVSPListener(info->vsp_listener_path);

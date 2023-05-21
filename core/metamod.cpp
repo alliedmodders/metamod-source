@@ -69,6 +69,7 @@ static String metamod_path;
 static String full_bin_path;
 static int vsp_version = 0;
 static int gamedll_version = 0;
+static const char *gamedll_interface_name = nullptr;
 static int engine_build = SOURCE_ENGINE_UNKNOWN;
 static List<game_dll_t *> gamedll_list;
 static bool is_gamedll_loaded = false;
@@ -1018,9 +1019,10 @@ bool MetamodSource::IsLoadedAsGameDLL()
 	return is_gamedll_loaded;
 }
 
-void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded)
+void MetamodSource::SetGameDLLInfo(CreateInterfaceFn serverFactory, const char *pGameDllIfaceName, int version, bool loaded)
 {
 	gamedll_info.factory = serverFactory;
+	gamedll_interface_name = pGameDllIfaceName;
 	gamedll_version = version;
 	is_gamedll_loaded = loaded;
 }
@@ -1084,6 +1086,11 @@ size_t MetamodSource::GetFullPluginPath(const char *plugin, char *buffer, size_t
 #endif
 
 	return num;
+}
+
+const char *MetamodSource::GetGameDLLInterfaceName() const
+{
+	return gamedll_interface_name;
 }
 
 static bool

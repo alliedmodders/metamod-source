@@ -93,7 +93,8 @@ public:
 	const char *GetVDFDir();
 	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
-	void SetGameDLLInfo(CreateInterfaceFn serverFactory, int version, bool loaded);
+	const char* GetGameDLLInterfaceName() const;
+	void SetGameDLLInfo(CreateInterfaceFn serverFactory, const char *pGameDllIfaceName, int version, bool loaded);
 	void SetVSPListener(const char *path);
 	size_t GetFullPluginPath(const char *plugin, char *buffer, size_t len);
 };

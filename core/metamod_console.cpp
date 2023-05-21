@@ -119,7 +119,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Description: %s\n", provider->GetGameDescription());
 			CONMSG("  Mod Path: %s\n", g_Metamod.GetBaseDir());
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
-			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
+			CONMSG("  Interface: %s\n", g_Metamod.GetGameDLLInterfaceName());
 			CONMSG("  Engine: %s\n", provider->GetEngineDescription());
 
 			// Display user messages

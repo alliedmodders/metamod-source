@@ -43,6 +43,7 @@ SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 SourceHook::String vsp_desc("Metamod:Source");
+static char gamedll_iface_name[128] = { 0 };
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads(const CCommand &args)
@@ -84,13 +85,12 @@ public:
 
 			pGlobals = playerInfoManager->GetGlobalVars();
 
-			char gamedll_iface[24];
 			for (unsigned int i = 3; i <= 50; i++)
 			{
-				UTIL_Format(gamedll_iface, sizeof(gamedll_iface), "ServerGameDLL%03d", i);
-				if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface, NULL)) != NULL)
+				UTIL_Format(gamedll_iface_name, sizeof(gamedll_iface_name), "ServerGameDLL%03d", i);
+				if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface_name, NULL)) != NULL)
 				{
-					g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, i, false);
+					g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, gamedll_iface_name, i, false);
 					break;
 				}
 			}
