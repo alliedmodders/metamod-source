@@ -60,7 +60,7 @@ public: // Must implement
 	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override = 0;
 	virtual const char* GetCommandLineValue(const char* key, const char* defval) override = 0;
 	virtual void ConsolePrint(const char* msg) override = 0;
-	virtual void ClientConsolePrint(edict_t* client, const char* msg) override = 0;
+	virtual void ClientConsolePrint(MMSPlayer_t player, const char* msg) override = 0;
 	virtual void ServerCommand(const char* cmd) override = 0;
 	virtual MetamodSourceConVar *CreateConVar(const char* name,
 		const char* defval,

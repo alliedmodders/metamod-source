@@ -200,7 +200,7 @@ static class ProviderCallbacks : public IMetamodSourceProviderCallbacks
 		return Command_Meta(info);
 	}
 
-	virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) override
+	virtual bool OnCommand_ClientMeta(MMSPlayer_t client, IMetamodSourceCommandInfo* info) override
 	{
 		return Command_ClientMeta(client, info);
 	}
@@ -750,7 +750,7 @@ size_t MetamodSource::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 	return mylen;
 }
 
-void MetamodSource::ClientConPrintf(edict_t *client, const char *fmt, ...)
+void MetamodSource::ClientConPrintf(MMSPlayer_t client, const char *fmt, ...)
 {
 	va_list ap;
 	char buffer[2048];

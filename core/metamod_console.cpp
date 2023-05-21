@@ -44,9 +44,9 @@ using namespace SourceHook;
 #define CLIENT_CONMSG	g_Metamod.ClientConPrintf
 template <typename ... Ts>
 
-void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
+void CMDMSG(MMSPlayer_t client, const char *pMsg, Ts ... ts)
 {
-	if (client)
+	if (client != MMSPlayer_INVALID)
 	{
 		CLIENT_CONMSG(client, pMsg, ts...);
 	}
@@ -56,7 +56,7 @@ void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
 	}
 }
 
-static void ReplyCredits(edict_t *client = nullptr)
+static void ReplyCredits(MMSPlayer_t client = MMSPlayer_INVALID)
 {
 	CMDMSG(client, "Metamod:Source was developed by:\n");
 	CMDMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
@@ -66,7 +66,7 @@ static void ReplyCredits(edict_t *client = nullptr)
 	CMDMSG(client, "http://www.metamodsource.net/\n");
 }
 
-static void ReplyVersion(edict_t *client = nullptr)
+static void ReplyVersion(MMSPlayer_t client = MMSPlayer_INVALID)
 {
 	CMDMSG(client, " Metamod:Source Version Information\n");
 	CMDMSG(client, "    Metamod:Source version %s\n", METAMOD_VERSION);
@@ -642,7 +642,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 	return true;
 }
 
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
+bool Command_ClientMeta(MMSPlayer_t client, IMetamodSourceCommandInfo *info)
 {
 	const char *cmd = info->GetArg(0);
 

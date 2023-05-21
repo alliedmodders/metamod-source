@@ -45,7 +45,7 @@ public: // BaseProvider
 	virtual const char* GetGameDescription() override;
 	virtual const char* GetCommandLineValue(const char* key, const char* defval) override;
 	virtual void ConsolePrint(const char* msg) override;
-	virtual void ClientConsolePrint(edict_t* client, const char* msg) override;
+	virtual void ClientConsolePrint(MMSPlayer_t client, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;
 	virtual MetamodSourceConVar *CreateConVar(const char* name,
 		const char* defval,

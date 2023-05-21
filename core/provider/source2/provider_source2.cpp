@@ -38,8 +38,8 @@ static Source2Provider g_Source2Provider;
 
 IMetamodSourceProvider* provider = &g_Source2Provider;
 
+CON_COMMAND_EXTERN(meta, LocalCommand_Meta, "Metamod:Source control options");
 
-ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 static ISource2ServerConfig* serverconfig = NULL;
 INetworkServerService* netservice = NULL;
@@ -53,7 +53,7 @@ SH_DECL_HOOK3_void(INetworkServerService, StartupServer, SH_NOATTRIB, 0, const G
 SH_DECL_HOOK5_void(IEngineServiceMgr, SwitchToLoop, SH_NOATTRIB, 0, const char *, KeyValues *, uint32, const char *, bool);
 SH_DECL_HOOK2_void(INetworkGameServer, Init, SH_NOATTRIB, 0, const GameSessionConfiguration_t &, const char *);
 SH_DECL_HOOK3(INetworkGameServer, StartChangeLevel, SH_NOATTRIB, 0, CUtlVector<INetworkGameClient *> *, const char *, const char *, void *);
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CEntityIndex, const CCommand&);
+SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CPlayerSlot, const CCommand&);
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
@@ -125,9 +125,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	g_pCVar = icvar;
 
-#ifdef S2_CONVAR_UNFINISHED
-	g_SMConVarAccessor.RegisterConCommandBase(&meta_local_cmd);
-#endif
+	ConVar_Register(FCVAR_RELEASE);
 
 	if (gameclients)
 	{
@@ -144,9 +142,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void Source2Provider::Notify_DLLShutdown_Pre()
 {
-#ifdef S2_CONVAR_UNFINISHED
-	g_SMConVarAccessor.RemoveMetamodCommands();
-#endif
+	ConVar_Unregister();
 }
 
 bool Source2Provider::ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len)
@@ -242,9 +238,8 @@ void Source2Provider::ConsolePrint(const char* str)
 	ConMsg("%s", str);
 }
 
-void Source2Provider::ClientConsolePrint(edict_t* pEdict, const char* message)
+void Source2Provider::ClientConsolePrint(MMSPlayer_t client, const char* message)
 {
-	int client = (int)(pEdict - gpGlobals->pEdicts);
 	engine->ClientPrintf(client, message);
 }
 
@@ -263,7 +258,7 @@ const char* Source2Provider::GetConVarString(MetamodSourceConVar *convar)
 
 	return convar->GetString();
 #else
-	return "";
+	return nullptr;
 #endif
 }
 
@@ -350,7 +345,7 @@ private:
 	const CCommand* m_cmd;
 };
 
-void LocalCommand_Meta(const CCommand& args)
+void LocalCommand_Meta(const CCommandContext &, const CCommand& args)
 {
 	if (nullptr != g_Source2Provider.m_pCallbacks)
 	{
@@ -438,17 +433,15 @@ void Source2Provider::Hook_SwitchToLoop(const char *pszLoopName, KeyValues *pKV,
 	RETURN_META(MRES_IGNORED);
 }
 
-void Source2Provider::Hook_ClientCommand(CEntityIndex index, const CCommand& _cmd)
+void Source2Provider::Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& _cmd)
 {
-	int client = index.Get();
 	GlobCommand cmd(&_cmd);
 
 	if (strcmp(cmd.GetArg(0), "meta") == 0)
 	{
 		if (nullptr != m_pCallbacks)
 		{
-			auto pEdict = reinterpret_cast<edict_t *>(gpGlobals->pEdicts + (intp)client);
-			m_pCallbacks->OnCommand_ClientMeta(pEdict, &cmd);
+			m_pCallbacks->OnCommand_ClientMeta(nSlot, &cmd);
 		}
 		
 		RETURN_META(MRES_SUPERCEDE);

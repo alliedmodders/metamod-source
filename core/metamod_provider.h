@@ -98,7 +98,7 @@ namespace SourceMM
 		/**
 		 * @brief Called when a client executes "meta" as a ClientCommand
 		 */
-		virtual bool OnCommand_ClientMeta(edict_t* client, IMetamodSourceCommandInfo* info) = 0;
+		virtual bool OnCommand_ClientMeta(MMSPlayer_t player, IMetamodSourceCommandInfo* info) = 0;
 	};
 
 	class IMetamodSourceProvider
@@ -150,10 +150,10 @@ namespace SourceMM
 		/**
 		 * @brief Prints text in the specified client's console.
 		 *
-		 * @param client			Client edict pointer.
+		 * @param player			Player identifier
 		 * @param msg				Message string.
 		 */
-		virtual void ClientConsolePrint(edict_t *client, const char *msg) =0;
+		virtual void ClientConsolePrint(MMSPlayer_t player, const char *msg) =0;
 
 		/**
 		 * @brief Halts the server with a fatal error message.

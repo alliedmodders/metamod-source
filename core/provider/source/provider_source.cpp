@@ -347,7 +347,7 @@ const char* SourceProvider::GetCommandLineValue(const char* key, const char* def
 	return NULL;
 }
 
-void SourceProvider::ClientConsolePrint(edict_t* pEdict, const char* message)
+void SourceProvider::ClientConsolePrint(MMSPlayer_t pEdict, const char* message)
 {
 	engine->ClientPrintf(pEdict, message);
 }

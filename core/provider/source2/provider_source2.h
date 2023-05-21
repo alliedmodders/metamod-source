@@ -52,7 +52,7 @@ public:
 	virtual const char* GetGameDescription() override;
 	virtual const char* GetCommandLineValue(const char* key, const char* defval) override;
 	virtual void ConsolePrint(const char* msg) override;
-	virtual void ClientConsolePrint(edict_t* client, const char* msg) override;
+	virtual void ClientConsolePrint(MMSPlayer_t player, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;
 	virtual MetamodSourceConVar *CreateConVar(const char* name,
 		const char* defval,
@@ -71,14 +71,14 @@ public:
 	void Hook_Init(const GameSessionConfiguration_t &config, const char* pszMapName);
 	CUtlVector<INetworkGameClient *> *Hook_StartChangeLevel(const char*, const char*, void*);
 	void Hook_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const char *pszUnk, bool bUnk);
-	void Hook_ClientCommand(CEntityIndex index, const CCommand& args);
+	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
 private:
 	bool KVLoadFromFile(KeyValues *kv, IFileSystem *filesystem, const char *resourceName, const char *pathID);
 private:
 	IFileSystem* baseFs = nullptr;
 	std::string sLastMap;
 
-	friend void LocalCommand_Meta(const CCommand& args);
+	friend void LocalCommand_Meta(const CCommandContext& context, const CCommand& args);
 };
 
 #endif
