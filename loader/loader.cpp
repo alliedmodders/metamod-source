@@ -206,7 +206,6 @@ void
 mm_GetGameName(char *buffer, size_t size)
 {
 	buffer[0] = '\0';
-	bool bHasDedicated = false;
 
 #if defined _WIN32
 	static char game[128];
@@ -224,10 +223,6 @@ mm_GetGameName(char *buffer, size_t size)
 			wcstombs(buffer, wargv[i], size);
 			buffer[size-1] = '\0';
 		}
-		else if (wcscmp(wargv[i], L"-dedicated") == 0)
-		{
-			bHasDedicated = true;
-		}
 	}
 
 	LocalFree(wargv);
@@ -244,10 +239,6 @@ mm_GetGameName(char *buffer, size_t size)
 
 			strncpy(buffer, argv[i], size);
 			buffer[size-1] = '\0';
-		}
-		else if (strcmp(argv[i], "-dedicated") == 0)
-		{
-			bHasDedicated = true;
 		}
 	}
 
@@ -271,10 +262,6 @@ mm_GetGameName(char *buffer, size_t size)
 			if (strcmp(arg, "-game") == 0)
 			{
 				bNextIsGame = true;
-			}
-			else if (strcmp(arg, "-dedicated") == 0)
-			{
-				bHasDedicated = true;
 			}
 		}
 
