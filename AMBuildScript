@@ -78,7 +78,7 @@ PossibleSDKs = {
   'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
   'pvkii': SDK('HL2SDKPVKII', '2.pvkii', '10', 'PVKII', WinLinux, 'pvkii'),
   'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', Source2, 'dota'),
-  'cs2': SDK('HL2SDKCS2', '2.cs2', '25', 'CS2', [], 'cs2'),
+  'cs2': SDK('HL2SDKCS2', '2.cs2', '25', 'CS2', Source2, 'cs2'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -391,7 +391,7 @@ class MMSConfig(object):
     if compiler.target.arch == 'x86_64':
       compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'pvkii']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'cs2', 'pvkii']:
       if compiler.target.platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
 
@@ -475,7 +475,7 @@ class MMSConfig(object):
         compiler.linkflags += ['-Wl,-z,origin']
       compiler.postlink += [tier1]
 
-      if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
+      if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'cs2', 'dota']:
         if compiler.target.arch == 'x86_64':
           compiler.postlink += [os.path.join(lib_folder, 'interfaces.a')]
         else:
@@ -494,7 +494,7 @@ class MMSConfig(object):
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
       elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'mock']:
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota', 'pvkii']:
+      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'cs2', 'dota', 'pvkii']:
         dynamic_libs = ['libtier0.so']
         if sdk.name not in ['dota', 'cs2']:
           dynamic_libs += ['libvstdlib.so']
@@ -509,7 +509,7 @@ class MMSConfig(object):
       libs = ['tier0', 'tier1']
       if sdk.name not in ['dota', 'cs2']:
         libs += ['vstdlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'mcv', 'csgo', 'dota']:
+      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'mcv', 'csgo', 'cs2', 'dota']:
         libs.append('interfaces')
       if sdk.name == 'bms':
         libs.append('mathlib')

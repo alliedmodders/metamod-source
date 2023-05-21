@@ -328,7 +328,14 @@ public:
 
 	virtual InitReturnVal_t Init()
 	{
-		mm_backend = MMBackend_DOTA;
+		if (!stricmp("csgo", game_name))
+		{
+			mm_backend = MMBackend_CS2;
+		}
+		else
+		{
+			mm_backend = MMBackend_DOTA;
+		}
 
 		char error[255];
 		if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
@@ -454,7 +461,7 @@ public:
 						 QueryValveInterface fileSystemFactory, 
 						 void *pGlobals)
 	{
-		mm_backend = mm_DetermineBackend(engineFactory, gamedll_qvi, game_name);
+		mm_backend = mm_DetermineBackendS1(engineFactory, gamedll_qvi, game_name);
 
 		char error[255];
 		if (mm_backend == MMBackend_UNKNOWN)

@@ -215,7 +215,9 @@ const char* Source2Provider::GetEngineDescription() const
 
 void Source2Provider::GetGamePath(char* pszBuffer, int len)
 {
-	ke::SafeSprintf(pszBuffer, len, "%s", Plat_GetGameDirectory());
+	CBufferStringGrowable<MAX_PATH> buf;
+	engine->GetGameDir(buf);
+	ke::SafeSprintf(pszBuffer, len, "%s", buf.Get());
 }
 
 const char* Source2Provider::GetGameDescription()

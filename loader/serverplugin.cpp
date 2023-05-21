@@ -90,7 +90,7 @@ public:
 		{
 			mm_GetGameName(game_name, sizeof(game_name));
 
-			mm_backend = mm_DetermineBackend(engineFactory, gsFactory, game_name);
+			mm_backend = mm_DetermineBackendS1(engineFactory, gsFactory, game_name);
 			if (mm_backend == MMBackend_Mock)
 				strcpy(game_name, "mock");
 		}
@@ -139,8 +139,7 @@ public:
 			&& mm_backend != MMBackend_Insurgency
 			&& mm_backend != MMBackend_DOI
 			&& mm_backend != MMBackend_CSGO
-			&& mm_backend != MMBackend_MCV
-			&& mm_backend != MMBackend_DOTA)
+			&& mm_backend != MMBackend_MCV)
 		{
 			SourceHook::MemFuncInfo mfp_fconnect;
 			mfp_fconnect.isVirtual = false;
