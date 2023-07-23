@@ -26,11 +26,6 @@ jobs:
             compiler_cc: clang-6.0
             compiler_cxx: clang++-6.0
             compiler_install: clang-6.0
-          - os: ubuntu-20.04
-            os_short: linux
-            compiler_cc: gcc-7
-            compiler_cxx: g++-7
-            compiler_install: 'gcc-7 g++7 g++-7-multilib'
           - os: macos-latest
             os_short: mac
             compiler_cc: clang
