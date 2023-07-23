@@ -13,20 +13,20 @@ jobs:
         include:
           - os: windows-latest
             os_short: windows
-            compiler_cc: msvc-vs2019
-          - os: windows-2016
+            compiler_cc: msvc-vs2022
+          - os: windows-2019
             os_short: windows
-            compiler_cc: msvc-vs2017
+            compiler_cc: msvc-vs2019
           - os: ubuntu-latest
             os_short: linux
             compiler_cc: clang
             compiler_cxx: clang++
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             os_short: linux
             compiler_cc: clang-3.9
             compiler_cxx: clang++-3.9
             compiler_install: clang-3.9
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             os_short: linux
             compiler_cc: gcc-6
             compiler_cxx: g++-6
