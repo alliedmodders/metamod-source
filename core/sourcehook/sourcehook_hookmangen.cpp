@@ -32,22 +32,14 @@
 
 // :TODO: test BIG vtable indices
 
+#define DOWNCASTPTR(x) reinterpret_cast<jit_int32_t>(x)
+#define DOWNCASTSIZE(x) static_cast<jit_uint32_t>(size)
+
 namespace SourceHook
 {
 	namespace Impl
 	{
 		CPageAlloc GenBuffer::ms_Allocator(16);
-
-		template <class T>
-		inline jit_int32_t DownCastPtr(T ptr)
-		{
-			return reinterpret_cast<jit_int32_t>(ptr);
-		}
-
-		inline jit_uint32_t DownCastSize(size_t size)
-		{
-			return static_cast<jit_uint32_t>(size);
-		}
 
 		GenContext::GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
 			: m_GeneratedPubFunc(NULL), m_OrigProto(proto), m_Proto(proto), m_VtblOffs(vtbl_offs),
@@ -175,8 +167,8 @@ namespace SourceHook
 
 		void GenContext::BitwiseCopy_Do(size_t size)
 		{
-			jit_uint32_t dwords = DownCastSize(size) / 4;
-			jit_uint32_t bytes = DownCastSize(size) % 4;
+			jit_uint32_t dwords = DOWNCASTSIZE(size) / 4;
+			jit_uint32_t bytes = DOWNCASTSIZE(size) % 4;
 
 			//if dwords
 			// mov ecx, <dwords>
@@ -399,7 +391,7 @@ namespace SourceHook
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
 				// call
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(pi.pCopyCtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EDX, DOWNCASTPTR(pi.pCopyCtor));
 				IA32_Call_Reg(&m_HookFunc, REG_EDX);
 
 				// gcc: clean up stack
@@ -452,7 +444,7 @@ namespace SourceHook
 					jit_int32_t tmpAlign = AlignStackBeforeCall(0, AlignStack_GCC_ThisOnStack);
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, fbrr_base + GetForcedByRefParamOffset(i));
 					IA32_Push_Reg(&m_HookFunc, REG_ECX);
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(pi.pDtor));
 					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					IA32_Pop_Reg(&m_HookFunc, REG_ECX);
@@ -570,7 +562,7 @@ namespace SourceHook
 						IA32_Push_Reg(&m_HookFunc, REG_EDX);
 						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
-						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pAssignOperator));
 						CheckAlignmentBeforeCall();
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
 						GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
@@ -602,7 +594,7 @@ namespace SourceHook
 
 						IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_place_for_memret);
 						GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+						IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pDtor));
 						CheckAlignmentBeforeCall();
 						IA32_Call_Reg(&m_HookFunc, REG_EAX);
 						GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
@@ -754,7 +746,7 @@ namespace SourceHook
 					IA32_Push_Reg(&m_HookFunc, REG_EAX);
 #endif
 
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pAssignOperator));
 					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
@@ -905,7 +897,7 @@ namespace SourceHook
 					IA32_Push_Rm_DispAuto(&m_HookFunc, REG_EBP, v_memret_outaddr);
 #endif
 
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pCopyCtor));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pCopyCtor));
 					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2 * SIZE_PTR, MOD_REG));
@@ -1120,7 +1112,7 @@ namespace SourceHook
 			{
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_va_buf);
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
-				IA32_Push_Imm32(&m_HookFunc, DownCastPtr("%s"));
+				IA32_Push_Imm32(&m_HookFunc, DOWNCASTPTR("%s"));
 				caller_clean_bytes += 2*SIZE_PTR;
 			}
 
@@ -1207,7 +1199,7 @@ namespace SourceHook
 					IA32_Push_Reg(&m_HookFunc, REG_EDX);
 					GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pAssignOperator));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pAssignOperator));
 					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
 					GCC_ONLY(IA32_Add_Rm_ImmAuto(&m_HookFunc, REG_ESP, 2*SIZE_PTR, MOD_REG));
@@ -1281,17 +1273,17 @@ namespace SourceHook
 			IA32_Push_Reg(&m_HookFunc, REG_EAX);
 
 			// *m_pHI
-			IA32_Mov_Rm_Imm32(&m_HookFunc, REG_EDX, DownCastPtr(m_pHI), MOD_REG);
+			IA32_Mov_Rm_Imm32(&m_HookFunc, REG_EDX, DOWNCASTPTR(m_pHI), MOD_REG);
 			IA32_Mov_Reg_Rm(&m_HookFunc, REG_EAX, REG_EDX, MOD_MEM_REG);
 			IA32_Push_Reg(&m_HookFunc, REG_EAX);
 
 			// set up thisptr
 #if SH_COMP == SH_COMP_GCC
 			//  on gcc/mingw, this is the first parameter
-			GCC_ONLY(IA32_Push_Imm32(&m_HookFunc, DownCastPtr(m_SHPtr)));
+			GCC_ONLY(IA32_Push_Imm32(&m_HookFunc, DOWNCASTPTR(m_SHPtr)));
 #elif SH_COMP == SH_COMP_MSVC
 			//  on msvc, it's ecx
-			IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, DownCastPtr(m_SHPtr));
+			IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, DOWNCASTPTR(m_SHPtr));
 #endif
 
 			// call the function. vtbloffs = 0, vtblidx = 19
@@ -1319,10 +1311,10 @@ namespace SourceHook
 			// thisptr
 #if SH_COMP == SH_COMP_GCC
 			//  on gcc/mingw, this is the first parameter
-			IA32_Push_Imm32(&m_HookFunc, DownCastPtr(m_SHPtr));
+			IA32_Push_Imm32(&m_HookFunc, DOWNCASTPTR(m_SHPtr));
 #elif SH_COMP == SH_COMP_MSVC
 			//  on msvc, it's ecx
-			IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, DownCastPtr(m_SHPtr));
+			IA32_Mov_Reg_Imm32(&m_HookFunc, REG_ECX, DOWNCASTPTR(m_SHPtr));
 #endif
 
 			// get vtptr into edx  --  we know shptr on jit time -> dereference it here!
@@ -1527,7 +1519,7 @@ namespace SourceHook
 				IA32_Push_Reg(&m_HookFunc, REG_ECX);
 				
 				// call
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(&vsnprintf));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(&vsnprintf));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 
@@ -1550,7 +1542,7 @@ namespace SourceHook
 				// orig_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pNormalCtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
@@ -1558,7 +1550,7 @@ namespace SourceHook
 				// override_reg
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pNormalCtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
@@ -1566,7 +1558,7 @@ namespace SourceHook
 				// plugin_ret
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pNormalCtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pNormalCtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
@@ -1611,7 +1603,7 @@ namespace SourceHook
 					(pi.flags & PassInfo::PassFlag_ByVal) && !(pi.flags & PassFlag_ForcedByRef))
 				{
 					IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, cur_param_pos);
-					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(pi.pDtor));
+					IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(pi.pDtor));
 					GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
 					CheckAlignmentBeforeCall();
 					IA32_Call_Reg(&m_HookFunc, REG_EAX);
@@ -1638,21 +1630,21 @@ namespace SourceHook
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_plugin_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pDtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_override_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pDtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
 
 				IA32_Lea_DispRegImmAuto(&m_HookFunc, REG_ECX, REG_EBP, v_orig_ret);
 				GCC_ONLY(IA32_Push_Reg(&m_HookFunc, REG_ECX));
-				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DownCastPtr(m_Proto.GetRet().pDtor));
+				IA32_Mov_Reg_Imm32(&m_HookFunc, REG_EAX, DOWNCASTPTR(m_Proto.GetRet().pDtor));
 				CheckAlignmentBeforeCall();
 				IA32_Call_Reg(&m_HookFunc, REG_EAX);
 				GCC_ONLY(IA32_Pop_Reg(&m_HookFunc, REG_ECX));
@@ -1736,7 +1728,7 @@ namespace SourceHook
 			m_PubFunc.start_count(counter);
 
 			// nonzero -> store hi
-			IA32_Mov_Rm_Imm32(&m_PubFunc, REG_EDX, DownCastPtr(m_pHI), MOD_REG);
+			IA32_Mov_Rm_Imm32(&m_PubFunc, REG_EDX, DOWNCASTPTR(m_pHI), MOD_REG);
 			IA32_Mov_Rm_Reg(&m_PubFunc, REG_EDX, REG_ECX, MOD_MEM_REG);
 
 			// zero
@@ -1750,8 +1742,8 @@ namespace SourceHook
 
 			// nonzero -> call vfunc
 			//  push params in reverse order
-			IA32_Push_Imm32(&m_PubFunc, DownCastPtr(m_HookfuncVfnptr));
-			IA32_Push_Imm32(&m_PubFunc, DownCastPtr(m_BuiltPI));
+			IA32_Push_Imm32(&m_PubFunc, DOWNCASTPTR(m_HookfuncVfnptr));
+			IA32_Push_Imm32(&m_PubFunc, DOWNCASTPTR(m_BuiltPI));
 			IA32_Push_Imm32(&m_PubFunc, m_VtblIdx);
 			IA32_Push_Imm32(&m_PubFunc, m_VtblOffs);
 			IA32_Push_Imm32(&m_PubFunc, SH_HOOKMAN_VERSION);
