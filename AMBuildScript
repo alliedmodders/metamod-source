@@ -217,8 +217,6 @@ class MMSConfig(object):
       if (cxx.version >= 'gcc-4.0') or cxx.family == 'clang':
         cxx.cflags += ['-fvisibility=hidden']
         cxx.cxxflags += ['-fvisibility-inlines-hidden']
-        if cxx.version >= 'gcc-6.0':
-          cxx.cxxflags += ['-fpermissive']
       cxx.cxxflags += [
         '-fno-exceptions',
         '-fno-rtti',
