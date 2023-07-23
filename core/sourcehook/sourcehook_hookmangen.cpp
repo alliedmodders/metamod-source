@@ -39,12 +39,12 @@ namespace SourceHook
 		CPageAlloc GenBuffer::ms_Allocator(16);
 
 		template <class T>
-		jit_int32_t DownCastPtr(T ptr)
+		inline jit_int32_t DownCastPtr(T ptr)
 		{
 			return reinterpret_cast<jit_int32_t>(ptr);
 		}
 
-		jit_uint32_t DownCastSize(size_t size)
+		inline jit_uint32_t DownCastSize(size_t size)
 		{
 			return static_cast<jit_uint32_t>(size);
 		}
