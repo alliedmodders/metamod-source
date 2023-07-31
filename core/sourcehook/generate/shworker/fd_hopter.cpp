@@ -70,7 +70,7 @@ expansion.
  Installation (for VC6, if you want to use .HOH as the extension instead):
  Go into the registry and change 
  HKEY_CURRENT_USER\Software\Microsoft\DevStudio\6.0\Text Editor\Tabs/Language Settings\C/C++\FileExtensions from cpp;cxx;c;h;hxx;hpp;inl;tlh;tli;rc;rc2 
- to cpp;cxx;c;h;hxx;hpp;inl;tlh;tli;rc;rc2;hoh by adding “;hoh” to the end.
+ to cpp;cxx;c;h;hxx;hpp;inl;tlh;tli;rc;rc2;hoh by adding ï¿½;hohï¿½ to the end.
  Then add this as a custom build step to the main file of your project:
  hopter $(InputDir)\*.hoh $(InputDir)\*.h
 
@@ -79,6 +79,7 @@ expansion.
 #include <string>
 #include <stdarg.h>
 #include <stdio.h>
+#include <cstring>
 
 // This is a quick-n-dirty implementation of a CString replacement.
 // It promises nothing more than to provide enough functionality to get
@@ -327,7 +328,7 @@ void PrintVarArgs(FILE *fout, CString bigblock, int num) {
 	bigblock.Replace("@INVOKEARGS,", invokelist + commastr);
 	bigblock.Replace("@INVOKEARGS", invokelist);
 
-	fprintf(fout, bigblock);				
+	fputs(bigblock, fout);				
 }
 
 int action_hopter(int numargs, const char *filenamein, const char *filenameout)

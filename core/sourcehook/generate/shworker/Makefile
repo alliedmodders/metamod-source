@@ -1,4 +1,4 @@
-CPP = gcc
+CPP = clang
 
 default: shworker
 
