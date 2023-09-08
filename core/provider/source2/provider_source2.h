@@ -73,8 +73,6 @@ public:
 	void Hook_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const char *pszUnk, bool bUnk);
 	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
 private:
-	bool KVLoadFromFile(KeyValues *kv, IFileSystem *filesystem, const char *resourceName, const char *pathID);
-private:
 	IFileSystem* baseFs = nullptr;
 	std::string sLastMap;
 
