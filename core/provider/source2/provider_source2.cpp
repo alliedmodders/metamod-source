@@ -354,36 +354,6 @@ void LocalCommand_Meta(const CCommandContext &, const CCommand& args)
 	}
 }
 
-bool Source2Provider::KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID)
-{
-	Assert(filesystem);
-#ifdef _MSC_VER
-	Assert(_heapchk() == _HEAPOK);
-#endif
-
-	FileHandle_t f = filesystem->Open(resourceName, "rb", pathID);
-	if (!f)
-		return false;
-
-	// load file into a null-terminated buffer
-	int fileSize = filesystem->Size(f);
-	char* buffer = (char*)MemAllocScratch(fileSize + 1);
-
-	Assert(buffer);
-
-	filesystem->Read(buffer, fileSize, f); // read into local buffer
-
-	buffer[fileSize] = 0; // null terminate file as EOF
-
-	filesystem->Close(f);	// close file after reading
-
-	bool retOK = kv->LoadFromBuffer(resourceName, buffer, filesystem);
-
-	MemFreeScratch();
-
-	return retOK;
-}
-
 void Source2Provider::Hook_StartupServer_Post(const GameSessionConfiguration_t &config, ISource2WorldSession *, const char *)
 {
 	static bool bGameServerHooked = false;
