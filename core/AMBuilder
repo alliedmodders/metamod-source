@@ -27,7 +27,11 @@ for sdk_name in MMS.sdks:
     ]
 
     if sdk_name in ['dota', 'cs2']:
-      binary.sources += ['provider/source2/provider_source2.cpp']
+      binary.sources += [
+	    'provider/source2/provider_source2.cpp',
+		os.path.join(sdk.path, 'tier1', 'convar.cpp'),
+		os.path.join(sdk.path, 'public', 'tier0', 'memoverride.cpp')
+	  ]
     else:
       binary.sources += [
         'provider/source/provider_source.cpp',
