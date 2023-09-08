@@ -88,40 +88,51 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		mm_LogMessage("Unable to find \"%s\": .vdf files will not be parsed", FILESYSTEM_INTERFACE_VERSION);
 	}
 
-#if 0
 	// Since we have to be added as a Game path (cannot add GameBin directly), we
 	// automatically get added to other paths as well, including having the MM:S
 	// dir become the default write path for logs and more. We can fix some of these.
+	
+	// GAMMACASE: This deals with the search paths where metamod could get added to, but there are still
+	// problems with this as console.log file for example would be created way earlier than we alter these search paths,
+	// and will be created in the metamod folder still, unsure what the solution to that could be tho!
 
-	char searchPath[260];
-	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
-	for (size_t i = 0; i < sizeof(searchPath); ++i)
+	// NOTE: baseFs->PrintSearchPaths(); could be used to print out search paths to debug them.
+
+	const char *pathIds[] = {
+		"ADDONS",
+		"CONTENT",
+		"CONTENTADDONS",
+		"CONTENTROOT",
+		"EXECUTABLE_PATH",
+		"GAME",
+		"GAMEBIN",
+		"GAMEROOT",
+		"MOD",
+		"PLATFORM",
+		"SHADER_SOURCE",
+		"SHADER_SOURCE_MOD",
+		"SHADER_SOURCE_ROOT"
+	};
+
+	for(int id = 0; id < (sizeof(pathIds) / sizeof(pathIds[0])); id++)
 	{
-		if (searchPath[i] == ';')
+		CUtlVector<CUtlString> searchPaths;
+		baseFs->GetSearchPathsForPathID(pathIds[id], (GetSearchPathTypes_t)0, searchPaths);
+
+		FOR_EACH_VEC(searchPaths, i)
 		{
-			searchPath[i] = '\0';
-			break;
+			if(strstr(searchPaths[i].Get(), "metamod") != 0)
+			{
+				baseFs->RemoveSearchPath(searchPaths[i].Get(), pathIds[id]);
+			}
 		}
 	}
-	baseFs->RemoveSearchPath(searchPath, "GAME");
-
-	// TODO: figure out why these calls get ignored and path remains
-	//baseFs->RemoveSearchPath(searchPath, "CONTENT");
-	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE");
-	//baseFs->RemoveSearchPath(searchPath, "SHADER_SOURCE_MOD");
 
 	baseFs->RemoveSearchPaths("DEFAULT_WRITE_PATH");
-	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, sizeof(searchPath));
-	for (size_t i = 0; i < sizeof(searchPath); ++i)
-	{
-		if (searchPath[i] == ';')
-		{
-			searchPath[i] = '\0';
-			break;
-		}
-	}
-	baseFs->AddSearchPath(searchPath, "DEFAULT_WRITE_PATH");
-#endif
+
+	CBufferStringGrowable<260> searchPath;
+	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, 1);
+	baseFs->AddSearchPath(searchPath.Get(), "DEFAULT_WRITE_PATH");
 
 	g_pCVar = icvar;
 
