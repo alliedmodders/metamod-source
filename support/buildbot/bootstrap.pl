@@ -13,8 +13,14 @@ use FindBin;
 use lib $FindBin::Bin;
 require 'helpers.pm';
 
+#Go back to tree root.
+my ($result);
+chdir(Build::PathFormat('../..'));
+$result = `git submodule update --init --recursive`;
+print "$result\n";
+
 #Go back above build dir
-chdir(Build::PathFormat('../../..'));
+chdir(Build::PathFormat('..'));
 
 #Get the source path.
 our ($root) = getcwd();
