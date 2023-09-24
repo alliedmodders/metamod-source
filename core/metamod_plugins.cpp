@@ -27,7 +27,7 @@
 
 #include <memory>
 
-#include <amtl/am-string.h>
+#include <am-string.h>
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include "metamod_plugins.h"
