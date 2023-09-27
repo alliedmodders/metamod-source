@@ -26,6 +26,7 @@
  */
 
 #include "provider_source.h"
+#include "metamod_util.h"
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 #else

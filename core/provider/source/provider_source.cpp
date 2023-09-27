@@ -30,6 +30,11 @@
 #include <KeyValues.h>
 #include <filesystem.h>
 
+#if SOURCE_ENGINE == SE_EPISODEONE
+#include <tier0/icommandline.h>
+#include <setjmp.h>
+#endif
+
 ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 static SourceProvider g_SourceProvider;
@@ -106,7 +111,7 @@ void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	CacheUserMessages();
 
 #if SOURCE_ENGINE < SE_ORANGEBOX
-	if (!g_SMConVarAccessor.InitConCommandBaseList())
+	if (!m_ConVarAccessor.InitConCommandBaseList())
 	{
 		/* This is very unlikely considering it's old engine */
 		mm_LogMessage("[META] Warning: Failed to find ConCommandBase list!");
@@ -234,7 +239,7 @@ int SourceProvider::DetermineSourceEngine()
 #elif SOURCE_ENGINE == SE_BMS
 	return SOURCE_ENGINE_BMS;
 #elif SOURCE_ENGINE == SE_EPISODEONE
-	return g_bOriginalEngine ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
+	return bOriginalEngine ? SOURCE_ENGINE_ORIGINAL : SOURCE_ENGINE_EPISODEONE;
 #elif SOURCE_ENGINE == SE_MOCK
 	return SOURCE_ENGINE_MOCK;
 #elif SOURCE_ENGINE == SE_PVKII
@@ -289,7 +294,7 @@ const char* SourceProvider::GetEngineDescription() const
 #elif SOURCE_ENGINE == SE_CSGO
 	return "Counter-Strike: Global Offensive (2012)";
 #elif SOURCE_ENGINE == SE_EPISODEONE
-	if (g_bOriginalEngine)
+	if (bOriginalEngine)
 	{
 		return "Original (pre-Episode 1)";
 	}
@@ -467,7 +472,11 @@ void LocalCommand_Meta()
 
 	if (nullptr != g_SourceProvider.m_pCallbacks)
 	{
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 		GlobCommand cmd(&args);
+#else
+		GlobCommand cmd;
+#endif
 		g_SourceProvider.m_pCallbacks->OnCommand_Meta(&cmd);
 	}
 }
