@@ -35,7 +35,12 @@
 #include <setjmp.h>
 #endif
 
-ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+static void LocalCommand_Meta(const CCommand& args);
+#else
+static void LocalCommand_Meta();
+#endif
+static ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
 
 static SourceProvider g_SourceProvider;
 
