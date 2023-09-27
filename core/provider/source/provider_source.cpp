@@ -29,9 +29,9 @@
 #include <metamod_console.h>
 #include <KeyValues.h>
 #include <filesystem.h>
+#include <tier0/icommandline.h>
 
 #if SOURCE_ENGINE == SE_EPISODEONE
-#include <tier0/icommandline.h>
 #include <setjmp.h>
 #endif
 
