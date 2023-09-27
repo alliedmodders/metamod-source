@@ -33,6 +33,8 @@
 #include <vector>
 #include <sh_list.h>
 
+class IFileSystem;
+
 class SourceProvider : public BaseProvider
 {
 public: // BaseProvider
@@ -101,7 +103,6 @@ private:
 	};
 private:
 	void CacheUserMessages();
-	void Detour_Error(const tchar* pMsg, ...);
 	bool KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID = nullptr);
 	inline bool IsUserMessageIterationSupported() const
 	{

@@ -482,7 +482,7 @@ void SourceProvider::CacheUserMessages()
 static jmp_buf usermsg_end;
 
 /* This only gets called if IServerGameDLL::GetUserMessageInfo() triggers it */
-void SourceProvider::Detour_Error(const tchar* pMsg, ...)
+void Detour_Error(const tchar* pMsg, ...)
 {
 	/* Jump back to setjmp() in CacheUserMessages() */
 	longjmp(usermsg_end, 1);
