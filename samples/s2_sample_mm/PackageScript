@@ -1,0 +1,49 @@
+# vim: set ts=2 sw=2 tw=99 noet ft=python: 
+import os
+
+builder.SetBuildFolder('package')
+
+metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
+bin_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin')
+bin_folder = builder.AddFolder(bin_folder_path)
+
+for cxx in MMSPlugin.all_targets:
+  if cxx.target.arch == 'x86_64':
+    if cxx.target.platform == 'windows':
+      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
+      bin64_folder = builder.AddFolder(bin64_folder_path)
+    elif cxx.target.platform == 'linux':
+      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
+      bin64_folder = builder.AddFolder(bin64_folder_path)
+    elif cxx.target.platform == 'mac':
+      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
+      bin64_folder = builder.AddFolder(bin64_folder_path)
+
+pdb_list = []
+for task in MMSPlugin.binaries:
+  # This hardly assumes there's only 1 targetted platform and would be overwritten
+  # with whatever comes last if multiple are used!
+  with open(os.path.join(builder.buildPath, MMSPlugin.plugin_name + '.vdf'), 'w') as fp:
+    fp.write('"Metamod Plugin"\n')
+    fp.write('{\n')
+    fp.write(f'\t"alias"\t"{MMSPlugin.plugin_alias}"\n')
+    if task.target.arch == 'x86_64':
+      fp.write(f'\t"file"\t"{os.path.join(bin64_folder_path, MMSPlugin.plugin_name)}"\n')
+    else:
+      fp.write(f'\t"file"\t"{os.path.join(bin_folder_path, MMSPlugin.plugin_name)}"\n')
+    fp.write('}\n')
+
+  if task.target.arch == 'x86_64':
+    builder.AddCopy(task.binary, bin64_folder)
+  else:
+    builder.AddCopy(task.binary, bin_folder)
+
+  if task.debug:
+    pdb_list.append(task.debug)
+
+builder.AddCopy(os.path.join(builder.buildPath, MMSPlugin.plugin_name + '.vdf'), metamod_folder)
+
+# Generate PDB info.
+with open(os.path.join(builder.buildPath, 'pdblog.txt'), 'wt') as fp:
+  for line in pdb_list:
+    fp.write(line.path + '\n')
