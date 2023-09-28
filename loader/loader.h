@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2015 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2023 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -106,6 +106,7 @@ enum MetamodBackend
 	MMBackend_Mock,
 	MMBackend_PVKII,
 	MMBackend_MCV,
+	MMBackend_CS2,
 	MMBackend_UNKNOWN
 };
 
@@ -125,7 +126,7 @@ extern void
 mm_GetGameName(char *buffer, size_t size);
 
 extern MetamodBackend
-mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serverFactory, const char *game_name);
+mm_DetermineBackendS1(QueryValveInterface engineFactory, QueryValveInterface serverFactory, const char *game_name);
 
 extern MetamodBackend mm_backend;
 

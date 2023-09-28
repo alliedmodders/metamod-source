@@ -28,25 +28,13 @@
 
 namespace SourceMM
 {
+	class MetamodSourceConVar;
+
 	enum
 	{
 		ConVarFlag_None = 0,
 		ConVarFlag_Notify = 1,
 		ConVarFlag_SpOnly = 2,
-	};
-
-	enum ProvidedHooks
-	{
-#if SOURCE_ENGINE == SE_DOTA
-		ProvidedHook_StartChangeLevel = 0,
-		ProvidedHook_Init = 1,
-		ProvidedHook_StartupServer = 2,
-		ProvidedHook_SwitchToLoop = 3,
-#else
-		ProvidedHook_LevelInit = 0,			/**< IServerGameDLL::LevelInit */
-		ProvidedHook_LevelShutdown = 1,		/**< IServerGameDLL::LevelShutdown */
-		ProvidedHook_GameInit = 4,			/**< IServerGameDLL::GameInit */
-#endif
 	};
 
 	/**
@@ -80,9 +68,49 @@ namespace SourceMM
 		virtual const char *GetArgString() =0;
 	};
 
+	/**
+     * @brief Interface for Metamod:Source to provide callbacks to the 
+	 * provider.
+	 */
+	class IMetamodSourceProviderCallbacks
+	{
+	public:
+		/**
+		 * @brief Called before the server DLL handles game initialization.
+		 */
+		virtual void OnGameInit() = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map initialization.
+		 */
+		virtual void OnLevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel, char const* pLandmarkName, bool loadGame, bool background) = 0;
+
+		/**
+		 * @brief Called after the server DLL has completed handling level/map shut down.
+		 */
+		virtual void OnLevelShutdown() = 0;
+
+		/**
+		 * @brief Called when the ConCommand "meta" is executed
+		 */
+		virtual bool OnCommand_Meta(IMetamodSourceCommandInfo* info) = 0;
+
+		/**
+		 * @brief Called when a client executes "meta" as a ClientCommand
+		 */
+		virtual bool OnCommand_ClientMeta(MMSPlayer_t player, IMetamodSourceCommandInfo* info) = 0;
+	};
+
 	class IMetamodSourceProvider
 	{
 	public:
+		/**
+		 * @brief Set the callback interface for the provider to call into.
+		 * 
+		 * @param pCallbacks		Pointer to callback interface implementation.
+		 */
+		virtual void SetCallbacks(IMetamodSourceProviderCallbacks* pCallbacks) = 0;
+
 		/**
 		 * @brief Returns whether source engine build is compatible.
 		 *
@@ -90,18 +118,6 @@ namespace SourceMM
 		 * @return					True if compatible, false otherwise.
 		 */
 		virtual bool IsSourceEngineBuildCompatible(int build) =0;
-
-		/**
-		 * @brief Retrieves hook information for each callback.  Each hook 
-		 * must be implemented.
-		 *
-		 * @param hook				Hook information to provide.
-		 * @param pInfo				Non-NULL pointer to fill with information 
-		 * 							about the hook's virtual location.
-		 * @return					True if supported, false to fail, which 
-		 * 							will cause Metamod:Source to fail.
-		 */
-		virtual bool GetHookInfo(ProvidedHooks hook, SourceHook::MemFuncInfo *pInfo) =0;
 
 		/**
 		 * @brief Logs a message via IVEngineServer::LogPrint.
@@ -132,20 +148,12 @@ namespace SourceMM
 		virtual void ConsolePrint(const char *msg) =0;
 
 		/**
-		 * @brief Returns whether remote printing is available.
-		 *
-		 * @return					True if remote printing is available, 
-		 * 							otherwise returns false.
-		 */
-		virtual bool IsRemotePrintingAvailable() =0;
-
-		/**
 		 * @brief Prints text in the specified client's console.
 		 *
-		 * @param client			Client edict pointer.
+		 * @param player			Player identifier
 		 * @param msg				Message string.
 		 */
-		virtual void ClientConsolePrint(edict_t *client, const char *msg) =0;
+		virtual void ClientConsolePrint(MMSPlayer_t player, const char *msg) =0;
 
 		/**
 		 * @brief Halts the server with a fatal error message.
@@ -166,6 +174,16 @@ namespace SourceMM
 		 * @param ...				Format parameters.
 		 */
 		virtual void DisplayWarning(const char *fmt, ...) =0;
+
+		/**
+		 * @brief Sends the server a developer message.
+		 *
+		 * No newline is appended.
+		 *
+		 * @param fmt				Formatted message string.
+		 * @param ...				Format parameters.
+		 */
+		virtual void DisplayDevMsg(const char* fmt, ...) = 0;
 
 		/**
 		 * @brief Attempts to notify the provider of the gamedll version being 
@@ -199,7 +217,7 @@ namespace SourceMM
 		 * @param help				Help text.
 		 * @return					ConVar pointer.
 		 */
-		virtual ConVar *CreateConVar(const char *name, 
+		virtual MetamodSourceConVar *CreateConVar(const char *name,
 			const char *defval, 
 			const char *help,
 			int flags) =0;
@@ -210,7 +228,7 @@ namespace SourceMM
 		 * @param convar			ConVar pointer.
 		 * @return					String value.
 		 */
-		virtual const char *GetConVarString(ConVar *convar) =0;
+		virtual const char *GetConVarString(MetamodSourceConVar *convar) =0;
 
 		/**
 		 * @brief Sets a ConVar string.
@@ -218,7 +236,7 @@ namespace SourceMM
 		 * @param convar			ConVar pointer.
 		 * @param str				String pointer.
 		 */
-		virtual void SetConVarString(ConVar *convar, const char *str) =0;
+		virtual void SetConVarString(MetamodSourceConVar *convar, const char *str) =0;
 
 		/**
 		 * @brief Retrieves the absolute path to the game directory.
@@ -234,13 +252,6 @@ namespace SourceMM
 		 * @return					Game description.
 		 */
 		virtual const char *GetGameDescription() =0;
-
-		/**
-		 * @brief Returns the ConCommandBase accessor.
-		 *
-		 * @return				An IConCommandBaseAccessor pointer.
-		 */
-		virtual IConCommandBaseAccessor *GetConCommandBaseAccessor() =0;
 
 		/**
 		 * @brief Registers a ConCommandBase.

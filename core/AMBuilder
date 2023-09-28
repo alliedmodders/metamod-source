@@ -17,16 +17,27 @@ for sdk_name in MMS.sdks:
       'metamod_oslink.cpp',
       'metamod_plugins.cpp',
       'metamod_util.cpp',
-      'provider/console.cpp',
-      'provider/provider_ep2.cpp',
+      'provider/provider_base.cpp',
       'sourcehook/sourcehook.cpp',
       'sourcehook/sourcehook_impl_chookidman.cpp',
       'sourcehook/sourcehook_impl_chookmaninfo.cpp',
       'sourcehook/sourcehook_impl_cproto.cpp',
       'sourcehook/sourcehook_impl_cvfnptr.cpp',
-      'gamedll_bridge.cpp',
-      'vsp_bridge.cpp'
+      'gamedll_bridge.cpp'
     ]
+
+    if sdk_name in ['dota', 'cs2']:
+      binary.sources += [
+	    'provider/source2/provider_source2.cpp',
+		os.path.join(sdk.path, 'tier1', 'convar.cpp'),
+		os.path.join(sdk.path, 'public', 'tier0', 'memoverride.cpp')
+	  ]
+    else:
+      binary.sources += [
+        'provider/source/provider_source.cpp',
+        'provider/source/provider_source_console.cpp',
+        'vsp_bridge.cpp'
+        ]
 
     # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
     if binary.compiler.target.arch == 'x86':

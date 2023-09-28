@@ -53,6 +53,7 @@ struct gamedll_bridge_info
 	QueryValveInterface	gsFactory;
 	void *				pGlobals;
 	unsigned int		dllVersion;
+	const char *		dllInterfaceName;
 	void *				isgd;
 	const char *		vsp_listener_path;
 };

@@ -31,10 +31,6 @@
 #include "metamod_provider.h"
 
 bool Command_Meta(IMetamodSourceCommandInfo *info);
-#if SOURCE_ENGINE == SE_DOTA
-bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info);
-#else
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info);
-#endif
+bool Command_ClientMeta(MMSPlayer_t client, IMetamodSourceCommandInfo *info);
 
 #endif //_INCLUDE_CONCOMMANDS_H

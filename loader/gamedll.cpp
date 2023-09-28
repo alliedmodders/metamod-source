@@ -50,6 +50,7 @@ static void *gamedll_lib = NULL;
 static IServerGameDLL *gamedll_iface = NULL;
 static ISource2ServerConfig *config_iface = NULL;
 static QueryValveInterface gamedll_qvi = NULL;
+static char gamedll_iface_name[128] = { 0 };
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
 #if defined _WIN32
@@ -328,7 +329,14 @@ public:
 
 	virtual InitReturnVal_t Init()
 	{
-		mm_backend = MMBackend_DOTA;
+		if (!stricmp("csgo", game_name))
+		{
+			mm_backend = MMBackend_CS2;
+		}
+		else
+		{
+			mm_backend = MMBackend_DOTA;
+		}
 
 		char error[255];
 		if (!mm_LoadMetamodLibrary(mm_backend, error, sizeof(error)))
@@ -354,6 +362,7 @@ public:
 		{
 			g_bridge_info.pGlobals = nullptr;// pGlobals;
 			g_bridge_info.dllVersion = gamedll_version;
+			g_bridge_info.dllInterfaceName = gamedll_iface_name;
 			g_bridge_info.isgd = gamedll_iface;
 			g_bridge_info.gsFactory = gamedll_qvi;
 			g_bridge_info.vsp_listener_path = mm_path;
@@ -454,7 +463,7 @@ public:
 						 QueryValveInterface fileSystemFactory, 
 						 void *pGlobals)
 	{
-		mm_backend = mm_DetermineBackend(engineFactory, gamedll_qvi, game_name);
+		mm_backend = mm_DetermineBackendS1(engineFactory, gamedll_qvi, game_name);
 
 		char error[255];
 		if (mm_backend == MMBackend_UNKNOWN)
@@ -490,6 +499,7 @@ public:
 			g_bridge_info.fsFactory = (QueryValveInterface)fileSystemFactory;
 			g_bridge_info.pGlobals = pGlobals;
 			g_bridge_info.dllVersion = gamedll_version;
+			g_bridge_info.dllInterfaceName = gamedll_iface_name;
 			g_bridge_info.isgd = gamedll_iface;
 			g_bridge_info.gsFactory = gamedll_qvi;
 			g_bridge_info.vsp_listener_path = mm_path;
@@ -800,9 +810,10 @@ mm_GameDllRequest(const char *name, int *ret)
 			return ptr;
 		}
 	}
-	else if (strncmp(name, "Source2Server0", 14) == 0)
+	else if (strncmp(name, "Source2Server", 13) == 0 && atoi(&name[13]) != 0)
 	{
 		gamedll_iface = (IServerGameDLL *)gamedll_qvi(name, ret);
+		strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name));
 		gamedll_version = atoi(&name[13]);
 		mm_PatchDllInit(true);
 
@@ -849,6 +860,7 @@ mm_GameDllRequest(const char *name, int *ret)
 			mm_FreeCachedLibraries();	
 			gamedll_lib = lib;
 			gamedll_iface = (IServerGameDLL *)ptr;
+			strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name));
 			gamedll_qvi = qvi;
 			gamedll_version = atoi(&name[13]);
 			mm_PatchDllInit(true);

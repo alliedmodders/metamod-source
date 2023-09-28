@@ -32,11 +32,9 @@
 #include <loader_bridge.h>
 #include <metamod_version.h>
 #include <sh_string.h>
-#include "provider/provider_ep2.h"
+#include "provider/provider_base.h"
 
-#if SOURCE_ENGINE == SE_DOTA
-SH_DECL_HOOK2_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommandContext &, const CCommand &);
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
 #else
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
@@ -45,10 +43,9 @@ SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
 SourceHook::String vsp_desc("Metamod:Source");
+static char gamedll_iface_name[128] = { 0 };
 
-#if SOURCE_ENGINE == SE_DOTA
-void InterceptPluginUnloads(const CCommandContext &context, const CCommand &args)
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads(const CCommand &args)
 #else
 void InterceptPluginUnloads()
@@ -57,9 +54,7 @@ void InterceptPluginUnloads()
 	g_bIsTryingToUnload = true;
 }
 
-#if SOURCE_ENGINE == SE_DOTA
-void InterceptPluginUnloads_Post(const CCommandContext &context, const CCommand &args)
-#elif SOURCE_ENGINE >= SE_ORANGEBOX
+#if SOURCE_ENGINE >= SE_ORANGEBOX
 void InterceptPluginUnloads_Post(const CCommand &args)
 #else
 void InterceptPluginUnloads_Post()
@@ -90,13 +85,12 @@ public:
 
 			pGlobals = playerInfoManager->GetGlobalVars();
 
-			char gamedll_iface[24];
 			for (unsigned int i = 3; i <= 50; i++)
 			{
-				UTIL_Format(gamedll_iface, sizeof(gamedll_iface), "ServerGameDLL%03d", i);
-				if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface, NULL)) != NULL)
+				UTIL_Format(gamedll_iface_name, sizeof(gamedll_iface_name), "ServerGameDLL%03d", i);
+				if ((server = (IServerGameDLL *)info->gsFactory(gamedll_iface_name, NULL)) != NULL)
 				{
-					g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, i, false);
+					g_Metamod.SetGameDLLInfo((CreateInterfaceFn)info->gsFactory, gamedll_iface_name, i, false);
 					break;
 				}
 			}
@@ -165,13 +159,12 @@ public:
 	virtual void Unload()
 	{
 		// Source2 doesn't have the Error function (nor VSP support).
-#if SOURCE_ENGINE != SE_DOTA
 		if (g_bIsTryingToUnload)
 		{
 			Error("Metamod:Source cannot be unloaded from VSP mode.  Use \"meta unload\" to unload specific plugins.\n");
 			return;
 		}
-#endif
+
 		if (g_plugin_unload != NULL)
 		{
 			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);

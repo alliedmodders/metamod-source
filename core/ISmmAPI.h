@@ -53,6 +53,14 @@ class ConCommandBase;
 #define MMIFACE_SH_HOOKMANAUTOGEN	"IHookManagerAutoGen"		/**< SourceHook::IHookManagerAutoGen Pointer */
 #define IFACE_MAXNUM			999						/**< Maximum interface version */
 
+#if defined META_IS_SOURCE2
+typedef CPlayerSlot MMSPlayer_t;
+static const MMSPlayer_t MMSPlayer_INVALID = CPlayerSlot(-1);
+#else
+typedef edict_t* MMSPlayer_t;
+static const MMSPlayer_t MMSPlayer_INVALID = nullptr;
+#endif
+
 typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 
 class IServerPluginCallbacks;
@@ -255,7 +263,7 @@ namespace SourceMM
 		 * @param client		Client edict pointer.
 		 * @param fmt			Formatted string to print to the client.
 		 */
-		virtual void ClientConPrintf(edict_t *client, const char *fmt, ...) =0;
+		virtual void ClientConPrintf(MMSPlayer_t client, const char *fmt, ...) =0;
 
 		/**
 		 * @brief Wrapper around InterfaceSearch().  Assumes no maximum.

@@ -44,13 +44,9 @@ using namespace SourceHook;
 #define CLIENT_CONMSG	g_Metamod.ClientConPrintf
 template <typename ... Ts>
 
-#if SOURCE_ENGINE == SE_DOTA
-void CMDMSG(int client, const char *pMsg, Ts ... ts)
-#else
-void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
-#endif
+void CMDMSG(MMSPlayer_t client, const char *pMsg, Ts ... ts)
 {
-	if (client)
+	if (client != MMSPlayer_INVALID)
 	{
 		CLIENT_CONMSG(client, pMsg, ts...);
 	}
@@ -60,11 +56,7 @@ void CMDMSG(edict_t *client, const char *pMsg, Ts ... ts)
 	}
 }
 
-#if SOURCE_ENGINE == SE_DOTA
-static void ReplyCredits(int client = 0)
-#else
-static void ReplyCredits(edict_t *client = nullptr)
-#endif
+static void ReplyCredits(MMSPlayer_t client = MMSPlayer_INVALID)
 {
 	CMDMSG(client, "Metamod:Source was developed by:\n");
 	CMDMSG(client, "  SourceHook: Pavol \"PM OnoTo\" Marko\n");
@@ -74,11 +66,7 @@ static void ReplyCredits(edict_t *client = nullptr)
 	CMDMSG(client, "http://www.metamodsource.net/\n");
 }
 
-#if SOURCE_ENGINE == SE_DOTA
-static void ReplyVersion(int client = 0)
-#else
-static void ReplyVersion(edict_t *client = nullptr)
-#endif
+static void ReplyVersion(MMSPlayer_t client = MMSPlayer_INVALID)
 {
 	CMDMSG(client, " Metamod:Source Version Information\n");
 	CMDMSG(client, "    Metamod:Source version %s\n", METAMOD_VERSION);
@@ -131,7 +119,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Description: %s\n", provider->GetGameDescription());
 			CONMSG("  Mod Path: %s\n", g_Metamod.GetBaseDir());
 			CONMSG("  DLL Path: %s\n", g_Metamod.GetGameBinaryPath());
-			CONMSG("  Interface: ServerGameDLL%03d\n", g_Metamod.GetGameDLLVersion());
+			CONMSG("  Interface: %s\n", g_Metamod.GetGameDLLInterfaceName());
 			CONMSG("  Engine: %s\n", provider->GetEngineDescription());
 
 			// Display user messages
@@ -654,11 +642,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 	return true;
 }
 
-#if SOURCE_ENGINE == SE_DOTA
-bool Command_ClientMeta(int client, IMetamodSourceCommandInfo *info)
-#else
-bool Command_ClientMeta(edict_t *client, IMetamodSourceCommandInfo *info)
-#endif
+bool Command_ClientMeta(MMSPlayer_t client, IMetamodSourceCommandInfo *info)
 {
 	const char *cmd = info->GetArg(0);
 

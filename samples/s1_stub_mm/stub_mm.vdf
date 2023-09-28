@@ -1,0 +1,5 @@
+"Metamod Plugin"
+{
+	"alias"		"stub"
+	"file"		"addons/stub_mm"
+}

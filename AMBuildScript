@@ -34,7 +34,7 @@ CSGO = {
   'mac': ['x86_64']
 }
 Source2 = {
-  'windows': ['x86', 'x86_64'],
+  'windows': ['x86_64'],
   'linux': ['x86_64'],
 }
 Insurgency = {
@@ -73,7 +73,6 @@ PossibleSDKs = {
   'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
   'mcv': SDK('HL2SDKMCV', '2.mcv', '22', 'MCV', MCV, 'mcv'),
   'csgo': SDK('HL2SDKCSGO', '2.csgo', '23', 'CSGO', CSGO, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', [], 'dota'),
   'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '18', 'PORTAL2', [], 'portal2'),
   'blade':  SDK('HL2SDKBLADE', '2.blade', '19', 'BLADE', Blade, 'blade'),
   'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '20', 'INSURGENCY', Insurgency, 'insurgency'),
@@ -82,6 +81,8 @@ PossibleSDKs = {
   'bms':  SDK('HL2SDKBMS', '2.bms', '11', 'BMS', WinLinux, 'bms'),
   'mock': SDK('HL2SDK-MOCK', '2.mock', '999', 'MOCK', Mock, 'mock'),
   'pvkii': SDK('HL2SDKPVKII', '2.pvkii', '10', 'PVKII', WinLinux, 'pvkii'),
+  'dota': SDK('HL2SDKDOTA', '2.dota', '24', 'DOTA', Source2, 'dota'),
+  'cs2': SDK('HL2SDKCS2', '2.cs2', '25', 'CS2', Source2, 'cs2'),
 }
 
 def ResolveEnvPath(env, folder):
@@ -394,13 +395,15 @@ class MMSConfig(object):
     if compiler.target.arch == 'x86_64':
       compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
 
-    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'pvkii']:
+    if sdk.name in ['css', 'hl2dm', 'dods', 'sdk2013', 'bms', 'tf2', 'l4d', 'nucleardawn', 'l4d2', 'dota', 'cs2', 'pvkii']:
       if compiler.target.platform in ['linux', 'mac']:
         compiler.defines += ['NO_HOOK_MALLOC', 'NO_MALLOC_OVERRIDE']
 
     if sdk.name in ['csgo', 'blade', 'pvkii'] and compiler.target.platform == 'linux':
       compiler.linkflags += ['-lstdc++']
 
+    if sdk.name in ['dota', 'cs2']:
+      compiler.defines += ['META_IS_SOURCE2']
 
     for path in paths:
       compiler.cxxincludes += [os.path.join(sdk.path, *path)]
@@ -476,7 +479,7 @@ class MMSConfig(object):
         compiler.linkflags += ['-Wl,-z,origin']
       compiler.postlink += [tier1]
 
-      if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
+      if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'cs2', 'dota']:
         if compiler.target.arch == 'x86_64':
           compiler.postlink += [os.path.join(lib_folder, 'interfaces.a')]
         else:
@@ -495,8 +498,10 @@ class MMSConfig(object):
         dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
       elif compiler.target.arch == 'x86_64' and sdk.name in ['csgo', 'mock']:
         dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota', 'pvkii', 'mcv']:
-        dynamic_libs = ['libtier0.so', 'libvstdlib.so']
+      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'cs2', 'dota', 'pvkii', 'mcv']:
+        dynamic_libs = ['libtier0.so']
+        if sdk.name not in ['dota', 'cs2']:
+          dynamic_libs += ['libvstdlib.so']
       else:
         dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
       if sdk.name in ['csgo', 'blade']:
@@ -505,8 +510,10 @@ class MMSConfig(object):
       binary.compiler.linkflags.append('-liconv')
       dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
     elif compiler.target.platform == 'windows':
-      libs = ['tier0', 'tier1', 'vstdlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'mcv', 'csgo', 'dota']:
+      libs = ['tier0', 'tier1']
+      if sdk.name not in ['dota', 'cs2']:
+        libs += ['vstdlib']
+      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'mcv', 'csgo', 'cs2', 'dota']:
         libs.append('interfaces')
       if sdk.name == 'bms':
         libs.append('mathlib')
