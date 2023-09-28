@@ -94,7 +94,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength)
 	return true;
 }
 
-#if defined __GNUC__
+#if defined __GNUC__ && defined(NO_MALLOC_OVERRIDE)
 void * operator new(size_t size) {
 	return malloc(size);
 }
