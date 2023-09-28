@@ -280,7 +280,7 @@ mm_GetGameName(char *buffer, size_t size)
 #elif defined __linux__
 		if (mm_ResolvePath("libtier0.so", tier0_path, sizeof(tier0_path), false))
 #elif defined __APPLE__
-		if (mm_ResolvePath("libtier0.dylib", tier0_path, sizeof(tier0_path), false))#else
+		if (mm_ResolvePath("libtier0.dylib", tier0_path, sizeof(tier0_path), false))
 #error unsupported platform
 #endif
 		{
