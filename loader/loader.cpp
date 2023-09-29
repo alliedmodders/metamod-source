@@ -50,6 +50,12 @@ mm_LogFatal(const char *message, ...)
 	va_list ap;
 	char header[256];
 
+	printf("MMS: Fatal error: ");
+	va_start(ap, message);
+	vprintf(message, ap);
+	va_end(ap);
+	printf("\n");
+
 	fp = fopen(mm_fatal_logfile, "at");
 	if (!fp && (fp = fopen("metamod-fatal.log", "at")) == NULL)
 		return;
@@ -292,16 +298,28 @@ mm_GetGameName(char *buffer, size_t size)
 #ifdef _WIN32
 				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "?GetGameInfoString@@YAPEBDPEBD0PEAD_K@Z");
 #else
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "__Z17GetGameInfoStringPKcS0_Pcm");
+				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "_Z17GetGameInfoStringPKcS0_Pcm");
 #endif
 				if (func != nullptr)
 				{
 					static char szTmp[260];
 					strncpy(buffer, func("FileSystem/SearchPaths/Mod", "", szTmp, sizeof(szTmp)), size);
 				}
+				else
+				{
+					mm_LogFatal("Failed to resolve GetGameInfoString in fallback gamedir lookup.");
+				}
 
 				mm_UnloadLibrary(pTier0);
 			}
+			else
+			{
+				mm_LogFatal("Failed to load tier0 from \"%s\" in fallback gamedir lookup: %s", tier0_path, err);
+			}
+		}
+		else
+		{
+			mm_LogFatal("Failed to resolve tier0 path in fallback gamedir lookup.");
 		}
 	}
 
