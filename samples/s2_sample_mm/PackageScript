@@ -13,10 +13,10 @@ for cxx in MMSPlugin.all_targets:
       bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
       bin64_folder = builder.AddFolder(bin64_folder_path)
     elif cxx.target.platform == 'linux':
-      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
+      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'linuxsteamrt64')
       bin64_folder = builder.AddFolder(bin64_folder_path)
     elif cxx.target.platform == 'mac':
-      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
+      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'osx64')
       bin64_folder = builder.AddFolder(bin64_folder_path)
 
 pdb_list = []
