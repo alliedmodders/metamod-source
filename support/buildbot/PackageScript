@@ -3,6 +3,13 @@ import os
 
 builder.SetBuildFolder('package')
 
+def deduce_target_sdk(path):
+	for sdk_name in MMS.sdks:
+		sdk = MMS.sdks[sdk_name]
+		if ('metamod.' + sdk.ext) in path:
+			return sdk
+	return None
+
 addons_folder = builder.AddFolder('addons')
 metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
 bin_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin'))
@@ -11,14 +18,17 @@ for cxx in MMS.all_targets:
 	if cxx.target.arch == 'x86_64':
 		if cxx.target.platform == 'windows':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'win64'))
+			bin64_s2_folder = bin64_folder
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_win64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
 		elif cxx.target.platform == 'linux':
-			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linuxsteamrt64'))
+			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linux64'))
+			bin64_s2_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linuxsteamrt64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_linux64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
 		elif cxx.target.platform == 'mac':
 			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'osx64'))
+			bin64_s2_folder = bin64_folder
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_osx64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
 
@@ -28,8 +38,15 @@ builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'README.txt'), metam
 
 pdb_list = []
 for task in MMS.binaries:
+	sdk = deduce_target_sdk(task.binary.path)
+
 	if task.target.arch == 'x86_64':
-		builder.AddCopy(task.binary, bin64_folder)
+		# libserver check is a hack to make sure that binary ends up in the correct folder
+		# as s2 folders differ to s1 layout
+		if 'libserver' in task.binary.path or (sdk is not None and sdk.name in ['dota', 'cs2']):
+			builder.AddCopy(task.binary, bin64_s2_folder)
+		else:
+			builder.AddCopy(task.binary, bin64_folder)
 	else:
 		builder.AddCopy(task.binary, bin_folder)
 

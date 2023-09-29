@@ -24,5 +24,6 @@ for cxx in MMS.all_targets:
       configure_library(cxx, 'libserver', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
     elif cxx.target.arch == 'x86':
       configure_library(cxx, 'server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'])
+    configure_library(cxx, 'server', ['LIB_PREFIX=""', 'LIB_SUFFIX=".so"'])
   else:
     configure_library(cxx, 'server', [])
