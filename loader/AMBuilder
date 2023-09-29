@@ -20,9 +20,10 @@ def configure_library(cxx, name, linux_defines):
 
 for cxx in MMS.all_targets:
   if cxx.target.platform == 'linux':
-    if cxx.target.arch == 'x64':
+    if cxx.target.arch == 'x86_64':
       configure_library(cxx, 'libserver', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
     elif cxx.target.arch == 'x86':
       configure_library(cxx, 'server_i486', ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"'])
-
-  configure_library(cxx, 'server', ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"'])
+    configure_library(cxx, 'server', ['LIB_PREFIX=""', 'LIB_SUFFIX=".so"'])
+  else:
+    configure_library(cxx, 'server', [])
