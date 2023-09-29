@@ -68,8 +68,28 @@ const char *UTIL_GetExtension(const char *file)
 	return NULL;
 }
 
+// https://stackoverflow.com/a/217605
+// trim from start (in place)
+static inline void ltrim(std::string& s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string& s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }).base(), s.end());
+}
+
 void UTIL_TrimLeft(char *buffer)
 {
+    std::string s(buffer);
+    ltrim(s);
+    strcpy(buffer, s.c_str());
+
+#if 0
 	/* Let's think of this as our iterator */
 	char *i = buffer;
 
@@ -88,10 +108,16 @@ void UTIL_TrimLeft(char *buffer)
 			memmove(buffer, i, (strlen(i) + 1) * sizeof(char));
 		}
 	}
+#endif 
 }
 
 void UTIL_TrimRight(char *buffer)
 {
+    std::string s(buffer);
+    rtrim(s);
+    strcpy(buffer, s.c_str());
+
+#if 0
 	/* Make sure buffer isn't null */
 	if (buffer)
 	{
@@ -108,6 +134,7 @@ void UTIL_TrimRight(char *buffer)
 			}
 		}
 	}
+#endif
 }
 
 bool UTIL_PathCmp(const char *path1, const char *path2)
