@@ -292,7 +292,7 @@ mm_GetGameName(char *buffer, size_t size)
 #ifdef _WIN32
 				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "?GetGameInfoString@@YAPEBDPEBD0PEAD_K@Z");
 #else
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "__Z17GetGameInfoStringPKcS0_Pcm");
+				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "_Z17GetGameInfoStringPKcS0_Pcm");
 #endif
 				if (func != nullptr)
 				{
