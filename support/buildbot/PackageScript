@@ -14,7 +14,7 @@ for cxx in MMS.all_targets:
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_win64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
 		elif cxx.target.platform == 'linux':
-			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linux64'))
+			bin64_folder = builder.AddFolder(os.path.join('addons', 'metamod', 'bin', 'linuxsteamrt64'))
 			builder.AddCopy(os.path.join(builder.sourcePath, 'support', 'metamod_linux64.vdf'), 
 			                os.path.join('addons', 'metamod_x64.vdf'))
 		elif cxx.target.platform == 'mac':
