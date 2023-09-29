@@ -88,27 +88,6 @@ void UTIL_TrimLeft(char *buffer)
     std::string s(buffer);
     ltrim(s);
     strcpy(buffer, s.c_str());
-
-#if 0
-	/* Let's think of this as our iterator */
-	char *i = buffer;
-
-	/* Make sure the buffer isn't null */
-	if (i && *i)
-	{
-		/* Add up number of whitespace characters */
-		while(isspace((unsigned char) *i))
-		{
-			i++;
-		}
-
-		/* If whitespace chars in buffer then adjust string so first non-whitespace char is at start of buffer */
-		if (i != buffer)
-		{
-			memmove(buffer, i, (strlen(i) + 1) * sizeof(char));
-		}
-	}
-#endif 
 }
 
 void UTIL_TrimRight(char *buffer)
@@ -116,25 +95,6 @@ void UTIL_TrimRight(char *buffer)
     std::string s(buffer);
     rtrim(s);
     strcpy(buffer, s.c_str());
-
-#if 0
-	/* Make sure buffer isn't null */
-	if (buffer)
-	{
-		size_t len = strlen(buffer);
-
-		/* Loop through buffer backwards while replacing whitespace chars with null chars */
-		for (size_t i = len - 1; i < len; i--)
-		{
-			if (isspace((unsigned char) buffer[i]))
-			{
-				buffer[i] = '\0';
-			} else {
-				break;
-			}
-		}
-	}
-#endif
 }
 
 bool UTIL_PathCmp(const char *path1, const char *path2)
