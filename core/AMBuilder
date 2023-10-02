@@ -14,7 +14,6 @@ def addFromFolder(path, extension=".cpp", recursive=False):
 		if not recursive:
 			break # no recursive
 
-	print(fileSelection)
 	return fileSelection
 
 
