@@ -16,6 +16,15 @@ def addFromFolder(path, extension=".cpp", recursive=False):
 
 	return fileSelection
 
+def getFolders(base_folder, recursive=True):
+	folder_list = []
+	for root, dirs, files in os.walk(base_folder):
+		if recursive:
+			folder_list.extend([os.path.join(root, folder) for folder in dirs])
+		else:
+			folder_list.extend([os.path.join(root, folder) for folder in dirs])
+			break # no recursive
+	return folder_list
 
 for sdk_name in MMS.sdks:
   for cxx in MMS.all_targets:
