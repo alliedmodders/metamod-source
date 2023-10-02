@@ -1,6 +1,23 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
+# Function to add multiple files from one folder
+# e.g. in binary.sources adding *addFromFolder to unpack the list.
+def addFromFolder(path, extension=".cpp", recursive=False):
+	fileSelection = []
+	
+	for root, dirs, files in os.walk(path):
+		for file in files:
+			if file.endswith(extension):
+				fileSelection.append( os.path.join(root, file) )
+		
+		if not recursive:
+			break # no recursive
+
+	print(fileSelection)
+	return fileSelection
+
+
 for sdk_name in MMS.sdks:
   for cxx in MMS.all_targets:
     sdk = MMS.sdks[sdk_name]
