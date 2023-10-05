@@ -67,10 +67,18 @@ namespace SourceHook
 			// 08048000-0804c000 r-xp 00000000 03:03 1010107    /bin/cat
 			unsigned long rlower, rupper;
 			char r, w, x;
-			while (fscanf(pF, "%lx-%lx %c%c%c", &rlower, &rupper, &r, &w, &x) != EOF) {
+			static char *buffer = NULL;
+			static size_t bufsize = 0;
+			while (getline(&buffer, &bufsize, pF) != -1) {
+				char *addr_split;
+				char *prot_split;
+				rlower = strtoul(buffer, &addr_split, 16);
+				rupper = strtoul(&addr_split[1], &prot_split, 16);
 				// Check whether we're IN THERE!
 				if (laddr >= rlower && laddr < rupper) {
-					fclose(pF);
+					r = prot_split[1];
+					w = prot_split[2];
+					x = prot_split[3];
 					*bits = 0;
 					if (r == 'r')
 						*bits |= SH_MEM_READ;
@@ -78,16 +86,9 @@ namespace SourceHook
 						*bits |= SH_MEM_WRITE;
 					if (x == 'x')
 						*bits |= SH_MEM_EXEC;
+					fclose(pF);
 					return true;
 				}
-				// Read to end of line
-				int c;
-				while ((c = fgetc(pF)) != '\n') {
-					if (c == EOF)
-						break;
-				}
-				if (c == EOF)
-					break;
 			}
 			fclose(pF);
 			return false;
