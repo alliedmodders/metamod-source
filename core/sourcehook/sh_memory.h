@@ -88,6 +88,7 @@ namespace SourceHook
 					if (x == 'x')
 						*bits |= SH_MEM_EXEC;
 					bFound = true;
+					break;
 				}
 			}
 			free(buffer);
