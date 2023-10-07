@@ -59,6 +59,7 @@ namespace SourceHook
 		// On linux, first check /proc/self/maps
 		unsigned long laddr = reinterpret_cast<unsigned long>(addr);
 
+		bool bFound = false;
 		FILE *pF = fopen("/proc/self/maps", "r");
 		if (pF) {
 			// Linux /proc/self/maps -> parse
@@ -67,8 +68,8 @@ namespace SourceHook
 			// 08048000-0804c000 r-xp 00000000 03:03 1010107    /bin/cat
 			unsigned long rlower, rupper;
 			char r, w, x;
-			static char *buffer = NULL;
-			static size_t bufsize = 0;
+			char *buffer = NULL;
+			size_t bufsize = 0;
 			while (getline(&buffer, &bufsize, pF) != -1) {
 				char *addr_split;
 				char *prot_split;
@@ -86,12 +87,12 @@ namespace SourceHook
 						*bits |= SH_MEM_WRITE;
 					if (x == 'x')
 						*bits |= SH_MEM_EXEC;
-					fclose(pF);
-					return true;
+					bFound = true;
 				}
 			}
+			free(buffer);
 			fclose(pF);
-			return false;
+			return bFound;
 		}
 		pF = fopen("/proc/curproc/map", "r");
 		if (pF) {
