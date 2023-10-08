@@ -58,9 +58,12 @@ namespace SourceHook
 #if SH_SYS == SH_SYS_LINUX
 		// On linux, first check /proc/self/maps
 		unsigned long laddr = reinterpret_cast<unsigned long>(addr);
-
 		bool bFound = false;
-		FILE *pF = fopen("/proc/self/maps", "r");
+
+		// Open once statically, duplicate before using to stay safe
+		// Way way faster than reopening from scratch
+		static FILE *pMasterFile = fopen("/proc/self/maps", "r");
+		FILE *pF = fdopen(dup(fileno(pMasterFile)), "r");
 		if (pF) {
 			// Linux /proc/self/maps -> parse
 			// Format:
