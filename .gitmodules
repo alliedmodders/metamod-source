@@ -1,3 +1,6 @@
 [submodule "third_party/amtl"]
 	path = third_party/amtl
 	url = https://github.com/alliedmodders/amtl
+[submodule "hl2sdk-manifests"]
+	path = hl2sdk-manifests
+	url = https://github.com/alliedmodders/hl2sdk-manifests
