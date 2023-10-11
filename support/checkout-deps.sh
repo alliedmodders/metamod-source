@@ -59,15 +59,11 @@ checkout ()
 if [ -z ${sdks+x} ]; then
   sdks=( csgo hl2dm nucleardawn l4d2 dods l4d css tf2 insurgency sdk2013 dota doi )
 
-  if [ $ismac -eq 0 ]; then
-    # Add these SDKs for Windows or Linux
-    sdks+=( orangebox blade episode1 bms pvkii )
+  # Windows/Linux only.
+  sdks+=( orangebox blade episode1 bms pvkii mcv )
 
-    # Add more SDKs for Windows only
-    if [ $iswin -eq 1 ]; then
-      sdks+=( darkm swarm bgt eye contagion )
-    fi
-  fi
+  # Windows only.
+  sdks+=( darkm swarm bgt eye contagion )
 fi
 
 # Check out a local copy as a proxy.
