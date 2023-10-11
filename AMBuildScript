@@ -302,7 +302,7 @@ class MMSConfig(object):
       defines += ['SE_{}={}'.format(other_sdk['define'], other_sdk['code'])]
 
     compiler.defines += defines
-    compiler.defines += ['SOURCE_ENGINE=' + sdk['code']]
+    compiler.defines += ['SOURCE_ENGINE={}'.format(sdk['code'])]
 
     if sdk['name'] in ['sdk2013', 'bms', 'pvkii'] and compiler.like('gcc'):
       # The 2013 SDK already has these in public/tier0/basetypes.h
