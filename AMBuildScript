@@ -256,6 +256,7 @@ class MMSConfig(object):
         cxx.linkflags += ['-static-libgcc']
       elif cxx.family == 'clang':
         cxx.linkflags += ['-lgcc_eh']
+      cxx.linkflags += ['-static-libstdc++']
     elif cxx.target.platform == 'mac':
       cxx.defines += ['OSX', '_OSX', 'POSIX']
 
@@ -271,8 +272,10 @@ class MMSConfig(object):
         ]
 
       cxx.linkflags += [
+        '-stdlib=libc++',
         '-lc++',
       ]
+      cxx.cxxflags += ['-stdlib=libc++']
     elif cxx.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
 
@@ -288,54 +291,6 @@ class MMSConfig(object):
         os.path.join(builder.buildPath, 'includes'),
         os.path.join(builder.sourcePath, 'versionlib'),
       ]
-
-  def HL2Compiler(self, context, cxx, sdk):
-    compiler = cxx.clone()
-    compiler.cxxincludes += [
-      os.path.join(context.currentSourcePath),
-      os.path.join(context.currentSourcePath, 'sourcehook'),
-      os.path.join(context.sourcePath, 'loader'),
-    ]
-
-    defines = []
-    for other_sdk in self.sdk_manifests:
-      defines += ['SE_{}={}'.format(other_sdk['define'], other_sdk['code'])]
-
-    compiler.defines += defines
-    compiler.defines += ['SOURCE_ENGINE={}'.format(sdk['code'])]
-
-    if sdk['name'] in ['sdk2013', 'bms', 'pvkii'] and compiler.like('gcc'):
-      # The 2013 SDK already has these in public/tier0/basetypes.h
-      compiler.defines.remove('stricmp=strcasecmp')
-      compiler.defines.remove('_stricmp=strcasecmp')
-      compiler.defines.remove('_snprintf=snprintf')
-      compiler.defines.remove('_vsnprintf=vsnprintf')
-
-    if compiler.family == 'msvc':
-      compiler.defines += ['COMPILER_MSVC']
-      if compiler.target.arch == 'x86':
-        compiler.defines += ['COMPILER_MSVC32']
-      elif compiler.target.arch == 'x86_64':
-        compiler.defines += ['COMPILER_MSVC64']
-      
-      if compiler.version >= 1900:
-        compiler.linkflags += ['legacy_stdio_definitions.lib']
-    else:
-      compiler.defines += ['COMPILER_GCC']
-      
-    if compiler.target.arch == 'x86_64':
-      compiler.defines += ['X64BITS', 'PLATFORM_64BITS']
-
-    SdkHelpers.addLists(sdk, 'defines', compiler)
-    SdkHelpers.addLists(sdk, 'linkflags', compiler)
-
-    if sdk['name'] in ['dota', 'cs2']:
-      compiler.defines += ['META_IS_SOURCE2']
-
-    for path in sdk['include_paths']:
-      compiler.cxxincludes += [os.path.join(sdk['path'], path)]
-
-    return compiler
 
   def AddVersioning(self, binary):
     if binary.compiler.target.platform == 'windows':
@@ -378,33 +333,23 @@ class MMSConfig(object):
     return cxx.StaticLibrary(name)
 
   def HL2Library(self, context, compiler, name, sdk):
-    compiler = self.HL2Compiler(context, compiler, sdk)
-    
-    lib_folder = sdk[compiler.target.platform][compiler.target.arch]['lib_folder']
-    lib_folder = os.path.join(sdk['path'], lib_folder)
-    for lib in SdkHelpers.getLists(sdk, 'libs', compiler):
-        compiler.linkflags += [os.path.join(sdk['path'], lib_folder, lib)]
-    for lib in SdkHelpers.getLists(sdk, 'postlink_libs', compiler):
-        compiler.postlink += [os.path.join(sdk['path'], lib_folder, lib)]
-
     binary = self.Library(compiler, name)
-    compiler = binary.compiler
+    cxx = binary.compiler
 
-    if compiler.target.platform == 'linux':
-      compiler.linkflags[0:0] = ['-lm']
-    elif compiler.target.platform == 'mac':
-      binary.compiler.linkflags.append('-liconv')
+    cxx.cxxincludes += [
+      os.path.join(context.currentSourcePath),
+      os.path.join(context.currentSourcePath, 'sourcehook'),
+      os.path.join(context.sourcePath, 'loader'),
+    ]
 
-    dynamic_libs = SdkHelpers.getLists(sdk, 'dynamic_libs', compiler)
-    for library in dynamic_libs:
-      source_path = os.path.join(lib_folder, library)
-      output_path = os.path.join(binary.localFolder, library)
+    defines = []
+    for other_sdk in self.sdk_manifests:
+      cxx.defines += ['SE_{}={}'.format(other_sdk['define'], other_sdk['code'])]
 
-      context.AddFolder(binary.localFolder)
-      output = context.AddSymlink(source_path, output_path)
+    if sdk['source2']:
+      cxx.defines += ['META_IS_SOURCE2']
 
-      binary.compiler.weaklinkdeps += [output]
-      binary.compiler.linkflags[0:0] = [library]
+    SdkHelpers.configureCxx(context, binary, sdk)
 
     return binary
 
