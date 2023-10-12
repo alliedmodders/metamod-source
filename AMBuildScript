@@ -338,6 +338,9 @@ class MMSConfig(object):
 
   def HL2Library(self, context, compiler, name, sdk):
     binary = self.Library(compiler, name)
+    binary.sources += [
+      os.path.join(context.sourcePath, 'third_party', 'amtl', 'compat', 'stdcxx.cpp'),
+    ]
     cxx = binary.compiler
 
     cxx.cxxincludes += [
