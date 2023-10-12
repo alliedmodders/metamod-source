@@ -52,6 +52,8 @@ SH_DECL_HOOK0(ILoopModeFactory, CreateLoopMode, SH_NOATTRIB, 0, ILoopMode *);
 SH_DECL_HOOK1_void(ILoopModeFactory, DestroyLoopMode, SH_NOATTRIB, 0, ILoopMode *);
 SH_DECL_HOOK2(ILoopMode, LoopInit, SH_NOATTRIB, 0, bool, KeyValues*, ILoopModePrerequisiteRegistry *);
 SH_DECL_HOOK0_void(ILoopMode, LoopShutdown, SH_NOATTRIB, 0);
+SH_DECL_HOOK4_void(ICvar, RegisterConVar, SH_NOATTRIB, 0, const ConVarCreation_t&, int64_t, ConVarHandle*, CConVarBaseData**);
+SH_DECL_HOOK2(ICvar, RegisterConCommand, SH_NOATTRIB, 0, ConCommandHandle, const ConCommandCreation_t&, int64_t);
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
@@ -147,6 +149,9 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	SH_ADD_HOOK(IEngineServiceMgr, RegisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_RegisterLoopMode), false);
 	SH_ADD_HOOK(IEngineServiceMgr, UnregisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_UnregisterLoopMode), false);
+
+	SH_ADD_HOOK(ICvar, RegisterConVar, icvar, SH_MEMBER(this, &Source2Provider::Hook_RegisterConVar), true);
+	SH_ADD_HOOK(ICvar, RegisterConCommand, icvar, SH_MEMBER(this, &Source2Provider::Hook_RegisterConCommand), true);
 }
 
 void Source2Provider::Notify_DLLShutdown_Pre()
@@ -288,27 +293,34 @@ void Source2Provider::SetConVarString(MetamodSourceConVar *convar, const char* s
 
 bool Source2Provider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return pCommand->IsCommand();
-#else
-	return false;
-#endif
+	return !pCommand->IsConVar();
 }
 
 bool Source2Provider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Register(pCommand);
-#else
+	if (pCommand->IsConVar())
+	{
+		auto& creation = pCommand->GetConVarCreation();
+		icvar->RegisterConVar(creation, pCommand->GetAdditionalFlags(), creation.m_pHandle, creation.m_pConVarData);
+	}
+	else
+	{
+		auto& creation = pCommand->GetConCommandCreation();
+		*creation.m_pHandle = icvar->RegisterConCommand(creation, pCommand->GetAdditionalFlags());
+	}
 	return true;
-#endif
 }
 
 void Source2Provider::UnregisterConCommandBase(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Unregister(pCommand);
-#endif
+	if (pCommand->IsConVar())
+	{
+		icvar->UnregisterConVar(pCommand->GetConVar());
+	}
+	else
+	{
+		icvar->UnregisterConCommand(pCommand->GetConCommand());
+	}
 }
 
 MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
@@ -453,4 +465,25 @@ void Source2Provider::Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& _cmd
 	}
 
 	RETURN_META(MRES_IGNORED);
+}
+
+void Source2Provider::Hook_RegisterConVar(const ConVarCreation_t& data, int64_t flags, ConVarHandle* handle, CConVarBaseData**)
+{
+	if (!handle || !handle->IsValid()) {
+		RETURN_META(MRES_IGNORED);
+	}
+
+	ConCommandBase base(data, flags, *handle);
+	RETURN_META(MRES_IGNORED);
+}
+
+ConCommandHandle Source2Provider::Hook_RegisterConCommand(const ConCommandCreation_t& data, int64_t flags)
+{
+	ConCommandHandle handle = META_RESULT_ORIG_RET(ConCommandHandle);
+	if (!handle.IsValid()) {
+		RETURN_META_VALUE(MRES_IGNORED, handle);
+	}
+
+	ConCommandBase base(data, flags, handle);
+	RETURN_META_VALUE(MRES_IGNORED, handle);
 }

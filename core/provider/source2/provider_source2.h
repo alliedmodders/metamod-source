@@ -75,6 +75,8 @@ public:
 	bool Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry);
 	void Hook_LoopShutdownPost();
 	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
+	void Hook_RegisterConVar(const ConVarCreation_t&, int64_t, ConVarHandle*, CConVarBaseData**);
+	ConCommandHandle Hook_RegisterConCommand(const ConCommandCreation_t&, int64_t);
 private:
 	IFileSystem* baseFs = nullptr;
 
