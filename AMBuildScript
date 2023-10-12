@@ -95,11 +95,15 @@ class MMSConfig(object):
     use_present = sdk_list[0] == 'present'
     if sdk_list[0] == '':
         sdk_list = []
+    if use_all or use_present:
+        sdk_list = []
 
     not_found = []
     for sdk_name, sdk in SdkHelpers.getSdks(builder):
       self.sdk_manifests.append(sdk)
       if not self.shouldIncludeSdk(sdk):
+        continue
+      if sdk_list and sdk_name not in sdk_list:
         continue
 
       sdk_path = self.findSdkPath(sdk_name)
