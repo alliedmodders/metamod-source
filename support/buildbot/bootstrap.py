@@ -11,6 +11,7 @@ import subprocess
 def Chdir(path):
     old = os.getcwd()
     os.chdir(path)
+    print('> cd {} # {}'.format(path, os.getcwd()))
     try:
         yield
     finally:
@@ -87,6 +88,7 @@ def main():
         '--symbol-files',
         '--targets=x86,x86_64',
         '--sdks=all',
+        '--out=OUTPUT',
         '--hl2sdk-root={}'.format(args.hl2sdk_root),
     ]
 
