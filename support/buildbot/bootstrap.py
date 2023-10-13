@@ -60,7 +60,7 @@ def main():
     with open(os.path.join('support', 'buildbot', 'buildconfig.json'), 'rt') as fp:
         config_root = json.load(fp)
 
-    config = config_root[args.config]
+    config = config_root.get(args.config, {})
 
     # Set build properties.
     build_env = os.environ.copy()
