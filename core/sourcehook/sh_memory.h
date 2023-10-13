@@ -62,7 +62,7 @@ namespace SourceHook
 
 		// Open once statically, duplicate before using to stay safe
 		// Way way faster than reopening from scratch
-		static std::unique_ptr<FILE, int(*)(FILE*)> pMasterFD(fopen("/proc/self/maps", "r"), fclose);
+		static std::unique_ptr<FILE, int(*)(FILE*)> pMasterFile(fopen("/proc/self/maps", "r"), fclose);
 		FILE *pF = fdopen(dup(fileno(pMasterFile.get())), "r");
 		if (pF) {
 			// Linux /proc/self/maps -> parse
