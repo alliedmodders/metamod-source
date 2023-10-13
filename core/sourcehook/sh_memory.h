@@ -29,6 +29,7 @@
 #		include <stdint.h>
 // http://www.die.net/doc/linux/man/man2/mprotect.2.html
 #		include <limits.h>
+#		include <memory>
 #		ifndef PAGESIZE
 #			define PAGESIZE 4096
 #		endif
