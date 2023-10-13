@@ -150,7 +150,7 @@ class MMSConfig(object):
           sdk_path = os.path.join(builder.options.hl2sdk_root, sdk.folder)
         else:
           sdk_path = ResolveEnvPath(sdk.envvar, sdk.folder)
-        if sdk_path is None:
+        if sdk_path is None or not os.path.isdir(sdk_path):
           if (use_all and sdk_name != 'mock') or sdk_name in sdk_list:
             raise Exception('Could not find a valid path for {0}'.format(sdk.envvar))
           not_found.append(sdk_name)
