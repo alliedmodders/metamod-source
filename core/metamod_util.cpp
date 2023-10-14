@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "metamod_util.h"
 #include "metamod_oslink.h"
 
