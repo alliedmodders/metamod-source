@@ -120,10 +120,11 @@ class MMSConfig(object):
         print('Warning: hl2sdk-{} was not found, and will not be included in build.'.format(sdk))
 
     for _, sdk in self.sdks.items():
-      for cxx in self.all_targets:
-        if not SdkHelpers.shouldBuildSdk(sdk, cxx):
-          continue
-        self.sdk_targets += [(sdk, cxx)]
+      if use_all or use_present or sdk.get('name', None) in sdk_list:
+        for cxx in self.all_targets:
+          if not SdkHelpers.shouldBuildSdk(sdk, cxx):
+            continue
+          self.sdk_targets += [(sdk, cxx)]
 
   def configure(self):
     builder.AddConfigureFile('pushbuild.txt')
