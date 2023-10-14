@@ -121,6 +121,8 @@ class MMSConfig(object):
 
     for _, sdk in self.sdks.items():
       for cxx in self.all_targets:
+        if not sdk['name'] in sdk_list:
+          continue
         if not SdkHelpers.shouldBuildSdk(sdk, cxx):
           continue
         self.sdk_targets += [(sdk, cxx)]
