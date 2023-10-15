@@ -84,51 +84,17 @@ class MMSConfig(object):
   def shouldIncludeSdk(self, sdk):
     if sdk.get('source2', False) and self.productVersion.startswith('1.'):
       return False
-    for cxx in self.all_targets:
-      if SdkHelpers.shouldBuildSdk(sdk, cxx):
-        return True
-    return False
+    return True
 
   def detectSDKs(self):
     sdk_list = builder.options.sdks.split(',')
-    use_all = sdk_list[0] == 'all'
-    use_present = sdk_list[0] == 'present'
-    if sdk_list[0] == '':
-        sdk_list = []
-    if use_all or use_present:
-        sdk_list = []
+    SdkHelpers.sdk_filter = self.shouldIncludeSdk
+    SdkHelpers.find_sdk_path = self.findSdkPath
+    SdkHelpers.findSdks(builder, self.all_targets, sdk_list)
 
-    not_found = []
-    for sdk_name, sdk in SdkHelpers.getSdks(builder):
-      self.sdk_manifests.append(sdk)
-      if not self.shouldIncludeSdk(sdk):
-        continue
-      if sdk_list and sdk_name not in sdk_list:
-        continue
-
-      sdk_path = self.findSdkPath(sdk_name)
-      if sdk_path is None:
-        if (use_all and sdk_name != 'mock') or sdk_name in sdk_list:
-          raise Exception('Could not find a valid path for {0}'.format(sdk_name))
-        not_found.append(sdk_name)
-        continue
-
-      sdk['path'] = sdk_path
-      self.sdks[sdk_name] = sdk
-
-    if len(self.sdks) < 1 and len(sdk_list):
-      raise Exception('No SDKs were found, nothing to build.')
-
-    if use_present:
-      for sdk in not_found:
-        print('Warning: hl2sdk-{} was not found, and will not be included in build.'.format(sdk))
-
-    for _, sdk in self.sdks.items():
-      if use_all or use_present or sdk.get('name', None) in sdk_list:
-        for cxx in self.all_targets:
-          if not SdkHelpers.shouldBuildSdk(sdk, cxx):
-            continue
-          self.sdk_targets += [(sdk, cxx)]
+    self.sdks = SdkHelpers.sdks
+    self.sdk_manifests = SdkHelpers.sdk_manifests
+    self.sdk_targets = SdkHelpers.sdk_targets
 
   def configure(self):
     builder.AddConfigureFile('pushbuild.txt')
