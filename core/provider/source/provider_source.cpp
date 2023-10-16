@@ -31,9 +31,7 @@
 #include <filesystem.h>
 #include <tier0/icommandline.h>
 
-#if SOURCE_ENGINE == SE_EPISODEONE
 #include <setjmp.h>
-#endif
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand& args);
