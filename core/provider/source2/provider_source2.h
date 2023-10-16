@@ -30,6 +30,7 @@
 
 #include "../provider_base.h"
 #include <tier1/utlvector.h>
+#include <IEngineService.h>
 #include <string>
 
 // TODO: is this still needed for Dota or CS2 on any platform?
@@ -67,14 +68,15 @@ public:
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 	bool Hook_AllowDedicatedServers(EUniverse universe) const;
 #endif
-	void Hook_StartupServer_Post(const GameSessionConfiguration_t &config, ISource2WorldSession *, const char *);
-	void Hook_Init(const GameSessionConfiguration_t &config, const char* pszMapName);
-	CUtlVector<INetworkGameClient *> *Hook_StartChangeLevel(const char*, const char*, void*);
-	void Hook_SwitchToLoop(const char *pszLoopName, KeyValues *pKV, uint32 nId, const char *pszUnk, bool bUnk);
+	void Hook_RegisterLoopMode(const char* pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer);
+	void Hook_UnregisterLoopMode(const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer);
+	ILoopMode *Hook_CreateLoopModePost();
+	void Hook_DestroyLoopMode(ILoopMode*);
+	bool Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry);
+	void Hook_LoopShutdownPost();
 	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
 private:
 	IFileSystem* baseFs = nullptr;
-	std::string sLastMap;
 
 	friend void LocalCommand_Meta(const CCommandContext& context, const CCommand& args);
 };
