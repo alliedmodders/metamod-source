@@ -154,6 +154,11 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 void Source2Provider::Notify_DLLShutdown_Pre()
 {
 	ConVar_Unregister();
+
+	if (gameclients)
+	{
+		SH_REMOVE_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &Source2Provider::Hook_ClientCommand), false);
+	}
 }
 
 bool Source2Provider::ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len)
