@@ -4,7 +4,7 @@
         "CXX": "clang-3.8"
     },
     "debian11": {
-        "CC": "clang-13",
-        "CXX": "clang++-13"
+        "CC": "clang-14",
+        "CXX": "clang++-14"
     }
 }
