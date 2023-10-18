@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "metamod_util.h"
 #include "metamod_oslink.h"
 
@@ -68,46 +69,33 @@ const char *UTIL_GetExtension(const char *file)
 	return NULL;
 }
 
+// https://stackoverflow.com/a/217605
+// trim from start (in place)
+static inline void ltrim(std::string& s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string& s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }).base(), s.end());
+}
+
 void UTIL_TrimLeft(char *buffer)
 {
-	/* Let's think of this as our iterator */
-	char *i = buffer;
-
-	/* Make sure the buffer isn't null */
-	if (i && *i)
-	{
-		/* Add up number of whitespace characters */
-		while(isspace((unsigned char) *i))
-		{
-			i++;
-		}
-
-		/* If whitespace chars in buffer then adjust string so first non-whitespace char is at start of buffer */
-		if (i != buffer)
-		{
-			memmove(buffer, i, (strlen(i) + 1) * sizeof(char));
-		}
-	}
+    std::string s(buffer);
+    ltrim(s);
+    strcpy(buffer, s.c_str());
 }
 
 void UTIL_TrimRight(char *buffer)
 {
-	/* Make sure buffer isn't null */
-	if (buffer)
-	{
-		size_t len = strlen(buffer);
-
-		/* Loop through buffer backwards while replacing whitespace chars with null chars */
-		for (size_t i = len - 1; i < len; i--)
-		{
-			if (isspace((unsigned char) buffer[i]))
-			{
-				buffer[i] = '\0';
-			} else {
-				break;
-			}
-		}
-	}
+    std::string s(buffer);
+    rtrim(s);
+    strcpy(buffer, s.c_str());
 }
 
 bool UTIL_PathCmp(const char *path1, const char *path2)
