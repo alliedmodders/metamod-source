@@ -34,4 +34,5 @@ parser.options.add_argument('--breakpad-dump', action='store_true', dest='breakp
                        default=False, help='Dump and upload breakpad symbols')
 parser.options.add_argument('--targets', type=str, dest='targets', default=None,
                             help="Override the target architecture (use commas to separate multiple targets).")
+parser.options.add_argument('--disable-auto-versioning', action='store_true', dest='disable_auto_versioning')
 parser.Configure()
