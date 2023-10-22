@@ -112,7 +112,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 		"SHADER_SOURCE_ROOT"
 	};
 
-	for(int id = 0; id < (sizeof(pathIds) / sizeof(pathIds[0])); id++)
+	for(size_t id = 0; id < (sizeof(pathIds) / sizeof(pathIds[0])); id++)
 	{
 		CUtlVector<CUtlString> searchPaths;
 		baseFs->GetSearchPathsForPathID(pathIds[id], (GetSearchPathTypes_t)0, searchPaths);
