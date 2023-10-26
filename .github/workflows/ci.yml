@@ -40,7 +40,6 @@ jobs:
           path: metamod-source
       
       - name: Select HL2SDKs
-        if: startsWith(runner.os, 'Windows')
         run: echo 'SDKS=["episode1","tf2","l4d2","csgo","dota","insurgency"]' >> $GITHUB_ENV
 
       - name: Cache dependencies
