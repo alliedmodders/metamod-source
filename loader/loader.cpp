@@ -211,74 +211,7 @@ typedef const char *(*GetGameInfoStringFn)(const char *pszKeyName, const char *p
 void
 mm_GetGameName(char *buffer, size_t size)
 {
-	buffer[0] = '\0';
-
-#if defined _WIN32
-	static char game[128];
-
-	LPWSTR pCmdLine = GetCommandLineW();
-	int argc;
-	LPWSTR *wargv = CommandLineToArgvW(pCmdLine, &argc);
-	for (int i = 0; i < argc; ++i)
-	{
-		if (wcscmp(wargv[i], L"-game") == 0)
-		{
-			if (++i >= argc)
-				break;
-
-			wcstombs(buffer, wargv[i], size);
-			buffer[size-1] = '\0';
-		}
-	}
-
-	LocalFree(wargv);
-
-#elif defined __APPLE__
-	int argc = *_NSGetArgc();
-	char **argv = *_NSGetArgv();
-	for (int i = 0; i < argc; ++i)
-	{
-		if (strcmp(argv[i], "-game") == 0)
-		{
-			if (++i >= argc)
-				break;
-
-			strncpy(buffer, argv[i], size);
-			buffer[size-1] = '\0';
-		}
-	}
-
-#elif defined __linux__
-	FILE *pFile = fopen("/proc/self/cmdline", "rb");
-	if (pFile)
-	{
-		char *arg = NULL;
-		size_t argsize = 0;
-		bool bNextIsGame = false;
-
-		while (getdelim(&arg, &argsize, 0, pFile) != -1)
-		{
-			if (bNextIsGame)
-			{
-				strncpy(buffer, arg, size);
-				buffer[size-1] = '\0';
-				bNextIsGame = false;
-			}
-
-			if (strcmp(arg, "-game") == 0)
-			{
-				bNextIsGame = true;
-			}
-		}
-
-		free(arg);
-		fclose(pFile);
-	}
-#else
-#error unsupported platform
-#endif
-
-	if (buffer[0] == 0)
+	if (!mm_GetCommandArgument("-game", buffer, size))
 	{
 		char tier0_path[PLATFORM_MAX_PATH];
 #ifdef _WIN32

@@ -632,3 +632,95 @@ void *mm_FindPattern(const void *libPtr, const char *pattern, size_t len)
 
 	return NULL;
 }
+
+bool mm_GetCommandArgument(const char* argName, char* buffer, size_t maxlength)
+{
+	if (buffer)
+		buffer[0] = '\0';
+
+#if defined _WIN32
+	wchar_t wargName[256];
+	mbstowcs(wargName, argName, sizeof(wargName) / sizeof(wchar_t));
+
+	LPWSTR pCmdLine = GetCommandLineW();
+	int argc;
+	LPWSTR* wargv = CommandLineToArgvW(pCmdLine, &argc);
+
+	bool found = false;
+	for (int i = 0; i < argc; ++i)
+	{
+		if (wcscmp(wargv[i], wargName) == 0)
+		{
+			found = true;
+
+			if ((++i) < argc && buffer && wargv[i][0] != '-')
+			{
+				wcstombs(buffer, wargv[i], maxlength);
+				buffer[maxlength - 1] = '\0';
+			}
+
+			break;
+		}
+	}
+
+	LocalFree(wargv);
+
+	return found;
+
+#elif defined __APPLE__
+	int argc = *_NSGetArgc();
+	char** argv = *_NSGetArgv();
+	for (int i = 0; i < argc; ++i)
+	{
+		if (strcmp(argv[i], argName) == 0)
+		{
+			if ((++i) < argc && buffer && argv[i][0] != '-')
+			{
+				strncpy(buffer, argv[i], maxlength);
+				buffer[maxlength - 1] = '\0';
+			}
+
+			return true;
+		}
+	}
+
+#elif defined __linux__
+	FILE* pFile = fopen("/proc/self/cmdline", "rb");
+	if (pFile)
+	{
+		char* arg = nullptr;
+		size_t argsize = 0;
+		bool nextIsValue = false;
+		bool found = false;
+
+		while (getdelim(&arg, &argsize, 0, pFile) != -1)
+		{
+			if (nextIsValue)
+			{
+				if (buffer && arg[0] != '-')
+				{
+					strncpy(buffer, arg, maxlength);
+					buffer[maxlength - 1] = '\0';
+				}
+
+				found = true;
+				break;
+			}
+
+			if (strcmp(arg, argName) == 0)
+			{
+				nextIsValue = true;
+			}
+		}
+
+		free(arg);
+		fclose(pFile);
+
+		return found || nextIsValue;
+	}
+#else
+#error 
+#endif
+
+	return false;
+}

@@ -758,6 +758,15 @@ mm_PatchConnect(bool patch)
 void *
 mm_GameDllRequest(const char *name, int *ret)
 {
+	if (strncmp(name, "Source2Server", 13) == 0 && !mm_GetCommandArgument("-dedicated") && !mm_GetCommandArgument("-insecure"))
+	{
+		mm_LogFatal("Metamod:Source requires -dedicated or -insecure on the command line to be able to load");
+		if (ret != nullptr)
+			*ret = 1; // IFACE_FAILED
+
+		return nullptr;
+	}
+
 	if (strncmp(name, "Source2ServerConfig", 19) == 0)
 	{
 		g_is_source2 = true;
