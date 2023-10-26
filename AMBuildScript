@@ -87,7 +87,7 @@ class MMSConfig(object):
     return True
 
   def detectSDKs(self):
-    sdk_list = builder.options.sdks.split(',')
+    sdk_list = [s for s in builder.options.sdks.split(',') if s]
     SdkHelpers.sdk_filter = self.shouldIncludeSdk
     SdkHelpers.find_sdk_path = self.findSdkPath
     SdkHelpers.findSdks(builder, self.all_targets, sdk_list)
