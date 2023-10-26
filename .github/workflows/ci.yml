@@ -40,7 +40,7 @@ jobs:
           path: metamod-source
       
       - name: Select HL2SDKs
-        run: echo 'SDKS=["episode1","tf2","l4d2","csgo","dota","insurgency"]' >> $GITHUB_ENV
+        run: echo 'SDKS=["episode1","tf2","l4d2","cs2","insurgency"]' >> $GITHUB_ENV
 
       - name: Cache dependencies
         uses: actions/cache@v3
