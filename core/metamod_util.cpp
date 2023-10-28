@@ -25,7 +25,7 @@
  * Version: $Id$
  */
 
-#include <ctype.h>
+#include <cctype>
 #include <string.h>
 #include <stdio.h>
 #include <string>
