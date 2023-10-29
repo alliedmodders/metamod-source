@@ -1959,12 +1959,12 @@ namespace SourceHook
 			return m_GeneratedPubFunc;
 		}
 
-		bool GenContext::Equal(const CProto &proto, int vtbl_offs, int vtbl_idx)
+		bool GenContext::Equal(const CProto &proto, int vtbl_offs, int vtbl_idx) const
 		{
 			return (m_OrigProto.ExactlyEqual(proto) && m_VtblOffs == vtbl_offs && m_VtblIdx == vtbl_idx);
 		}
 
-		bool GenContext::Equal(HookManagerPubFunc other)
+		bool GenContext::Equal(HookManagerPubFunc other) const
 		{
 			return m_GeneratedPubFunc == other;
 		}
@@ -2013,11 +2013,9 @@ namespace SourceHook
 			{
 				return NULL;
 			}
-			else
-			{
-				m_Contexts.push_back(sctx);
-				return sctx.m_GenContext->GetPubFunc();
-			}
+
+			m_Contexts.push_back(sctx);
+			return sctx.m_GenContext->GetPubFunc();
 		}
 
 		void CHookManagerAutoGen::ReleaseHookMan(HookManagerPubFunc pubFunc)

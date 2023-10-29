@@ -98,6 +98,18 @@ namespace SourceHook
 		int CSourceHookImpl::AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 			ISHDelegate *handler, bool post)
 		{
+			return AddHook(plug, mode, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
+		}
+
+		int CSourceHookImpl::AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
+			ISHDelegate *handler, bool post)
+		{
+			return AddHook(plug, mode, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
+		}
+
+		int CSourceHookImpl::AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
+			ISHDelegate *handler, bool post)
+		{
 			if (mode != Hook_Normal && mode != Hook_VP && mode != Hook_DVP)
 				return 0;
 
@@ -171,6 +183,18 @@ namespace SourceHook
 		}
 
 		bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
+			ISHDelegate *handler, bool post)
+		{
+			return RemoveHook(plug, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
+		}
+
+		bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
+			ISHDelegate *handler, bool post)
+		{
+			return RemoveHook(plug, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
+		}
+
+		bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
 			ISHDelegate *handler, bool post)
 		{
 			// Get info about hook manager and compute adjustediface
@@ -417,6 +441,18 @@ namespace SourceHook
 		}
 
 		void CSourceHookImpl::RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc)
+		{
+			// Find the hook manager
+			RemoveHookManager(plug, HookManagerPubFuncHandler(pubFunc));
+		}
+
+		void CSourceHookImpl::RemoveHookManager(Plugin plug, IHookManagerMemberFunc* pubFunc)
+		{
+			// Find the hook manager
+			RemoveHookManager(plug, HookManagerPubFuncHandler(pubFunc));
+		}
+
+		void CSourceHookImpl::RemoveHookManager(Plugin plug, const HookManagerPubFuncHandler &pubFunc)
 		{
 			// Find the hook manager
 			CHookManList::iterator hookman_iter = m_HookManList.find(CHookManager::Descriptor(plug, pubFunc));

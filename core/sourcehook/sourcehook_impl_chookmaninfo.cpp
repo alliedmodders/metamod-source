@@ -15,7 +15,7 @@ namespace SourceHook
 {
 	namespace Impl
 	{
-		CHookManager::CHookManager(Plugin ownerPlugin, HookManagerPubFunc pubFunc)
+		CHookManager::CHookManager(Plugin ownerPlugin, const HookManagerPubFuncHandler& pubFunc)
 			: m_OwnerPlugin(ownerPlugin), m_PubFunc(pubFunc), m_Version(-1)
 		{
 			// Query pubfunc
@@ -61,7 +61,7 @@ namespace SourceHook
 				Unregister();
 		}
 
-		CHookManager *CHookManList::GetHookMan(Plugin plug, HookManagerPubFunc pubFunc)
+		CHookManager *CHookManList::GetHookMan(Plugin plug, const HookManagerPubFuncHandler &pubFunc)
 		{
 			CHookManager hm(plug, pubFunc);
 			return GetHookMan(hm);

@@ -16,6 +16,8 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
+#include <type_traits>
+
 // Interface revisions:
 //  1 - Initial revision
 //  2 - Changed to virtual functions for iterators and all queries
@@ -39,6 +41,15 @@
 //  1 - initial
 #define SH_HOOKMANAUTOGEN_IFACE_VERSION 1
 #define SH_HOOKMANAUTOGEN_IMPL_VERSION 1
+
+namespace SourceHook
+{
+class ISourceHook;
+typedef int Plugin;
+}
+
+extern SourceHook::ISourceHook *g_SHPtr;
+extern SourceHook::Plugin g_PLID;
 
 // The value of SH_GLOB_SHPTR has to be a pointer to SourceHook::ISourceHook
 // It's used in various macros
@@ -247,11 +258,145 @@ namespace SourceHook
 	*	@brief Pointer to hook manager interface function
 	*
 	*	The hook manager should store hi for later use if store==true. It should then call hi->SetInfo(...) if hi
-	*   is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
+	*	is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
 	*
 	*	@param hi A pointer to IHookManagerInfo
 	*/
 	typedef int (*HookManagerPubFunc)(bool store, IHookManagerInfo *hi);
+
+	/**
+	*	@brief Pointer to hook manager interface function for member and static functions
+	*
+	*	The hook manager should store hi for later use if store==true. It should then call hi->SetInfo(...) if hi
+	*	is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
+	*
+	*	@param hi A pointer to IHookManagerInfo
+	*/
+
+	class IHookManagerMemberFunc
+	{
+	public:
+		virtual ~IHookManagerMemberFunc() = default;
+		virtual int Call(bool store, IHookManagerInfo *hi) const = 0;
+	};
+
+	class HookManagerPubFuncHandler
+	{
+	public:
+		HookManagerPubFuncHandler()
+		 : staticFunc_(nullptr)
+		 , memberFunc_(nullptr)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(HookManagerPubFunc func)
+		 : staticFunc_(func)
+		 , memberFunc_(nullptr)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(IHookManagerMemberFunc* funcHandler)
+		 : staticFunc_(nullptr)
+		 , memberFunc_(funcHandler)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(const HookManagerPubFuncHandler& other)
+		 : staticFunc_(other.staticFunc_)
+		 , memberFunc_(other.memberFunc_)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(HookManagerPubFuncHandler&& other)
+		 : staticFunc_(other.staticFunc_)
+		 , memberFunc_(other.memberFunc_)
+		{
+			other.staticFunc_ = nullptr;
+			other.memberFunc_ = nullptr;
+		}
+
+		HookManagerPubFuncHandler& operator=(const HookManagerPubFuncHandler& other)
+		{
+			staticFunc_ = other.staticFunc_;
+			memberFunc_ = other.memberFunc_;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(HookManagerPubFuncHandler&& other)
+		{
+			if (this == &other)
+				return *this;
+
+			staticFunc_ = other.staticFunc_;
+			memberFunc_ = other.memberFunc_;
+			other.staticFunc_ = nullptr;
+			other.memberFunc_ = nullptr;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(HookManagerPubFunc func)
+		{
+			staticFunc_ = func;
+			memberFunc_ = nullptr;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(IHookManagerMemberFunc* funcHandler)
+		{
+			staticFunc_ = nullptr;
+			memberFunc_ = funcHandler;
+			return *this;
+		}
+
+		operator bool() const
+		{
+			return (staticFunc_ != nullptr ||
+				memberFunc_ != nullptr);
+		}
+
+		operator HookManagerPubFunc() const
+		{
+			return staticFunc_;
+		}
+
+		operator IHookManagerMemberFunc*() const
+		{
+			return memberFunc_;
+		}
+
+		int operator()(bool store, IHookManagerInfo *hi) const
+		{
+			if(staticFunc_ != nullptr)
+				return staticFunc_(store, hi);
+
+			if(memberFunc_ != nullptr)
+				return memberFunc_->Call(store, hi);
+
+			return 0;
+		}
+
+		bool operator==(const HookManagerPubFuncHandler &rhs) const
+		{
+			return staticFunc_ == rhs.staticFunc_ &&
+			       memberFunc_ == rhs.memberFunc_;
+		}
+
+		bool operator==(HookManagerPubFunc staticFunc) const
+		{
+			return staticFunc_ == staticFunc &&
+			       memberFunc_ == nullptr;
+		}
+
+		bool operator==(const IHookManagerMemberFunc *memberFunc) const
+		{
+			return staticFunc_ == nullptr &&
+			       memberFunc_ == memberFunc;
+		}
+
+	private:
+		HookManagerPubFunc staticFunc_;
+		IHookManagerMemberFunc* memberFunc_;
+	};
 
 	class ISHDelegate
 	{
@@ -353,7 +498,7 @@ namespace SourceHook
 			Hook_Normal,
 			Hook_VP,
 			Hook_DVP
-		}; 
+		};
 
 		/**
 		*	@brief Add a (VP) hook.
@@ -424,7 +569,7 @@ namespace SourceHook
 		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
 		*
 		*	@param plug The owner of the hook manager
-		*   @param pubFunc The hook manager's info function
+		*	@param pubFunc The hook manager's info function
 		*/
 		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc) = 0;
 
@@ -499,6 +644,36 @@ namespace SourceHook
 			const void *origRetPtr, void *overrideRetPtr) = 0;
 
 		virtual void EndContext(IHookContext *pCtx) = 0;
+
+		/**
+		*	@brief Add a (VP) hook.
+		*
+		*	@return non-zero hook id on success, 0 otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param mode	Can be either Hook_Normal or Hook_VP (vtable-wide hook)
+		*	@param iface The interface pointer
+		*	@param ifacesize The size of the class iface points to
+		*	@param myHookMan A hook manager function that should be capable of handling the function
+		*	@param handler A pointer to the hook handler something
+		*	@param post Set to true if you want a post handler
+		*/
+
+		virtual int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
+			ISHDelegate *handler, bool post) = 0;
+
+		// Source backwarts compat (only for normal hooks)
+		virtual bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
+			ISHDelegate *handler, bool post) = 0;
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*	@param pubFunc The hook manager's info function
+		*/
+
+		virtual void RemoveHookManager(Plugin plug, IHookManagerMemberFunc* pubFunc) = 0;
 	};
 
 
@@ -4923,6 +5098,478 @@ namespace SourceHook
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 }
+
+
+namespace SourceHook
+{
+
+// Get type info for type T
+template<typename T>
+inline void TypeInfo(PassInfo& passInfo)
+{
+    passInfo.size = sizeof(T);
+    passInfo.type = GetPassInfo<T>::type;
+    passInfo.flags = GetPassInfo<T>::flags;
+}
+
+// Get type info for type T
+template<>
+inline void TypeInfo<void>(PassInfo& passInfo)
+{
+    passInfo.size = 1;
+    passInfo.type = 0;
+    passInfo.flags = 0;
+}
+
+template<typename... ArgsType>
+class PassInfoInitializer
+{
+public:
+    constexpr PassInfoInitializer()
+    {
+        InitializePassInfo<sizeof...(ArgsType), 0, ArgsType...>();
+    }
+
+    const PassInfo *ParamsPassInfo() const
+    {
+        return params_;
+    }
+
+    const size_t ParamsPassInfoSize() const
+    {
+        return sizeof...(ArgsType);
+    }
+
+private:
+    template<size_t size, size_t index, typename T, typename... NextArgsType>
+    inline typename std::enable_if<sizeof...(NextArgsType) != 0, void>::type InitializePassInfo()
+    {
+        TypeInfo<T>(params_[index]);
+        InitializePassInfo<size, index + 1, NextArgsType...>();
+    }
+
+    template<size_t size, size_t index, typename T>
+    inline void InitializePassInfo()
+    {
+        TypeInfo<T>(params_[index]);
+    }
+
+    PassInfo params_[sizeof...(ArgsType)];
+};
+
+template <typename T>
+struct ReturnTypeInfo
+{
+    static const size_t size()
+    {
+        return sizeof(T);
+    }
+
+    static const int type()
+    {
+        return GetPassInfo<T>::type;
+    }
+
+    static const unsigned int flags()
+    {
+        return GetPassInfo<T>::flags;
+    }
+};
+
+template <>
+struct ReturnTypeInfo<void>
+{
+    static const size_t size()
+    {
+        return 0; // why isn't it sizeof(void) like in TypeInfo<T>?
+    }
+
+    static const int type()
+    {
+        return 0;
+    }
+
+    static const unsigned int flags()
+    {
+        return 0;
+    }
+};
+
+template<typename T>
+class CHookManagerMemberFuncHandler : public IHookManagerMemberFunc
+{
+public:
+    typedef int (T::*HookManagerMemberFunc)(bool store, IHookManagerInfo *hi);
+
+    explicit CHookManagerMemberFuncHandler(T* funcHandler, HookManagerMemberFunc func)
+     : funcHandler_(funcHandler)
+     , func_(func)
+    {
+    }
+
+    virtual ~CHookManagerMemberFuncHandler()
+    {
+    }
+
+private:
+    virtual int Call(bool store, IHookManagerInfo *hi) const override
+    {
+        return (funcHandler_->*func_)(store, hi);
+    }
+
+private:
+    T* funcHandler_;
+    HookManagerMemberFunc func_;
+};
+
+template<typename ReturnType, class ... Params>
+class ManualHookHandler : public CHookManagerMemberFuncHandler<ManualHookHandler<ReturnType, Params...>>
+{
+public:
+    typedef ManualHookHandler<ReturnType, Params...> ThisType;
+    typedef fastdelegate::FastDelegate<ReturnType, Params...> FD;
+    typedef ReturnType(EmptyClass::*ECMFP)(Params...);
+    typedef ExecutableClassN<EmptyClass, ECMFP, ReturnType, Params...> CallEC;
+
+    template<typename T>
+    struct HookedFuncType
+    {
+        typedef ReturnType (T::*HookFunc)(Params...);
+    };
+
+    ManualHookHandler()
+        : CHookManagerMemberFuncHandler<ThisType>(this, &ThisType::HookManPubFunc)
+        , thisPointerOffset_(0)
+        , vTableIndex_(0)
+        , vtableOffset_(0)
+        , msMFI_{false, 0, 0, 0}
+        , msHI_(nullptr)
+        , msProto_{sizeof...(Params),
+                   {ReturnTypeInfo<ReturnType>::size(), ReturnTypeInfo<ReturnType>::type(), ReturnTypeInfo<ReturnType>::flags()},
+                   paramInfosM_.ParamsPassInfo(),
+                   0,
+                   __SH_EPI,
+                   paramInfos2M_}
+    {
+        for(PassInfo::V2Info& paramInfo : paramInfos2M_)
+        {
+            paramInfo = __SH_EPI;
+        }
+    }
+
+    virtual ~ManualHookHandler()
+    {
+        //TODO apply RAII, cleanup all related hooks here
+    }
+
+    // TODO probably not needed for manual hooks
+    void Reconfigure()
+    {
+        msMFI_.isVirtual = true;
+        msMFI_.thisptroffs = thisPointerOffset_;
+        msMFI_.vtblindex = vTableIndex_;
+        msMFI_.vtbloffs = vtableOffset_;
+    }
+
+    void Reconfigure(int vtblindex, int vtbloffs = 0, int thisptroffs = 0)
+    {
+        g_SHPtr->RemoveHookManager(g_PLID, this);
+        msMFI_.thisptroffs = thisptroffs;
+        msMFI_.vtblindex = vtblindex;
+        msMFI_.vtbloffs = vtbloffs;
+    }
+
+    template<typename T>
+    int Add(void *iface, T* callbackInstPtr, typename HookedFuncType<T>::HookFunc callbackFuncPtr, bool post = true, ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+    {
+        typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
+        typename ThisType::CMyDelegateImpl* tmp = new typename ThisType::CMyDelegateImpl(handler); // TODO use unique_ptr here
+
+        return g_SHPtr->AddHook(g_PLID, mode, iface, thisPointerOffset_, this, tmp, post);
+    }
+
+    template<typename T>
+    bool Remove(void *iface, T* callbackInstPtr, typename HookedFuncType<T>::HookFunc callbackFuncPtr, bool post = true)
+    {
+        typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
+        typename ThisType::CMyDelegateImpl tmp(handler);
+
+        return g_SHPtr->RemoveHook(g_PLID, iface, thisPointerOffset_, this, &tmp, post);
+    }
+
+    // For void return type only
+    template<typename U = ReturnType, typename std::enable_if<std::is_same<U, void>::value, void>::type* = nullptr>
+    void Recall(META_RES result, Params... newparams)
+    {
+        g_SHPtr->SetRes(result);
+        g_SHPtr->DoRecall();
+        SourceHook::EmptyClass *thisptr = reinterpret_cast<EmptyClass*>(g_SHPtr->GetIfacePtr());
+        (thisptr->*(GetRecallMFP(thisptr)))(newparams...);
+        g_SHPtr->SetRes(MRES_SUPERCEDE);
+    }
+
+    // For any return type but void
+    template<typename U = ReturnType, typename std::enable_if<!std::is_same<U, void>::value, void>::type* = nullptr>
+    U Recall(META_RES result, U value, Params... newparams)
+    {
+        g_SHPtr->SetRes(result);
+        g_SHPtr->DoRecall();
+        if ((result) >= MRES_OVERRIDE)
+        {
+            /* see RETURN_META_VALUE_NEWPARAMS */
+            SetOverrideResult(g_SHPtr, value);
+        }
+        EmptyClass *thisptr = reinterpret_cast<EmptyClass*>(g_SHPtr->GetIfacePtr());
+        g_SHPtr->SetRes(MRES_SUPERCEDE);
+        return (thisptr->*(GetRecallMFP(thisptr)))(newparams...);
+    }
+
+private:
+    struct IMyDelegate : ISHDelegate
+    {
+        virtual ReturnType Call(Params... params) = 0;
+    };
+
+    struct CMyDelegateImpl : public IMyDelegate
+    {
+        FD m_Deleg;
+        CMyDelegateImpl(FD deleg)
+            : m_Deleg(deleg)
+        {
+        }
+
+        virtual ReturnType Call(Params... params) override
+        {
+            return m_Deleg(params...);
+        }
+
+        virtual void DeleteThis() override
+        {
+            delete this;
+        }
+
+        virtual bool IsEqual(ISHDelegate *pOtherDeleg) override
+        {
+            return m_Deleg == static_cast<CMyDelegateImpl*>(pOtherDeleg)->m_Deleg;
+        }
+    };
+
+    // Implementation for any return type but void
+    template<typename U = ReturnType, typename std::enable_if<!std::is_same<U, void>::value, void>::type* = nullptr>
+    U Func(Params... params)
+    {
+        /* 1) Set up calls */
+        void *ourvfnptr = reinterpret_cast<void*>(*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + msMFI_.vtbloffs) + msMFI_.vtblindex);
+        void *vfnptr_origentry;
+
+        META_RES status = MRES_IGNORED;
+        META_RES prev_res;
+        META_RES cur_res;
+
+        typedef typename ReferenceCarrier<ReturnType>::type my_rettype;
+        my_rettype orig_ret;
+        my_rettype override_ret;
+        my_rettype plugin_ret;
+        IMyDelegate *iter = nullptr;
+
+        IHookContext *pContext = g_SHPtr->SetupHookLoop(msHI_,
+                                                        ourvfnptr,
+                                                        reinterpret_cast<void*>(this),
+                                                        &vfnptr_origentry,
+                                                        &status,
+                                                        &prev_res,
+                                                        &cur_res,
+                                                        &orig_ret,
+                                                        &override_ret);
+
+        prev_res = MRES_IGNORED;
+
+        while ((iter = static_cast<IMyDelegate*>(pContext->GetNext())))
+        {
+            cur_res = MRES_IGNORED;
+            plugin_ret = iter->Call(params...);
+            prev_res = cur_res;
+
+            if (cur_res > status)
+                status = cur_res;
+
+            if (cur_res >= MRES_OVERRIDE)
+                *reinterpret_cast<my_rettype*>(pContext->GetOverrideRetPtr()) = plugin_ret;
+        }
+
+        if (status != MRES_SUPERCEDE && pContext->ShouldCallOrig())
+        {
+            ReturnType (EmptyClass::*mfp)(Params...);
+            SH_SETUP_MFP(mfp);
+
+            orig_ret = (reinterpret_cast<EmptyClass*>(this)->*mfp)(params...);
+        }
+        else
+            orig_ret = override_ret; /* :TODO: ??? : use pContext->GetOverrideRetPtr() or not? */
+
+        prev_res = MRES_IGNORED;
+        while ((iter = static_cast<IMyDelegate*>(pContext->GetNext())))
+        {
+            cur_res = MRES_IGNORED;
+            plugin_ret = iter->Call(params...);
+            prev_res = cur_res;
+
+            if (cur_res > status)
+                status = cur_res;
+
+            if (cur_res >= MRES_OVERRIDE)
+                *reinterpret_cast<my_rettype*>(pContext->GetOverrideRetPtr()) = plugin_ret;
+        }
+
+        const void* repPtr = (status >= MRES_OVERRIDE) ? pContext->GetOverrideRetPtr() :
+                                                         pContext->GetOrigRetPtr();
+
+        g_SHPtr->EndContext(pContext);
+
+        return *reinterpret_cast<const my_rettype*>(repPtr);
+    }
+
+    // Implementation for void return type only
+    template<typename U = ReturnType, typename std::enable_if<std::is_same<U, void>::value, void>::type* = nullptr>
+    void Func(Params... params)
+    {
+        /* 1) Set up calls */
+        void *ourvfnptr = reinterpret_cast<void*>(*reinterpret_cast<void***>(reinterpret_cast<char*>(this) + msMFI_.vtbloffs) + msMFI_.vtblindex);
+        void *vfnptr_origentry;
+
+        META_RES status = MRES_IGNORED;
+        META_RES prev_res;
+        META_RES cur_res;
+
+        IMyDelegate *iter = nullptr;
+
+        IHookContext *pContext = g_SHPtr->SetupHookLoop(msHI_,
+                                                        ourvfnptr,
+                                                        reinterpret_cast<void*>(this),
+                                                        &vfnptr_origentry,
+                                                        &status,
+                                                        &prev_res,
+                                                        &cur_res,
+                                                        nullptr,
+                                                        nullptr);
+
+        prev_res = MRES_IGNORED;
+        while ((iter = static_cast<IMyDelegate*>(pContext->GetNext())))
+        {
+            cur_res = MRES_IGNORED;
+            iter->Call(params...);
+            prev_res = cur_res;
+
+            if (cur_res > status)
+                status = cur_res;
+        }
+
+        if (status != MRES_SUPERCEDE && pContext->ShouldCallOrig())
+        {
+            void (EmptyClass::*mfp)(Params...);
+
+            reinterpret_cast<void**>(&mfp)[0] = vfnptr_origentry;
+            reinterpret_cast<void**>(&mfp)[1] = 0;
+
+            (reinterpret_cast<EmptyClass*>(this)->*mfp)(params...);
+        }
+
+        prev_res = MRES_IGNORED;
+        while ( (iter = static_cast<IMyDelegate*>(pContext->GetNext())))
+        {
+            cur_res = MRES_IGNORED;
+
+            iter->Call(params...);
+            prev_res = cur_res;
+
+            if (cur_res > status)
+                status = cur_res;
+        }
+
+        g_SHPtr->EndContext(pContext);
+    }
+
+    int HookManPubFunc(bool store, IHookManagerInfo *hi)
+    {
+        /* Verify interface version */
+        if (g_SHPtr->GetIfaceVersion() != SH_IFACE_VERSION)
+            return 1;
+
+        if (g_SHPtr->GetImplVersion() < SH_IMPL_VERSION)
+            return 1;
+
+        if (store)
+            msHI_ = hi;
+
+        if (hi)
+        {
+            MemFuncInfo mfi = {true, -1, 0, 0};
+            GetFuncInfo<ThisType, ThisType, void, Params...>(this, &ThisType::Func, mfi);
+
+            hi->SetInfo(SH_HOOKMAN_VERSION,
+                        msMFI_.vtbloffs,
+                        msMFI_.vtblindex,
+                        &msProto_,
+                        reinterpret_cast<void**>(reinterpret_cast<char*>(this) + mfi.vtbloffs)[mfi.vtblindex]);
+        }
+
+        return 0;
+    }
+
+    typename ManualHookHandler::ECMFP GetRecallMFP(EmptyClass *thisptr)
+    {
+        union
+        {
+            typename ManualHookHandler::ECMFP mfp;
+            struct
+            {
+                void *addr;
+                intptr_t adjustor;
+            } s;
+        } u;
+
+        u.s.addr = (*reinterpret_cast<void***>(reinterpret_cast<char*>(thisptr) + msMFI_.vtbloffs))[msMFI_.vtblindex];
+        u.s.adjustor = 0;
+
+        return u.mfp;
+    }
+
+    typename ManualHookHandler::CallEC Call(void *ptr)
+    {
+        typename ManualHookHandler::ECMFP mfp;
+        void *vfnptr = reinterpret_cast<void*>(*reinterpret_cast<void***>((reinterpret_cast<char*>(ptr) + msMFI_.thisptroffs + msMFI_.vtbloffs) ) + msMFI_.vtblindex);
+
+        /* patch mfp */
+        *reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr);
+
+        if (sizeof(mfp) == 2*sizeof(void*)) /* gcc */
+            *(reinterpret_cast<void**>(&mfp) + 1) = 0;
+
+        return ManualHookHandler::CallEC(reinterpret_cast<EmptyClass*>(ptr), mfp, vfnptr, g_SHPtr);
+    }
+
+    // Implementation for any return type but void
+    template<typename U = ReturnType, typename std::enable_if<!std::is_same<U, void>::value, void>::type* = nullptr>
+    void SetOverrideResult(ISourceHook *shptr, U value)
+    {
+        OverrideFunctor<U> overrideFunc = SourceHook::SetOverrideResult<U>();
+        overrideFunc(shptr, value);
+    }
+
+private:
+    int thisPointerOffset_; // thisptroffs
+    int vTableIndex_; // vtblindex
+    int vtableOffset_; // vtbloffs
+
+    MemFuncInfo msMFI_; // ms_MFI
+    IHookManagerInfo *msHI_; // ms_HI
+
+    PassInfoInitializer<void, Params...> paramInfosM_; // ParamInfosM
+    PassInfo::V2Info paramInfos2M_[sizeof...(Params) + 1]; // ParamInfos2M
+    ProtoInfo msProto_; // ms_Proto
+};
+
+} // SourceHook
 
 #endif
 	// The pope is dead. -> :(
