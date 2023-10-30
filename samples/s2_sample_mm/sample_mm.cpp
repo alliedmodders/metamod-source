@@ -70,6 +70,9 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	// Currently doesn't work from within mm side, use GetGameGlobals() in the mean time instead
 	// gpGlobals = ismm->GetCGlobals();
 
+	// Required to get the IMetamodListener events
+	g_SMAPI->AddListener( this, this );
+
 	META_CONPRINTF( "Starting plugin.\n" );
 
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &SamplePlugin::Hook_GameFrame, true);
@@ -157,7 +160,6 @@ void SamplePlugin::Hook_GameFrame( bool simulating, bool bFirstTick, bool bLastT
 	 */
 }
 
-// Potentially might not work
 void SamplePlugin::OnLevelInit( char const *pMapName,
 									 char const *pMapEntities,
 									 char const *pOldLevel,
@@ -168,7 +170,6 @@ void SamplePlugin::OnLevelInit( char const *pMapName,
 	META_CONPRINTF("OnLevelInit(%s)\n", pMapName);
 }
 
-// Potentially might not work
 void SamplePlugin::OnLevelShutdown()
 {
 	META_CONPRINTF("OnLevelShutdown()\n");
