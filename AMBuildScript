@@ -284,6 +284,12 @@ class MMSConfig(object):
   def Library(self, cxx, name):
     binary = cxx.Library(name)
     self.AddVersioning(binary)
+
+    if binary.compiler.like('gcc'):
+      binary.sources += [
+        os.path.join(builder.sourcePath, 'third_party', 'amtl', 'compat', 'stdcxx.cpp')
+      ]
+    
     return binary
 
   def Program(self, compiler, name):
