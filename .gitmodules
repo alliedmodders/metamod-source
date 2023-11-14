@@ -4,6 +4,3 @@
 [submodule "hl2sdk-manifests"]
 	path = hl2sdk-manifests
 	url = https://github.com/alliedmodders/hl2sdk-manifests
-[submodule "samples/s2_sample_mm/hl2sdk-manifests"]
-	path = samples/s2_sample_mm/hl2sdk-manifests
-	url = https://github.com/alliedmodders/hl2sdk-manifests
