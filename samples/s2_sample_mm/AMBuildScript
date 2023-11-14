@@ -275,6 +275,10 @@ class MMSPluginConfig(object):
 
     if sdk['source2']:
       cxx.defines += ['META_IS_SOURCE2']
+      binary.sources += [
+        os.path.join(sdk['path'], 'tier0_perproject', 'memoverride.cpp'),
+        os.path.join(sdk['path'], 'tier1', 'convar.cpp'),
+      ]
 
     SdkHelpers.configureCxx(context, binary, sdk)
 
