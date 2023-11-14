@@ -23,8 +23,6 @@ for sdk, cxx in MMS.sdk_targets:
   if sdk.get('source2', False):
     binary.sources += [
       'provider/source2/provider_source2.cpp',
-      os.path.join(sdk['path'], 'tier1', 'convar.cpp'),
-      os.path.join(sdk['path'], 'public', 'tier0', 'memoverride.cpp')
     ]
   else:
     binary.sources += [
