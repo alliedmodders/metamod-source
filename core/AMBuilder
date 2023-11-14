@@ -1,7 +1,10 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
-for sdk, cxx in MMS.sdk_targets:
+for sdk_target in MMS.sdk_targets:
+  sdk = sdk_target.sdk
+  cxx = sdk_target.cxx
+  
   name = 'metamod.' + sdk['extension']
   binary = MMS.HL2Library(builder, cxx, name, sdk)
 
@@ -30,6 +33,11 @@ for sdk, cxx in MMS.sdk_targets:
       'provider/source/provider_source_console.cpp',
       'vsp_bridge.cpp'
       ]
+  
+  if sdk['name'] == 'cs2':
+    binary.custom = [builder.tools.Protoc(protoc = sdk_target.protoc, sources = [
+      os.path.join(sdk['path'], 'common', 'network_connection.proto'),
+    ])]
 
   if cxx.target.arch == 'x86':
     binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
