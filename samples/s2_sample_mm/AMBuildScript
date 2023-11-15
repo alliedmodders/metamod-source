@@ -329,7 +329,7 @@ class MMSPluginConfig(object):
 
     # Platform-specifics
     if cxx.target.platform == 'linux':
-      cxx.defines += ['_LINUX', 'POSIX', '_FILE_OFFSET_BITS=64']
+      cxx.defines += ['LINUX', '_LINUX', 'POSIX', '_FILE_OFFSET_BITS=64']
       if cxx.family == 'gcc':
         cxx.linkflags += ['-static-libgcc']
       elif cxx.family == 'clang':
