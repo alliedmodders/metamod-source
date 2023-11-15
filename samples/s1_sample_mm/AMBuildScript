@@ -252,6 +252,7 @@ class MMSConfig(object):
     if builder.target.platform == 'linux':
       cxx.defines += [
         'POSIX',
+        'LINUX',
         '_LINUX',
       ]
       cxx.linkflags += ['-shared']
