@@ -52,7 +52,11 @@ def ResolveMMSRoot():
 
 mms_root = ResolveMMSRoot()
 
-SdkHelpers = builder.Eval('hl2sdk-manifests/SdkHelpers.ambuild', {
+if not builder.options.hl2sdk_manifests:
+  raise Exception('Could not find a source copy of HL2SDK manifests')
+hl2sdk_manifests = builder.options.hl2sdk_manifests
+
+SdkHelpers = builder.Eval(os.path.join(hl2sdk_manifests, 'SdkHelpers.ambuild'), {
   'Project': 'metamod'
 })
 
