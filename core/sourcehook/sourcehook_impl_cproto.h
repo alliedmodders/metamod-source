@@ -53,6 +53,8 @@ namespace SourceHook
 
 			void Fill(const ProtoInfo *pProto);
 
+			void Fill(const IProtoInfo *pProto);
+
 			// For old sourcehook.h: flags 0 -> assume ByVal
 			static unsigned int GetRealFlags(const PassInfo &info)
 			{
@@ -65,6 +67,11 @@ namespace SourceHook
 			}
 
 			CProto(const ProtoInfo *pProto)
+			{
+				Fill(pProto);
+			}
+
+			CProto(const IProtoInfo *pProto)
 			{
 				Fill(pProto);
 			}

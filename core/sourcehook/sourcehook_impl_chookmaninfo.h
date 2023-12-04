@@ -74,6 +74,9 @@ namespace SourceHook
 			// *** IHookManagerInfo interface ***
 			void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
 				ProtoInfo *proto, void *hookfunc_vfnptr);
+
+			void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
+				IProtoInfo *proto, void *hookfunc_vfnptr);
 		};
 
 		class CHookManList : public List<CHookManager>

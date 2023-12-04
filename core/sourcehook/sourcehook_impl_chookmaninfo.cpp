@@ -37,6 +37,16 @@ namespace SourceHook
 			m_HookfuncVfnptr = hookfunc_vfnptr;
 		}
 
+		void CHookManager::SetInfo(int hookman_version, int vtbloffs, int vtblidx,
+			IProtoInfo *proto, void *hookfunc_vfnptr)
+		{
+			m_Version = hookman_version;
+			m_VtblOffs = vtbloffs;
+			m_VtblIdx = vtblidx;
+			m_Proto = proto;
+			m_HookfuncVfnptr = hookfunc_vfnptr;
+		}
+
 		void CHookManager::Register()
 		{
 			m_PubFunc(true, this);

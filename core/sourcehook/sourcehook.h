@@ -184,6 +184,20 @@ namespace SourceHook
 	*/
 	struct PassInfo
 	{
+		PassInfo()
+		 : size(0)
+		 , type(0)
+		 , flags(0)
+		{
+		}
+
+		PassInfo(size_t typeSize, int typeId, unsigned int typeFlags)
+		 : size(typeSize)
+		 , type(typeId)
+		 , flags(typeFlags)
+		{
+		}
+
 		enum PassType
 		{
 			PassType_Unknown=0,		/**< Unknown -- no extra info available */
@@ -217,6 +231,22 @@ namespace SourceHook
 
 		struct V2Info
 		{
+			V2Info()
+			 : pNormalCtor(nullptr)
+			 , pCopyCtor(nullptr)
+			 , pDtor(nullptr)
+			 , pAssignOperator(nullptr)
+			{
+			}
+
+			V2Info(void *normalCtor, void *copyCtor, void *dtor, void *assignOperator)
+			 : pNormalCtor(normalCtor)
+			 , pCopyCtor(copyCtor)
+			 , pDtor(dtor)
+			 , pAssignOperator(assignOperator)
+			{
+			}
+
 			void *pNormalCtor;
 			void *pCopyCtor;
 			void *pDtor;
@@ -250,6 +280,26 @@ namespace SourceHook
 		// Version2:
 		PassInfo::V2Info retPassInfo2;
 		const PassInfo::V2Info *paramsPassInfo2;
+	};
+
+	class IProtoInfo
+	{
+	public:
+		enum class ProtoInfoVersion : int
+		{
+			ProtoInfoVersionInvalid = -1,
+			ProtoInfoVersion1 = 0,
+			ProtoInfoVersion2 = 1
+		};
+
+		virtual ~IProtoInfo() = default;
+		virtual size_t GetNumOfParams() const = 0;
+		virtual const PassInfo &GetRetPassInfo() const = 0;
+		virtual const PassInfo *GetParamsPassInfo() const = 0;
+		virtual int GetConvention() const = 0;
+		virtual IProtoInfo::ProtoInfoVersion GetVersion() const = 0;
+		virtual const PassInfo::V2Info &GetRetPassInfo2() const = 0;
+		virtual const PassInfo::V2Info *GetParamsPassInfo2() const = 0;
 	};
 
 	struct IHookManagerInfo;
@@ -409,6 +459,9 @@ namespace SourceHook
 	{
 		virtual void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
 			ProtoInfo *proto, void *hookfunc_vfnptr) = 0;
+
+		virtual void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
+			IProtoInfo *proto, void *hookfunc_vfnptr) = 0;
 	};
 
 	// I'm adding support for functions which return references.
@@ -5130,12 +5183,17 @@ public:
         InitializePassInfo<sizeof...(ArgsType), 0, ArgsType...>();
     }
 
-    const PassInfo *ParamsPassInfo() const
+    const PassInfo *GetParamsPassInfo() const
     {
         return params_;
     }
 
-    const size_t ParamsPassInfoSize() const
+    const PassInfo::V2Info *GetParamsPassInfoV2() const
+    {
+        return paramsV2_;
+    }
+
+    const size_t GetParamsPassInfoSize() const
     {
         return sizeof...(ArgsType);
     }
@@ -5155,6 +5213,32 @@ private:
     }
 
     PassInfo params_[sizeof...(ArgsType)];
+    PassInfo::V2Info paramsV2_[sizeof...(ArgsType)];
+};
+
+// For zero arguments
+template<>
+class PassInfoInitializer<>
+{
+public:
+    constexpr PassInfoInitializer()
+    {
+    }
+
+    const PassInfo *GetParamsPassInfo() const
+    {
+        return nullptr;
+    }
+
+    const PassInfo::V2Info *GetParamsPassInfoV2() const
+    {
+        return nullptr;
+    }
+
+    const size_t GetParamsPassInfoSize() const
+    {
+        return 0;
+    }
 };
 
 template <typename T>
@@ -5181,7 +5265,7 @@ struct ReturnTypeInfo<void>
 {
     static const size_t size()
     {
-        return 0; // why isn't it sizeof(void) like in TypeInfo<T>?
+        return 0;
     }
 
     static const int type()
@@ -5223,6 +5307,64 @@ private:
 };
 
 template<typename ReturnType, class ... Params>
+class CProtoInfo : public IProtoInfo
+{
+public:
+	constexpr CProtoInfo()
+         : retPassInfo(ReturnTypeInfo<ReturnType>::size(),
+		       ReturnTypeInfo<ReturnType>::type(),
+		       ReturnTypeInfo<ReturnType>::flags())
+	{
+	}
+
+	virtual ~CProtoInfo() override
+	{
+	}
+
+	virtual size_t GetNumOfParams() const override
+	{
+		return paramsPassInfo.GetParamsPassInfoSize();
+	}
+
+	virtual const PassInfo &GetRetPassInfo() const override
+	{
+		return retPassInfo;
+	}
+
+	virtual const PassInfo *GetParamsPassInfo() const override
+	{
+		return paramsPassInfo.GetParamsPassInfo();
+	}
+
+	virtual int GetConvention() const override
+	{
+		return 0;
+	}
+
+	// version of the ProtoInfo structure.
+	virtual IProtoInfo::ProtoInfoVersion GetVersion() const override
+	{
+		return ProtoInfoVersion::ProtoInfoVersion2;
+	}
+
+	virtual const PassInfo::V2Info &GetRetPassInfo2() const override
+	{
+		return retPassInfo2;
+	}
+
+	virtual const PassInfo::V2Info *GetParamsPassInfo2() const override
+	{
+		return paramsPassInfo.GetParamsPassInfoV2();
+	}
+
+private:
+	int numOfParams;		//!< number of parameters
+	PassInfo retPassInfo;		//!< PassInfo for the return value. size=0 -> no retval
+	PassInfo::V2Info retPassInfo2;  //!< Version2 only
+	PassInfoInitializer<Params...> paramsPassInfo;	//!< PassInfos for the parameters
+};
+
+template<typename ReturnType, class ... Params>
 class ManualHookHandler : public CHookManagerMemberFuncHandler<ManualHookHandler<ReturnType, Params...>>
 {
 public:
@@ -5237,38 +5379,24 @@ public:
         typedef ReturnType (T::*HookFunc)(Params...);
     };
 
-    ManualHookHandler()
+    constexpr ManualHookHandler()
         : CHookManagerMemberFuncHandler<ThisType>(this, &ThisType::HookManPubFunc)
-        , thisPointerOffset_(0)
-        , vTableIndex_(0)
-        , vtableOffset_(0)
         , msMFI_{false, 0, 0, 0}
         , msHI_(nullptr)
-        , msProto_{sizeof...(Params),
-                   {ReturnTypeInfo<ReturnType>::size(), ReturnTypeInfo<ReturnType>::type(), ReturnTypeInfo<ReturnType>::flags()},
-                   paramInfosM_.ParamsPassInfo(),
-                   0,
-                   __SH_EPI,
-                   paramInfos2M_}
     {
-        for(PassInfo::V2Info& paramInfo : paramInfos2M_)
-        {
-            paramInfo = __SH_EPI;
-        }
     }
+
+    ManualHookHandler(const ManualHookHandler&) = delete;
+
+    ManualHookHandler(ManualHookHandler&&) = delete;
+
+    ManualHookHandler& operator=(const ManualHookHandler&) = delete;
+
+    ManualHookHandler& operator=(ManualHookHandler&&) = delete;
 
     virtual ~ManualHookHandler()
     {
         //TODO apply RAII, cleanup all related hooks here
-    }
-
-    // TODO probably not needed for manual hooks
-    void Reconfigure()
-    {
-        msMFI_.isVirtual = true;
-        msMFI_.thisptroffs = thisPointerOffset_;
-        msMFI_.vtblindex = vTableIndex_;
-        msMFI_.vtbloffs = vtableOffset_;
     }
 
     void Reconfigure(int vtblindex, int vtbloffs = 0, int thisptroffs = 0)
@@ -5285,7 +5413,7 @@ public:
         typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
         typename ThisType::CMyDelegateImpl* tmp = new typename ThisType::CMyDelegateImpl(handler); // TODO use unique_ptr here
 
-        return g_SHPtr->AddHook(g_PLID, mode, iface, thisPointerOffset_, this, tmp, post);
+        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, this, tmp, post);
     }
 
     template<typename T>
@@ -5294,7 +5422,7 @@ public:
         typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
         typename ThisType::CMyDelegateImpl tmp(handler);
 
-        return g_SHPtr->RemoveHook(g_PLID, iface, thisPointerOffset_, this, &tmp, post);
+        return g_SHPtr->RemoveHook(g_PLID, iface, 0, this, &tmp, post);
     }
 
     // For void return type only
@@ -5557,16 +5685,10 @@ private:
     }
 
 private:
-    int thisPointerOffset_; // thisptroffs
-    int vTableIndex_; // vtblindex
-    int vtableOffset_; // vtbloffs
-
     MemFuncInfo msMFI_; // ms_MFI
     IHookManagerInfo *msHI_; // ms_HI
 
-    PassInfoInitializer<void, Params...> paramInfosM_; // ParamInfosM
-    PassInfo::V2Info paramInfos2M_[sizeof...(Params) + 1]; // ParamInfos2M
-    ProtoInfo msProto_; // ms_Proto
+    CProtoInfo<ReturnType, Params...> msProto_; // ms_Proto
 };
 
 } // SourceHook
