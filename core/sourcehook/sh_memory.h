@@ -262,37 +262,34 @@ namespace SourceHook
 		{
 #if SH_SYS == SH_SYS_LINUX
 			// On linux, first check /proc/self/maps
-			long lower = reinterpret_cast<long>(addr);
-			long upper = lower + len;
-
+			unsigned long lower = reinterpret_cast<unsigned long>(addr);
+			unsigned long upper = lower + len;
+			
+			bool bFound = false;
 			FILE *pF = fopen("/proc/self/maps", "r");
 			if (pF)
 			{
 				// Linux /proc/self/maps -> parse
 				// Format:
-				// lower    upper    prot     stuff                 path
-				// 08048000-0804c000 r-xp 00000000 03:03 1010107    /bin/cat
-				long rlower, rupper;
-				while (fscanf(pF, "%lx-%lx", &rlower, &rupper) != EOF)
-				{
+				// lower	upper	prot	 stuff				 path
+				// 08048000-0804c000 r-xp 00000000 03:03 1010107	/bin/cat
+				unsigned long rlower, rupper;
+				char *buffer = NULL;
+				size_t bufsize = 0;
+				while (getline(&buffer, &bufsize, pF) != -1) {
+					char *addr_split;
+					rlower = strtoul(buffer, &addr_split, 16);
+					rupper = strtoul(&addr_split[1], NULL, 16);
 					// Check whether we're IN THERE!
 					if (lower >= rlower && upper <= rupper)
 					{
-						fclose(pF);
-						return true;
-					}
-					// Read to end of line
-					int c;
-					while ((c = fgetc(pF)) != '\n')
-					{
-						if (c == EOF)
-							break;
-					}
-					if (c == EOF)
+						bFound = true;
 						break;
+					}
 				}
+				free(buffer);
 				fclose(pF);
-				return false;
+				return bFound;
 			}
 			pF = fopen("/proc/curproc/map", "r");
 			if (pF)
