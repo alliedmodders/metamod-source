@@ -715,10 +715,6 @@ namespace SourceHook
 		virtual int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
 			ISHDelegate *handler, bool post) = 0;
 
-		// Source backwarts compat (only for normal hooks)
-		virtual bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
-			ISHDelegate *handler, bool post) = 0;
-
 		/**
 		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
 		*
@@ -5396,7 +5392,7 @@ public:
 
     virtual ~ManualHookHandler()
     {
-        //TODO apply RAII, cleanup all related hooks here
+        g_SHPtr->RemoveHookManager(g_PLID, this);
     }
 
     void Reconfigure(int vtblindex, int vtbloffs = 0, int thisptroffs = 0)
@@ -5416,13 +5412,19 @@ public:
         return g_SHPtr->AddHook(g_PLID, mode, iface, 0, this, tmp, post);
     }
 
-    template<typename T>
-    bool Remove(void *iface, T* callbackInstPtr, typename HookedFuncType<T>::HookFunc callbackFuncPtr, bool post = true)
+    bool Remove(int hookid)
     {
-        typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
-        typename ThisType::CMyDelegateImpl tmp(handler);
+        return g_SHPtr->RemoveHookByID(hookid);
+    }
 
-        return g_SHPtr->RemoveHook(g_PLID, iface, 0, this, &tmp, post);
+    bool Pause(int hookid)
+    {
+        return g_SHPtr->PauseHookByID(hookid);
+    }
+
+    bool Unpause(int hookid)
+    {
+        return g_SHPtr->UnpauseHookByID(hookid);
     }
 
     // For void return type only

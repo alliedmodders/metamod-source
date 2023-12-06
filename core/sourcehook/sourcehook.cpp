@@ -188,12 +188,6 @@ namespace SourceHook
 			return RemoveHook(plug, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
 		}
 
-		bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
-			ISHDelegate *handler, bool post)
-		{
-			return RemoveHook(plug, iface, thisptr_offs, HookManagerPubFuncHandler(myHookMan), handler, post);
-		}
-
 		bool CSourceHookImpl::RemoveHook(Plugin plug, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
 			ISHDelegate *handler, bool post)
 		{

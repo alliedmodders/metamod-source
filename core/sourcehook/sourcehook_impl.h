@@ -331,9 +331,6 @@ namespace SourceHook
 			bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 				ISHDelegate *handler, bool post);
 
-			bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
-				ISHDelegate *handler, bool post);
-
 			bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
 				ISHDelegate *handler, bool post);
 
