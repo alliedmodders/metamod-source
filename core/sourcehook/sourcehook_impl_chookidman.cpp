@@ -19,6 +19,25 @@ namespace SourceHook
 		{
 		}
 
+		void CHookIDManager::OptimizeEntryVector()
+		{
+			const size_t curSize = m_Entries.size();
+			size_t newSize = curSize;
+			for(size_t i = m_Entries.size(); i != 0; --i)
+			{
+				const size_t entryIndex = i - 1;
+				if (!m_Entries[entryIndex].IsFree())
+					break;
+
+				newSize = entryIndex;
+			}
+
+			if(curSize != newSize)
+			{
+				m_Entries.resize(newSize);
+			}
+		}
+
 		int CHookIDManager::New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr,
 			void *adjustediface, Plugin plug, int thisptr_offs, const SHDelegateHandler &handler, bool post)
 		{
@@ -27,7 +46,7 @@ namespace SourceHook
 			size_t cursize = m_Entries.size();
 			for (size_t i = 0; i < cursize; ++i)
 			{
-				if (m_Entries[i].isfree)
+				if (m_Entries[i].IsFree())
 				{
 					m_Entries[i] = tmp;
 					return static_cast<int>(i) + 1;
@@ -41,21 +60,20 @@ namespace SourceHook
 		bool CHookIDManager::Remove(int hookid)
 		{
 			int realid = hookid - 1;
-			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].isfree)
+			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].IsFree())
 				return false;
 
-			m_Entries[realid].handler.reset();
-			m_Entries[realid].isfree = true;
+			m_Entries[realid].Reset();
 
-			// :TODO: remove free ids from back sometimes ??
+			OptimizeEntryVector();
 
 			return true;
 		}
 
-		const CHookIDManager::Entry * CHookIDManager::QueryHook(int hookid)
+		const CHookIDManager::Entry *CHookIDManager::QueryHook(int hookid)
 		{
 			int realid = hookid - 1;
-			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].isfree)
+			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].IsFree())
 				return NULL;
 
 			return &m_Entries[realid];
@@ -68,7 +86,7 @@ namespace SourceHook
 			size_t cursize = m_Entries.size();
 			for (size_t i = 0; i < cursize; ++i)
 			{
-				if (!m_Entries[i].isfree && m_Entries[i].proto == proto && m_Entries[i].vtbl_offs == vtbl_offs &&
+				if (!m_Entries[i].IsFree() && m_Entries[i].proto == proto && m_Entries[i].vtbl_offs == vtbl_offs &&
 					m_Entries[i].vtbl_idx == vtbl_idx && m_Entries[i].adjustediface == adjustediface && m_Entries[i].plug == plug &&
 					m_Entries[i].thisptr_offs == thisptr_offs && m_Entries[i].handler->IsEqual(handler) && m_Entries[i].post == post)
 				{
@@ -82,7 +100,7 @@ namespace SourceHook
 			size_t cursize = m_Entries.size();
 			for (size_t i = 0; i < cursize; ++i)
 			{
-				if (!m_Entries[i].isfree)
+				if (!m_Entries[i].IsFree())
 					output.push_back(static_cast<int>(i) + 1);
 			}
 		}
@@ -92,7 +110,7 @@ namespace SourceHook
 			size_t cursize = m_Entries.size();
 			for (size_t i = 0; i < cursize; ++i)
 			{
-				if (!m_Entries[i].isfree && m_Entries[i].plug == plug)
+				if (!m_Entries[i].IsFree() && m_Entries[i].plug == plug)
 					output.push_back(static_cast<int>(i) + 1);
 			}
 		}
@@ -103,12 +121,13 @@ namespace SourceHook
 			size_t cursize = m_Entries.size();
 			for (size_t i = 0; i < cursize; ++i)
 			{
-				if (!m_Entries[i].isfree && m_Entries[i].vfnptr == vfnptr)
+				if (!m_Entries[i].IsFree() && m_Entries[i].vfnptr == vfnptr)
 				{
-					m_Entries[i].handler.reset();
-					m_Entries[i].isfree = true;
+					m_Entries[i].Reset();
 				}
 			}
+
+			OptimizeEntryVector();
 		}
 
 	}

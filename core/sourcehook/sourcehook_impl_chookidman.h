@@ -24,8 +24,6 @@ namespace SourceHook
 		public:
 			struct Entry
 			{
-				bool isfree;
-
 				// hookman info
 				CProto proto;
 				int vtbl_offs;
@@ -43,9 +41,19 @@ namespace SourceHook
 				SHDelegateHandler handler;
 				bool post;
 
+				bool IsFree() const
+				{
+					return handler.get() == nullptr;
+				}
+
+				void Reset()
+				{
+					handler.reset();
+				}
+
 				Entry(const CProto &pprt, int pvo, int pvi, void *pvp, void *pai, Plugin pplug, int pto,
 					const SHDelegateHandler &ph, bool ppost)
-					: isfree(false), proto(pprt), vtbl_offs(pvo), vtbl_idx(pvi), vfnptr(pvp), 
+					: proto(pprt), vtbl_offs(pvo), vtbl_idx(pvi), vfnptr(pvp),
 					adjustediface(pai), plug(pplug), thisptr_offs(pto), handler(ph), post(ppost)
 				{
 				}
@@ -57,6 +65,10 @@ namespace SourceHook
 			// Internally, hookid 1 is stored as m_Entries[0]
 
 			CVector<Entry> m_Entries;
+
+			// Remove free entries from back
+			void OptimizeEntryVector();
+
 		public:
 			CHookIDManager();
 			int New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr, void *adjustediface,
