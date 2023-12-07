@@ -20,7 +20,7 @@ namespace SourceHook
 		}
 
 		int CHookIDManager::New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr,
-			void *adjustediface, Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post)
+			void *adjustediface, Plugin plug, int thisptr_offs, const SHDelegateHandler &handler, bool post)
 		{
 			Entry tmp(proto, vtbl_offs, vtbl_idx, vfnptr, adjustediface, plug, thisptr_offs, handler, post);
 
@@ -44,6 +44,7 @@ namespace SourceHook
 			if (realid < 0 || realid >= static_cast<int>(m_Entries.size()) || m_Entries[realid].isfree)
 				return false;
 
+			m_Entries[realid].handler.reset();
 			m_Entries[realid].isfree = true;
 
 			// :TODO: remove free ids from back sometimes ??
@@ -103,7 +104,10 @@ namespace SourceHook
 			for (size_t i = 0; i < cursize; ++i)
 			{
 				if (!m_Entries[i].isfree && m_Entries[i].vfnptr == vfnptr)
+				{
+					m_Entries[i].handler.reset();
 					m_Entries[i].isfree = true;
+				}
 			}
 		}
 

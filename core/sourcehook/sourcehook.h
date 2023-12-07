@@ -16,6 +16,8 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
+#include <memory>
+
 // Interface revisions:
 //  1 - Initial revision
 //  2 - Changed to virtual functions for iterators and all queries
@@ -437,11 +439,67 @@ namespace SourceHook
 		IHookManagerMemberFunc* memberFunc_;
 	};
 
+	class SHDelegateHandler;
+
 	class ISHDelegate
 	{
 	public:
 		virtual bool IsEqual(ISHDelegate *pOtherDeleg) = 0;		// pOtherDeleg is from the same plugin and hookman
+	private:
+		friend class SHDelegateHandler;
 		virtual void DeleteThis() = 0;
+	};
+
+	// ISHDelegate doesn't provide a virtual destructor, use this wrapper to handle it
+	class SHDelegateHandler final
+	{
+	public:
+		template<typename U, class ... Params>
+		static SHDelegateHandler Make(Params&&... params)
+		{
+			ISHDelegate* delegate = new U(std::forward<Params>(params)...);
+			return SHDelegateHandler(delegate);
+		}
+
+		SHDelegateHandler()
+		 : ptr_(nullptr, &SHDelegateHandler::DeleteDelegate)
+		{
+		}
+
+		explicit SHDelegateHandler(ISHDelegate* delegate)
+		 : ptr_(delegate, &SHDelegateHandler::DeleteDelegate)
+		{
+		}
+
+		void reset()
+		{
+			ptr_.reset();
+		}
+
+		bool operator==(const SHDelegateHandler &other) const
+		{
+			return ptr_.get() == other.get();
+		}
+
+		ISHDelegate* operator->() const
+		{
+			return ptr_.get();
+		}
+
+		ISHDelegate* get() const
+		{
+			return ptr_.get();
+		}
+
+	private:
+		static void DeleteDelegate(ISHDelegate* delegate)
+		{
+			if(delegate)
+				delegate->DeleteThis();
+		}
+
+	private:
+		std::shared_ptr<ISHDelegate> ptr_;
 	};
 
 	struct IHookManagerInfo
@@ -701,8 +759,8 @@ namespace SourceHook
 		*	@param post Set to true if you want a post handler
 		*/
 
-		virtual int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, IHookManagerMemberFunc* myHookMan,
-			ISHDelegate *handler, bool post) = 0;
+		virtual int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
+			const SHDelegateHandler &handler, bool post) = 0;
 
 		/**
 		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
@@ -711,7 +769,7 @@ namespace SourceHook
 		*	@param pubFunc The hook manager's info function
 		*/
 
-		virtual void RemoveHookManager(Plugin plug, IHookManagerMemberFunc* pubFunc) = 0;
+		virtual void RemoveHookManager(Plugin plug, const HookManagerPubFuncHandler &pubFunc) = 0;
 	};
 
 

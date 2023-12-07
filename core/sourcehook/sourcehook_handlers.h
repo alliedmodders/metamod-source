@@ -271,12 +271,12 @@ public:
 
     virtual ~ManualHookHandler()
     {
-        g_SHPtr->RemoveHookManager(g_PLID, this);
+        g_SHPtr->RemoveHookManager(g_PLID, HookManagerPubFuncHandler(this));
     }
 
     void Reconfigure(int vtblindex, int vtbloffs = 0, int thisptroffs = 0)
     {
-        g_SHPtr->RemoveHookManager(g_PLID, this);
+        g_SHPtr->RemoveHookManager(g_PLID, HookManagerPubFuncHandler(this));
         msMFI_.thisptroffs = thisptroffs;
         msMFI_.vtblindex = vtblindex;
         msMFI_.vtbloffs = vtbloffs;
@@ -286,9 +286,9 @@ public:
     int Add(void *iface, T* callbackInstPtr, typename HookedFuncType<T>::HookFunc callbackFuncPtr, bool post = true, ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
     {
         typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
-        typename ThisType::CMyDelegateImpl* tmp = new typename ThisType::CMyDelegateImpl(handler); // TODO use unique_ptr here
-
-        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, this, tmp, post);
+        HookManagerPubFuncHandler pubFunc(this);
+        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CMyDelegateImpl>(handler);
+        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
     }
 
     bool Remove(int hookid)

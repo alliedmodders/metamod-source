@@ -20,7 +20,7 @@ namespace SourceHook
 			// *** Data ***
 			Plugin m_OwnerPlugin;
 			int m_ThisPointerOffset;
-			ISHDelegate *m_pHandler;
+			SHDelegateHandler m_pHandler;
 			int m_HookID;
 			bool m_Paused;
 		public:
@@ -30,9 +30,9 @@ namespace SourceHook
 			{
 				Plugin m_OwnerPlugin;
 				int m_ThisPointerOffset;
-				ISHDelegate *m_pHandler;
+				SHDelegateHandler m_pHandler;
 
-				Descriptor(Plugin ownerPlugin, int thisPtrOffset, ISHDelegate *pHandler)
+				Descriptor(Plugin ownerPlugin, int thisPtrOffset, const SHDelegateHandler &pHandler)
 					: m_OwnerPlugin(ownerPlugin), m_ThisPointerOffset(thisPtrOffset),
 					m_pHandler(pHandler)
 				{
@@ -40,7 +40,7 @@ namespace SourceHook
 			};
 
 			// *** Interface ***
-			inline CHook(Plugin ownerPlugin, int thisPtrOffset, ISHDelegate *pHandler, int hookid, bool paused=false);
+			inline CHook(Plugin ownerPlugin, int thisPtrOffset, const SHDelegateHandler &pHandler, int hookid, bool paused=false);
 			inline bool operator==(const Descriptor &other) const;
 			inline bool operator==(int hookid) const;
 			inline Plugin GetOwnerPlugin() const;
@@ -52,7 +52,7 @@ namespace SourceHook
 		};
 
 		// *** Implementation ***
-		inline CHook::CHook(Plugin ownerPlugin, int thisPtrOffset, ISHDelegate *pHandler, int hookid, bool paused)
+		inline CHook::CHook(Plugin ownerPlugin, int thisPtrOffset, const SHDelegateHandler &pHandler, int hookid, bool paused)
 			: m_OwnerPlugin(ownerPlugin), m_ThisPointerOffset(thisPtrOffset),
 			m_pHandler(pHandler), m_HookID(hookid), m_Paused(paused)
 		{
@@ -82,7 +82,7 @@ namespace SourceHook
 
 		inline ISHDelegate *CHook::GetHandler() const
 		{
-			return m_pHandler;
+			return m_pHandler.get();
 		}
 
 		inline void CHook::SetPaused(bool value)

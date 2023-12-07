@@ -40,11 +40,11 @@ namespace SourceHook
 				// hook
 				Plugin plug;
 				int thisptr_offs;
-				ISHDelegate *handler;
+				SHDelegateHandler handler;
 				bool post;
 
 				Entry(const CProto &pprt, int pvo, int pvi, void *pvp, void *pai, Plugin pplug, int pto,
-					ISHDelegate *ph, bool ppost)
+					const SHDelegateHandler &ph, bool ppost)
 					: isfree(false), proto(pprt), vtbl_offs(pvo), vtbl_idx(pvi), vfnptr(pvp), 
 					adjustediface(pai), plug(pplug), thisptr_offs(pto), handler(ph), post(ppost)
 				{
@@ -60,7 +60,7 @@ namespace SourceHook
 		public:
 			CHookIDManager();
 			int New(const CProto &proto, int vtbl_offs, int vtbl_idx, void *vfnptr, void *adjustediface,
-				Plugin plug, int thisptr_offs, ISHDelegate *handler, bool post);
+				Plugin plug, int thisptr_offs, const SHDelegateHandler &handler, bool post);
 			bool Remove(int hookid);
 			const Entry * QueryHook(int hookid);
 
