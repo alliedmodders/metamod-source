@@ -283,7 +283,11 @@ public:
     }
 
     template<typename T>
-    int Add(void *iface, T* callbackInstPtr, typename HookedFuncType<T>::HookFunc callbackFuncPtr, bool post = true, ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+    [[nodiscard]] int Add(void *iface,
+                          T* callbackInstPtr,
+                          typename HookedFuncType<T>::HookFunc callbackFuncPtr,
+                          bool post = true,
+                          ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
     {
         typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
         HookManagerPubFuncHandler pubFunc(this);
@@ -291,21 +295,22 @@ public:
         return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
     }
 
-    bool Remove(int hookid)
+    inline bool Remove(int hookid)
     {
         return g_SHPtr->RemoveHookByID(hookid);
     }
 
-    bool Pause(int hookid)
+    inline bool Pause(int hookid)
     {
         return g_SHPtr->PauseHookByID(hookid);
     }
 
-    bool Unpause(int hookid)
+    inline bool Unpause(int hookid)
     {
         return g_SHPtr->UnpauseHookByID(hookid);
     }
 
+    // See RETURN_META_MNEWPARAMS
     // For void return type only
     template<typename U = ReturnType, typename std::enable_if<std::is_same<U, void>::value, void>::type* = nullptr>
     void Recall(META_RES result, Params... newparams)
@@ -317,9 +322,10 @@ public:
         g_SHPtr->SetRes(MRES_SUPERCEDE);
     }
 
+    // See RETURN_META_VALUE_MNEWPARAMS
     // For any return type but void
     template<typename U = ReturnType, typename std::enable_if<!std::is_same<U, void>::value, void>::type* = nullptr>
-    U Recall(META_RES result, U value, Params... newparams)
+    [[nodiscard]] U Recall(META_RES result, U value, Params... newparams)
     {
         g_SHPtr->SetRes(result);
         g_SHPtr->DoRecall();
@@ -331,6 +337,23 @@ public:
         EmptyClass *thisptr = reinterpret_cast<EmptyClass*>(g_SHPtr->GetIfacePtr());
         g_SHPtr->SetRes(MRES_SUPERCEDE);
         return (thisptr->*(GetRecallMFP(thisptr)))(newparams...);
+    }
+
+    // See RETURN_META.
+    // NOTE: for RETURN_META_VALUE return the value after this call
+    inline void SetResult(META_RES res)
+    {
+        g_SHPtr->SetRes(res);
+    }
+
+    [[nodiscard]] inline META_RES GetPreviousResult() const
+    {
+        return g_SHPtr->GetPrevRes();
+    }
+
+    [[nodiscard]] inline META_RES GetStatus() const
+    {
+        return g_SHPtr->GetStatus();
     }
 
 private:
@@ -513,7 +536,7 @@ private:
         if (hi)
         {
             MemFuncInfo mfi = {true, -1, 0, 0};
-            GetFuncInfo<ThisType, ThisType, void, Params...>(this, &ThisType::Func, mfi);
+            GetFuncInfo<ThisType, ThisType, ReturnType, Params...>(this, &ThisType::Func, mfi);
 
             hi->SetInfo(SH_HOOKMAN_VERSION,
                         msMFI_.vtbloffs,
