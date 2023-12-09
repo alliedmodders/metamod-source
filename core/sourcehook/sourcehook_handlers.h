@@ -244,14 +244,30 @@ class ManualHookHandler : public CHookManagerMemberFuncHandler<ManualHookHandler
 {
 public:
     typedef ManualHookHandler<ReturnType, Params...> ThisType;
-    typedef fastdelegate::FastDelegate<ReturnType, Params...> FD;
     typedef ReturnType(EmptyClass::*ECMFP)(Params...);
     typedef ExecutableClassN<EmptyClass, ECMFP, ReturnType, Params...> CallEC;
 
-    template<typename T>
-    struct HookedFuncType
+    template<typename U>
+    struct HookedMemberFuncType
     {
-        typedef ReturnType (T::*HookFunc)(Params...);
+        typedef ReturnType (U::*HookFunc)(Params...);
+    };
+
+    struct HookedStaticFuncType
+    {
+        typedef ReturnType (*HookFunc)(Params...);
+    };
+
+    template<typename T, typename U>
+    struct HookedMemberFuncIFaceType
+    {
+        typedef ReturnType (U::*HookFunc)(T*, Params...);
+    };
+
+    template<typename T>
+    struct HookedStaticFuncIFaceType
+    {
+        typedef ReturnType (*HookFunc)(T*, Params...);
     };
 
     constexpr ManualHookHandler()
@@ -271,27 +287,69 @@ public:
 
     virtual ~ManualHookHandler()
     {
-        g_SHPtr->RemoveHookManager(g_PLID, HookManagerPubFuncHandler(this));
+        HookManagerPubFuncHandler pubFunc(this);
+        g_SHPtr->RemoveHookManager(g_PLID, pubFunc);
     }
 
     void Reconfigure(int vtblindex, int vtbloffs = 0, int thisptroffs = 0)
     {
-        g_SHPtr->RemoveHookManager(g_PLID, HookManagerPubFuncHandler(this));
+        HookManagerPubFuncHandler pubFunc(this);
+        g_SHPtr->RemoveHookManager(g_PLID, pubFunc);
         msMFI_.thisptroffs = thisptroffs;
         msMFI_.vtblindex = vtblindex;
         msMFI_.vtbloffs = vtbloffs;
     }
 
-    template<typename T>
+    // Hook with a statuc function callback
+    // ReturnType Callback(Params...);
     [[nodiscard]] int Add(void *iface,
-                          T* callbackInstPtr,
-                          typename HookedFuncType<T>::HookFunc callbackFuncPtr,
+                          typename HookedStaticFuncType::HookFunc callbackFuncPtr,
                           bool post = true,
                           ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
     {
-        typename ManualHookHandler::FD handler(callbackInstPtr, callbackFuncPtr);
         HookManagerPubFuncHandler pubFunc(this);
-        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CMyDelegateImpl>(handler);
+        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CStaticDelegateImpl>(callbackFuncPtr);
+        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
+    }
+
+    // Hook with a statuc function callback with iface pointer first argument
+    // ReturnType Callback(T *iface, Params...);
+    template<typename T>
+    [[nodiscard]] int Add(T *iface,
+                          typename HookedStaticFuncIFaceType<T>::HookFunc callbackFuncPtr,
+                          bool post = true,
+                          ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+    {
+        HookManagerPubFuncHandler pubFunc(this);
+        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CStaticIFaceDelegateImpl<T>>(callbackFuncPtr);
+        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
+    }
+
+    // Hook with a member function callback
+    // ReturnType U::Callback(Params...);
+    template<typename U, typename std::enable_if<std::is_class<U>::value, void>::type* = nullptr>
+    [[nodiscard]] int Add(void *iface,
+                          U* callbackInstPtr,
+                          typename HookedMemberFuncType<U>::HookFunc callbackFuncPtr,
+                          bool post = true,
+                          ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+    {
+        HookManagerPubFuncHandler pubFunc(this);
+        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CMemberDelegateImpl<U>>(callbackInstPtr, callbackFuncPtr);
+        return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
+    }
+
+    // Hook with a member function callback with iface pointer first argument
+    // ReturnType U::Callback(T *iface, Params...);
+    template<typename T, typename U, typename std::enable_if<std::is_class<U>::value, void>::type* = nullptr>
+    [[nodiscard]] int Add(T *iface,
+                          U *callbackInstPtr,
+                          typename HookedMemberFuncIFaceType<T, U>::HookFunc callbackFuncPtr,
+                          bool post = true,
+                          ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+    {
+        HookManagerPubFuncHandler pubFunc(this);
+        SHDelegateHandler shDelegate = SHDelegateHandler::Make<ThisType::CMemberIFaceDelegateImpl<T, U>>(callbackInstPtr, callbackFuncPtr);
         return g_SHPtr->AddHook(g_PLID, mode, iface, 0, pubFunc, shDelegate, post);
     }
 
@@ -331,7 +389,6 @@ public:
         g_SHPtr->DoRecall();
         if ((result) >= MRES_OVERRIDE)
         {
-            /* see RETURN_META_VALUE_NEWPARAMS */
             SetOverrideResult(g_SHPtr, value);
         }
         EmptyClass *thisptr = reinterpret_cast<EmptyClass*>(g_SHPtr->GetIfacePtr());
@@ -360,29 +417,96 @@ private:
     struct IMyDelegate : ISHDelegate
     {
         virtual ReturnType Call(Params... params) = 0;
+
+        // Unneeded
+        // old SH_REMOVE_HOOK syntax is not supported
+        virtual bool IsEqual(ISHDelegate */*pOtherDeleg*/) override
+        {
+            SH_ASSERT(false, ("Forbidden use of ISHDelegate::IsEqual"));
+            return false;
+        }
     };
 
-    struct CMyDelegateImpl : public IMyDelegate
+    struct CStaticDelegateImpl : public IMyDelegate
     {
-        FD m_Deleg;
-        CMyDelegateImpl(FD deleg)
-            : m_Deleg(deleg)
+        typename HookedStaticFuncType::HookFunc funcPtr_;
+        CStaticDelegateImpl(typename HookedStaticFuncType::HookFunc callbackFuncPtr)
+            : funcPtr_(callbackFuncPtr)
         {
         }
 
         virtual ReturnType Call(Params... params) override
         {
-            return m_Deleg(params...);
+            return funcPtr_(params...);
         }
 
         virtual void DeleteThis() override
         {
             delete this;
         }
+    };
 
-        virtual bool IsEqual(ISHDelegate *pOtherDeleg) override
+    template<typename T>
+    struct CStaticIFaceDelegateImpl : public IMyDelegate
+    {
+        typename HookedStaticFuncIFaceType<T>::HookFunc funcPtr_;
+        CStaticIFaceDelegateImpl(typename HookedStaticFuncIFaceType<T>::HookFunc callbackFuncPtr)
+            : funcPtr_(callbackFuncPtr)
         {
-            return m_Deleg == static_cast<CMyDelegateImpl*>(pOtherDeleg)->m_Deleg;
+        }
+
+        virtual ReturnType Call(Params... params) override
+        {
+            return funcPtr_(reinterpret_cast<T*>(g_SHPtr->GetIfacePtr()), params...);
+        }
+
+        virtual void DeleteThis() override
+        {
+            delete this;
+        }
+    };
+
+    template<typename U>
+    struct CMemberDelegateImpl : public IMyDelegate
+    {
+        U* instPtr_;
+        typename HookedMemberFuncType<U>::HookFunc funcPtr_;
+        CMemberDelegateImpl(U* callbackInstPtr, typename HookedMemberFuncType<U>::HookFunc callbackFuncPtr)
+            : instPtr_(callbackInstPtr)
+            , funcPtr_(callbackFuncPtr)
+        {
+        }
+
+        virtual ReturnType Call(Params... params) override
+        {
+            return (instPtr_->*funcPtr_)(params...);
+        }
+
+        virtual void DeleteThis() override
+        {
+            delete this;
+        }
+    };
+
+    template<typename T, typename U>
+    struct CMemberIFaceDelegateImpl : public IMyDelegate
+    {
+        U* instPtr_;
+        typename HookedMemberFuncIFaceType<T, U>::HookFunc funcPtr_;
+        CMemberIFaceDelegateImpl(U* callbackInstPtr, typename HookedMemberFuncIFaceType<T, U>::HookFunc callbackFuncPtr)
+            : instPtr_(callbackInstPtr)
+            , funcPtr_(callbackFuncPtr)
+        {
+        }
+
+        virtual ReturnType Call(Params... params) override
+        {
+            return (instPtr_->*funcPtr_)(reinterpret_cast<T*>(g_SHPtr->GetIfacePtr()), params...);
+        }
+
+        virtual void DeleteThis() override
+        {
+            delete this;
         }
     };
 
@@ -499,9 +623,7 @@ private:
         if (status != MRES_SUPERCEDE && pContext->ShouldCallOrig())
         {
             void (EmptyClass::*mfp)(Params...);
-
-            reinterpret_cast<void**>(&mfp)[0] = vfnptr_origentry;
-            reinterpret_cast<void**>(&mfp)[1] = 0;
+            SH_SETUP_MFP(mfp);
 
             (reinterpret_cast<EmptyClass*>(this)->*mfp)(params...);
         }

@@ -43,12 +43,12 @@ namespace SourceHook
 
 				bool IsFree() const
 				{
-					return handler.get() == nullptr;
+					return handler.Get() == nullptr;
 				}
 
 				void Reset()
 				{
-					handler.reset();
+					handler.Reset();
 				}
 
 				Entry(const CProto &pprt, int pvo, int pvi, void *pvp, void *pai, Plugin pplug, int pto,

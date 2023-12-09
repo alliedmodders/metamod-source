@@ -82,7 +82,7 @@ namespace SourceHook
 
 		inline ISHDelegate *CHook::GetHandler() const
 		{
-			return m_pHandler.get();
+			return m_pHandler.Get();
 		}
 
 		inline void CHook::SetPaused(bool value)

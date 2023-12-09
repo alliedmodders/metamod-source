@@ -471,14 +471,14 @@ namespace SourceHook
 		{
 		}
 
-		void reset()
+		void Reset()
 		{
 			ptr_.reset();
 		}
 
 		bool operator==(const SHDelegateHandler &other) const
 		{
-			return ptr_.get() == other.get();
+			return ptr_.get() == other.Get();
 		}
 
 		ISHDelegate* operator->() const
@@ -486,7 +486,7 @@ namespace SourceHook
 			return ptr_.get();
 		}
 
-		ISHDelegate* get() const
+		ISHDelegate* Get() const
 		{
 			return ptr_.get();
 		}
