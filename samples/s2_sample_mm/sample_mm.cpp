@@ -142,7 +142,7 @@ bool SamplePlugin::Hook_ClientConnect( CPlayerSlot slot, const char *pszName, ui
 
 void SamplePlugin::Hook_ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid )
 {
-	META_CONPRINTF( "Hook_ClientPutInServer(%d, \"%s\", %d, %d, %d)\n", slot, pszName, type, xuid );
+	META_CONPRINTF( "Hook_ClientPutInServer(%d, \"%s\", %d, %d)\n", slot, pszName, type, xuid );
 }
 
 void SamplePlugin::Hook_ClientDisconnect( CPlayerSlot slot, ENetworkDisconnectionReason reason, const char *pszName, uint64 xuid, const char *pszNetworkID )
