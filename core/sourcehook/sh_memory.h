@@ -265,7 +265,6 @@ namespace SourceHook
 			unsigned long lower = reinterpret_cast<unsigned long>(addr);
 			unsigned long upper = lower + len;
 			
-			bool bFound = false;
 			FILE *pF = fopen("/proc/self/maps", "r");
 			if (pF)
 			{
@@ -273,13 +272,14 @@ namespace SourceHook
 				// Format:
 				// lower	upper	prot	 stuff				 path
 				// 08048000-0804c000 r-xp 00000000 03:03 1010107	/bin/cat
-				unsigned long rlower, rupper;
+				bool bFound = false;
+				
 				char *buffer = NULL;
 				size_t bufsize = 0;
 				while (getline(&buffer, &bufsize, pF) != -1) {
 					char *addr_split;
-					rlower = strtoul(buffer, &addr_split, 16);
-					rupper = strtoul(&addr_split[1], NULL, 16);
+					unsigned long rlower = strtoul(buffer, &addr_split, 16);
+					unsigned long rupper = strtoul(&addr_split[1], NULL, 16);
 					// Check whether we're IN THERE!
 					if (lower >= rlower && upper <= rupper)
 					{
