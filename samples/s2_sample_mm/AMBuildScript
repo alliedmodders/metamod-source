@@ -1,19 +1,26 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
 import os, sys
 
-additional_libs = [
-  # Path should be relative either to hl2sdk folder or to build folder
-  #'path/to/lib/example.lib',
-]
+# Edit the functions below for the extra functionality, the return should be
+# a list of path's to wanted locations
+def additional_libs(context, binary, sdk):
+  return [
+    # Path should be relative either to hl2sdk folder or to build folder
+    # 'path/to/lib/example.lib',
+  ]
 
-additional_defines = [
-  #'EXAMPLE_DEFINE=2'
-]
+def additional_defines(context, binary, sdk):
+  return [
+    # 'EXAMPLE_DEFINE=2'
+  ]
 
-additional_includes = [
-  # Path should be absolute only!
-  #'D:/absolute/path/to/include/folder/'
-]
+def additional_includes(context, binary, sdk):
+  return [
+    # Path should be absolute only!
+    # os.path.join(sdk['path'], 'game', 'server'),
+    # os.path.join(sdk['path'], 'public', 'entity2'),
+    # 'D:/absolute/path/to/include/folder/'
+  ]
 
 def ResolveEnvPath(env, folder):
   if env in os.environ:
@@ -286,9 +293,9 @@ class MMSPluginConfig(object):
 
     SdkHelpers.configureCxx(context, binary, sdk)
 
-    cxx.linkflags += additional_libs
-    cxx.defines += additional_defines
-    cxx.cxxincludes += additional_includes
+    cxx.linkflags += additional_libs(context, binary, sdk)
+    cxx.defines += additional_defines(context, binary, sdk)
+    cxx.cxxincludes += additional_includes(context, binary, sdk)
 
     return binary
 
