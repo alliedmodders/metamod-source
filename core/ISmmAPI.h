@@ -115,6 +115,7 @@ namespace SourceMM
 		/**
 		 * @brief Returns an interface factory for the GameDLL.
 		 *
+		 * @param syn			If syn is true, the synthetic wrapper is returned.
 		 *						If syn is false, the true function is returned.
 		 * @return				CreateInterfaceFn function pointer.
 		 */
