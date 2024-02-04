@@ -907,7 +907,10 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		/* patch mfp */ \
 		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
 		if (sizeof(mfp) == 2*sizeof(void*)) /* gcc */ \
-			*(reinterpret_cast<void**>(&mfp) + 1) = 0; \
+		{ \
+			void** pleaseShutUpMsvc = reinterpret_cast<void**>(&mfp); \
+			pleaseShutUpMsvc[1] = 0; \
+		} \
 		return SH_MFHCls(hookname)::CallEC(reinterpret_cast< ::SourceHook::EmptyClass* >(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
 	} \
 	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \
