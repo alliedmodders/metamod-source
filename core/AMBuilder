@@ -1,7 +1,10 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
-for sdk, cxx in MMS.sdk_targets:
+for sdk_target in MMS.sdk_targets:
+  sdk = sdk_target.sdk
+  cxx = sdk_target.cxx
+
   name = 'metamod.' + sdk['extension']
   binary = MMS.HL2Library(builder, cxx, name, sdk)
 
