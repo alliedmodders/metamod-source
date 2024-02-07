@@ -55,12 +55,6 @@ public:
 	virtual void ConsolePrint(const char* msg) override;
 	virtual void ClientConsolePrint(MMSPlayer_t player, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;
-	virtual MetamodSourceConVar *CreateConVar(const char* name,
-		const char* defval,
-		const char* help,
-		int flags) override;
-	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
-	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
 	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;
@@ -75,8 +69,6 @@ public:
 	bool Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry);
 	void Hook_LoopShutdownPost();
 	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
-	void Hook_RegisterConVar(const ConVarCreation_t&, int64_t, ConVarHandle*, CConVarBaseData**);
-	ConCommandHandle Hook_RegisterConCommand(const ConCommandCreation_t&, int64_t);
 private:
 	IFileSystem* baseFs = nullptr;
 

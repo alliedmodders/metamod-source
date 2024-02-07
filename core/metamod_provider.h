@@ -26,10 +26,10 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 #define _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 
+#include "metamod_convar.h"
+
 namespace SourceMM
 {
-	class MetamodSourceConVar;
-
 	enum
 	{
 		ConVarFlag_None = 0,
@@ -207,36 +207,6 @@ namespace SourceMM
 		 * @param cmd				Command string.
 		 */
 		virtual void ServerCommand(const char *cmd) =0;
-
-		/**
-		 * @brief Creates a ConVar pointer.
-		 *
-		 * @param name				ConVar name.
-		 * @param defval			Default value string.
-		 * @param flags				ConVar flags.
-		 * @param help				Help text.
-		 * @return					ConVar pointer.
-		 */
-		virtual MetamodSourceConVar *CreateConVar(const char *name,
-			const char *defval, 
-			const char *help,
-			int flags) =0;
-
-		/**
-		 * @brief Returns the string value of a ConVar.
-		 *
-		 * @param convar			ConVar pointer.
-		 * @return					String value.
-		 */
-		virtual const char *GetConVarString(MetamodSourceConVar *convar) =0;
-
-		/**
-		 * @brief Sets a ConVar string.
-		 *
-		 * @param convar			ConVar pointer.
-		 * @param str				String pointer.
-		 */
-		virtual void SetConVarString(MetamodSourceConVar *convar, const char *str) =0;
 
 		/**
 		 * @brief Retrieves the absolute path to the game directory.
