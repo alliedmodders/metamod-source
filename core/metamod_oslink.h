@@ -65,7 +65,11 @@
 	#include <sys/types.h>
 	#include <dirent.h>
 	typedef		void*			HINSTANCE;
+#ifdef META_IS_SOURCE2
+	#define		dlmount(x)		dlopen(x,RTLD_NOW | RTLD_DEEPBIND)
+#else
 	#define		dlmount(x)		dlopen(x,RTLD_NOW)
+#endif
 	#define		abspath(x, s)	realpath(s, x)
 	#define	PATH_SEP_STR		"/"
 	#define PATH_SEP_CHAR		'/'
