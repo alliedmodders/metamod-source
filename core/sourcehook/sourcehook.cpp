@@ -98,6 +98,14 @@ namespace SourceHook
 		int CSourceHookImpl::AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 			ISHDelegate *handler, bool post)
 		{
+			HookManagerPubFuncHandler pubFunc(myHookMan);
+			SHDelegateHandler shDelegate(handler);
+			return AddHook(plug, mode, iface, thisptr_offs, pubFunc, shDelegate, post);
+		}
+
+		int CSourceHookImpl::AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
+			const SHDelegateHandler &handler, bool post)
+		{
 			if (mode != Hook_Normal && mode != Hook_VP && mode != Hook_DVP)
 				return 0;
 
@@ -174,7 +182,7 @@ namespace SourceHook
 			ISHDelegate *handler, bool post)
 		{
 			// Get info about hook manager and compute adjustediface
-			CHookManager tmpHookMan(plug, myHookMan);
+			CHookManager tmpHookMan(plug, HookManagerPubFuncHandler(myHookMan));
 
 			void *adjustediface = reinterpret_cast<void*>(reinterpret_cast<char*>(iface)+thisptr_offs);
 
@@ -223,8 +231,6 @@ namespace SourceHook
 			List<CHook>::iterator hook_iter = hooks.find(hookid);
 			if (hook_iter == hooks.end())
 				return false;
-
-			hook_iter->GetHandler()->DeleteThis();
 
 			// Iterator movage!
 			List<CHook>::iterator oldhookiter = hook_iter;
@@ -417,6 +423,12 @@ namespace SourceHook
 		}
 
 		void CSourceHookImpl::RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc)
+		{
+			// Find the hook manager
+			RemoveHookManager(plug, HookManagerPubFuncHandler(pubFunc));
+		}
+
+		void CSourceHookImpl::RemoveHookManager(Plugin plug, const HookManagerPubFuncHandler &pubFunc)
 		{
 			// Find the hook manager
 			CHookManList::iterator hookman_iter = m_HookManList.find(CHookManager::Descriptor(plug, pubFunc));

@@ -16,6 +16,8 @@
 #ifndef __SOURCEHOOK_H__
 #define __SOURCEHOOK_H__
 
+#include <memory>
+
 // Interface revisions:
 //  1 - Initial revision
 //  2 - Changed to virtual functions for iterators and all queries
@@ -173,6 +175,20 @@ namespace SourceHook
 	*/
 	struct PassInfo
 	{
+		PassInfo()
+		 : size(0)
+		 , type(0)
+		 , flags(0)
+		{
+		}
+
+		PassInfo(size_t typeSize, int typeId, unsigned int typeFlags)
+		 : size(typeSize)
+		 , type(typeId)
+		 , flags(typeFlags)
+		{
+		}
+
 		enum PassType
 		{
 			PassType_Unknown=0,		/**< Unknown -- no extra info available */
@@ -206,6 +222,22 @@ namespace SourceHook
 
 		struct V2Info
 		{
+			V2Info()
+			 : pNormalCtor(nullptr)
+			 , pCopyCtor(nullptr)
+			 , pDtor(nullptr)
+			 , pAssignOperator(nullptr)
+			{
+			}
+
+			V2Info(void *normalCtor, void *copyCtor, void *dtor, void *assignOperator)
+			 : pNormalCtor(normalCtor)
+			 , pCopyCtor(copyCtor)
+			 , pDtor(dtor)
+			 , pAssignOperator(assignOperator)
+			{
+			}
+
 			void *pNormalCtor;
 			void *pCopyCtor;
 			void *pDtor;
@@ -241,29 +273,242 @@ namespace SourceHook
 		const PassInfo::V2Info *paramsPassInfo2;
 	};
 
+	class IProtoInfo
+	{
+	public:
+		enum class ProtoInfoVersion : int
+		{
+			ProtoInfoVersionInvalid = -1,
+			ProtoInfoVersion1 = 0,
+			ProtoInfoVersion2 = 1
+		};
+
+		virtual ~IProtoInfo() = default;
+		virtual size_t GetNumOfParams() const = 0;
+		virtual const PassInfo &GetRetPassInfo() const = 0;
+		virtual const PassInfo *GetParamsPassInfo() const = 0;
+		virtual int GetConvention() const = 0;
+		virtual IProtoInfo::ProtoInfoVersion GetVersion() const = 0;
+		virtual const PassInfo::V2Info &GetRetPassInfo2() const = 0;
+		virtual const PassInfo::V2Info *GetParamsPassInfo2() const = 0;
+	};
+
 	struct IHookManagerInfo;
 
 	/**
 	*	@brief Pointer to hook manager interface function
 	*
 	*	The hook manager should store hi for later use if store==true. It should then call hi->SetInfo(...) if hi
-	*   is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
+	*	is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
 	*
 	*	@param hi A pointer to IHookManagerInfo
 	*/
 	typedef int (*HookManagerPubFunc)(bool store, IHookManagerInfo *hi);
 
+	/**
+	*	@brief Pointer to hook manager interface function for member and static functions
+	*
+	*	The hook manager should store hi for later use if store==true. It should then call hi->SetInfo(...) if hi
+	*	is non-null. The hook manager can return 0 for success or a non-zero value if it doesn't want to be used.
+	*
+	*	@param hi A pointer to IHookManagerInfo
+	*/
+
+	class IHookManagerMemberFunc
+	{
+	public:
+		virtual ~IHookManagerMemberFunc() = default;
+		virtual int Call(bool store, IHookManagerInfo *hi) const = 0;
+	};
+
+	class HookManagerPubFuncHandler
+	{
+	public:
+		HookManagerPubFuncHandler()
+		 : staticFunc_(nullptr)
+		 , memberFunc_(nullptr)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(HookManagerPubFunc func)
+		 : staticFunc_(func)
+		 , memberFunc_(nullptr)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(IHookManagerMemberFunc* funcHandler)
+		 : staticFunc_(nullptr)
+		 , memberFunc_(funcHandler)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(const HookManagerPubFuncHandler& other)
+		 : staticFunc_(other.staticFunc_)
+		 , memberFunc_(other.memberFunc_)
+		{
+		}
+
+		explicit HookManagerPubFuncHandler(HookManagerPubFuncHandler&& other)
+		 : staticFunc_(other.staticFunc_)
+		 , memberFunc_(other.memberFunc_)
+		{
+			other.staticFunc_ = nullptr;
+			other.memberFunc_ = nullptr;
+		}
+
+		HookManagerPubFuncHandler& operator=(const HookManagerPubFuncHandler& other)
+		{
+			staticFunc_ = other.staticFunc_;
+			memberFunc_ = other.memberFunc_;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(HookManagerPubFuncHandler&& other)
+		{
+			if (this == &other)
+				return *this;
+
+			staticFunc_ = other.staticFunc_;
+			memberFunc_ = other.memberFunc_;
+			other.staticFunc_ = nullptr;
+			other.memberFunc_ = nullptr;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(HookManagerPubFunc func)
+		{
+			staticFunc_ = func;
+			memberFunc_ = nullptr;
+			return *this;
+		}
+
+		HookManagerPubFuncHandler& operator=(IHookManagerMemberFunc* funcHandler)
+		{
+			staticFunc_ = nullptr;
+			memberFunc_ = funcHandler;
+			return *this;
+		}
+
+		operator bool() const
+		{
+			return (staticFunc_ != nullptr ||
+				memberFunc_ != nullptr);
+		}
+
+		operator HookManagerPubFunc() const
+		{
+			return staticFunc_;
+		}
+
+		operator IHookManagerMemberFunc*() const
+		{
+			return memberFunc_;
+		}
+
+		int operator()(bool store, IHookManagerInfo *hi) const
+		{
+			if(staticFunc_ != nullptr)
+				return staticFunc_(store, hi);
+
+			if(memberFunc_ != nullptr)
+				return memberFunc_->Call(store, hi);
+
+			return 0;
+		}
+
+		bool operator==(const HookManagerPubFuncHandler &rhs) const
+		{
+			return staticFunc_ == rhs.staticFunc_ &&
+			       memberFunc_ == rhs.memberFunc_;
+		}
+
+		bool operator==(HookManagerPubFunc staticFunc) const
+		{
+			return staticFunc_ == staticFunc &&
+			       memberFunc_ == nullptr;
+		}
+
+		bool operator==(const IHookManagerMemberFunc *memberFunc) const
+		{
+			return staticFunc_ == nullptr &&
+			       memberFunc_ == memberFunc;
+		}
+
+	private:
+		HookManagerPubFunc staticFunc_;
+		IHookManagerMemberFunc* memberFunc_;
+	};
+
+	class SHDelegateHandler;
+
 	class ISHDelegate
 	{
 	public:
 		virtual bool IsEqual(ISHDelegate *pOtherDeleg) = 0;		// pOtherDeleg is from the same plugin and hookman
+	private:
+		friend class SHDelegateHandler;
 		virtual void DeleteThis() = 0;
+	};
+
+	// ISHDelegate doesn't provide a virtual destructor, use this wrapper to handle it
+	class SHDelegateHandler final
+	{
+	public:
+		template<typename U, class ... Params>
+		static SHDelegateHandler Make(Params&&... params)
+		{
+			ISHDelegate* delegate = new U(std::forward<Params>(params)...);
+			return SHDelegateHandler(delegate);
+		}
+
+		SHDelegateHandler()
+		 : ptr_(nullptr, &SHDelegateHandler::DeleteDelegate)
+		{
+		}
+
+		explicit SHDelegateHandler(ISHDelegate* delegate)
+		 : ptr_(delegate, &SHDelegateHandler::DeleteDelegate)
+		{
+		}
+
+		void Reset()
+		{
+			ptr_.reset();
+		}
+
+		bool operator==(const SHDelegateHandler &other) const
+		{
+			return ptr_.get() == other.Get();
+		}
+
+		ISHDelegate* operator->() const
+		{
+			return ptr_.get();
+		}
+
+		ISHDelegate* Get() const
+		{
+			return ptr_.get();
+		}
+
+	private:
+		static void DeleteDelegate(ISHDelegate* delegate)
+		{
+			if(delegate)
+				delegate->DeleteThis();
+		}
+
+	private:
+		std::shared_ptr<ISHDelegate> ptr_;
 	};
 
 	struct IHookManagerInfo
 	{
 		virtual void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
 			ProtoInfo *proto, void *hookfunc_vfnptr) = 0;
+
+		virtual void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
+			IProtoInfo *proto, void *hookfunc_vfnptr) = 0;
 	};
 
 	// I'm adding support for functions which return references.
@@ -353,7 +598,7 @@ namespace SourceHook
 			Hook_Normal,
 			Hook_VP,
 			Hook_DVP
-		}; 
+		};
 
 		/**
 		*	@brief Add a (VP) hook.
@@ -424,7 +669,7 @@ namespace SourceHook
 		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
 		*
 		*	@param plug The owner of the hook manager
-		*   @param pubFunc The hook manager's info function
+		*	@param pubFunc The hook manager's info function
 		*/
 		virtual void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc) = 0;
 
@@ -499,6 +744,32 @@ namespace SourceHook
 			const void *origRetPtr, void *overrideRetPtr) = 0;
 
 		virtual void EndContext(IHookContext *pCtx) = 0;
+
+		/**
+		*	@brief Add a (VP) hook.
+		*
+		*	@return non-zero hook id on success, 0 otherwise
+		*
+		*	@param plug The unique identifier of the plugin that calls this function
+		*	@param mode	Can be either Hook_Normal or Hook_VP (vtable-wide hook)
+		*	@param iface The interface pointer
+		*	@param ifacesize The size of the class iface points to
+		*	@param myHookMan A hook manager function that should be capable of handling the function
+		*	@param handler A pointer to the hook handler something
+		*	@param post Set to true if you want a post handler
+		*/
+
+		virtual int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
+			const SHDelegateHandler &handler, bool post) = 0;
+
+		/**
+		*	@brief Remove a hook manager. Auto-removes all hooks attached to it from plugin plug.
+		*
+		*	@param plug The owner of the hook manager
+		*	@param pubFunc The hook manager's info function
+		*/
+
+		virtual void RemoveHookManager(Plugin plug, const HookManagerPubFuncHandler &pubFunc) = 0;
 	};
 
 
@@ -4926,6 +5197,5 @@ namespace SourceHook
 		return reinterpret_cast<Iface*>(shptr->GetIfacePtr());
 	}
 }
-
 #endif
 	// The pope is dead. -> :(

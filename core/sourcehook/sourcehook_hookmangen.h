@@ -265,8 +265,8 @@ namespace SourceHook
 			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
 			~GenContext();
 
-			bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx);
-			bool Equal(HookManagerPubFunc other);
+			bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx) const;
+			bool Equal(HookManagerPubFunc other) const;
 
 			HookManagerPubFunc GetPubFunc();
 		};
