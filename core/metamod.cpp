@@ -78,9 +78,33 @@ static bool is_game_init = false;
 static bool vsp_load_requested = false;
 static bool vsp_loaded = false;
 static game_dll_t gamedll_info;
-static MetamodSourceConVar *metamod_version = NULL;
-static MetamodSourceConVar *mm_pluginsfile = NULL;
-static MetamodSourceConVar *mm_basedir = NULL;
+
+static MetamodSourceConVar<const char*> metamod_version("metamod_version", 
+	ConVarFlag_Notify|ConVarFlag_SpOnly,
+	"Metamod:Source Version",
+	METAMOD_VERSION
+);
+
+static MetamodSourceConVar<const char*> mm_pluginsfile("mm_pluginsfile",
+	ConVarFlag_SpOnly,
+	"Metamod:Source Plugins File",
+#if defined WIN32 || defined _WIN32
+	"addons\\metamod\\metaplugins.ini"
+#else
+	"addons/metamod/metaplugins.ini"
+#endif
+);
+
+static MetamodSourceConVar<const char*> mm_basedir("mm_basedir",
+	ConVarFlag_SpOnly,
+	"Metamod:Source Base Folder",
+#if defined __linux__ || defined __APPLE__
+	"addons/metamod"
+#else
+	"addons\\metamod"
+#endif
+);
+
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
@@ -180,12 +204,12 @@ static class ProviderCallbacks : public IMetamodSourceProviderCallbacks
 				sizeof(filepath),
 				"%s/%s",
 				mod_path.c_str(),
-				provider->GetConVarString(mm_pluginsfile));
+				mm_pluginsfile.GetValue());
 			g_Metamod.PathFormat(vdfpath,
 				sizeof(vdfpath),
 				"%s/%s",
 				mod_path.c_str(),
-				provider->GetConVarString(mm_basedir));
+				mm_basedir.GetValue());
 			mm_LoadPlugins(filepath, vdfpath);
 		}
 		else
@@ -438,7 +462,7 @@ DoInitialPluginLoads()
 	const char *mmBaseDir = provider->GetCommandLineValue("mm_basedir", NULL);
 	if (!pluginFile) 
 	{
-		pluginFile = provider->GetConVarString(mm_pluginsfile);
+		pluginFile = mm_pluginsfile.GetValue();
 		if (pluginFile == NULL)
 		{
 			pluginFile = "addons/metamod/metaplugins.ini";
@@ -446,7 +470,7 @@ DoInitialPluginLoads()
 	}
 	if (!mmBaseDir)
 	{
-		mmBaseDir = provider->GetConVarString(mm_basedir);
+		mmBaseDir = mm_basedir.GetValue();
 		if (mmBaseDir == NULL)
 		{
 			mmBaseDir = "addons/metamod";
@@ -471,30 +495,8 @@ mm_StartupMetamod(bool is_vsp_load)
 		METAMOD_VERSION,
 		is_vsp_load ? "V" : "");
 
-	metamod_version = provider->CreateConVar("metamod_version", 
-		METAMOD_VERSION, 
-		"Metamod:Source Version",
-		ConVarFlag_Notify|ConVarFlag_SpOnly);
-
-	provider->SetConVarString(metamod_version, buffer);
-
-	mm_pluginsfile = provider->CreateConVar("mm_pluginsfile", 
-#if defined WIN32 || defined _WIN32
-		"addons\\metamod\\metaplugins.ini", 
-#else
-		"addons/metamod/metaplugins.ini",
-#endif
-		"Metamod:Source Plugins File",
-		ConVarFlag_SpOnly);
-
-	mm_basedir = provider->CreateConVar("mm_basedir",
-#if defined __linux__ || defined __APPLE__
-		"addons/metamod",
-#else
-		"addons\\metamod",
-#endif
-		"Metamod:Source Base Folder",
-		ConVarFlag_SpOnly);
+	// TO-DO
+	// ConVar register here....
 	
 	g_bIsVspBridged = is_vsp_load;
 
@@ -881,12 +883,12 @@ const char *MetamodSource::GetGameBinaryPath()
 
 const char *MetamodSource::GetPluginsFile()
 {
-	return provider->GetConVarString(mm_pluginsfile);
+	return mm_pluginsfile.GetValue();
 }
 
 const char *MetamodSource::GetVDFDir()
 {
-	return provider->GetConVarString(mm_basedir);
+	return mm_basedir.GetValue();
 }
 
 bool MetamodSource::RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
