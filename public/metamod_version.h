@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2010 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2024 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -45,14 +45,14 @@
 #define MMS_BUILD_TAG		"manual"
 #define MMS_BUILD_LOCAL_REV	"0"
 #define MMS_BUILD_CSET		"0"
-#define MMS_BUILD_MAJOR		"1"
-#define MMS_BUILD_MINOR		"12"
+#define MMS_BUILD_MAJOR		"2"
+#define MMS_BUILD_MINOR		"0"
 #define MMS_BUILD_RELEASE	"0"
 
 #define MMS_BUILD_UNIQUEID MMS_BUILD_LOCAL_REV ":" MMS_BUILD_CSET
 
 #define MMS_VERSION_STRING	MMS_BUILD_MAJOR "." MMS_BUILD_MINOR "." MMS_BUILD_RELEASE "-" MMS_BUILD_TAG
-#define MMS_VERSION_FILE		1,12,0,0
+#define MMS_VERSION_FILE		2,0,0,0
 #endif
 #define MMS_BUILD_TIMESTAMP	__DATE__ " " __TIME__
 
