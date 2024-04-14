@@ -191,9 +191,6 @@ class MMSConfig(object):
 
     cxx = builder.DetectCxx()
 
-    if cxx.like('msvc') and len(self.archs) > 1:
-      raise Exception('Building multiple archs with MSVC is not currently supported')
-
     if cxx.behavior == 'gcc':
       cxx.defines += [
         'stricmp=strcasecmp',
@@ -228,9 +225,6 @@ class MMSConfig(object):
       if cxx.family == 'clang':
         if cxx.version >= 'clang-3.9' or cxx.version >= 'apple-clang-10.0':
           cxx.cxxflags += ['-Wno-expansion-to-defined']
-
-    elif cxx.like('msvc'):
-      raise Exception('MSVC builds should use the Visual Studio projects until somebody implements support') # todo: implement MSVC support
 
     # Optimization
     if builder.options.opt == '1':
@@ -275,17 +269,10 @@ class MMSConfig(object):
   def HL2Compiler(self, context, sdk, arch):
     compiler = context.cxx.clone()
 
-    if sdk.name == 'episode1' or sdk.name == 'darkm':
-      compiler.cxxincludes += [
-        os.path.join(context.currentSourcePath),
-        os.path.join(self.mms_root, 'core-legacy'),
-        os.path.join(self.mms_root, 'core-legacy', 'sourcehook'),
-    ]
-    else:
-      compiler.cxxincludes += [
-        os.path.join(context.currentSourcePath),
-        os.path.join(self.mms_root, 'core'),
-        os.path.join(self.mms_root, 'core', 'sourcehook'),
+    compiler.cxxincludes += [
+      os.path.join(context.currentSourcePath),
+      os.path.join(self.mms_root, 'core'),
+      os.path.join(self.mms_root, 'core', 'sourcehook'),
     ]
 
     defines = ['SE_' + PossibleSDKs[i].define + '=' + PossibleSDKs[i].code for i in PossibleSDKs]
@@ -332,18 +319,11 @@ class MMSConfig(object):
     return compiler
 
   def AddVersioning(self, binary, arch):
-    if builder.target.platform == 'windows':
-      # todo: verify this for MSVC support
-      binary.sources += ['version.rc']
-      binary.compiler.rcdefines += [
-        'BINARY_NAME="{0}"'.format(binary.outputFile),
-        'RC_COMPILE'
-      ]
-    elif builder.target.platform == 'mac' and binary.type == 'library':
+    if builder.target.platform == 'mac' and binary.type == 'library':
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
-      ]
+    ]
 
     return binary
 

@@ -20,10 +20,6 @@
 extern IVEngineServer *engine;
 extern CGlobalVars *gpGlobals;
 
-#if SOURCE_ENGINE == SE_EPISODEONE && defined METAMOD_PLAPI_VERSION
-#error "Metamod:Source 1.6 API is not supported on the old engine."
-#endif
-
 #define ENGINE_CALL(func) SH_CALL(engine, &IVEngineServer::func)
 
 /**
