@@ -323,7 +323,7 @@ class MMSConfig(object):
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
-    ]
+      ]
 
     return binary
 
