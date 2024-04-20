@@ -52,6 +52,7 @@
 #endif
 
 #ifdef SH_DEBUG
+
 # include <stdio.h>
 # include <stdlib.h>
 
@@ -194,7 +195,7 @@ namespace SourceHook
 			// SH tries to auto-detect these
 			// If you want to override SH's auto-detection, pass them in yourself
 			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
-			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
+			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX)/RAX(x86_64) */
 		};
 
 		size_t size;			//!< Size of the data being passed
@@ -907,7 +908,10 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		/* patch mfp */ \
 		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
 		if (sizeof(mfp) == 2*sizeof(void*)) /* gcc */ \
-			*(reinterpret_cast<void**>(&mfp) + 1) = 0; \
+		{ \
+			void** pleaseShutUpMsvc = reinterpret_cast<void**>(&mfp); \
+			pleaseShutUpMsvc[1] = 0; \
+		} \
 		return SH_MFHCls(hookname)::CallEC(reinterpret_cast< ::SourceHook::EmptyClass* >(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
 	} \
 	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \

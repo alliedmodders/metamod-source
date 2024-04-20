@@ -39,6 +39,13 @@ namespace SourceHook
 
 		void CHookManager::Register()
 		{
+			SH_DEBUG_LOG(VERBOSE, "CHookManager(%p)::SetInfo\n"
+			"- hookman_version %d\n"
+			"- vtbloffs %d\n"
+			"- vtblidx %d\n"
+			"- hookfunc_vfnptr %p\n\n",
+			(void*)this, m_Version, m_VtblOffs, m_VtblIdx, m_HookfuncVfnptr);
+
 			m_PubFunc(true, this);
 		}
 
@@ -49,6 +56,9 @@ namespace SourceHook
 
 		void CHookManager::IncrRef(CVfnPtr *pVfnPtr)
 		{
+			SH_DEBUG_LOG(VERBOSE, "CHookManager(%p)::IncrRef\n",
+			(void*)this);
+
 			m_VfnPtrs.push_back(pVfnPtr);
 			if (m_VfnPtrs.size() == 1)
 				Register();
@@ -56,6 +66,9 @@ namespace SourceHook
 
 		void CHookManager::DecrRef(CVfnPtr *pVfnPtr)
 		{
+			SH_DEBUG_LOG(VERBOSE, "CHookManager(%p)::DecrRef\n",
+			(void*)this);
+
 			m_VfnPtrs.remove(pVfnPtr);
 			if (m_VfnPtrs.empty())
 				Unregister();
