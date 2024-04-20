@@ -52,6 +52,7 @@
 #endif
 
 #ifdef SH_DEBUG
+
 # include <stdio.h>
 # include <stdlib.h>
 
@@ -194,7 +195,7 @@ namespace SourceHook
 			// SH tries to auto-detect these
 			// If you want to override SH's auto-detection, pass them in yourself
 			PassFlag_RetMem		= (1<<6),		/**< Object is returned in memory (through hidden first param */
-			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX) */
+			PassFlag_RetReg		= (1<<7)		/**< Object is returned in EAX(:EDX)/RAX(x86_64) */
 		};
 
 		size_t size;			//!< Size of the data being passed

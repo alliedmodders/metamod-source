@@ -178,7 +178,8 @@ class MMSConfig(object):
       ]
       cxx.cflags += [
         '/W3',
-        '/Zi',
+        '/Z7',
+        '/EHsc',
         '/std:c++17',
       ]
       cxx.cxxflags += ['/TP']

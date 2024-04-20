@@ -12,6 +12,8 @@
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
 #include "sh_pagealloc.h"
+#include <list>
+#include <memory>
 
 namespace SourceHook
 {
@@ -38,6 +40,16 @@ namespace SourceHook
 		typedef unsigned int jitoffs_t;
 		typedef signed int jitrel_t;
 
+		class IGenContext
+		{
+		public:
+			virtual ~IGenContext() {};
+
+			virtual bool Equal(const CProto& proto, int vtbl_offs, int vtbl_idx) = 0;
+			virtual bool Equal(HookManagerPubFunc other) = 0;
+
+			virtual HookManagerPubFunc GetPubFunc() = 0;
+		};
 
 		class GenBuffer
 		{
@@ -140,6 +152,9 @@ namespace SourceHook
 			void write_uint32(jit_uint32_t x)		{ push(x); }
 			void write_int32(jit_uint32_t x)		{ push(x); }
 
+			void write_uint64(jit_uint64_t x)		{ push(x); }
+			void write_int64(jit_int64_t x)			{ push(x); }
+
 			jitoffs_t get_outputpos()
 			{
 				return m_Size;
@@ -155,7 +170,7 @@ namespace SourceHook
 			}
 		};
 
-		class GenContext
+		class GenContext : public IGenContext
 		{
 			const static int SIZE_MWORD = 4;
 			const static int SIZE_PTR = sizeof(void*);
@@ -263,12 +278,12 @@ namespace SourceHook
 		public:
 			// Level 1 -> Public interface
 			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
-			~GenContext();
+			virtual ~GenContext();
 
-			bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx);
-			bool Equal(HookManagerPubFunc other);
+			virtual bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx) override;
+			virtual bool Equal(HookManagerPubFunc other) override;
 
-			HookManagerPubFunc GetPubFunc();
+			virtual HookManagerPubFunc GetPubFunc() override;
 		};
 
 		class CHookManagerAutoGen : public IHookManagerAutoGen 
@@ -276,9 +291,9 @@ namespace SourceHook
 			struct StoredContext
 			{
 				int m_RefCnt;
-				GenContext *m_GenContext;
+				std::unique_ptr<IGenContext> m_GenContext;
 			};
-			List<StoredContext> m_Contexts;
+			std::list<StoredContext> m_Contexts;
 			ISourceHook *m_pSHPtr;
 
 		public:
