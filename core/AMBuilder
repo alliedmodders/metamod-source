@@ -16,7 +16,8 @@ for sdk_target in MMS.sdk_targets:
     'metamod_util.cpp',
     'provider/console.cpp',
     'provider/provider_ep2.cpp',
-    'sourcehook/sourcehook.cpp',
+    'sourcehook/sourcehook.cpp',  
+    'sourcehook/sourcehook_hookmangen_test.cpp',
     'sourcehook/sourcehook_impl_chookidman.cpp',
     'sourcehook/sourcehook_impl_chookmaninfo.cpp',
     'sourcehook/sourcehook_impl_cproto.cpp',
@@ -28,5 +29,7 @@ for sdk_target in MMS.sdk_targets:
   # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
   if binary.compiler.target.arch == 'x86':
     binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
+  elif binary.compiler.target.arch == 'x86_64':
+    binary.sources += ['sourcehook/sourcehook_hookmangen_x86_64.cpp']
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
