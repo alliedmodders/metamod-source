@@ -328,6 +328,8 @@ extern PluginId g_PLID;
 extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceMM::IMetamodSourceProvider *provider;
 extern SourceMM::ISmmAPI *g_pMetamod;
+template<typename Interface, auto Method, typename Result, typename... Args> \
+struct Hook : public ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...> {};
 
 #endif //_INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 

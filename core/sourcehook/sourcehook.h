@@ -723,6 +723,61 @@ namespace SourceHook
 		};
 	}
 
+	/**
+	 * A reference to an active SourceHook
+	 */
+	struct HookInstance
+	{
+	public:
+		HookInstance(ISourceHook** sh, int hookid)
+		: SH(sh)
+		, _hookid(hookid)
+		{}
+	protected:
+		//	The global pointer to the SourceHook API
+		ISourceHook** SH;
+
+		//	The ID of this specific hook
+		int _hookid;
+
+	public:
+
+		/**
+		 * @brief Returns true if the hook was successfully placed.
+		 * @return
+		 */
+		bool Ok()
+		{
+			return _hookid != 0;
+		}
+
+		/**
+		 * @brief Pause the hook, preventing it from being called until unpaused.
+		 * @return
+		 */
+		bool Pause()
+		{
+			return (*SH)->PauseHookByID(_hookid);
+		}
+
+		/**
+		 * @brief Unpause the hook if it is currently paused
+		 * @return
+		 */
+		bool Unpause()
+		{
+			return (*SH)->UnpauseHookByID(_hookid);
+		}
+
+		/**
+		 * @brief Remove the hook, permanently preventing it from being invoked.
+		 * @return
+		 */
+		bool Remove()
+		{
+			return (*SH)->RemoveHookByID(_hookid);
+		}
+	};
 
 	/**
 	*	@brief A hook manager, used to hook instances of a specific interface.
@@ -731,8 +786,8 @@ namespace SourceHook
 	*	and prototype in the template arguments. Any derived class of the interface
 	*	can be hooked using this manager.
 	*/
-	template<ISourceHook** SH, typename Interface, auto Method, typename Result, typename... Args>
-	struct Hook
+	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
+	struct HookImpl
 	{
 		/**
 		*	@brief The type we expect the template arg "Method" to be.
@@ -750,15 +805,15 @@ namespace SourceHook
 
 		//	Singleton instance
 		//	Initialized below!
-		static Hook Instance;
+		static HookImpl Instance;
 
 	private:
-		Hook(Hook& other) = delete;
+		HookImpl(HookImpl& other) = delete;
 
 		/**
 		*	@brief Build the ProtoInfo for this hook
 		*/
-		constexpr Hook()
+		constexpr HookImpl()
 		{
 			//	build protoinfo
 			Proto.numOfParams = sizeof...(Args);
@@ -791,11 +846,11 @@ namespace SourceHook
 		}
 
 	public:
-		static constexpr Hook* Make()
+		static constexpr HookImpl* Make()
 		{
-			Hook::Instance = Hook();
+			HookImpl::Instance = HookImpl();
 
-			return &Hook::Instance;
+			return &HookImpl::Instance;
 		}
 
 	public:	//	Public Interface
@@ -809,16 +864,18 @@ namespace SourceHook
 		*	@param handler the handler that will be called in place of the original method
 		*	@param mode the hook mode - Hook_Normal will only hook this instance, while others alter the global virtual table.
 		*/
-		int Add(Plugin id, Interface* iface, bool post, Delegate handler, ::SourceHook::ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+		HookInstance Add(Interface* iface, bool post, Delegate handler, ::SourceHook::ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
 		{
 			using namespace ::SourceHook;
 			MemFuncInfo mfi = {true, -1, 0, 0};
 			GetFuncInfo(Method, mfi);
 			if (mfi.thisptroffs < 0 || !mfi.isVirtual)
-				return false;
+				return HookInstance(SH, 0);
 
 			CMyDelegateImpl* delegate = new CMyDelegateImpl(handler);
-			return (*SH)->AddHook(id, mode, iface, mfi.thisptroffs, Hook::HookManPubFunc, delegate, post);
+			int id = (*SH)->AddHook(*PL, mode, iface, mfi.thisptroffs, HookImpl::HookManPubFunc, delegate, post);
+
+			return HookInstance(SH, id);
 		}
 
 		/**
@@ -829,7 +886,7 @@ namespace SourceHook
 		*	@param post true if this was a post hook, false otherwise (pre-hook)
 		*	@param handler the handler that will be removed from this hook.
 		*/
-		int Remove(Plugin id, Interface* iface, bool post, Delegate handler)
+		int Remove(Interface* iface, bool post, Delegate handler)
 		{
 			using namespace ::SourceHook;
 			MemFuncInfo mfi = {true, -1, 0, 0};
@@ -837,7 +894,7 @@ namespace SourceHook
 
 			//	Temporary delegate for .IsEqual() comparison.
 			CMyDelegateImpl temp(handler);
-			return (*SH)->RemoveHook(id, iface, mfi.thisptroffs, Hook::HookManPubFunc, &temp, post);
+			return (*SH)->RemoveHook(*PL, iface, mfi.thisptroffs, HookImpl::HookManPubFunc, &temp, post);
 		}
 
 	protected:
@@ -855,7 +912,7 @@ namespace SourceHook
 			if (hi) {
 				//	Build a memberfuncinfo for our hook processor.
 				MemFuncInfo our_mfi = {true, -1, 0, 0};
-				GetFuncInfo(&Hook::Func, our_mfi);
+				GetFuncInfo(&HookImpl::Func, our_mfi);
 
 				void* us = reinterpret_cast<void **>(reinterpret_cast<char *>(&Instance) + our_mfi.vtbloffs)[our_mfi.vtblindex];
 				hi->SetInfo(SH_HOOKMAN_VERSION, Instance.MFI.vtbloffs, Instance.MFI.vtblindex, &Instance.Proto, us);
@@ -908,6 +965,11 @@ namespace SourceHook
 				Result
 		>::type VoidSafeResult;
 
+		/**
+		*	@brief A return type that is C++-reference-safe.
+		*
+		*	Prevents us from doing silly things with byref-passed values.
+		*/
 		typedef typename ReferenceCarrier<VoidSafeResult>::type ResultType;
 
 		/**
@@ -915,6 +977,9 @@ namespace SourceHook
 		*/
 		virtual Result Func(Args... args)
 		{
+			//	Note to all ye who enter here:
+			//	Do not, do NOT--DO NOT: touch "this" or any of our member variables.
+			//	Hands off bucko. USE THE STATIC INSTANCE! (thisptr is undefined!!)
 			using namespace ::SourceHook;
 
 			void *ourvfnptr = reinterpret_cast<void *>(
@@ -994,8 +1059,8 @@ namespace SourceHook
 	//	You're probably wondering what the hell this does.
 	//	https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library/11711082#11711082
 	//	Yes, I also happen to hate C++.
-	template<ISourceHook** SH, typename Interface, auto Method, typename Result, typename... Args>
-	Hook<SH, Interface, Method, Result, Args...> Hook<SH, Interface, Method, Result, Args...>::Instance;
+	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
+	HookImpl<SH, PL, Interface, Method, Result, Args...> HookImpl<SH, PL, Interface, Method, Result, Args...>::Instance;
 
 }
 

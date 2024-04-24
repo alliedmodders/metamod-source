@@ -480,7 +480,9 @@ using namespace SourceMM;
 	extern SourceHook::ISourceHook *g_SHPtr; \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
-	extern PluginId g_PLID; 
+	extern PluginId g_PLID;    \
+    template<typename Interface, auto Method, typename Result, typename... Args> \
+	struct Hook : public ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...> {};
 
 /**
  * @brief This should be the first line in your Load callback.
