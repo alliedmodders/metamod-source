@@ -44,14 +44,14 @@ static SourceProvider g_SourceProvider;
 
 IMetamodSourceProvider* provider = &g_SourceProvider;
 
-SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, 0, bool);
-SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, const char*, const char*, const char*, const char*, bool, bool);
-SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
+auto OnGameInit = SourceHook::Hook<&g_SHPtr, IServerGameDLL, &IServerGameDLL::GameInit, bool>::Make();
+auto OnLevelInit = SourceHook::Hook<&g_SHPtr, IServerGameDLL, &IServerGameDLL::LevelInit, bool, const char*, const char*, const char*, const char*, bool, bool>::Make();
+auto OnLevelShutdown = SourceHook::Hook<&g_SHPtr, IServerGameDLL, &IServerGameDLL::LevelShutdown, void>::Make();
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t*, const CCommand&);
+auto OnClientCommand = SourceHook::Hook<&g_SHPtr, IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*, const CCommand&>::Make();
 #else
-SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t*);
+auto OnClientCommand = SourceHook::Hook<&g_SHPtr, IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*>::Make();
 #endif
 
 void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
@@ -124,19 +124,18 @@ void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	if (gameclients)
 	{
-		SH_ADD_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &SourceProvider::Hook_ClientCommand), false);
+		OnClientCommand->Add(g_PLID, gameclients, false, SH_MEMBER(this, &SourceProvider::Hook_ClientCommand));
 	}
 
-	SH_ADD_HOOK(IServerGameDLL, GameInit, server, SH_MEMBER(this, &SourceProvider::Hook_GameInit), false);
-	SH_ADD_HOOK(IServerGameDLL, LevelInit, server, SH_MEMBER(this, &SourceProvider::Hook_LevelInit), true);
-	SH_ADD_HOOK(IServerGameDLL, LevelShutdown, server, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown), true);
-}
+	OnGameInit->Add(g_PLID, server, false, SH_MEMBER(this, &SourceProvider::Hook_GameInit));
+	OnLevelInit->Add(g_PLID, server, true, SH_MEMBER(this, &SourceProvider::Hook_LevelInit));
+	OnLevelShutdown->Add(g_PLID, server, true, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown));
 
 void SourceProvider::Notify_DLLShutdown_Pre()
 {
-	SH_REMOVE_HOOK(IServerGameDLL, GameInit, server, SH_MEMBER(this, &SourceProvider::Hook_GameInit), false);
-	SH_REMOVE_HOOK(IServerGameDLL, LevelInit, server, SH_MEMBER(this, &SourceProvider::Hook_LevelInit), true);
-	SH_REMOVE_HOOK(IServerGameDLL, LevelShutdown, server, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown), true);
+	OnGameInit->Remove(g_PLID, server, false, SH_MEMBER(this, &SourceProvider::Hook_GameInit));
+	OnLevelInit->Remove(g_PLID, server, true, SH_MEMBER(this, &SourceProvider::Hook_LevelInit));
+	OnLevelShutdown->Remove(g_PLID, server, true, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown));
 
 	m_ConVarAccessor.RemoveMetamodCommands();
 
