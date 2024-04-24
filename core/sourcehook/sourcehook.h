@@ -98,8 +98,10 @@
 
 #ifdef _MSC_VER
 # define SH_COMP SH_COMP_MSVC
+# define SH_INLINE inline __forceinline
 #elif defined __GNUC__
 # define SH_COMP SH_COMP_GCC
+# define SH_INLINE inline __attribute__((always_inline))
 #else
 # error Unsupported compiler
 #endif
@@ -114,6 +116,7 @@
 
 #define SH_PTRSIZE sizeof(void*)
 
+#include <type_traits>
 #include "sh_memfuncinfo.h"
 #include "FastDelegate.h"
 
@@ -566,6 +569,434 @@ namespace SourceHook
 		static const int type = 0;
 		static const unsigned int flags = PassInfo::PassFlag_ByRef;
 	};
+
+
+	/************************************************************************/
+	/* Templated hook definition                                            */
+	/************************************************************************/
+
+	namespace metaprogramming
+	{
+		namespace detail
+		{
+			/**
+			*	@brief Iterate over all elements of a type pack
+			*
+			*	@param functor A reference to the functor containing the step<index, now> template.
+			*/
+			template<class Functor, int Index, typename Now, typename... Rest>
+			constexpr SH_INLINE void for_each_template_impl(Functor *f)
+			{
+				f->template step<Index, Now>();
+
+				if constexpr (sizeof...(Rest) > 0) {
+					for_each_template_impl<Functor, Index + 1, Rest...>(f);
+				}
+			}
+		}
+
+		template<class Functor, typename First, typename... Rest>
+		constexpr SH_INLINE void for_each_template(Functor* f)
+		{
+			detail::for_each_template_impl<Functor, 0, First, Rest...>(f);
+		}
+
+		/**
+		*	@brief Iterate over all elements of a type pack
+		*
+		*	@param functor A reference to the functor containing the step<index, now> template.
+		*/
+		template<class Functor, typename First, typename... Rest>
+		constexpr SH_INLINE void for_each_template_nullable(Functor* f)
+		{
+			for_each_template<Functor, First, Rest...>(f);
+		}
+
+		template<class Functor>
+		constexpr SH_INLINE void for_each_template_nullable(Functor* f)
+		{
+			//	Empty varargs
+		}
+
+		template <bool Test, class Yes = void, class No = void>
+		struct if_else {
+		public:
+			typedef No type;
+		};
+
+		template <class Yes, class No>
+		struct if_else<true, Yes, No> {
+		public:
+			typedef Yes type;
+		};
+	}
+
+	namespace detail
+	{
+
+		/**
+		*	@brief Build the PassInfo for a method pack.
+		*
+		*	Iterated over using for_each_template_nullable.
+		*/
+		class PrototypeBuilderFunctor
+		{
+		public:
+			constexpr PrototypeBuilderFunctor(PassInfo* p)
+					: params(p) {}
+			PassInfo* params;
+
+			template<int Index, typename Now>
+			constexpr void step()
+			{
+				//	Note: first index is always the thisptr!
+				params[Index + 1] = { sizeof(Now), ::SourceHook::GetPassInfo< Now >::type, ::SourceHook::GetPassInfo< Now >::flags };
+			}
+		};
+
+		/**
+		*	@brief Common type for the void/non-void handling semantics.
+		*
+		*	Basically, *(void*) is an illegal operation as it works on zero-sized
+		*	types. We work around this here by using these two lovely templates,
+	 	*	which both specify safe handling for void and non-void return params.
+		*
+		*	Invoke - call the passed delegate and safely handle the return type
+		*	Original - call the original method and safely handle the return type
+		*	Dereference - dereference the return type pointer for hook return semantics
+		*
+		*/
+		template<ISourceHook** SourceHook, typename Result, typename... Args>
+		struct BaseMethodInvoker
+		{
+		public:
+			typedef Result (EmptyClass::*EmptyDelegate)(Args...);
+		};
+
+		template<ISourceHook** SourceHook, typename IDelegate, typename... Args>
+		struct VoidMethodInvoker
+		{
+		public:
+			typedef std::bool_constant<false> has_return;
+			typedef BaseMethodInvoker<SourceHook, void, Args...> base;
+
+			static void Invoke(IDelegate* delegate, void* result, Args... args)
+			{
+				//	Do not touch return type: It's void!
+				delegate->Call(args...);
+			}
+
+			static void Original(EmptyClass* self, typename base::EmptyDelegate mfp, void* result, Args... args)
+			{
+				//	Do not touch return type: It's void!
+				(self->*mfp)(args...);
+			}
+
+			static void Dereference(const void* arg)
+			{
+				return;
+			}
+		};
+
+		template<ISourceHook** SourceHook, typename IDelegate, typename Result, typename... Args>
+		struct ReturningMethodInvoker
+		{
+		public:
+			typedef std::bool_constant<true> has_return;
+			typedef BaseMethodInvoker<SourceHook, Result, Args...> base;
+
+
+			static void Invoke(IDelegate* delegate, Result* result, Args... args)
+			{
+				*result = delegate->Call(args...);
+			}
+
+			static void Original(EmptyClass* self, typename base::EmptyDelegate mfp, Result* result, Args... args)
+			{
+				*result = (self->*mfp)(args...);
+			}
+
+			static Result Dereference(const Result* arg)
+			{
+				return *arg;
+			}
+		};
+	}
+
+
+	/**
+	*	@brief A hook manager, used to hook instances of a specific interface.
+	*
+	*	You must specify the SourceHook pointer, interface, method pointer,
+	*	and prototype in the template arguments. Any derived class of the interface
+	*	can be hooked using this manager.
+	*/
+	template<ISourceHook** SH, typename Interface, auto Method, typename Result, typename... Args>
+	struct Hook
+	{
+		/**
+		*	@brief The type we expect the template arg "Method" to be.
+		*/
+		typedef Result (Interface::*MemberMethod)(Args...);
+		typedef fastdelegate::FastDelegate<Result, Args...> Delegate;
+		typedef decltype(Method) MethodType;
+
+		static_assert( std::is_same<MethodType, MemberMethod>::type::value, "Mismatched template parameters!" );
+
+		//	Members
+		::SourceHook::MemFuncInfo MFI;
+		::SourceHook::IHookManagerInfo *HI;
+		::SourceHook::ProtoInfo Proto;
+
+		//	Singleton instance
+		//	Initialized below!
+		static Hook Instance;
+
+	private:
+		Hook(Hook& other) = delete;
+
+		/**
+		*	@brief Build the ProtoInfo for this hook
+		*/
+		constexpr Hook()
+		{
+			//	build protoinfo
+			Proto.numOfParams = sizeof...(Args);
+			Proto.convention = ProtoInfo::CallConv_Unknown;
+
+			if constexpr (std::is_void_v<Result>) {
+				Proto.retPassInfo = {0, 0, 0};
+			} else {
+				Proto.retPassInfo = { sizeof(Result), ::SourceHook::GetPassInfo< Result >::type, ::SourceHook::GetPassInfo< Result >::flags };
+			}
+
+			//	Iterate over the args... type pack
+			auto paramsPassInfo = new PassInfo[sizeof...(Args) + 1];
+			paramsPassInfo[0] = { 1, 0, 0 };
+			Proto.paramsPassInfo = paramsPassInfo;
+
+			detail::PrototypeBuilderFunctor argsBuilder(paramsPassInfo);
+			metaprogramming::for_each_template_nullable<detail::PrototypeBuilderFunctor, Args...>(&argsBuilder);
+
+
+			//	Build the backwards compatible paramsPassInfoV2 field
+			Proto.retPassInfo2 = {0, 0, 0, 0};
+			auto paramsPassInfo2 = new PassInfo::V2Info[sizeof...(Args) + 1];
+			Proto.paramsPassInfo2 = paramsPassInfo2;
+
+			for (int i = 0; i /* lte to include thisptr! */ <= sizeof...(Args); ++i) {
+				paramsPassInfo2[i] = { 0, 0, 0, 0 };
+			}
+
+		}
+
+	public:
+		static constexpr Hook* Make()
+		{
+			Hook::Instance = Hook();
+
+			return &Hook::Instance;
+		}
+
+	public:	//	Public Interface
+
+		/**
+		*	@brief Add an instance of this hook to the specified interface
+		*
+		*	@param id the g_PLID value for the plugin creating the hook
+		*	@param iface the interface pointer to hook
+		*	@param post true when post-hooking, false when pre-hooking.
+		*	@param handler the handler that will be called in place of the original method
+		*	@param mode the hook mode - Hook_Normal will only hook this instance, while others alter the global virtual table.
+		*/
+		int Add(Plugin id, Interface* iface, bool post, Delegate handler, ::SourceHook::ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+		{
+			using namespace ::SourceHook;
+			MemFuncInfo mfi = {true, -1, 0, 0};
+			GetFuncInfo(Method, mfi);
+			if (mfi.thisptroffs < 0 || !mfi.isVirtual)
+				return false;
+
+			CMyDelegateImpl* delegate = new CMyDelegateImpl(handler);
+			return (*SH)->AddHook(id, mode, iface, mfi.thisptroffs, Hook::HookManPubFunc, delegate, post);
+		}
+
+		/**
+		*	@brief Remove an existing hook handler from this interface
+		*
+		*	@param id the g_PLID value for the plugin the hook was created under
+		*	@param iface the interface to be unhooked
+		*	@param post true if this was a post hook, false otherwise (pre-hook)
+		*	@param handler the handler that will be removed from this hook.
+		*/
+		int Remove(Plugin id, Interface* iface, bool post, Delegate handler)
+		{
+			using namespace ::SourceHook;
+			MemFuncInfo mfi = {true, -1, 0, 0};
+			GetFuncInfo(Method, mfi);
+
+			//	Temporary delegate for .IsEqual() comparison.
+			CMyDelegateImpl temp(handler);
+			return (*SH)->RemoveHook(id, iface, mfi.thisptroffs, Hook::HookManPubFunc, &temp, post);
+		}
+
+	protected:
+		static int HookManPubFunc(bool store, ::SourceHook::IHookManagerInfo *hi)
+		{
+			//	Build the MemberFuncInfo for the hooked method
+			GetFuncInfo<MemberMethod>(static_cast<MemberMethod>(Method), Instance.MFI);
+
+			if ((*SH)->GetIfaceVersion() != SH_IFACE_VERSION || (*SH)->GetImplVersion() < SH_IMPL_VERSION)
+				return 1;
+
+			if (store)
+				Instance.HI = hi;
+
+			if (hi) {
+				//	Build a memberfuncinfo for our hook processor.
+				MemFuncInfo our_mfi = {true, -1, 0, 0};
+				GetFuncInfo(&Hook::Func, our_mfi);
+
+				void* us = reinterpret_cast<void **>(reinterpret_cast<char *>(&Instance) + our_mfi.vtbloffs)[our_mfi.vtblindex];
+				hi->SetInfo(SH_HOOKMAN_VERSION, Instance.MFI.vtbloffs, Instance.MFI.vtblindex, &Instance.Proto, us);
+			}
+
+			return 0;
+		}
+
+		struct IMyDelegate : ::SourceHook::ISHDelegate
+		{
+			virtual Result Call(Args... args) = 0;
+		};
+
+		struct CMyDelegateImpl : IMyDelegate
+		{
+			Delegate _delegate;
+
+			CMyDelegateImpl(Delegate deleg) : _delegate(deleg)
+			{}
+			virtual~CMyDelegateImpl() {}
+			Result Call(Args... args) { return _delegate(args...); }
+			void DeleteThis() { delete this; }
+			bool IsEqual(ISHDelegate *pOtherDeleg) { return _delegate == static_cast<CMyDelegateImpl *>(pOtherDeleg)->_delegate; }
+
+		};
+
+	protected:
+
+		/**
+		*	@brief An object containing methods to safely handle the return type
+		*
+		*	This allows us to safely handle zero-sized types as return values.
+		*/
+		typedef typename metaprogramming::if_else<
+				std::is_void<Result>::value,
+				detail::VoidMethodInvoker<SH, IMyDelegate, Args...>,
+				detail::ReturningMethodInvoker<SH, IMyDelegate, Result, Args...>
+		>::type Invoker;
+
+		/**
+		*	@brief An object containing a safely-allocatable return type
+		*
+		*	Used when stack-allocating the return type;
+		*	void returns are never written to so using void* is safe.
+		*	when the return is not zero-sized, use the return itself.
+		*/
+		typedef typename metaprogramming::if_else<
+				std::is_void<Result>::value,
+				void*,
+				Result
+		>::type VoidSafeResult;
+
+		typedef typename ReferenceCarrier<VoidSafeResult>::type ResultType;
+
+		/**
+		*	@brief Hook handler virtual
+		*/
+		virtual Result Func(Args... args)
+		{
+			using namespace ::SourceHook;
+
+			void *ourvfnptr = reinterpret_cast<void *>(
+					*reinterpret_cast<void ***>(reinterpret_cast<char *>(this) + Instance.MFI.vtbloffs) + Instance.MFI.vtblindex);
+			void *vfnptr_origentry;
+
+			META_RES status = MRES_IGNORED;
+			META_RES prev_res;
+			META_RES cur_res;
+
+			ResultType original_ret;
+			ResultType override_ret;
+			ResultType current_ret;
+
+			IMyDelegate *iter;
+			IHookContext *context = (*SH)->SetupHookLoop(
+					Instance.HI,
+					ourvfnptr,
+					reinterpret_cast<void *>(this),
+					&vfnptr_origentry,
+					&status,
+					&prev_res,
+					&cur_res,
+					&original_ret,
+					&override_ret);
+
+			//	Call all pre-hooks
+			prev_res = MRES_IGNORED;
+			while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
+				cur_res = MRES_IGNORED;
+				Invoker::Invoke(iter, &current_ret, args...);
+				prev_res = cur_res;
+
+				if (cur_res > status)
+					status = cur_res;
+
+				if (cur_res >= MRES_OVERRIDE)
+					*reinterpret_cast<ResultType *>(context->GetOverrideRetPtr()) = current_ret;
+			}
+
+			//	Call original method
+			if (status != MRES_SUPERCEDE && context->ShouldCallOrig()) {
+				typename Invoker::base::EmptyDelegate original;
+				reinterpret_cast<void **>(&original)[0] = vfnptr_origentry;
+				Invoker::Original( reinterpret_cast<EmptyClass*>(this), original, &original_ret, args...);
+			} else {
+				//	TODO: Do we use context->GetOriginalRetPtr() here?
+				//	this is inherited from the macro versions to prevent semantic differences.
+				original_ret = override_ret;
+			}
+
+			//	Call all post-hooks
+			prev_res = MRES_IGNORED;
+			while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
+				cur_res = MRES_IGNORED;
+				Invoker::Invoke(iter, &current_ret, args...);
+				prev_res = cur_res;
+
+				if (cur_res > status)
+					status = cur_res;
+
+				if (cur_res >= MRES_OVERRIDE)
+					*reinterpret_cast<VoidSafeResult *>(context->GetOverrideRetPtr()) = current_ret;
+			}
+
+			const ResultType* result_ptr = reinterpret_cast<const ResultType *>((status >= MRES_OVERRIDE)
+																				? context->GetOverrideRetPtr()
+																				: context->GetOrigRetPtr());
+
+			(*SH)->EndContext(context);
+
+			return Invoker::Dereference(result_ptr);
+		}
+
+	};
+
+	//	You're probably wondering what the hell this does.
+	//	https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library/11711082#11711082
+	//	Yes, I also happen to hate C++.
+	template<ISourceHook** SH, typename Interface, auto Method, typename Result, typename... Args>
+	Hook<SH, Interface, Method, Result, Args...> Hook<SH, Interface, Method, Result, Args...>::Instance;
+
 }
 
 /************************************************************************/
