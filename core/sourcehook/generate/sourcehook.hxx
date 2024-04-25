@@ -671,19 +671,19 @@ namespace SourceHook
 		*	used when the core delegates receive different args than the root proto (eg, varargs!)
 		*
 		*/
-		template<ISourceHook** SourceHook, typename Result, typename... Args>
+		template<typename Result, typename... Args>
 		struct BaseMethodInvoker
 		{
 		public:
 			typedef Result (EmptyClass::*EmptyDelegate)(Args...);
 		};
 
-		template<ISourceHook** SourceHook, typename IDelegate, typename... Args>
+		template<typename IDelegate, typename... Args>
 		struct VoidMethodInvoker
 		{
 		public:
 			typedef std::bool_constant<false> has_return;
-			typedef BaseMethodInvoker<SourceHook, void, Args...> base;
+			typedef BaseMethodInvoker<void, Args...> base;
 
 			static void Invoke(IDelegate* delegate, void* result, Args... args)
 			{
@@ -710,12 +710,12 @@ namespace SourceHook
 			}
 		};
 
-		template<ISourceHook** SourceHook, typename IDelegate, typename Result, typename... Args>
+		template<typename IDelegate, typename Result, typename... Args>
 		struct ReturningMethodInvoker
 		{
 		public:
 			typedef std::bool_constant<true> has_return;
-			typedef BaseMethodInvoker<SourceHook, Result, Args...> base;
+			typedef BaseMethodInvoker<Result, Args...> base;
 
 
 			static void Invoke(IDelegate* delegate, Result* result, Args... args)
@@ -1010,8 +1010,8 @@ namespace SourceHook
 		*/
 		typedef typename metaprogramming::if_else<
 				std::is_void<Result>::value,
-				detail::VoidMethodInvoker<SH, IMyDelegate, Args...>,
-				detail::ReturningMethodInvoker<SH, IMyDelegate, Result, Args...>
+				detail::VoidMethodInvoker<IMyDelegate, Args...>,
+				detail::ReturningMethodInvoker<IMyDelegate, Result, Args...>
 		>::type Invoker;
 
 		/**
