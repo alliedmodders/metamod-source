@@ -717,26 +717,35 @@ namespace SourceHook
 			typedef std::bool_constant<true> has_return;
 			typedef BaseMethodInvoker<Result, Args...> base;
 
+			/**
+			 * A RefSafeResult handles return types that are references
+			 * (Which we cannot take a pointer to). This technically breaks
+			 * the contract of the return being "Result", but this is the type
+			 * the actual hook handler uses :/
+			 */
+			typedef typename ReferenceCarrier<Result>::type RefSafeResult;
 
-			static void Invoke(IDelegate* delegate, Result* result, Args... args)
+
+			static void Invoke(IDelegate* delegate, RefSafeResult& result, Args... args)
 			{
-				*result = delegate->Call(args...);
+				result = delegate->Call(args...);
 			}
 
-			static void Original(EmptyClass* self, typename base::EmptyDelegate mfp, Result* result, Args... args)
+			static void Original(EmptyClass* self, typename base::EmptyDelegate mfp, RefSafeResult& result, Args... args)
 			{
-				*result = (self->*mfp)(args...);
+				result = (self->*mfp)(args...);
 			}
 
 			template<typename Self, typename Mfp>
-			static void OriginalRaised( Result (*Invoker)(Self, Mfp, Args...), Self self, Mfp mfp, Result* result, Args... args )
+			static void OriginalRaised( Result (*Invoker)(Self, Mfp, Args...), Self self, Mfp mfp, RefSafeResult& result, Args... args )
 			{
-				*result = Invoker(self, mfp, args...);
+				result = Invoker(self, mfp, args...);
 			}
 
-			static Result Dereference(const Result* arg)
+			static Result Dereference(const RefSafeResult* arg)
 			{
-				return *arg;
+				Result res = *arg;
+				return res;
 			}
 		};
 
@@ -835,9 +844,6 @@ namespace SourceHook
 			template<ISourceHook** SH, typename Invoker, typename InstType>
 			static Result HookImplCore(InstType* Instance, void* self, Args... args)
 			{
-				//	Note to all ye who enter here:
-				//	Do not, do NOT--DO NOT: touch "this" or any of our member variables.
-				//	Hands off bucko. USE THE STATIC INSTANCE! (thisptr is undefined!!)
 				using namespace ::SourceHook;
 
 				void *ourvfnptr = reinterpret_cast<void *>(
@@ -847,6 +853,24 @@ namespace SourceHook
 				META_RES status = MRES_IGNORED;
 				META_RES prev_res;
 				META_RES cur_res;
+
+				//	TODO: STL operator= invocations beyond here can invoke corrupt destructors.
+				//	this can lead to memory corruption/uninitialized memory use,
+				//	as the STL operator= will try to call the destructor on the uninitialized
+				//	member. If we see any memory corruption during operator= or similar,
+				//	then that means we need to fix this and actually initialize these variables.
+				//
+				//	One idea is to use placement copy constructors here, where we tell C++
+				//	to initialize these variables with a copy constructor from another type:
+				//	new (&uninitialized_variable) VariableType(existing_value);
+				//		HOWEVER: C++ will intentionally not destroy the original copy, possibly leading
+				//		to memory leaks of the original STL types. Not bad, not great. We're trading off safety
+				//		for guaranteed memory leaks--initializing these variables with a default constructor is probably
+				//		MUCH better in the long run.
+				//
+				//	Ultimately, this comes down to the SDK ensuring all types have accessible constructors.
+				//	Which SHOULD be a thing, but there's a lot of SDKs and I'm lazy enough to let this wait
+				//	until it starts causing problems. This is what the macros do, so it really should be fine.
 
 				ResultType original_ret;
 				ResultType override_ret;
@@ -868,7 +892,7 @@ namespace SourceHook
 				prev_res = MRES_IGNORED;
 				while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
 					cur_res = MRES_IGNORED;
-					Invoker::Invoke(iter, &current_ret, args...);
+					Invoker::Invoke(iter, current_ret, args...);
 					prev_res = cur_res;
 
 					if (cur_res > status)
@@ -887,18 +911,18 @@ namespace SourceHook
 					//	the parent ("InstType") is capable of lowering arguments for us; in other words,
 					//	they'll take tough ABI semantics like varargs and crunch them into an object we can
 					//	actually pass around. Unfortunately, that means we can't call the original delegate,
-					//	as then we'd be trying to give it the "lowered" argument that we gave it.
+					//	as then we'd be trying to give it the "lowered" argument that we received.
 					//	
 					//	To work around this, we've exposed the unlowered types to the implementation core here,
 					//	and we're going to give control of actually invoking the original to the hook manager
 					//	that actually lowered the args for us.
 					//	
-					//	These semantics are a little rough but it makes more sense from the parent-class side of things.
+					//	These semantics are a little rough, but it makes more sense from the parent-class side of things.
 
-					typename InstType::UnloweredSelf* known_self = reinterpret_cast<InstType::UnloweredSelf*>(self);
-					typename InstType::UnloweredDelegate known_mfp = reinterpret_cast<InstType::UnloweredDelegate>(original);
+					typename InstType::UnloweredSelf* known_self = reinterpret_cast<typename InstType::UnloweredSelf*>(self);
+					typename InstType::UnloweredDelegate known_mfp = reinterpret_cast<typename InstType::UnloweredDelegate>(original);
 
-					Invoker::OriginalRaised( &InstType::InvokeUnlowered, known_self, known_mfp, &original_ret, args... );
+					Invoker::OriginalRaised( &InstType::InvokeUnlowered, known_self, known_mfp, original_ret, args... );
 				} else {
 					//	TODO: Do we use context->GetOriginalRetPtr() here?
 					//	this is inherited from the macro versions to prevent semantic differences.
@@ -909,14 +933,14 @@ namespace SourceHook
 				prev_res = MRES_IGNORED;
 				while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
 					cur_res = MRES_IGNORED;
-					Invoker::Invoke(iter, &current_ret, args...);
+					Invoker::Invoke(iter, current_ret, args...);
 					prev_res = cur_res;
 
 					if (cur_res > status)
 						status = cur_res;
 
 					if (cur_res >= MRES_OVERRIDE)
-						*reinterpret_cast<VoidSafeResult *>(context->GetOverrideRetPtr()) = current_ret;
+						*reinterpret_cast<ResultType *>(context->GetOverrideRetPtr()) = current_ret;
 				}
 
 				const ResultType* result_ptr = reinterpret_cast<const ResultType *>((status >= MRES_OVERRIDE)
@@ -999,6 +1023,7 @@ namespace SourceHook
 		typedef typename HookHandlerImpl::Delegate Delegate;
 		typedef typename HookHandlerImpl::IMyDelegate IMyDelegate;
 		typedef typename HookHandlerImpl::CMyDelegateImpl CMyDelegateImpl;
+		typedef typename HookHandlerImpl::ResultType HandlerResultType;
 
 		friend HookHandlerImpl;
 
@@ -1157,7 +1182,7 @@ namespace SourceHook
 	//	arguments passed to the method to an easier-to-use form for the
 	//	core implementation (defined above).
 	//
-	//	Thus, the hook managers are simply responsible for packing and weird
+	//	Thus, the hook managers are simply responsible for packing any weird
 	//	or unorthodox arguments into a generally safe form, and then they are
 	//	responsible for unpacking these arguments back into their unsafe form
 	//	when it's time to call the original.
