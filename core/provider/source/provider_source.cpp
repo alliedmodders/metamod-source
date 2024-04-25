@@ -44,14 +44,14 @@ static SourceProvider g_SourceProvider;
 
 IMetamodSourceProvider* provider = &g_SourceProvider;
 
-auto OnGameInit = Hook<IServerGameDLL, &IServerGameDLL::GameInit, bool>::Make();
-auto OnLevelInit = Hook<IServerGameDLL, &IServerGameDLL::LevelInit, bool, const char*, const char*, const char*, const char*, bool, bool>::Make();
-auto OnLevelShutdown = Hook<IServerGameDLL, &IServerGameDLL::LevelShutdown, void>::Make();
+auto OnGameInit = SourceHook::Hook<IServerGameDLL, &IServerGameDLL::GameInit, bool>::Make();
+auto OnLevelInit = SourceHook::Hook<IServerGameDLL, &IServerGameDLL::LevelInit, bool, const char*, const char*, const char*, const char*, bool, bool>::Make();
+auto OnLevelShutdown = SourceHook::Hook<IServerGameDLL, &IServerGameDLL::LevelShutdown, void>::Make();
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-auto OnClientCommand = Hook<IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*, const CCommand&>::Make();
+auto OnClientCommand = SourceHook::Hook<IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*, const CCommand&>::Make();
 #else
-auto OnClientCommand = Hook<IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*>::Make();
+auto OnClientCommand = SourceHook::Hook<IServerGameClients, &IServerGameClients::ClientCommand, void, edict_t*>::Make();
 #endif
 
 void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,

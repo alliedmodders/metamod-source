@@ -116,6 +116,7 @@
 
 #define SH_PTRSIZE sizeof(void*)
 
+#include <cstdarg>
 #include <type_traits>
 #include "sh_memfuncinfo.h"
 #include "FastDelegate.h"
@@ -665,6 +666,10 @@ namespace SourceHook
 		*	Original - call the original method and safely handle the return type
 		*	Dereference - dereference the return type pointer for hook return semantics
 		*
+		*	OriginalRaised - a little special, we call a static func from the parent hook
+		*	manager class to raise lowered arguments passed to the core delegates. This is
+		*	used when the core delegates receive different args than the root proto (eg, varargs!)
+		*
 		*/
 		template<ISourceHook** SourceHook, typename Result, typename... Args>
 		struct BaseMethodInvoker
@@ -692,6 +697,13 @@ namespace SourceHook
 				(self->*mfp)(args...);
 			}
 
+			template<typename Self, typename Mfp>
+			static void OriginalRaised( void (*Invoker)(Self, Mfp, Args...), Self self, Mfp mfp, void* result, Args... args )
+			{
+				//	Do not touch return type: It's void!
+				Invoker(self, mfp, args...);
+			}
+
 			static void Dereference(const void* arg)
 			{
 				return;
@@ -716,9 +728,204 @@ namespace SourceHook
 				*result = (self->*mfp)(args...);
 			}
 
+			template<typename Self, typename Mfp>
+			static void OriginalRaised( Result (*Invoker)(Self, Mfp, Args...), Self self, Mfp mfp, Result* result, Args... args )
+			{
+				*result = Invoker(self, mfp, args...);
+			}
+
 			static Result Dereference(const Result* arg)
 			{
 				return *arg;
+			}
+		};
+
+		/**
+		 * @brief defines the interface from the hook manager -> user code
+		 *
+		 * This is invoked from the hook manager to call SourceHook delegates once
+		 * the hook manager has lowered arguments/etc into the receiving delegate types.
+		 */
+		template<ProtoInfo::CallConvention Convention, typename Result, typename... Args>
+		struct HookHandlerImpl
+		{
+		public:
+			/**
+			 * @brief The delegate type that SourceHook will invoke (user code)
+			 */
+			typedef typename fastdelegate::FastDelegate<Result, Args...> Delegate;
+
+			struct IMyDelegate : ::SourceHook::ISHDelegate
+			{
+			public:
+				virtual Result Call(Args... args) = 0;
+			};
+
+			struct CMyDelegateImpl : IMyDelegate
+			{
+			public:
+				Delegate _delegate;
+
+				CMyDelegateImpl(Delegate deleg) : _delegate(deleg)
+				{}
+				virtual~CMyDelegateImpl() {}
+				Result Call(Args... args) { return _delegate(args...); }
+				void DeleteThis() { delete this; }
+				bool IsEqual(ISHDelegate *pOtherDeleg) { return _delegate == static_cast<CMyDelegateImpl *>(pOtherDeleg)->_delegate; }
+
+			};
+
+			/**
+			*	@brief An object containing a safely-allocatable return type
+			*
+			*	Used when stack-allocating the return type;
+			*	void returns are never written to so using void* is safe.
+			*	when the return is not zero-sized, use the return itself.
+			*/
+			typedef typename metaprogramming::if_else<
+					std::is_void<Result>::value,
+					void*,
+					Result
+			>::type VoidSafeResult;
+
+			/**
+			*	@brief A return type that is C++-reference-safe.
+			*
+			*	Prevents us from doing silly things with byref-passed values.
+			*/
+			typedef typename ReferenceCarrier<VoidSafeResult>::type ResultType;
+
+			::SourceHook::ProtoInfo Proto;
+
+			/**
+			*	@brief Build the ProtoInfo for this hook
+			*/
+			constexpr HookHandlerImpl()
+			{
+				//	build protoinfo
+				Proto.numOfParams = sizeof...(Args);
+				Proto.convention = Convention;
+
+				if constexpr (std::is_void_v<Result>) {
+					Proto.retPassInfo = {0, 0, 0};
+				} else {
+					Proto.retPassInfo = { sizeof(Result), ::SourceHook::GetPassInfo< Result >::type, ::SourceHook::GetPassInfo< Result >::flags };
+				}
+
+				//	Iterate over the args... type pack
+				auto paramsPassInfo = new PassInfo[sizeof...(Args) + 1];
+				paramsPassInfo[0] = { 1, 0, 0 };
+				Proto.paramsPassInfo = paramsPassInfo;
+
+				detail::PrototypeBuilderFunctor argsBuilder(paramsPassInfo);
+				metaprogramming::for_each_template_nullable<detail::PrototypeBuilderFunctor, Args...>(&argsBuilder);
+
+
+				//	Build the backwards compatible paramsPassInfoV2 field
+				Proto.retPassInfo2 = {0, 0, 0, 0};
+				auto paramsPassInfo2 = new PassInfo::V2Info[sizeof...(Args) + 1];
+				Proto.paramsPassInfo2 = paramsPassInfo2;
+
+				for (int i = 0; i /* lte to include thisptr! */ <= sizeof...(Args); ++i) {
+					paramsPassInfo2[i] = { 0, 0, 0, 0 };
+				}
+
+			}
+
+			template<ISourceHook** SH, typename Invoker, typename InstType>
+			static Result HookImplCore(InstType* Instance, void* self, Args... args)
+			{
+				//	Note to all ye who enter here:
+				//	Do not, do NOT--DO NOT: touch "this" or any of our member variables.
+				//	Hands off bucko. USE THE STATIC INSTANCE! (thisptr is undefined!!)
+				using namespace ::SourceHook;
+
+				void *ourvfnptr = reinterpret_cast<void *>(
+						*reinterpret_cast<void ***>(reinterpret_cast<char *>(self) + Instance->MFI.vtbloffs) + Instance->MFI.vtblindex);
+				void *vfnptr_origentry;
+
+				META_RES status = MRES_IGNORED;
+				META_RES prev_res;
+				META_RES cur_res;
+
+				ResultType original_ret;
+				ResultType override_ret;
+				ResultType current_ret;
+
+				IMyDelegate *iter;
+				IHookContext *context = (*SH)->SetupHookLoop(
+						Instance->HI,
+						ourvfnptr,
+						reinterpret_cast<void *>(self),
+						&vfnptr_origentry,
+						&status,
+						&prev_res,
+						&cur_res,
+						&original_ret,
+						&override_ret);
+
+				//	Call all pre-hooks
+				prev_res = MRES_IGNORED;
+				while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
+					cur_res = MRES_IGNORED;
+					Invoker::Invoke(iter, &current_ret, args...);
+					prev_res = cur_res;
+
+					if (cur_res > status)
+						status = cur_res;
+
+					if (cur_res >= MRES_OVERRIDE)
+						*reinterpret_cast<ResultType *>(context->GetOverrideRetPtr()) = current_ret;
+				}
+
+				//	Call original method
+				if (status != MRES_SUPERCEDE && context->ShouldCallOrig()) {
+					typename Invoker::base::EmptyDelegate original;
+					reinterpret_cast<void **>(&original)[0] = vfnptr_origentry;
+
+					//	A little hacky, but I think this is probably the best way to go about this.
+					//	the parent ("InstType") is capable of lowering arguments for us; in other words,
+					//	they'll take tough ABI semantics like varargs and crunch them into an object we can
+					//	actually pass around. Unfortunately, that means we can't call the original delegate,
+					//	as then we'd be trying to give it the "lowered" argument that we gave it.
+					//	
+					//	To work around this, we've exposed the unlowered types to the implementation core here,
+					//	and we're going to give control of actually invoking the original to the hook manager
+					//	that actually lowered the args for us.
+					//	
+					//	These semantics are a little rough but it makes more sense from the parent-class side of things.
+
+					typename InstType::UnloweredSelf* known_self = reinterpret_cast<InstType::UnloweredSelf*>(self);
+					typename InstType::UnloweredDelegate known_mfp = reinterpret_cast<InstType::UnloweredDelegate>(original);
+
+					Invoker::OriginalRaised( &InstType::InvokeUnlowered, known_self, known_mfp, &original_ret, args... );
+				} else {
+					//	TODO: Do we use context->GetOriginalRetPtr() here?
+					//	this is inherited from the macro versions to prevent semantic differences.
+					original_ret = override_ret;
+				}
+
+				//	Call all post-hooks
+				prev_res = MRES_IGNORED;
+				while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
+					cur_res = MRES_IGNORED;
+					Invoker::Invoke(iter, &current_ret, args...);
+					prev_res = cur_res;
+
+					if (cur_res > status)
+						status = cur_res;
+
+					if (cur_res >= MRES_OVERRIDE)
+						*reinterpret_cast<VoidSafeResult *>(context->GetOverrideRetPtr()) = current_ret;
+				}
+
+				const ResultType* result_ptr = reinterpret_cast<const ResultType *>((status >= MRES_OVERRIDE)
+																					? context->GetOverrideRetPtr()
+																					: context->GetOrigRetPtr());
+
+				(*SH)->EndContext(context);
+
+				return Invoker::Dereference(result_ptr);
 			}
 		};
 	}
@@ -730,8 +937,8 @@ namespace SourceHook
 	{
 	public:
 		HookInstance(ISourceHook** sh, int hookid)
-		: SH(sh)
-		, _hookid(hookid)
+				: SH(sh)
+				, _hookid(hookid)
 		{}
 	protected:
 		//	The global pointer to the SourceHook API
@@ -746,37 +953,25 @@ namespace SourceHook
 		 * @brief Returns true if the hook was successfully placed.
 		 * @return
 		 */
-		bool Ok()
-		{
-			return _hookid != 0;
-		}
+		bool Ok() { return _hookid != 0; }
 
 		/**
 		 * @brief Pause the hook, preventing it from being called until unpaused.
 		 * @return
 		 */
-		bool Pause()
-		{
-			return (*SH)->PauseHookByID(_hookid);
-		}
+		bool Pause() { return (*SH)->PauseHookByID(_hookid); }
 
 		/**
 		 * @brief Unpause the hook if it is currently paused
 		 * @return
 		 */
-		bool Unpause()
-		{
-			return (*SH)->UnpauseHookByID(_hookid);
-		}
+		bool Unpause() { return (*SH)->UnpauseHookByID(_hookid); }
 
 		/**
 		 * @brief Remove the hook, permanently preventing it from being invoked.
 		 * @return
 		 */
-		bool Remove()
-		{
-			return (*SH)->RemoveHookByID(_hookid);
-		}
+		bool Remove() { return (*SH)->RemoveHookByID(_hookid); }
 	};
 
 	/**
@@ -786,79 +981,80 @@ namespace SourceHook
 	*	and prototype in the template arguments. Any derived class of the interface
 	*	can be hooked using this manager.
 	*/
-	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
-	struct HookImpl
+	template<
+			//	SourceHook core
+			ISourceHook** SH, Plugin* PL,
+			//	Hooked object
+			typename Interface, auto Method,
+			//	Hooked object type
+			typename MemberMethod, ProtoInfo::CallConvention Convention,
+			//	Parent where lowering will occur
+			typename Parent,
+			//	Delegate type
+			typename Result, typename... Args>
+	struct HookCoreImpl
 	{
+	protected:
+		typedef typename ::SourceHook::detail::HookHandlerImpl<Convention, Result, Args...> HookHandlerImpl;
+		typedef typename HookHandlerImpl::Delegate Delegate;
+		typedef typename HookHandlerImpl::IMyDelegate IMyDelegate;
+		typedef typename HookHandlerImpl::CMyDelegateImpl CMyDelegateImpl;
+
+		friend HookHandlerImpl;
+
+
+		/**
+		*	@brief An object containing methods to safely handle the return type
+		*
+		*	This allows us to safely handle zero-sized types as return values.
+		*/
+		typedef typename metaprogramming::if_else<
+				std::is_void<Result>::value,
+				detail::VoidMethodInvoker<SH, IMyDelegate, Args...>,
+				detail::ReturningMethodInvoker<SH, IMyDelegate, Result, Args...>
+		>::type Invoker;
+
 		/**
 		*	@brief The type we expect the template arg "Method" to be.
+		*	Method is the MFP we will be hooking, so they need to be exact!
 		*/
-		typedef Result (Interface::*MemberMethod)(Args...);
-		typedef fastdelegate::FastDelegate<Result, Args...> Delegate;
+		//	typedef Result (Interface::*MemberMethod)(Args...);
 		typedef decltype(Method) MethodType;
 
 		static_assert( std::is_same<MethodType, MemberMethod>::type::value, "Mismatched template parameters!" );
 
+		//	uh oh, Parent is technically uninitialized here.
+		//	should find a workaround, this would be nice to have.
+		//static_assert( std::is_base_of<HookCoreImpl, Parent>::type::value, "Mismatched hookman parent type! (INTERNAL ERROR - REPORT THIS AS A BUG)");
+
+
 		//	Members
 		::SourceHook::MemFuncInfo MFI;
 		::SourceHook::IHookManagerInfo *HI;
-		::SourceHook::ProtoInfo Proto;
+
+		HookHandlerImpl HookHandler;
 
 		//	Singleton instance
 		//	Initialized below!
-		static HookImpl Instance;
+		static Parent Instance;
 
-	private:
-		HookImpl(HookImpl& other) = delete;
+	protected:
+		HookCoreImpl(HookCoreImpl& other) = delete;
 
-		/**
-		*	@brief Build the ProtoInfo for this hook
-		*/
-		constexpr HookImpl()
+		constexpr HookCoreImpl()
+		//	Build the ProtoInfo object
+		: HookHandler(HookHandlerImpl())
 		{
-			//	build protoinfo
-			Proto.numOfParams = sizeof...(Args);
-			Proto.convention = ProtoInfo::CallConv_Unknown;
-
-			if constexpr (std::is_void_v<Result>) {
-				Proto.retPassInfo = {0, 0, 0};
-			} else {
-				Proto.retPassInfo = { sizeof(Result), ::SourceHook::GetPassInfo< Result >::type, ::SourceHook::GetPassInfo< Result >::flags };
-			}
-
-			//	Iterate over the args... type pack
-			auto paramsPassInfo = new PassInfo[sizeof...(Args) + 1];
-			paramsPassInfo[0] = { 1, 0, 0 };
-			Proto.paramsPassInfo = paramsPassInfo;
-
-			detail::PrototypeBuilderFunctor argsBuilder(paramsPassInfo);
-			metaprogramming::for_each_template_nullable<detail::PrototypeBuilderFunctor, Args...>(&argsBuilder);
-
-
-			//	Build the backwards compatible paramsPassInfoV2 field
-			Proto.retPassInfo2 = {0, 0, 0, 0};
-			auto paramsPassInfo2 = new PassInfo::V2Info[sizeof...(Args) + 1];
-			Proto.paramsPassInfo2 = paramsPassInfo2;
-
-			for (int i = 0; i /* lte to include thisptr! */ <= sizeof...(Args); ++i) {
-				paramsPassInfo2[i] = { 0, 0, 0, 0 };
-			}
 
 		}
 
-	public:
-		static constexpr HookImpl* Make()
-		{
-			HookImpl::Instance = HookImpl();
 
-			return &HookImpl::Instance;
-		}
 
 	public:	//	Public Interface
 
 		/**
 		*	@brief Add an instance of this hook to the specified interface
 		*
-		*	@param id the g_PLID value for the plugin creating the hook
 		*	@param iface the interface pointer to hook
 		*	@param post true when post-hooking, false when pre-hooking.
 		*	@param handler the handler that will be called in place of the original method
@@ -869,19 +1065,19 @@ namespace SourceHook
 			using namespace ::SourceHook;
 			MemFuncInfo mfi = {true, -1, 0, 0};
 			GetFuncInfo(Method, mfi);
+
 			if (mfi.thisptroffs < 0 || !mfi.isVirtual)
-				return HookInstance(SH, 0);
+				return {SH, false};
 
 			CMyDelegateImpl* delegate = new CMyDelegateImpl(handler);
-			int id = (*SH)->AddHook(*PL, mode, iface, mfi.thisptroffs, HookImpl::HookManPubFunc, delegate, post);
+			int id = (*SH)->AddHook(*PL, mode, iface, mfi.thisptroffs, HookCoreImpl::HookManPubFunc, delegate, post);
 
-			return HookInstance(SH, id);
+			return {SH, id};
 		}
 
 		/**
 		*	@brief Remove an existing hook handler from this interface
 		*
-		*	@param id the g_PLID value for the plugin the hook was created under
 		*	@param iface the interface to be unhooked
 		*	@param post true if this was a post hook, false otherwise (pre-hook)
 		*	@param handler the handler that will be removed from this hook.
@@ -894,10 +1090,17 @@ namespace SourceHook
 
 			//	Temporary delegate for .IsEqual() comparison.
 			CMyDelegateImpl temp(handler);
-			return (*SH)->RemoveHook(*PL, iface, mfi.thisptroffs, HookImpl::HookManPubFunc, &temp, post);
+			return (*SH)->RemoveHook(*PL, iface, mfi.thisptroffs, HookCoreImpl::HookManPubFunc, &temp, post);
 		}
 
 	protected:
+		/**
+		 * @brief Configure the hookmangen for this hook manager
+		 * 
+		 * @param store 
+		 * @param hi 
+		 * @return int Zero on success
+		 */
 		static int HookManPubFunc(bool store, ::SourceHook::IHookManagerInfo *hi)
 		{
 			//	Build the MemberFuncInfo for the hooked method
@@ -912,155 +1115,184 @@ namespace SourceHook
 			if (hi) {
 				//	Build a memberfuncinfo for our hook processor.
 				MemFuncInfo our_mfi = {true, -1, 0, 0};
-				GetFuncInfo(&HookImpl::Func, our_mfi);
+				GetFuncInfo(&Parent::Hook, our_mfi);
 
 				void* us = reinterpret_cast<void **>(reinterpret_cast<char *>(&Instance) + our_mfi.vtbloffs)[our_mfi.vtblindex];
-				hi->SetInfo(SH_HOOKMAN_VERSION, Instance.MFI.vtbloffs, Instance.MFI.vtblindex, &Instance.Proto, us);
+				hi->SetInfo(SH_HOOKMAN_VERSION, Instance.MFI.vtbloffs, Instance.MFI.vtblindex, &Instance.HookHandler.Proto, us);
 			}
 
 			return 0;
 		}
 
-		struct IMyDelegate : ::SourceHook::ISHDelegate
-		{
-			virtual Result Call(Args... args) = 0;
-		};
-
-		struct CMyDelegateImpl : IMyDelegate
-		{
-			Delegate _delegate;
-
-			CMyDelegateImpl(Delegate deleg) : _delegate(deleg)
-			{}
-			virtual~CMyDelegateImpl() {}
-			Result Call(Args... args) { return _delegate(args...); }
-			void DeleteThis() { delete this; }
-			bool IsEqual(ISHDelegate *pOtherDeleg) { return _delegate == static_cast<CMyDelegateImpl *>(pOtherDeleg)->_delegate; }
-
-		};
-
 	protected:
+		static Result InvokeDelegates(void* self, Args... args)
+		{
+			return HookHandlerImpl::template HookImplCore<SH, Invoker, Parent>(&Instance, self, args...);
+		}
 
-		/**
-		*	@brief An object containing methods to safely handle the return type
-		*
-		*	This allows us to safely handle zero-sized types as return values.
-		*/
-		typedef typename metaprogramming::if_else<
-				std::is_void<Result>::value,
-				detail::VoidMethodInvoker<SH, IMyDelegate, Args...>,
-				detail::ReturningMethodInvoker<SH, IMyDelegate, Result, Args...>
-		>::type Invoker;
 
-		/**
-		*	@brief An object containing a safely-allocatable return type
-		*
-		*	Used when stack-allocating the return type;
-		*	void returns are never written to so using void* is safe.
-		*	when the return is not zero-sized, use the return itself.
-		*/
-		typedef typename metaprogramming::if_else<
-				std::is_void<Result>::value,
-				void*,
-				Result
-		>::type VoidSafeResult;
+	};
 
-		/**
-		*	@brief A return type that is C++-reference-safe.
-		*
-		*	Prevents us from doing silly things with byref-passed values.
-		*/
-		typedef typename ReferenceCarrier<VoidSafeResult>::type ResultType;
+
+	//	You're probably wondering what the hell this does.
+	//	https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library/11711082#11711082
+	//	I hate C++.
+	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename MemberMethod,  ProtoInfo::CallConvention Convention, typename Parent, typename Result, typename... Args>
+	Parent HookCoreImpl<SH, PL, Interface, Method, MemberMethod, Convention, Parent, Result, Args...>::Instance;
+
+
+	/************************************************************************/
+	/* Templated hook managers/argument lowering                            */
+	/************************************************************************/
+
+	//	How it works:
+	//
+	//	C++ has no way to pass varargs to a lower method (unfortunately).
+	//	all we can do is give the lower method a pointer to our va_fmt object.
+	//	This is bad for us because it means there's no way to call the original method,
+	//	which requests varargs and not the va_fmt.
+	//
+	//	To work around this, we introduce "argument lowering":
+	//	The hook managers (defined below) have the option to translate the
+	//	arguments passed to the method to an easier-to-use form for the
+	//	core implementation (defined above).
+	//
+	//	Thus, the hook managers are simply responsible for packing and weird
+	//	or unorthodox arguments into a generally safe form, and then they are
+	//	responsible for unpacking these arguments back into their unsafe form
+	//	when it's time to call the original.
+	//
+	//	To make your own hook manager, you need to do the following things:
+	//	- Inherit from HookCoreImpl<>, passing your (INCOMPLETE!) type as an argument for the
+	//	  "Parent" typename in the HookCoreImpl template.
+	//	  - Pass the LOWERED args to HookCoreImpl<>'s args thing!
+	//	  - Pass the UNLOWERED/BAD SEMANTICS args to MemberMethod template param
+	//	- Expose a mfp "UnloweredDelegate" typename (aka, Method)
+	//	- Expose a "UnloweredSelf" typename (aka, interface)
+	//	- Expose a virtual Result Hook(ORIGINAL/UNSAFE ARGS HERE) method
+	//	  - That calls return InvokeDelegates(this, SAFE ARGS PASSED TO HOOKCOREIMPL);
+	//	- Expose a  static Result InvokeUnlowered(UnloweredSelf* self, UnloweredDelegate mfp, Args... args) method
+	//
+	//	That's it, you're done!
+	//	As long as you don't invoke any undefined behavior while doing any of the above,
+	//	you should be able to get away with pretty much anything.
+	//
+	//	As an example, the SourceHook FmtHookImpl below does the following operations:
+	//	- Passes <Args..., const char* buffer> as args to HookCoreImpl,
+	//	- Has a virtual Result Hook(Args..., const char* fmt, ...)
+	//	  - That calls vsnprintf(buf, fmt, ...)
+	//	  - That passes the result to InvokeUnlowered(Args..., buf);
+	//	- Exposes a InvokeUnlowered(self, mfp, args..., const char* buf)
+	//	  - That calls self->mfp(args...,"%s", buf)
+	//	By using printf(buf, fmt, ...) and then passing "%s", buf to the original,
+	//	we've preserved semantics across the entire SourceHook call!
+	//	
+	//	I should probably be killed for writing this code, but life is short anyways.
+	//	TODO: Add manual hook support to all of this shenanigans
+
+	/**
+	 * @brief Non-vararg hook implementation
+	 * 
+	 * Performs no argument lowering.
+	 * 
+	 * @tparam SH A pointer to the SourceHook interface
+	 * @tparam PL A pointer to our PluginId
+	 * @tparam Interface The interface to hook
+	 * @tparam Method The interface method pointer to hook
+	 * @tparam Result The return type
+	 * @tparam Args All arguments passed to the original 
+	 */
+	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
+	struct HookImpl : HookCoreImpl<
+			SH, PL,
+			Interface, Method, Result (Interface::*)(Args...), ProtoInfo::CallConv_ThisCall,
+			HookImpl<SH, PL, Interface, Method, Result, Args...>,
+			Result, Args...>
+	{
+	public:
+		typedef Result (Interface::*UnloweredDelegate)(Args...);
+		typedef Interface UnloweredSelf;
 
 		/**
 		*	@brief Hook handler virtual
 		*/
-		virtual Result Func(Args... args)
+		virtual Result Hook(Args... args)
 		{
-			//	Note to all ye who enter here:
-			//	Do not, do NOT--DO NOT: touch "this" or any of our member variables.
-			//	Hands off bucko. USE THE STATIC INSTANCE! (thisptr is undefined!!)
-			using namespace ::SourceHook;
-
-			void *ourvfnptr = reinterpret_cast<void *>(
-					*reinterpret_cast<void ***>(reinterpret_cast<char *>(this) + Instance.MFI.vtbloffs) + Instance.MFI.vtblindex);
-			void *vfnptr_origentry;
-
-			META_RES status = MRES_IGNORED;
-			META_RES prev_res;
-			META_RES cur_res;
-
-			ResultType original_ret;
-			ResultType override_ret;
-			ResultType current_ret;
-
-			IMyDelegate *iter;
-			IHookContext *context = (*SH)->SetupHookLoop(
-					Instance.HI,
-					ourvfnptr,
-					reinterpret_cast<void *>(this),
-					&vfnptr_origentry,
-					&status,
-					&prev_res,
-					&cur_res,
-					&original_ret,
-					&override_ret);
-
-			//	Call all pre-hooks
-			prev_res = MRES_IGNORED;
-			while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
-				cur_res = MRES_IGNORED;
-				Invoker::Invoke(iter, &current_ret, args...);
-				prev_res = cur_res;
-
-				if (cur_res > status)
-					status = cur_res;
-
-				if (cur_res >= MRES_OVERRIDE)
-					*reinterpret_cast<ResultType *>(context->GetOverrideRetPtr()) = current_ret;
-			}
-
-			//	Call original method
-			if (status != MRES_SUPERCEDE && context->ShouldCallOrig()) {
-				typename Invoker::base::EmptyDelegate original;
-				reinterpret_cast<void **>(&original)[0] = vfnptr_origentry;
-				Invoker::Original( reinterpret_cast<EmptyClass*>(this), original, &original_ret, args...);
-			} else {
-				//	TODO: Do we use context->GetOriginalRetPtr() here?
-				//	this is inherited from the macro versions to prevent semantic differences.
-				original_ret = override_ret;
-			}
-
-			//	Call all post-hooks
-			prev_res = MRES_IGNORED;
-			while ((iter = static_cast<IMyDelegate *>(context->GetNext()))) {
-				cur_res = MRES_IGNORED;
-				Invoker::Invoke(iter, &current_ret, args...);
-				prev_res = cur_res;
-
-				if (cur_res > status)
-					status = cur_res;
-
-				if (cur_res >= MRES_OVERRIDE)
-					*reinterpret_cast<VoidSafeResult *>(context->GetOverrideRetPtr()) = current_ret;
-			}
-
-			const ResultType* result_ptr = reinterpret_cast<const ResultType *>((status >= MRES_OVERRIDE)
-																				? context->GetOverrideRetPtr()
-																				: context->GetOrigRetPtr());
-
-			(*SH)->EndContext(context);
-
-			return Invoker::Dereference(result_ptr);
+			return InvokeDelegates(this, args...);
 		}
 
+		/**
+		 * @brief Call the original method by raising our lowered arguments back to the originals
+		 * @param unlowered
+		 * @param args
+		 */
+		static Result InvokeUnlowered(UnloweredSelf* self, UnloweredDelegate mfp, Args... args)
+		{
+			return (self->*mfp)(args...);
+		}
+	public:
+		static constexpr HookImpl* Make()
+		{
+			HookImpl::Instance = HookImpl();
+
+			return &HookImpl::Instance;
+		}
 	};
 
-	//	You're probably wondering what the hell this does.
-	//	https://stackoverflow.com/questions/11709859/how-to-have-static-data-members-in-a-header-only-library/11711082#11711082
-	//	Yes, I also happen to hate C++.
+	/**
+	 * @brief Format string hook implementation
+	 * 
+	 * Lowers const char* fmt and ... into const char* buffer
+	 * 
+	 * @tparam SH A pointer to the SourceHook interface
+	 * @tparam PL A pointer to our PluginId
+	 * @tparam Interface The interface to hook
+	 * @tparam Method The interface method pointer to hook
+	 * @tparam Result The return type
+	 * @tparam Args All arguments passed to the original, except the last const char* fmt and ...
+	 */
 	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
-	HookImpl<SH, PL, Interface, Method, Result, Args...> HookImpl<SH, PL, Interface, Method, Result, Args...>::Instance;
+	struct FmtHookImpl : HookCoreImpl<
+			SH, PL,
+			Interface, Method, Result (Interface::*)(Args..., const char*, ...), ProtoInfo::CallConv_HasVafmt,
+			FmtHookImpl<SH, PL, Interface, Method, Result, Args...>,
+			Result, Args..., const char*>
+	{
+		typedef Result (Interface::*UnloweredDelegate)(Args..., const char*, ...);
+		typedef Interface UnloweredSelf;
+
+		/**
+		*	@brief Hook handler virtual
+		*/
+		virtual Result Hook(Args... args, const char* fmt, ...)
+		{
+			char buf[::SourceHook::STRBUF_LEN];
+			va_list ap;
+			va_start(ap, fmt);
+				vsnprintf(buf, sizeof(buf), fmt, ap);
+				buf[sizeof(buf) - 1] = 0;
+			va_end(ap);
+			return InvokeDelegates(this, args..., buf);
+		}
+
+		/**
+		 * @brief Call the original method by raising our lowered arguments back to the originals
+		 * @param unlowered
+		 * @param args
+		 */
+		static Result InvokeUnlowered(UnloweredSelf* self, UnloweredDelegate mfp, Args... args, const char* buffer)
+		{
+			return (self->*mfp)(args..., "%s", buffer);
+		}
+
+	public:
+		static constexpr FmtHookImpl* Make()
+		{
+			FmtHookImpl::Instance = FmtHookImpl();
+
+			return &FmtHookImpl::Instance;
+		}
+	};
 
 }
 

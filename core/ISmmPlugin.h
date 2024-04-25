@@ -475,14 +475,24 @@ using namespace SourceMM;
 /**
  * @brief This should be in one of your header files, if you wish 
  * to use values like g_SHPtr in other files.
+ * This also creates helpers for accessing the SourceHook templates.
  */
-#define PLUGIN_GLOBALVARS()	\
-	extern SourceHook::ISourceHook *g_SHPtr; \
-	extern ISmmAPI *g_SMAPI; \
-	extern ISmmPlugin *g_PLAPI; \
-	extern PluginId g_PLID;    \
-    template<typename Interface, auto Method, typename Result, typename... Args> \
-	struct Hook : public ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...> {};
+#define PLUGIN_GLOBALVARS()                                                                                      \
+	extern SourceHook::ISourceHook *g_SHPtr;                                                                     \
+	extern ISmmAPI *g_SMAPI;                                                                                     \
+	extern ISmmPlugin *g_PLAPI;                                                                                  \
+	extern PluginId g_PLID;                                                                                      \
+	namespace SourceHook                                                                                         \
+	{                                                                                                            \
+		template <typename Interface, auto Method, typename Result, typename... Args>                            \
+		struct Hook : public ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...>       \
+		{                                                                                                        \
+		};                                                                                                       \
+		template <typename Interface, auto Method, typename Result, typename... Args>                            \
+		struct FmtHook : public ::SourceHook::FmtHookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...> \
+		{                                                                                                        \
+		};                                                                                                       \
+	}
 
 /**
  * @brief This should be the first line in your Load callback.
