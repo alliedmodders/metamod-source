@@ -854,24 +854,6 @@ namespace SourceHook
 				META_RES prev_res;
 				META_RES cur_res;
 
-				//	TODO: STL operator= invocations beyond here can invoke corrupt destructors.
-				//	this can lead to memory corruption/uninitialized memory use,
-				//	as the STL operator= will try to call the destructor on the uninitialized
-				//	member. If we see any memory corruption during operator= or similar,
-				//	then that means we need to fix this and actually initialize these variables.
-				//
-				//	One idea is to use placement copy constructors here, where we tell C++
-				//	to initialize these variables with a copy constructor from another type:
-				//	new (&uninitialized_variable) VariableType(existing_value);
-				//		HOWEVER: C++ will intentionally not destroy the original copy, possibly leading
-				//		to memory leaks of the original STL types. Not bad, not great. We're trading off safety
-				//		for guaranteed memory leaks--initializing these variables with a default constructor is probably
-				//		MUCH better in the long run.
-				//
-				//	Ultimately, this comes down to the SDK ensuring all types have accessible constructors.
-				//	Which SHOULD be a thing, but there's a lot of SDKs and I'm lazy enough to let this wait
-				//	until it starts causing problems. This is what the macros do, so it really should be fine.
-
 				ResultType original_ret;
 				ResultType override_ret;
 				ResultType current_ret;
