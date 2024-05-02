@@ -484,14 +484,10 @@ using namespace SourceMM;
 	extern PluginId g_PLID;                                                                                      \
 	namespace SourceHook                                                                                         \
 	{                                                                                                            \
-		template <typename Interface, auto Method, typename Result, typename... Args>                            \
-		struct Hook : public ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...>       \
-		{                                                                                                        \
-		};                                                                                                       \
-		template <typename Interface, auto Method, typename Result, typename... Args>                            \
-		struct FmtHook : public ::SourceHook::FmtHookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...> \
-		{                                                                                                        \
-		};                                                                                                       \
+			template <typename Interface, auto Method, typename Result, typename... Args>						 \
+			using Hook = ::SourceHook::HookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...>;			 \
+			template <typename Interface, auto Method, typename Result, typename... Args>						 \
+			using FmtHook = ::SourceHook::FmtHookImpl<&g_SHPtr, &g_PLID, Interface, Method, Result, Args...>;    \
 	}
 
 /**

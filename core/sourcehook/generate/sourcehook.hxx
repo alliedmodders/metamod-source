@@ -117,6 +117,7 @@
 #define SH_PTRSIZE sizeof(void*)
 
 #include <cstdarg>
+#include <cstdio>
 #include <type_traits>
 #include "sh_memfuncinfo.h"
 #include "FastDelegate.h"
@@ -706,7 +707,6 @@ namespace SourceHook
 
 			static void Dereference(const void* arg)
 			{
-				return;
 			}
 		};
 
@@ -744,8 +744,7 @@ namespace SourceHook
 
 			static Result Dereference(const RefSafeResult* arg)
 			{
-				Result res = *arg;
-				return res;
+				return *arg;
 			}
 		};
 
@@ -780,8 +779,13 @@ namespace SourceHook
 				virtual~CMyDelegateImpl() {}
 				Result Call(Args... args) { return _delegate(args...); }
 				void DeleteThis() { delete this; }
-				bool IsEqual(ISHDelegate *pOtherDeleg) { return _delegate == static_cast<CMyDelegateImpl *>(pOtherDeleg)->_delegate; }
-
+				bool IsEqual(ISHDelegate *pOtherDeleg) {
+					//	Note: This is a safe cast because SourceHook will only call IsEqual() for delegates
+					//	of the same plugin/hookmangen. However, there is no tests enforcing this behavior (yet!)
+					//	this should never crash in the first place for differing delegates because the operator== should
+					//	only be using only fields in the FastDelegate<> base type, so no undefined reads?
+					return _delegate == static_cast<CMyDelegateImpl *>(pOtherDeleg)->_delegate;
+				}
 			};
 
 			/**
@@ -854,6 +858,7 @@ namespace SourceHook
 				META_RES prev_res;
 				META_RES cur_res;
 
+				//	TODO: fix MSVC warning C4700 uninitialized local variable used
 				ResultType original_ret;
 				ResultType override_ret;
 				ResultType current_ret;
@@ -1009,7 +1014,6 @@ namespace SourceHook
 
 		friend HookHandlerImpl;
 
-
 		/**
 		*	@brief An object containing methods to safely handle the return type
 		*
@@ -1025,15 +1029,47 @@ namespace SourceHook
 		*	@brief The type we expect the template arg "Method" to be.
 		*	Method is the MFP we will be hooking, so they need to be exact!
 		*/
-		//	typedef Result (Interface::*MemberMethod)(Args...);
 		typedef decltype(Method) MethodType;
 
-		static_assert( std::is_same<MethodType, MemberMethod>::type::value, "Mismatched template parameters!" );
+		//	IF YOU HAVE THIS ERROR:
+		//	Make sure the SECOND template argument to SourceHook::Hook and SourceHook::FmtHook
+		//	is a member function pointer for the interface you passed, such as:
+		//
+		//	SourceHook::Hook<Interface, &Interface::Method, ...>
+		//								^^^^^^^^^^^^^^^^^^
+		//	To resolve, ensure this second argument is a MEMBER function pointer to a VIRTUAL.
+		//	Does not work on statics/non-virtuals!
+		static_assert( std::is_member_function_pointer<MethodType>::value,
+				"You must specify a pointer to the hooked method (&Interface::Method) for the 'Method' argument!" );
+
+		//	IF YOU HAVE THIS ERROR:
+		//	You are passing an Interface object that doesn't have a virtual table.
+		//	SourceHook can only hook virtual methods!
+		//
+		//	To resolve, specify a type that actually has a virtual method.
+		static_assert( std::is_polymorphic<Interface>::value,
+				"Your interface is not polymorphic! Did you specify the wrong type?");
+
+		//	IF YOU HAVE THIS ERROR:
+		//	Your arguments, interface, and/or return type are wrong!
+		//	This error occurs because the method type we expected (MemberMethod)
+		//	is not the same as the actual method that was passed to be hooked.
+		//
+		//	Double check that all your arguments match up EXACTLY, as any deviation
+		//	can cause errors. Also make sure your Interface is correct :^)
+		//
+		//	SourceHook::Hook<Interface, &Interface::Method, void, int&, const int*>
+		//	         ┌───────────────────────────────────────┘     │     │
+		//			 │           ┌───────┬─────────────────────────┴─────┘
+		//           V           V       V
+		//	virtual void Method(int &a, const int *b) = 0;
+		//
+		static_assert( std::is_same<MethodType, MemberMethod>::type::value,
+				"Mismatched argument types" );
 
 		//	uh oh, Parent is technically uninitialized here.
 		//	should find a workaround, this would be nice to have.
 		//static_assert( std::is_base_of<HookCoreImpl, Parent>::type::value, "Mismatched hookman parent type! (INTERNAL ERROR - REPORT THIS AS A BUG)");
-
 
 		//	Members
 		::SourceHook::MemFuncInfo MFI;
@@ -1065,9 +1101,9 @@ namespace SourceHook
 		*	@param iface the interface pointer to hook
 		*	@param post true when post-hooking, false when pre-hooking.
 		*	@param handler the handler that will be called in place of the original method
-		*	@param mode the hook mode - Hook_Normal will only hook this instance, while others alter the global virtual table.
+		*	@param mode what objects the hook is invoked on - Hook_Normal for only the interface object we pass to ->Add().
 		*/
-		HookInstance Add(Interface* iface, bool post, Delegate handler, ::SourceHook::ISourceHook::AddHookMode mode = ISourceHook::AddHookMode::Hook_Normal)
+		HookInstance Add(Interface* iface, bool post, Delegate handler, bool global = false)
 		{
 			using namespace ::SourceHook;
 			MemFuncInfo mfi = {true, -1, 0, 0};
@@ -1077,7 +1113,7 @@ namespace SourceHook
 				return {SH, false};
 
 			CMyDelegateImpl* delegate = new CMyDelegateImpl(handler);
-			int id = (*SH)->AddHook(*PL, mode, iface, mfi.thisptroffs, HookCoreImpl::HookManPubFunc, delegate, post);
+			int id = (*SH)->AddHook(*PL, global ? ISourceHook::AddHookMode::Hook_VP : ISourceHook::AddHookMode::Hook_Normal, iface, mfi.thisptroffs, HookCoreImpl::HookManPubFunc, delegate, post);
 
 			return {SH, id};
 		}
@@ -1111,6 +1147,7 @@ namespace SourceHook
 		static int HookManPubFunc(bool store, ::SourceHook::IHookManagerInfo *hi)
 		{
 			//	Build the MemberFuncInfo for the hooked method
+			//	TODO: Accept MFI from user code if they wish to do a manual hook
 			GetFuncInfo<MemberMethod>(static_cast<MemberMethod>(Method), Instance.MFI);
 
 			if ((*SH)->GetIfaceVersion() != SH_IFACE_VERSION || (*SH)->GetImplVersion() < SH_IMPL_VERSION)
@@ -1124,6 +1161,9 @@ namespace SourceHook
 				MemFuncInfo our_mfi = {true, -1, 0, 0};
 				GetFuncInfo(&Parent::Hook, our_mfi);
 
+				static_assert( std::is_member_function_pointer< decltype(&Parent::Hook) >::value,
+							   "Internal Error - Parent::Hook is not a virtual!" );
+
 				void* us = reinterpret_cast<void **>(reinterpret_cast<char *>(&Instance) + our_mfi.vtbloffs)[our_mfi.vtblindex];
 				hi->SetInfo(SH_HOOKMAN_VERSION, Instance.MFI.vtbloffs, Instance.MFI.vtblindex, &Instance.HookHandler.Proto, us);
 			}
@@ -1136,8 +1176,6 @@ namespace SourceHook
 		{
 			return HookHandlerImpl::template HookImplCore<SH, Invoker, Parent>(&Instance, self, args...);
 		}
-
-
 	};
 
 
@@ -1162,12 +1200,15 @@ namespace SourceHook
 	//	To work around this, we introduce "argument lowering":
 	//	The hook managers (defined below) have the option to translate the
 	//	arguments passed to the method to an easier-to-use form for the
-	//	core implementation (defined above).
+	//	core implementation (defined above). In this case, they translate
+	//	(const char* fmt, ...) to ("%s", <formatted result>)
 	//
-	//	Thus, the hook managers are simply responsible for packing any weird
-	//	or unorthodox arguments into a generally safe form, and then they are
-	//	responsible for unpacking these arguments back into their unsafe form
-	//	when it's time to call the original.
+	//	Warning: Your HookManGen MUST take the exact args/protoinfo of every other
+	//	hookman (in other plugins) for the same method. If you have two hookmans
+	//	that pass different args to their delegates, and they end up hooking the same method,
+	//	they WILL crash because SourceHook will only pick one of the hookman to be the hook!
+	//	If you need to do something REALLY silly, you should be using HookManGen which allows
+	//	you to do some silly goose things like chuck varargs across C calls :^)
 	//
 	//	To make your own hook manager, you need to do the following things:
 	//	- Inherit from HookCoreImpl<>, passing your (INCOMPLETE!) type as an argument for the
@@ -1210,7 +1251,7 @@ namespace SourceHook
 	 * @tparam Args All arguments passed to the original 
 	 */
 	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
-	struct HookImpl : HookCoreImpl<
+	struct HookImpl final : HookCoreImpl<
 			SH, PL,
 			Interface, Method, Result (Interface::*)(Args...), ProtoInfo::CallConv_ThisCall,
 			HookImpl<SH, PL, Interface, Method, Result, Args...>,
@@ -1223,9 +1264,9 @@ namespace SourceHook
 		/**
 		*	@brief Hook handler virtual
 		*/
-		virtual Result Hook(Args... args)
+		virtual Result Hook(Args... args) final
 		{
-			return InvokeDelegates(this, args...);
+			return HookImpl::InvokeDelegates(this, args...);
 		}
 
 		/**
@@ -1259,7 +1300,7 @@ namespace SourceHook
 	 * @tparam Args All arguments passed to the original, except the last const char* fmt and ...
 	 */
 	template<ISourceHook** SH, Plugin* PL, typename Interface, auto Method, typename Result, typename... Args>
-	struct FmtHookImpl : HookCoreImpl<
+	struct FmtHookImpl final : HookCoreImpl<
 			SH, PL,
 			Interface, Method, Result (Interface::*)(Args..., const char*, ...), ProtoInfo::CallConv_HasVafmt,
 			FmtHookImpl<SH, PL, Interface, Method, Result, Args...>,
@@ -1271,7 +1312,7 @@ namespace SourceHook
 		/**
 		*	@brief Hook handler virtual
 		*/
-		virtual Result Hook(Args... args, const char* fmt, ...)
+		virtual Result Hook(Args... args, const char* fmt, ...) final
 		{
 			char buf[::SourceHook::STRBUF_LEN];
 			va_list ap;
@@ -1279,7 +1320,7 @@ namespace SourceHook
 				vsnprintf(buf, sizeof(buf), fmt, ap);
 				buf[sizeof(buf) - 1] = 0;
 			va_end(ap);
-			return InvokeDelegates(this, args..., buf);
+			return FmtHookImpl::InvokeDelegates(this, args..., buf);
 		}
 
 		/**
