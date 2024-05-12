@@ -417,6 +417,11 @@ FileSystemFactory(const char *iface, int *ret)
 void
 mm_LogMessage(const char *msg, ...)
 {
+	static bool g_logging = false;
+	if (g_logging) {
+		return;
+	}
+	g_logging = true;
 	va_list ap;
 	static char buffer[2048];
 
@@ -433,6 +438,7 @@ mm_LogMessage(const char *msg, ...)
 		fprintf(stdout, "%s", buffer);
 	}
 	provider->ConsolePrint(buffer);
+	g_logging = false;
 }
 
 static void
