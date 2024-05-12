@@ -4,7 +4,7 @@
 *
 * License: zlib/libpng
 *
-* Author(s): Andre "Kenzzer" Benoist
+* Author(s): André "Kenzzer" Benoist
 * ============================
 */
 
@@ -40,8 +40,12 @@ extern SourceMM::IMetamodSourceProvider *provider;
 # define MSVC_ONLY(x)
 #endif
 
+using namespace SourceHook::Asm;
+
 namespace SourceHook
 {
+	CPageAlloc Asm::GenBuffer::ms_Allocator(16);
+	
 	namespace Impl
 	{
 		void PrintDebug(x64JitWriter& jit, const char* message) {
@@ -97,8 +101,6 @@ namespace SourceHook
 			// Free shadow space
 			MSVC_ONLY(jit.add(rsp, 40));
 		}
-
-		CPageAlloc GenBuffer::ms_Allocator(16);
 
 		x64GenContext::x64GenContext()
 			: m_GeneratedPubFunc(nullptr), m_VtblOffs(0),
@@ -305,7 +307,7 @@ namespace SourceHook
 		void* x64GenContext::GenerateHookFunc()
 		{
 			const auto& retInfo = m_Proto.GetRet();
-			m_HookFunc.breakpoint();
+			//m_HookFunc.breakpoint();
 
 			// For the time being, we only consider xmm0-xmm15 registers
 			// are only used to store 64bits worth of data, despite being
