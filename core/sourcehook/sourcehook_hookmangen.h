@@ -12,6 +12,7 @@
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
 #include "sh_pagealloc.h"
+#include "sh_asm.h"
 #include <list>
 #include <memory>
 
@@ -51,125 +52,6 @@ namespace SourceHook
 			virtual HookManagerPubFunc GetPubFunc() = 0;
 		};
 
-		class GenBuffer
-		{
-			static CPageAlloc ms_Allocator;
-
-			unsigned char *m_pData;
-			jitoffs_t m_Size;
-			jitoffs_t m_AllocatedSize;
-
-		public:
-			GenBuffer() : m_pData(NULL), m_Size(0), m_AllocatedSize(0)
-			{
-			}
-			~GenBuffer()
-			{
-				clear();
-			}
-			jitoffs_t GetSize()
-			{
-				return m_Size;
-			}
-			unsigned char *GetData()
-			{
-				return m_pData;
-			}
-
-			template <class PT> void push(PT what)
-			{
-				push((const unsigned char *)&what, sizeof(PT));
-			}
-
-			void push(const unsigned char *data, jitoffs_t size)
-			{
-				jitoffs_t newSize = m_Size + size;
-				if (newSize > m_AllocatedSize)
-				{
-					m_AllocatedSize = newSize > m_AllocatedSize*2 ? newSize : m_AllocatedSize*2;
-					if (m_AllocatedSize < 64)
-						m_AllocatedSize = 64;
-
-					unsigned char *newBuf;
-					newBuf = reinterpret_cast<unsigned char*>(ms_Allocator.Alloc(m_AllocatedSize));
-					ms_Allocator.SetRW(newBuf);
-					if (!newBuf)
-					{
-						SH_ASSERT(0, ("bad_alloc: couldn't allocate 0x%08X bytes of memory\n", m_AllocatedSize));
-						return;
-					}
-					memset((void*)newBuf, 0xCC, m_AllocatedSize);			// :TODO: remove this !
-					memcpy((void*)newBuf, (const void*)m_pData, m_Size);
-					if (m_pData)
-					{
-						ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
-						ms_Allocator.SetRW(newBuf);
-						ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
-					}
-					m_pData = newBuf;
-				}
-				memcpy((void*)(m_pData + m_Size), (const void*)data, size);
-				m_Size = newSize;
-			}
-
-			template <class PT> void rewrite(jitoffs_t offset, PT what)
-			{
-				rewrite(offset, (const unsigned char *)&what, sizeof(PT));
-			}
-
-			void rewrite(jitoffs_t offset, const unsigned char *data, jitoffs_t size)
-			{
-				SH_ASSERT(offset + size <= m_AllocatedSize, ("rewrite too far"));
-
-				memcpy((void*)(m_pData + offset), (const void*)data, size);
-			}
-
-			void clear()
-			{
-				if (m_pData)
-					ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
-				m_pData = NULL;
-				m_Size = 0;
-				m_AllocatedSize = 0;
-			}
-
-			void SetRE()
-			{
-				ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
-			}
-
-			operator void *()
-			{
-				return reinterpret_cast<void*>(GetData());
-			}
-
-			void write_ubyte(jit_uint8_t x)			{ push(x); }
-			void write_byte(jit_uint8_t x)			{ push(x); }
-			
-			void write_ushort(unsigned short x)		{ push(x); }
-			void write_short(signed short x)		{ push(x); }
-
-			void write_uint32(jit_uint32_t x)		{ push(x); }
-			void write_int32(jit_uint32_t x)		{ push(x); }
-
-			void write_uint64(jit_uint64_t x)		{ push(x); }
-			void write_int64(jit_int64_t x)			{ push(x); }
-
-			jitoffs_t get_outputpos()
-			{
-				return m_Size;
-			}
-
-			void start_count(jitoffs_t &offs)
-			{
-				offs = get_outputpos();
-			}
-			void end_count(jitoffs_t &offs)
-			{
-				offs = get_outputpos() - offs;
-			}
-		};
-
 		class GenContext : public IGenContext
 		{
 			const static int SIZE_MWORD = 4;
@@ -184,8 +66,8 @@ namespace SourceHook
 			int m_VtblIdx;
 			ISourceHook *m_SHPtr;
 
-			GenBuffer m_HookFunc;
-			GenBuffer m_PubFunc;
+			Asm::GenBuffer m_HookFunc;
+			Asm::GenBuffer m_PubFunc;
 
 			ProtoInfo *m_BuiltPI;
 			PassInfo *m_BuiltPI_Params;
