@@ -44,8 +44,6 @@ using namespace SourceHook::Asm;
 
 namespace SourceHook
 {
-	CPageAlloc Asm::GenBuffer::ms_Allocator(16);
-	
 	namespace Impl
 	{
 		void PrintDebug(x64JitWriter& jit, const char* message) {
@@ -1430,61 +1428,6 @@ static_assert(false, "Missing auto-detect type for linux!");
 		bool x64GenContext::Equal(HookManagerPubFunc other)
 		{
 			return m_GeneratedPubFunc == other;
-		}
-
-		CHookManagerAutoGen::CHookManagerAutoGen(ISourceHook *pSHPtr) : m_pSHPtr(pSHPtr) { }
-
-		CHookManagerAutoGen::~CHookManagerAutoGen() { }
-
-		int CHookManagerAutoGen::GetIfaceVersion()
-		{
-			return SH_HOOKMANAUTOGEN_IFACE_VERSION;
-		}
-
-		int CHookManagerAutoGen::GetImplVersion()
-		{
-			return SH_HOOKMANAUTOGEN_IMPL_VERSION;
-		}
-
-		HookManagerPubFunc CHookManagerAutoGen::MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx)
-		{
-			CProto mproto(proto);
-			for (auto iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
-			{
-				if (iter->m_GenContext->Equal(mproto, vtbl_offs, vtbl_idx))
-				{
-					iter->m_RefCnt++;
-					return iter->m_GenContext->GetPubFunc();
-				}
-			}
-
-			// Not found yet -> new one
-			StoredContext sctx;
-			sctx.m_RefCnt = 1;
-			sctx.m_GenContext = std::make_unique<x64GenContext>(proto, vtbl_offs, vtbl_idx, m_pSHPtr);
-
-			auto pubFunc = sctx.m_GenContext->GetPubFunc();
-			if (pubFunc != nullptr)
-			{
-				m_Contexts.emplace_back(std::move(sctx));
-			}
-			return pubFunc;
-		}
-
-		void CHookManagerAutoGen::ReleaseHookMan(HookManagerPubFunc pubFunc)
-		{
-			for (auto iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
-			{
-				if (iter->m_GenContext->Equal(pubFunc))
-				{
-					iter->m_RefCnt--;
-					if (iter->m_RefCnt == 0)
-					{
-						iter = m_Contexts.erase(iter);
-					}
-					break;
-				}
-			}
 		}
 	}
 }
