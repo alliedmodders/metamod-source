@@ -115,11 +115,11 @@ namespace SourceHook
 			constexpr operator x8664Reg() const { return rm; }
 
 		protected:
-			x86_64_RegRm::x86_64_RegRm(x8664Reg reg, std::int32_t disp) : rm(reg), disp(disp) {
+			x86_64_RegRm(x8664Reg reg, std::int32_t disp) : rm(reg), disp(disp) {
 				Setup();
 			}
 
-			x86_64_RegRm::x86_64_RegRm(x8664Reg reg) : rm(reg), disp(0) {
+			x86_64_RegRm(x8664Reg reg) : rm(reg), disp(0) {
 				Setup();
 			}
 
@@ -155,8 +155,8 @@ namespace SourceHook
 		static const x86_64_Reg rsi = { x8664Reg::RSI };
 		static const x86_64_Reg rdi = { x8664Reg::RDI };
 
-		static const x86_64_Reg r8 = { x8664Reg::R8 };
-		static const x86_64_Reg r9 = { x8664Reg::R9 };
+		static const x86_64_Reg r8 =  { x8664Reg::R8  };
+		static const x86_64_Reg r9 =  { x8664Reg::R9  };
 		static const x86_64_Reg r10 = { x8664Reg::R10 };
 		static const x86_64_Reg r11 = { x8664Reg::R11 };
 		static const x86_64_Reg r12 = { x8664Reg::R12 };
