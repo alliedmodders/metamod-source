@@ -34,7 +34,6 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_ep2.h"
-#include "sourcehook/sourcehook_hookmangen_test.h"
 #include <sys/stat.h>
 #if SOURCE_ENGINE == SE_DOTA
 #include <iserver.h>
@@ -125,7 +124,9 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
+#if !defined( PLATFORM_64BITS ) && !defined( _LINUX )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
+#endif
 static META_RES last_meta_res;
 static IServerPluginCallbacks *vsp_callbacks = NULL;
 static bool were_plugins_loaded = false;
@@ -223,7 +224,6 @@ mm_InitializeForLoad()
 	SH_MANUALHOOK_RECONFIGURE(SGD_LevelShutdown, info.vtblindex, info.vtbloffs, info.thisptroffs);
 	SH_ADD_MANUALHOOK_STATICFUNC(SGD_LevelShutdown, server, Handler_LevelShutdown, true);
 #endif
-	SourceHook::Impl::run_tests();
 }
 
 bool
@@ -427,7 +427,7 @@ mm_LogMessage(const char *msg, ...)
 
 	va_start(ap, msg);
 	size_t len = vsnprintf(buffer, sizeof(buffer) - 2, msg, ap);
-	len = min(len, 2046);
+	len = std::min<size_t>(len, 2046);
 	va_end(ap);
 
 	buffer[len++] = '\n';
@@ -1009,6 +1009,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
+#if !defined( PLATFORM_64BITS ) && !defined( _LINUX )
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
 		if (ret)
@@ -1017,7 +1018,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
 	}
-
+#endif
 	CPluginManager::CPlugin *pl;
 	List<IMetamodListener *>::iterator event;
 	IMetamodListener *api;
