@@ -16,7 +16,6 @@ for sdk_target in MMS.sdk_targets:
     'metamod_util.cpp',
     'provider/provider_base.cpp',
     'sourcehook/sourcehook.cpp',
-    #'sourcehook/sourcehook_hookmangen_test.cpp',
     'sourcehook/sourcehook_impl_chookidman.cpp',
     'sourcehook/sourcehook_impl_chookmaninfo.cpp',
     'sourcehook/sourcehook_impl_cproto.cpp',
