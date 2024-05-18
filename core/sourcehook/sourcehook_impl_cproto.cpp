@@ -37,7 +37,6 @@ namespace SourceHook
 				m_RetPassInfo.pDtor = NULL;
 				m_RetPassInfo.pAssignOperator = NULL;
 
-				
 				m_ParamsPassInfo.resize(pProto->numOfParams);
 
 				for (int i = 1; i <= pProto->numOfParams; ++i)
@@ -86,6 +85,45 @@ namespace SourceHook
 			{
 				// Unknown
 				m_Version = -1;
+			}
+		}
+
+		void CProto::Fill(const IProtoInfo *pProto)
+		{
+			if (pProto == nullptr)
+				m_Version = -1;
+
+			m_ParamsPassInfo.clear();
+
+			m_Version = static_cast<int>(pProto->GetVersion());
+			m_Convention = pProto->GetConvention();
+			m_NumOfParams = pProto->GetNumOfParams();
+
+			const PassInfo& retPassInfo = pProto->GetRetPassInfo();
+			m_RetPassInfo.size = retPassInfo.size;
+			m_RetPassInfo.type = retPassInfo.type;
+			m_RetPassInfo.flags = retPassInfo.flags;
+
+			const PassInfo::V2Info& retPassInfo2 = pProto->GetRetPassInfo2();
+			m_RetPassInfo.pNormalCtor = retPassInfo2.pNormalCtor; // should be nullptr for Version 1
+			m_RetPassInfo.pCopyCtor = retPassInfo2.pCopyCtor; // should be nullptr for Version 1
+			m_RetPassInfo.pDtor = retPassInfo2.pDtor; // should be nullptr for Version 1
+			m_RetPassInfo.pAssignOperator = retPassInfo2.pAssignOperator; // should be nullptr for Version 1
+
+			m_ParamsPassInfo.resize(pProto->GetNumOfParams());
+
+			const PassInfo* paramsPassInfo = pProto->GetParamsPassInfo();
+			const PassInfo::V2Info* paramsPassInfo2 = pProto->GetParamsPassInfo2();
+			for (int i = 0; i != m_NumOfParams; ++i)
+			{
+				m_ParamsPassInfo[i].size = paramsPassInfo[i].size;
+				m_ParamsPassInfo[i].type = paramsPassInfo[i].type;
+				m_ParamsPassInfo[i].flags = paramsPassInfo[i].flags;
+
+				m_ParamsPassInfo[i].pNormalCtor = paramsPassInfo2[i].pNormalCtor; // should be nullptr for Version 1
+				m_ParamsPassInfo[i].pCopyCtor = paramsPassInfo2[i].pCopyCtor; // should be nullptr for Version 1
+				m_ParamsPassInfo[i].pDtor = paramsPassInfo2[i].pDtor; // should be nullptr for Version 1
+				m_ParamsPassInfo[i].pAssignOperator = paramsPassInfo2[i].pAssignOperator; // should be nullptr for Version 1
 			}
 		}
 
