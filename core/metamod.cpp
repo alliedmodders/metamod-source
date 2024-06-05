@@ -842,7 +842,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
-#if !defined( PLATFORM_64BITS ) && !defined( _LINUX )
+#if !defined( __amd64__ )
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
 		if (ret)
