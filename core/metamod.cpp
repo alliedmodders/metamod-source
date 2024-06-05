@@ -124,7 +124,7 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-#if !defined( PLATFORM_64BITS ) && !defined( _LINUX )
+#if !defined( __amd64__ )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
 #endif
 static META_RES last_meta_res;
@@ -414,6 +414,24 @@ FileSystemFactory(const char *iface, int *ret)
 	IFACE_MACRO(filesystem_factory, FileSystem);
 }
 
+template<typename T>
+class SaveAndSet {
+public:
+    SaveAndSet(T* location, const T& value)
+     : location_(location),
+       old_(*location)
+    {
+        *location_ = value;
+    }
+    ~SaveAndSet() {
+        *location_ = old_;
+    }
+
+private:
+    T* location_;
+    T old_;
+};
+
 void
 mm_LogMessage(const char *msg, ...)
 {
@@ -421,13 +439,18 @@ mm_LogMessage(const char *msg, ...)
 	if (g_logging) {
 		return;
 	}
-	g_logging = true;
+	SaveAndSet<bool>(&g_logging, true);
+
 	va_list ap;
 	static char buffer[2048];
 
 	va_start(ap, msg);
 	size_t len = vsnprintf(buffer, sizeof(buffer) - 2, msg, ap);
-	len = std::min<size_t>(len, 2046);
+	len = std::min<size_t>(len, sizeof(buffer) - 2);
+	if (len < 0) {
+		return;
+	}
+
 	va_end(ap);
 
 	buffer[len++] = '\n';
@@ -438,7 +461,6 @@ mm_LogMessage(const char *msg, ...)
 		fprintf(stdout, "%s", buffer);
 	}
 	provider->ConsolePrint(buffer);
-	g_logging = false;
 }
 
 static void
