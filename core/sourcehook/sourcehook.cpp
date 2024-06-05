@@ -42,6 +42,9 @@ namespace SourceHook
 
 	namespace Impl
 	{
+		// Log level
+		SH_LOG sh_log_level = SH_LOG::TEST;
+
 		//////////////////////////////////////////////////////////////////////////
 		// CVfnPtrList
 		//////////////////////////////////////////////////////////////////////////
@@ -488,6 +491,18 @@ namespace SourceHook
 		IHookContext *CSourceHookImpl::SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origCallAddr, META_RES *statusPtr,
 			META_RES *prevResPtr, META_RES *curResPtr, const void *origRetPtr, void *overrideRetPtr)
 		{
+			SH_DEBUG_LOG(VERBOSE, "CSourceHookImpl(%p)::SetupHookLoop\n"
+			"- hi %p\n"
+			"- vfnptr %p\n"
+			"- thisptr %p\n"
+			"- origCallAddr %p\n"
+			"- statusPtr  %p\n"
+			"- prevResPtr %p\n"
+			"- curResPtr %p\n"
+			"- origRetPtr %p\n"
+			"- overrideRetPtr %p",
+			(void*)this, (void*)hi, (void*)vfnptr, (void*)thisptr, (void*)origCallAddr, (void*)statusPtr, (void*)prevResPtr, (void*)curResPtr, (void*)origRetPtr, (void*)overrideRetPtr);
+
 			CHookContext *pCtx = NULL;
 			CHookContext *oldctx = m_ContextStack.empty() ? NULL : &m_ContextStack.front();
 			if (oldctx)
@@ -568,6 +583,7 @@ namespace SourceHook
 			if (vfnptr_iter == vfnptr_list.end())
 			{
 				pCtx->m_State = CHookContext::State_Dead;
+				SH_DEBUG_LOG(VERBOSE, "CSourceHookImpl(%p)::SetupHookLoop\nThe hook is dead", this);
 			}
 			else
 			{
@@ -696,6 +712,8 @@ namespace SourceHook
 		//////////////////////////////////////////////////////////////////////////
 		ISHDelegate *CHookContext::GetNext()
 		{
+			SH_DEBUG_LOG(VERBOSE, "CHookContext(%p)::GetNext\n- m_State %d\n",(void*)this, m_State);
+
 			CIface *pVPIface;
 			switch (m_State)
 			{
@@ -753,6 +771,7 @@ namespace SourceHook
 				// end VP hooks -> orig call
 
 				m_State = State_OrigCall;
+				SH_DEBUG_LOG(VERBOSE, "CHookContext(%p)::GetNext\n- No more PRE handler!\n",(void*)this);
 				return NULL;
 				
 			case State_OrigCall:
@@ -801,6 +820,7 @@ namespace SourceHook
 				// end VP hooks -> done
 
 				m_State = State_Dead;
+				SH_DEBUG_LOG(VERBOSE, "CHookContext(%p)::GetNext\n- No more POST handler!\n",(void*)this);
 				return NULL;
 
 			case State_Recall_Post:
@@ -813,6 +833,7 @@ namespace SourceHook
 				m_State = State_PostVP;
 				return NULL;
 			}
+			SH_DEBUG_LOG(VERBOSE, "CHookContext(%p)::GetNext\n- Unknown state we fell through!\n",(void*)this);
 			return NULL;
 		}
 

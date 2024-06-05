@@ -179,6 +179,9 @@ New SH_CALL
 #include "sourcehook_impl_ciface.h"
 #include "sourcehook_impl_cvfnptr.h"
 #include "sourcehook_impl_chookidman.h"
+#include <stdarg.h>
+
+void mm_LogMessage(const char* msg, ...);
 
 namespace SourceHook
 {
@@ -188,6 +191,24 @@ namespace SourceHook
 
 	namespace Impl
 	{
+		enum SH_LOG {
+			VERBOSE,
+			NORMAL,
+			TEST,
+			NONE,
+		};
+
+		extern SH_LOG sh_log_level;
+
+		template<typename... Args>
+		inline void SH_DEBUG_LOG(SH_LOG log_level, const char* message, Args... args)
+		{
+			if (log_level < sh_log_level) {
+				return;
+			}
+			mm_LogMessage(message, args...);
+		}
+
 		struct CHookContext : IHookContext
 		{
 			CHookContext() : m_CleanupTask(NULL)

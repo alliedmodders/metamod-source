@@ -124,7 +124,7 @@ static ConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-#if !defined( _WIN64 ) && !defined( __amd64__ )
+#if !defined( __amd64__ )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
 #endif
 static META_RES last_meta_res;
@@ -414,14 +414,43 @@ FileSystemFactory(const char *iface, int *ret)
 	IFACE_MACRO(filesystem_factory, FileSystem);
 }
 
+template<typename T>
+class SaveAndSet {
+public:
+    SaveAndSet(T* location, const T& value)
+     : location_(location),
+       old_(*location)
+    {
+        *location_ = value;
+    }
+    ~SaveAndSet() {
+        *location_ = old_;
+    }
+
+private:
+    T* location_;
+    T old_;
+};
+
 void
 mm_LogMessage(const char *msg, ...)
 {
+	static bool g_logging = false;
+	if (g_logging) {
+		return;
+	}
+	SaveAndSet<bool>(&g_logging, true);
+
 	va_list ap;
 	static char buffer[2048];
 
 	va_start(ap, msg);
 	size_t len = vsnprintf(buffer, sizeof(buffer) - 2, msg, ap);
+	len = std::min<size_t>(len, sizeof(buffer) - 2);
+	if (len < 0) {
+		return;
+	}
+
 	va_end(ap);
 
 	buffer[len++] = '\n';
@@ -431,6 +460,7 @@ mm_LogMessage(const char *msg, ...)
 	{
 		fprintf(stdout, "%s", buffer);
 	}
+	provider->ConsolePrint(buffer);
 }
 
 static void
@@ -1001,23 +1031,16 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
+#if !defined( __amd64__ )
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
-#if defined( _WIN64 ) || defined( __amd64__ )
-		if (ret)
-		{
-			*ret = META_IFACE_FAILED;
-		}
-		return nullptr;
-#else
 		if (ret)
 		{
 			*ret = META_IFACE_OK;
 		}
 		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
-#endif
 	}
-
+#endif
 	CPluginManager::CPlugin *pl;
 	List<IMetamodListener *>::iterator event;
 	IMetamodListener *api;
