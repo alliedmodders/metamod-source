@@ -160,6 +160,10 @@ class MMSConfig(object):
           '-Wno-implicit-int-float-conversion',
           '-Wno-tautological-overlap-compare',
         ]
+      if cxx.version >= 'clang-13.0':
+        cxx.cflags += [
+          '-Wno-ordered-compare-function-pointers',
+        ]
 
     elif cxx.like('msvc'):
       if builder.options.debug == '1':
