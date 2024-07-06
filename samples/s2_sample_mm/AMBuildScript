@@ -59,11 +59,16 @@ def ResolveMMSRoot():
 
 mms_root = ResolveMMSRoot()
 
-if not builder.options.hl2sdk_manifests:
-  raise Exception('Could not find a source copy of HL2SDK manifests')
-hl2sdk_manifests = builder.options.hl2sdk_manifests
+def ResolveHL2SDKManifestsRoot():
+  prenormalized_path = builder.options.hl2sdk_manifests
+  if not prenormalized_path or not os.path.isdir(prenormalized_path):
+    raise Exception('Could not find a source copy of HL2SDK manifests')
+  
+  return os.path.abspath(os.path.normpath(prenormalized_path))
 
-SdkHelpers = builder.Eval(os.path.join(hl2sdk_manifests, 'SdkHelpers.ambuild'), {
+hl2sdk_manifests_root = ResolveHL2SDKManifestsRoot()
+
+SdkHelpers = builder.Eval(os.path.join(hl2sdk_manifests_root, 'SdkHelpers.ambuild'), {
   'Project': 'metamod'
 })
 
@@ -110,7 +115,7 @@ class MMSPluginConfig(object):
   def findSdkPath(self, sdk_name):
     dir_name = 'hl2sdk-{}'.format(sdk_name)
     if builder.options.hl2sdk_root:
-      sdk_path = os.path.join(builder.options.hl2sdk_root, dir_name)
+      sdk_path = os.path.abspath(os.path.normpath(os.path.join(builder.options.hl2sdk_root, dir_name)))
       if os.path.exists(sdk_path):
         return sdk_path
     return ResolveEnvPath('HL2SDK{}'.format(sdk_name.upper()), dir_name)
