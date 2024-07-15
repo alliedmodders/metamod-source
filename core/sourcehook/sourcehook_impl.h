@@ -322,6 +322,9 @@ namespace SourceHook
 			int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 				ISHDelegate *handler, bool post);
 
+			int AddHook(Plugin plug, AddHookMode mode, void *iface, int thisptr_offs, const HookManagerPubFuncHandler &myHookMan,
+				const SHDelegateHandler &handler, bool post);
+
 			bool RemoveHook(Plugin plug, void *iface, int thisptr_offs, HookManagerPubFunc myHookMan,
 				ISHDelegate *handler, bool post);
 
@@ -354,6 +357,8 @@ namespace SourceHook
 			void ResolvePendingUnloads(bool force = false);
 
 			void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
+
+			void RemoveHookManager(Plugin plug, const HookManagerPubFuncHandler &pubFunc);
 
 			void SetIgnoreHooks(void *vfnptr);
 			void ResetIgnoreHooks(void *vfnptr);

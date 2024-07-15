@@ -24,7 +24,7 @@ namespace SourceHook
 		{
 			// *** Data ***
 			Plugin m_OwnerPlugin;
-			HookManagerPubFunc m_PubFunc;
+			HookManagerPubFuncHandler m_PubFunc;
 			int m_VtblOffs;
 			int m_VtblIdx;
 			CProto m_Proto;
@@ -38,15 +38,15 @@ namespace SourceHook
 			struct Descriptor
 			{
 				Plugin m_OwnerPlugin;
-				HookManagerPubFunc m_PubFunc;
-				Descriptor(Plugin ownerPlugin, HookManagerPubFunc pubFunc)
+				HookManagerPubFuncHandler m_PubFunc;
+				Descriptor(Plugin ownerPlugin, const HookManagerPubFuncHandler &pubFunc)
 					: m_OwnerPlugin(ownerPlugin), m_PubFunc(pubFunc)
 				{
 				}
 			};
 
 			// *** Interface ***
-			CHookManager(Plugin ownerPlugin, HookManagerPubFunc pubFunc);
+			CHookManager(Plugin ownerPlugin, const HookManagerPubFuncHandler &pubFunc);
 
 			inline bool operator==(const Descriptor &other) const;
 			inline bool operator==(const CHookManager &other) const;
@@ -58,7 +58,7 @@ namespace SourceHook
 			inline const CProto &GetProto()  const;
 			inline int GetVersion()  const;
 			inline void *GetHookFunc() const;
-			inline HookManagerPubFunc GetPubFunc() const;
+			inline const HookManagerPubFuncHandler &GetPubFunc() const;
 
 			void Register();
 			void Unregister();
@@ -74,12 +74,15 @@ namespace SourceHook
 			// *** IHookManagerInfo interface ***
 			void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
 				ProtoInfo *proto, void *hookfunc_vfnptr);
+
+			void SetInfo(int hookman_version, int vtbloffs, int vtblidx,
+				IProtoInfo *proto, void *hookfunc_vfnptr);
 		};
 
 		class CHookManList : public List<CHookManager>
 		{
 		public:
-			CHookManager *GetHookMan(Plugin plug, HookManagerPubFunc pubFunc);
+			CHookManager *GetHookMan(Plugin plug, const HookManagerPubFuncHandler &pubFunc);
 			CHookManager *GetHookMan(CHookManager &hm);
 		};
 
@@ -132,7 +135,7 @@ namespace SourceHook
 			return *reinterpret_cast<void**>(m_HookfuncVfnptr);
 		}
 
-		inline HookManagerPubFunc CHookManager::GetPubFunc() const
+		inline const HookManagerPubFuncHandler &CHookManager::GetPubFunc() const
 		{
 			return m_PubFunc;
 		}
