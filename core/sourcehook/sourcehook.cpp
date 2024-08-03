@@ -43,7 +43,7 @@ namespace SourceHook
 	namespace Impl
 	{
 		// Log level
-		SH_LOG sh_log_level = SH_LOG::TEST;
+		SH_LOG sh_log_level = SH_LOG::NONE;
 
 		//////////////////////////////////////////////////////////////////////////
 		// CVfnPtrList
