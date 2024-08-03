@@ -80,8 +80,9 @@ namespace SourceHook
 		//////////////////////////////////////////////////////////////////////////
 		
 
-		CSourceHookImpl::CSourceHookImpl()
+		CSourceHookImpl::CSourceHookImpl(DebugLogFunc logfunc)
 		{
+			m_LogFunc = logfunc;
 		}
 		CSourceHookImpl::~CSourceHookImpl()
 		{
@@ -637,6 +638,14 @@ namespace SourceHook
 			// resolve them now.
 			if (m_ContextStack.size() == 0 && m_PendingUnloads.size() != 0)
 				ResolvePendingUnloads();
+		}
+
+		void CSourceHookImpl::LogDebug(const char *format, ...)
+		{
+			va_list args;
+			va_start(args, format);
+			m_LogFunc(format, args);
+			va_end(args);
 		}
 
 		void CSourceHookImpl::CompleteShutdown()

@@ -102,7 +102,7 @@ public:
 bool
 mm_DetectGameInformation();
 
-void
+int
 mm_LogMessage(const char *msg, ...);
 
 int

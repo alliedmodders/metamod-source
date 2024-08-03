@@ -52,7 +52,6 @@
 #endif
 
 #ifdef SH_DEBUG
-
 # include <stdio.h>
 # include <stdlib.h>
 
@@ -133,6 +132,11 @@ enum META_RES
 
 namespace SourceHook
 {
+	/**
+	*   @brief	SourceHook's debug log function
+	*/
+	typedef int (*DebugLogFunc)(const char*, ...);
+
 	/**
 	*	@brief	Specifies the size (in bytes) for the internal buffer of vafmt(printf-like) function handlers
 	*/
@@ -500,6 +504,8 @@ namespace SourceHook
 			const void *origRetPtr, void *overrideRetPtr) = 0;
 
 		virtual void EndContext(IHookContext *pCtx) = 0;
+
+	    virtual void LogDebug(const char *pFormat, ...) = 0;
 	};
 
 
