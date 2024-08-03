@@ -134,7 +134,7 @@ static bool g_bIsVspBridged = false;
 
 MetamodSource g_Metamod;
 PluginId g_PLID = Pl_Console;
-CSourceHookImpl g_SourceHook;
+CSourceHookImpl g_SourceHook(mm_LogMessage);
 ISourceHook *g_SHPtr = &g_SourceHook;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
@@ -432,12 +432,13 @@ private:
     T old_;
 };
 
-void
+int
 mm_LogMessage(const char *msg, ...)
 {
+	int ret = 0;
 	static bool g_logging = false;
 	if (g_logging) {
-		return;
+		return ret;
 	}
 	SaveAndSet<bool>(&g_logging, true);
 
@@ -448,7 +449,7 @@ mm_LogMessage(const char *msg, ...)
 	size_t len = vsnprintf(buffer, sizeof(buffer) - 2, msg, ap);
 	len = std::min<size_t>(len, sizeof(buffer) - 2);
 	if (len < 0) {
-		return;
+		return ret;
 	}
 
 	va_end(ap);
@@ -456,11 +457,14 @@ mm_LogMessage(const char *msg, ...)
 	buffer[len++] = '\n';
 	buffer[len] = '\0';
 
+	
 	if (!provider->LogMessage(buffer))
 	{
-		fprintf(stdout, "%s", buffer);
+		ret = fprintf(stdout, "%s", buffer);
 	}
 	provider->ConsolePrint(buffer);
+
+	return ret;
 }
 
 static void
