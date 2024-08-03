@@ -4,6 +4,11 @@ import os
 for cxx in MMS.all_targets:
   name = 'test_sourcehook'
   binary = MMS.Program(cxx, name)
+
+  binary.compiler.defines += [
+    'SOURCEHOOK_TESTS',
+  ]
+
   binary.compiler.cxxincludes += [
     os.path.join(builder.sourcePath, 'core', 'sourcehook'),
   ]
@@ -19,6 +24,7 @@ for cxx in MMS.all_targets:
     '../sourcehook_impl_chookidman.cpp',
     '../sourcehook_impl_cproto.cpp',
     '../sourcehook_impl_cvfnptr.cpp',
+    '../sourcehook_hookmangen.cpp',
     'test1.cpp',
     'test2.cpp',
     'test3.cpp',
@@ -36,7 +42,9 @@ for cxx in MMS.all_targets:
     'testrefret.cpp',
     'testvphooks.cpp',
   ]
-  if binary.compiler.target.arch == 'x86':
-    binary.sources += ['../sourcehook_hookmangen.cpp']
+  if cxx.target.arch == 'x86':
+    binary.sources += ['../sourcehook_hookmangen_x86.cpp']
+  elif binary.compiler.target.arch == 'x86_64':
+    binary.sources += ['../sourcehook_hookmangen_x86_64.cpp']
 
   builder.Add(binary)
