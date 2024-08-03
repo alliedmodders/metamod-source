@@ -41,7 +41,7 @@ for sdk_target in MMS.sdk_targets:
     ])]
 
   if cxx.target.arch == 'x86':
-    binary.sources += ['sourcehook/sourcehook_hookmangen.cpp']
+    binary.sources += ['sourcehook/sourcehook_hookmangen_x86.cpp']
   elif binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform != 'linux':
     binary.sources += ['sourcehook/sourcehook_hookmangen_x86_64.cpp']
   nodes = builder.Add(binary)
