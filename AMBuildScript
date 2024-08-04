@@ -323,7 +323,6 @@ class MMSConfig(object):
       os.path.join(context.sourcePath, 'loader'),
     ]
 
-    defines = []
     for other_sdk in self.sdk_manifests:
       cxx.defines += ['SE_{}={}'.format(other_sdk['define'], other_sdk['code'])]
 
