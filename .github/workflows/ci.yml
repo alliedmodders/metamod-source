@@ -28,15 +28,11 @@ jobs:
             compiler_cc: clang-6.0
             compiler_cxx: clang++-6.0
             compiler_install: clang-6.0
-          - os: macos-latest
-            os_short: mac
-            compiler_cc: clang
-            compiler_cxx: clang++
       fail-fast: false
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os_short }}-${{ matrix.compiler_cc }}
     env:
-      SDKS: '["episode1","tf2","l4d2","csgo","dota"]'
+      SDKS: '["episode1","tf2","l4d2","csgo"]'
       DEPENDENCIES_FOLDER: dependencies
       DEPENDENCIES_ROOT: ${{ github.workspace }}/dependencies
     steps:
@@ -47,7 +43,7 @@ jobs:
       
       - name: Select HL2SDKs
         if: startsWith(runner.os, 'Windows')
-        run: echo 'SDKS=["episode1","tf2","l4d2","csgo","dota","insurgency"]' >> $GITHUB_ENV
+        run: echo 'SDKS=["episode1","tf2","l4d2","csgo","insurgency"]' >> $GITHUB_ENV
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -88,7 +84,7 @@ jobs:
             linux-libc-dev:i386 lib32z1-dev ${{ matrix.compiler_install }}
 
       - name: Select clang compiler
-        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        if: startsWith(runner.os, 'Linux')
         run: |
           echo "CC=${{ matrix.compiler_cc }}" >> $GITHUB_ENV
           echo "CXX=${{ matrix.compiler_cxx }}" >> $GITHUB_ENV
