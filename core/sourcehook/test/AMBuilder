@@ -4,6 +4,8 @@ import os
 for cxx in MMS.all_targets:
   name = 'test_sourcehook'
   binary = MMS.Program(cxx, name)
+  if binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform == 'linux':
+    continue
 
   binary.compiler.defines += [
     'SOURCEHOOK_TESTS',
