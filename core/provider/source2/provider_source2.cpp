@@ -32,7 +32,7 @@
 #include <KeyValues.h>
 #include <filesystem.h>
 #include <iserver.h>
-
+#include <tier0/utlstringtoken.h>
 
 static Source2Provider g_Source2Provider;
 
@@ -247,7 +247,7 @@ bool Source2Provider::Hook_AllowDedicatedServers(EUniverse universe) const
 
 const char* Source2Provider::GetCommandLineValue(const char* key, const char* defval)
 {
-	return CommandLine()->ParmValue(key, defval);
+	return CommandLine()->ParmValue(MakeStringToken(key), defval);
 }
 
 void Source2Provider::ConsolePrint(const char* str)
