@@ -62,6 +62,8 @@ if compiler.get_id() == 'clang' or compiler.get_id() == 'gcc'
 endif
 
 public_inc = include_directories('public')
+core_inc = include_directories('core')
+sourcehook_inc = include_directories('core/sourcehook')
 
 subdir('versionlib')
-
+subdir('loader')
