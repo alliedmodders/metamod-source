@@ -14,6 +14,7 @@ if compiler.get_id() == 'clang' or compiler.get_id() == 'gcc'
     '-D_vsnprintf=vsnprintf',
     '-DHAVE_STDINT_H',
     '-DGNUC',
+    '-DCOMPILER_GCC',
   ], language: ['c', 'cpp'])
 
   # C/C++ Arguments
@@ -61,9 +62,17 @@ if compiler.get_id() == 'clang' or compiler.get_id() == 'gcc'
   add_project_arguments('-D_FILE_OFFSET_BITS=64', language: 'cpp')
 endif
 
+if target_machine.cpu_family() == 'x86_64'
+  add_project_arguments('-DPLATFORM_64BITS', language: 'cpp')
+  add_project_arguments('-DX64BITS', language: 'cpp')
+endif
+
 public_inc = include_directories('public')
+loader_inc = include_directories('loader')
 core_inc = include_directories('core')
 sourcehook_inc = include_directories('core/sourcehook')
+amtl_inc = include_directories('third_party/amtl')
 
 subdir('versionlib')
 subdir('loader')
+subdir('core')
