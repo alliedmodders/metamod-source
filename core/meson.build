@@ -15,41 +15,24 @@ core_src = [
 ]
 
 foreach sdk : get_option('sdks')
-  sdk_proj = subproject('hl2sdk-' + sdk)
+  sdk_dep = dependency(sdk)
 
-  sdk_platforms = sdk_proj.get_variable('sdk_platforms')
-  if target_machine.system() not in sdk_platforms
-    error(sdk, 'not supported for', target_machine.system())
-  elif target_machine.cpu_family() not in sdk_platforms[target_machine.system()]
-    error(sdk, 'not supported for', target_machine.system(), target_machine.cpu_family())
-  endif
-
-  sdk_suffix = sdk_proj.get_variable('sdk_suffix')
-  sdk_source2 = sdk_proj.get_variable('sdk_source2', false)
-  sdk_src = []
-  sdk_inc = sdk_proj.get_variable('sdk_inc')
-  sdk_libs = sdk_proj.get_variable('sdk_libs')
-  sdk_deps = sdk_proj.get_variable('sdk_deps')
-  sdk_cpp_args = sdk_proj.get_variable('sdk_cpp_args')
-  sdk_link_args = []
-  sdk_proto = sdk_proj.get_variable('sdk_proto')
-  sdk_proto_lib = sdk_proj.get_variable('sdk_proto_lib')
-
-  if sdk_source2
-    sdk_src += [
+  if sdk_dep.get_variable('engine') == 'source2'
+    sdk_src = [
       'provider/source2/provider_source2.cpp',
     ]
-    sdk_cpp_args += [
+    sdk_cpp_args = [
       '-DMETA_IS_SOURCE2',
     ]
   else
-    sdk_src += [
+    sdk_src = [
       'provider/source/provider_source.cpp',
       'provider/source/provider_source_console.cpp',
       'vsp_bridge.cpp',
     ]
   endif
 
+  sdk_link_args = []
   if target_machine.system() == 'linux'
     if compiler.get_id() == 'gcc'
       sdk_link_args += [
@@ -73,35 +56,32 @@ foreach sdk : get_option('sdks')
     sdk_src += ['sourcehook/sourcehook_hookmangen_x86.cpp']
   endif
 
-  build_target('metamod.' + sdk_suffix,
+  build_target('metamod.' + sdk_dep.get_variable('suffix'),
     name_prefix: '',
     target_type: 'shared_library',
     override_options: 'b_lundef=false',
     sources: [
       core_src,
       sdk_src,
-      sdk_proto,
     ],
     include_directories: [
       core_inc,
-      sdk_inc,
       loader_inc,
       sourcehook_inc,
       amtl_inc,
       public_inc,
     ],
     cpp_args: [
-      sdk_cpp_args,
+      sdk_cpp_args
     ],
     link_args: [
       sdk_link_args,
     ],
     dependencies: [
-      sdk_deps,
+      sdk_dep,
     ],
     link_with: [
       versionlib,
-      sdk_libs,
     ]
   )
 endforeach
