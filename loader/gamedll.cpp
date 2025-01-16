@@ -264,7 +264,7 @@ gamedll_bridge_info g_bridge_info;
 // IS2SC::AllowDedicatedServer - return true. remove hook.
 // CreateInterfaceFn (IS2S) - hook Init and Shutdown
 // IS2S::Init - do same as old ISGD::DLLInit, including core load. return orig. remove hook.
-// IS2S::Shutdown - <-- this
+// IS2SC::Disconnect - do same as old ISGD::DLLShutdown
 
 enum InitReturnVal_t
 {
@@ -277,7 +277,7 @@ enum InitReturnVal_t
 class ISource2ServerConfig
 {
 public:
-	virtual bool	Connect(QueryValveInterface factory)
+	virtual bool Connect(QueryValveInterface factory)
 	{
 		g_bridge_info.engineFactory = factory;
 		g_bridge_info.fsFactory = factory;
@@ -300,19 +300,52 @@ public:
 					void *addr;
 					intptr_t adjustor;
 				} s;
-		} u;
+			} u;
 			u.s.addr = is2sc_orig_connect;
 			u.s.adjustor = 0;
 #endif
-			result = (((VEmptyClass *) config_iface)->*u.mfpnew)(factory);
+			result = (((VEmptyClass *)config_iface)->*u.mfpnew)(factory);
 		}
 
 		mm_PatchConnect(false);
 
 		return result;
 	}
+
+	virtual void Disconnect()
+	{
+		gamedll_bridge->Unload();
+		gamedll_bridge = NULL;
+		mm_UnloadMetamodLibrary();
+
+		/* Call original function */
+		{
+			union
+			{
+				void (VEmptyClass::*mfpnew)();
 #if defined _WIN32
-	virtual bool	AllowDedicatedServers(int universe) const
+				void *addr;
+			} u;
+			u.addr = isgd_orig_shutdown;
+#else
+				struct
+				{
+					void *addr;
+					intptr_t adjustor;
+				} s;
+			} u;
+			u.s.addr = isgd_orig_shutdown;
+			u.s.adjustor = 0;
+#endif
+			(((VEmptyClass *)config_iface)->*u.mfpnew)();
+		}
+
+		mm_UnloadLibrary(gamedll_lib);
+		gamedll_lib = NULL;
+	}
+
+#if defined _WIN32
+	virtual bool AllowDedicatedServers(int universe) const
 	{
 		mm_PatchAllowDedicated(false);
 		return true;
@@ -420,38 +453,6 @@ public:
 		mm_PatchDllInit(false);
 
 		return result;
-	}
-
-	virtual void Shutdown()
-	{
-		gamedll_bridge->Unload();
-		gamedll_bridge = NULL;
-		mm_UnloadMetamodLibrary();
-
-		/* Call original function */
-		{
-			union
-			{
-				void (VEmptyClass::*mfpnew)();
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = isgd_orig_shutdown;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-			} u;
-			u.s.addr = isgd_orig_shutdown;
-			u.s.adjustor = 0;
-#endif
-			(((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
-		}
-
-		mm_UnloadLibrary(gamedll_lib);
-		gamedll_lib = NULL;
 	}
 };
 
@@ -660,7 +661,7 @@ mm_PatchDllShutdown()
 	mfp.isVirtual = false;
 	if (g_is_source2)
 	{
-		SourceHook::GetFuncInfo(&ISource2Server::Shutdown, mfp);
+		SourceHook::GetFuncInfo(&ISource2ServerConfig::Disconnect, mfp);
 	}
 	else
 	{
@@ -672,13 +673,14 @@ mm_PatchDllShutdown()
 
 	if (g_is_source2)
 	{
-		vtable_src = (void **)*(void **)&is2s_thunk;
+		vtable_src = (void **)*(void **)&is2sc_thunk;
+		vtable_dest = (void **)*(void **)config_iface;
 	}
 	else
 	{
 		vtable_src = (void **)*(void **)&isgd_thunk;
+		vtable_dest = (void **)*(void **)gamedll_iface;
 	}
-	vtable_dest = (void **)*(void **)gamedll_iface;
 
 	isgd_orig_shutdown = vtable_dest[isgd_shutdown_index];
 	vtable_dest[isgd_shutdown_index] = vtable_src[mfp.vtblindex];

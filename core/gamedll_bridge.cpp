@@ -65,7 +65,7 @@ public:
 
 		mfi.isVirtual = false;
 #ifdef META_IS_SOURCE2
-		SourceHook::GetFuncInfo(&IServerGameDLL::Shutdown, mfi);
+		SourceHook::GetFuncInfo(&ISource2ServerConfig::Disconnect, mfi);
 #else
 		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfi);
 #endif
