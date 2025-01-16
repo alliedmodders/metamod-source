@@ -128,7 +128,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	baseFs->RemoveSearchPaths("DEFAULT_WRITE_PATH");
 
-	CBufferStringGrowable<260> searchPath;
+	CBufferStringN<260> searchPath;
 	baseFs->GetSearchPath("GAME", (GetSearchPathTypes_t)0, searchPath, 1);
 	baseFs->AddSearchPath(searchPath.Get(), "DEFAULT_WRITE_PATH");
 
@@ -228,7 +228,7 @@ const char* Source2Provider::GetEngineDescription() const
 
 void Source2Provider::GetGamePath(char* pszBuffer, int len)
 {
-	CBufferStringGrowable<MAX_PATH> buf;
+	CBufferStringN<MAX_PATH> buf;
 	engine->GetGameDir(buf);
 	ke::SafeSprintf(pszBuffer, len, "%s", buf.Get());
 }
