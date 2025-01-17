@@ -34,6 +34,72 @@
  */
 
 #include <ISmmPluginExt.h>
+#include <string>
+
+#if defined META_IS_SOURCE2
+#include <icvar.h>
+#include <tier1/convar.h>
+class ConCommandBase
+{
+public:
+	ConCommandBase(const ConVarCreation_t& creation, int64_t nAdditionalFlags, const ConVarHandle& handle) :
+	m_bIsCvar(true),
+	m_Name(creation.m_pszName),
+	m_nAdditionalFlags(nAdditionalFlags),
+	m_Handle(handle),
+	m_Creation(creation)
+	{}
+
+	ConCommandBase(const ConCommandCreation_t& creation, int64_t nAdditionalFlags, const ConCommandHandle& handle) :
+	m_bIsCvar(false),
+	m_Name(creation.m_pszName),
+	m_nAdditionalFlags(nAdditionalFlags),
+	m_Handle(handle),
+	m_Creation(creation)
+	{}
+
+	const char* GetName() const { return m_Name.c_str(); }
+	bool IsConVar() const { return m_bIsCvar; }
+
+	ConVarHandle GetConVar() { return m_Handle.cvar; }
+	ConCommandHandle GetConCommand() { return m_Handle.cmd; }
+
+	ConVarCreation_t& GetConVarCreation() { return m_Creation.cvar; }
+	ConCommandCreation_t& GetConCommandCreation() { return m_Creation.cmd; }
+
+	int64_t GetAdditionalFlags() const { return m_nAdditionalFlags; }
+protected:
+	bool m_bIsCvar;
+	std::string m_Name;
+	int64_t m_nAdditionalFlags;
+	
+	union ConCommandBaseHandle {
+		ConCommandBaseHandle(ConVarHandle handle) :
+		cvar(handle)
+		{}
+
+		ConCommandBaseHandle(ConCommandHandle handle) :
+		cmd(handle)
+		{}
+
+		ConVarHandle cvar;
+		ConCommandHandle cmd;
+	} m_Handle;
+
+	union ConCommandBaseCreation {
+		ConCommandBaseCreation(const ConVarCreation_t& handle) :
+		cvar(handle)
+		{}
+
+		ConCommandBaseCreation(const ConCommandCreation_t& handle) :
+		cmd(handle)
+		{}
+	
+		ConVarCreation_t cvar;
+		ConCommandCreation_t cmd;
+	} m_Creation;
+};
+#endif
 
 namespace SourceMM
 {

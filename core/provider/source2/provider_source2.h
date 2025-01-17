@@ -55,12 +55,6 @@ public:
 	virtual void ConsolePrint(const char* msg) override;
 	virtual void ClientConsolePrint(MMSPlayer_t player, const char* msg) override;
 	virtual void ServerCommand(const char* cmd) override;
-	virtual MetamodSourceConVar *CreateConVar(const char* name,
-		const char* defval,
-		const char* help,
-		int flags) override;
-	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
-	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
 	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;

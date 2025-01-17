@@ -265,76 +265,36 @@ void Source2Provider::ServerCommand(const char* cmd)
 	engine->ServerCommand(cmd);
 }
 
-const char* Source2Provider::GetConVarString(MetamodSourceConVar *convar)
-{
-#ifdef S2_CONVAR_UNFINISHED
-	if (convar == NULL)
-	{
-		return NULL;
-	}
-
-	return convar->GetString();
-#else
-	return nullptr;
-#endif
-}
-
-void Source2Provider::SetConVarString(MetamodSourceConVar *convar, const char* str)
-{
-#ifdef S2_CONVAR_UNFINISHED
-	convar->SetValue(str);
-#endif
-}
-
 bool Source2Provider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return pCommand->IsCommand();
-#else
-	return false;
-#endif
+	return !pCommand->IsConVar();
 }
 
 bool Source2Provider::RegisterConCommandBase(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Register(pCommand);
-#else
+	if (pCommand->IsConVar())
+	{
+		auto& creation = pCommand->GetConVarCreation();
+		icvar->RegisterConVar(creation, pCommand->GetAdditionalFlags(), creation.m_pHandle, creation.m_pConVarData);
+	}
+	else
+	{
+		auto& creation = pCommand->GetConCommandCreation();
+		*creation.m_pHandle = icvar->RegisterConCommand(creation, pCommand->GetAdditionalFlags());
+	}
 	return true;
-#endif
 }
 
 void Source2Provider::UnregisterConCommandBase(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Unregister(pCommand);
-#endif
-}
-
-MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
-	const char* defval,
-	const char* help,
-	int flags)
-{
-#ifdef S2_CONVAR_UNFINISHED
-	int newflags = 0;
-	if (flags & ConVarFlag_Notify)
+	if (pCommand->IsConVar())
 	{
-		newflags |= FCVAR_NOTIFY;
+		icvar->UnregisterConVar(pCommand->GetConVar());
 	}
-	if (flags & ConVarFlag_SpOnly)
+	else
 	{
-		newflags |= FCVAR_SPONLY;
+		icvar->UnregisterConCommand(pCommand->GetConCommand());
 	}
-
-	ConVar* pVar = new ConVar(name, defval, newflags, help);
-
-	g_SMConVarAccessor.RegisterConCommandBase(pVar);
-
-	return pVar;
-#else
-	return nullptr;
-#endif
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo
