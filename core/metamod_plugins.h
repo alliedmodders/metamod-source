@@ -150,7 +150,7 @@ public:
 private:
 	//These are identical internal functions for the wrappers above.
 	CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
-	bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen);
+	bool _Unload(CPlugin *pl, bool force, char *error, size_t maxlen, bool all);
 	bool _Pause(CPlugin *pl, char *error, size_t maxlen);
 	bool _Unpause(CPlugin *pl, char *error, size_t maxlen);
 	void UnregAllConCmds(CPlugin *pl);

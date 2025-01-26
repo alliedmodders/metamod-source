@@ -150,9 +150,10 @@ namespace SourceMM
 		 *
 		 * @param error		Error message buffer
 		 * @param maxlen	Size of error message buffer
+		 * @param all		If unloading all plugins
 		 * @return			True on success, return false to request no unload.
 		 */
-		virtual bool Unload(char *error, size_t maxlen)
+		virtual bool Unload(char *error, size_t maxlen, bool all)
 		{
 			return true;
 		}
