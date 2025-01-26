@@ -279,7 +279,7 @@ bool CPluginManager::Unload(PluginId id, bool force, char *error, size_t maxlen)
 
 	bool ret;
 	PluginId old_id = pl->m_Id;
-	if ( (ret=_Unload(pl, force, error, maxlen)) == true )
+	if ( (ret=_Unload(pl, force, error, maxlen, false)) == true )
 	{
 		ITER_PLEVENT(OnPluginUnload, old_id);
 	}
@@ -308,7 +308,7 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 			if (pl->m_Status >= Pl_Paused)
 			{
 				//Now it gets crazy... unload the original copy.
-				_Unload( (*i), true, buffer, sizeof(buffer)-1 );
+				_Unload( (*i), true, buffer, sizeof(buffer)-1, false );
 				
 				//Set the new copy's id
 				pl->m_Id = id;
@@ -321,7 +321,7 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 			else
 			{
 				//don't really care about the buffer here
-				_Unload(pl, true, buffer, sizeof(buffer)-1);
+				_Unload(pl, true, buffer, sizeof(buffer)-1, false);
 
 				//We just wasted an id... reclaim it
 				m_LastId--;
@@ -606,7 +606,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	return pl;
 }
 
-bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *error, size_t maxlen)
+bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *error, size_t maxlen, bool all)
 {
 	if (error)
 	{
@@ -616,7 +616,7 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 	if (pl->m_API && pl->m_Lib)
 	{
 		//Note, we'll always tell the plugin it will be unloading...
-		if (pl->m_API->Unload(error, maxlen) || force)
+		if (pl->m_API->Unload(error, maxlen, all) || force)
 		{
 			pl->m_Events.clear();
 			UnregAllConCmds(pl);
@@ -720,7 +720,7 @@ bool CPluginManager::UnloadAll()
 
 	while ((i = m_Plugins.begin()) != m_Plugins.end())
 	{
-		if ( !_Unload( (*i), true, error, sizeof(error)) )
+		if ( !_Unload( (*i), true, error, sizeof(error), true) )
 		{
 			status = false;
 		}
