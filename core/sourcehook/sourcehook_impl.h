@@ -256,9 +256,20 @@ namespace SourceHook
 
 			ICleanupTask *m_CleanupTask;
 
+			bool isValidIterator(List<CHook>::iterator &myIter, List<CHook> &myList) {
+				for (auto iter = myList.begin(); iter != myList.end(); ++iter) {
+					if (iter == myIter) {
+						return true;
+					}
+				}
+				return false;
+			}
+
 			void SkipPaused(List<CHook>::iterator &iter, List<CHook> &list)
 			{
-				while (iter != list.end() && iter->IsPaused())
+				if (!iter || !isValidIterator(iter, list))
+					iter = list.end();
+				while (iter != list.end() && iter && iter->IsPaused())
 					++iter;
 			}
 		public:
