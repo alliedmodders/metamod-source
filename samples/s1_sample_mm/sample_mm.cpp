@@ -54,8 +54,8 @@ class BaseAccessor : public IConCommandBaseAccessor
 public:
 	bool RegisterConCommandBase(ConCommandBase *pCommandBase)
 	{
-		/* Always call META_REGCVAR instead of going through the engine. */
-		return META_REGCVAR(pCommandBase);
+		/* Always call META_REGBASECMD instead of going through the engine. */
+		return META_REGBASECMD(pCommandBase);
 	}
 } s_BaseAccessor;
 

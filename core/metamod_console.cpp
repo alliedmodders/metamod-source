@@ -240,7 +240,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				else
 				{
 					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
-					List<ConCommandBase *>::iterator ci;
+					List<ProviderConCommand *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
@@ -277,7 +277,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				else
 				{
 					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
-					List<ConCommandBase *>::iterator ci;
+					List<ProviderConVar *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)

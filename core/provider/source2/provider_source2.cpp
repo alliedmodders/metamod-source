@@ -151,6 +151,9 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 void Source2Provider::Notify_DLLShutdown_Pre()
 {
+	for(auto cvar : m_RegisteredConVars)
+		delete cvar;
+
 	ConVar_Unregister();
 
 	SH_REMOVE_HOOK(IEngineServiceMgr, RegisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_RegisterLoopMode), false);
@@ -267,48 +270,61 @@ void Source2Provider::ServerCommand(const char* cmd)
 
 const char* Source2Provider::GetConVarString(MetamodSourceConVar *convar)
 {
-#ifdef S2_CONVAR_UNFINISHED
 	if (convar == NULL)
 	{
 		return NULL;
 	}
 
-	return convar->GetString();
-#else
-	return nullptr;
-#endif
+	auto &value = reinterpret_cast<CConVar<CUtlString> *>(convar)->Get();
+	return !value.IsEmpty() ? value.Get() : nullptr;
 }
 
 void Source2Provider::SetConVarString(MetamodSourceConVar *convar, const char* str)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	convar->SetValue(str);
-#endif
+	reinterpret_cast<CConVar<CUtlString> *>(convar)->Set( str );
 }
 
 bool Source2Provider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return pCommand->IsCommand();
-#else
+	// This method shouldn't ever be called on s2 titles
 	return false;
-#endif
 }
 
-bool Source2Provider::RegisterConCommandBase(ConCommandBase* pCommand)
+bool Source2Provider::RegisterConCommand(ProviderConCommand* pCommand)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Register(pCommand);
-#else
+	// Registration is handled by the plugins
+	
+	// If command has FCVAR_DEVELOPMENTONLY and is registered through our system
+	// assume that it's previously plugin registered command that was hidden (on plugin reloads for example),
+	// so remove that flag to make it available again
+	if(pCommand->IsFlagSet( FCVAR_DEVELOPMENTONLY ))
+		pCommand->RemoveFlags( FCVAR_DEVELOPMENTONLY );
+
 	return true;
-#endif
 }
 
-void Source2Provider::UnregisterConCommandBase(ConCommandBase* pCommand)
+bool Source2Provider::RegisterConVar(ProviderConVar *pVar)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	return g_SMConVarAccessor.Unregister(pCommand);
-#endif
+	// Registration is handled by the plugins
+	return true;
+}
+
+void Source2Provider::UnregisterConCommand(ProviderConCommand *pCommand)
+{
+	icvar->UnregisterConCommandCallbacks(*pCommand);
+
+	// Hide command from the search, as it would still be available otherwise
+	pCommand->AddFlags( FCVAR_DEVELOPMENTONLY );
+}
+
+void Source2Provider::UnregisterConVar(ProviderConVar *pVar)
+{
+	icvar->UnregisterConVarCallbacks(*pVar);
+
+	// Invalidate cvar for future use
+	// This makes it hidden from the search and lets future convar registrations of that 
+	// name to take over its setup
+	pVar->GetConVarData()->Invalidate();
 }
 
 MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
@@ -316,8 +332,7 @@ MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
 	const char* help,
 	int flags)
 {
-#ifdef S2_CONVAR_UNFINISHED
-	int newflags = 0;
+	uint64 newflags = 0ll;
 	if (flags & ConVarFlag_Notify)
 	{
 		newflags |= FCVAR_NOTIFY;
@@ -327,14 +342,11 @@ MetamodSourceConVar* Source2Provider::CreateConVar(const char* name,
 		newflags |= FCVAR_SPONLY;
 	}
 
-	ConVar* pVar = new ConVar(name, defval, newflags, help);
+	CConVar<CUtlString> *pVar = new CConVar<CUtlString>( name, newflags, help, defval );
+	
+	m_RegisteredConVars.push_back( pVar );
 
-	g_SMConVarAccessor.RegisterConCommandBase(pVar);
-
-	return pVar;
-#else
-	return nullptr;
-#endif
+	return reinterpret_cast<MetamodSourceConVar *>(pVar);
 }
 
 class GlobCommand : public IMetamodSourceCommandInfo

@@ -799,7 +799,7 @@ PluginIter CPluginManager::_end()
 	return m_Plugins.end();
 }
 
-void CPluginManager::AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
+void CPluginManager::AddPluginCvar(ISmmPlugin *api, ProviderConVar *pCvar)
 {
 	CPlugin *pl = FindByAPI(api);
 
@@ -811,7 +811,7 @@ void CPluginManager::AddPluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
 	pl->m_Cvars.push_back(pCvar);
 }
 
-void CPluginManager::AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
+void CPluginManager::AddPluginCmd(ISmmPlugin *api, ProviderConCommand *pCmd)
 {
 	CPlugin *pl = FindByAPI(api);
 
@@ -823,7 +823,7 @@ void CPluginManager::AddPluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
 	pl->m_Cmds.push_back(pCmd);
 }
 
-void CPluginManager::RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
+void CPluginManager::RemovePluginCvar(ISmmPlugin *api, ProviderConVar *pCvar)
 {
 	CPlugin *pl = FindByAPI(api);
 
@@ -835,7 +835,7 @@ void CPluginManager::RemovePluginCvar(ISmmPlugin *api, ConCommandBase *pCvar)
 	pl->m_Cvars.remove(pCvar);
 }
 
-void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
+void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ProviderConCommand *pCmd)
 {
 	CPlugin *pl = FindByAPI(api);
 
@@ -849,18 +849,16 @@ void CPluginManager::RemovePluginCmd(ISmmPlugin *api, ConCommandBase *pCmd)
 
 void CPluginManager::UnregAllConCmds(CPlugin *pl)
 {
-	SourceHook::List<ConCommandBase *>::iterator i;
-
 	/* :TODO: */
-	for (i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
+	for (auto i=pl->m_Cvars.begin(); i!=pl->m_Cvars.end(); i++)
 	{
-		g_Metamod.UnregisterConCommandBase(pl->m_Id, (*i) );
+		g_Metamod.UnregisterConVar(pl->m_Id, (*i) );
 	}
 	pl->m_Cvars.clear();
 
-	for (i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
+	for (auto i=pl->m_Cmds.begin(); i!=pl->m_Cmds.end(); i++)
 	{
-		g_Metamod.UnregisterConCommandBase(pl->m_Id, (*i) );
+		g_Metamod.UnregisterConCommand(pl->m_Id, (*i) );
 	}
 	pl->m_Cmds.clear();
 }

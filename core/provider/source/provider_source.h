@@ -55,8 +55,10 @@ public: // BaseProvider
 		int flags) override;
 	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
 	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
-	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
-	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
+	virtual bool RegisterConCommand(ProviderConCommand *pCommand) override;
+	virtual bool RegisterConVar(ProviderConVar *pVar) override;
+	virtual void UnregisterConCommand(ProviderConCommand *pCommand) override;
+	virtual void UnregisterConVar(ProviderConVar *pVar) override;
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;
 	virtual int GetUserMessageCount() override;
 	virtual int FindUserMessage(const char* name, int* size = nullptr) override;

@@ -419,6 +419,8 @@ namespace SourceMM
 		 * @brief Called when Metamod:Source is about to remove a concommand or 
 		 * convar.  This can also be called if ISmmAPI::UnregisterConCmdBase is 
 		 * used by a plugin.
+		 * 
+		 * @deprecated since PLAPI 17
 		 *
 		 * @param id			Id of the plugin that created the concommand or 
 		 * 						convar.
@@ -426,6 +428,30 @@ namespace SourceMM
 		 * 						removed.
 		 */
 		virtual void OnUnlinkConCommandBase(PluginId id, ConCommandBase *pCommand)
+		{
+		}
+
+		/**
+		 * @brief Called when Metamod:Source is about to remove a concommand.
+		 * This can also be called if ISmmAPI::UnregisterConCommand is 
+		 * used by a plugin.
+		 *
+		 * @param id			Id of the plugin that created the concommand.
+		 * @param pCommand		Pointer to concommand that is being removed.
+		 */
+		virtual void OnUnlinkConCommand(PluginId id, ProviderConCommand *pCommand)
+		{
+		}
+
+		/**
+		 * @brief Called when Metamod:Source is about to remove a convar.
+		 * This can also be called if ISmmAPI::UnregisterConVar is 
+		 * used by a plugin.
+		 *
+		 * @param id			Id of the plugin that created the convar.
+		 * @param pVar			Pointer to convar that is being removed.
+		 */
+		virtual void OnUnlinkConVar(PluginId id, ProviderConVar *pVar)
 		{
 		}
 	};
@@ -492,12 +518,30 @@ using namespace SourceMM;
 	g_PLID = id;
 
 #define META_LOG				g_SMAPI->LogMsg
-#define META_REGCMD(name)		g_SMAPI->RegisterConCommandBase(g_PLAPI, name##_command)
-#define META_REGCVAR(var)		g_SMAPI->RegisterConCommandBase(g_PLAPI, var)
-#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, name##_command)
-#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, var)
 #define	META_CONPRINT			g_SMAPI->ConPrint
 #define META_CONPRINTF			g_SMAPI->ConPrintf
+
+#if defined META_IS_SOURCE2
+#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCommand( g_PLAPI, name##_command )
+#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConVar( g_PLAPI, var )
+
+#define META_CONVAR_REGISTER(flags) ConVar_Register( flags, \
+	[]( ConVarRefAbstract *ref )	{ g_SMAPI->RegisterConVar( g_PLAPI, ref ); }, \
+	[]( ConCommandRef *ref )		{ g_SMAPI->RegisterConCommand( g_PLAPI, ref ); } \
+)
+#else
+// @deprecated since 2.1
+#define META_REGCMD(name)		g_SMAPI->RegisterConCommandBase(g_PLAPI, name##_command)
+// @deprecated since 2.1
+#define META_REGCVAR(var)		g_SMAPI->RegisterConCommandBase(g_PLAPI, var)
+// @deprecated since 2.1
+#define META_UNREGCMD(name)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, name##_command)
+// @deprecated since 2.1
+#define META_UNREGCVAR(var)		g_SMAPI->UnregisterConCommandBase(g_PLAPI, var)
+
+#define META_REGBASECMD(var)		(var->IsCommand() ? g_SMAPI->RegisterConCommand(g_PLAPI, var) : g_SMAPI->RegisterConVar(g_PLAPI, var))
+#define META_UNREGBASECMD(var)		(var->IsCommand() ? g_SMAPI->UnregisterConCommand(g_PLAPI, var) : g_SMAPI->UnregisterConVar(g_PLAPI, var))
+#endif
 
 /* Probably should use this up above someday */
 #define CONCMD_VARNAME(name) name##_command

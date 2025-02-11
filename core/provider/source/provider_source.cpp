@@ -385,14 +385,24 @@ bool SourceProvider::IsConCommandBaseACommand(ConCommandBase* pCommand)
 	return pCommand->IsCommand();
 }
 
-bool SourceProvider::RegisterConCommandBase(ConCommandBase* pCommand)
+bool SourceProvider::RegisterConCommand(ProviderConCommand* pCommand)
 {
 	return m_ConVarAccessor.Register(pCommand);
 }
 
-void SourceProvider::UnregisterConCommandBase(ConCommandBase* pCommand)
+bool SourceProvider::RegisterConVar(ProviderConVar* pVar)
 {
-	return m_ConVarAccessor.Unregister(pCommand);
+	return m_ConVarAccessor.Register(pVar);
+}
+
+void SourceProvider::UnregisterConCommand(ProviderConCommand* pCommand)
+{
+	m_ConVarAccessor.Unregister(pCommand);
+}
+
+void SourceProvider::UnregisterConVar(ProviderConVar* pVar)
+{
+	m_ConVarAccessor.Unregister(pVar);
 }
 
 MetamodSourceConVar* SourceProvider::CreateConVar(const char* name,
