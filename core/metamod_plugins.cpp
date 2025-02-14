@@ -320,8 +320,9 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 			}
 			else
 			{
-				//don't really care about the buffer here
-				_Unload(pl, true, buffer, sizeof(buffer)-1);
+				//We don't need to handle any extra unloading,
+				//as if plugin has failed to load it would be
+				//unloaded by _Load() method itself
 
 				//We just wasted an id... reclaim it
 				m_LastId--;
@@ -400,7 +401,8 @@ struct Unloader : public SourceHook::Impl::UnloadListener
 		if (plugin_->m_UnloadFn != NULL)
 			plugin_->m_UnloadFn();
 
-		dlclose(plugin_->m_Lib);
+		if(plugin_->m_Lib)
+			dlclose(plugin_->m_Lib);
 
 		if (destroy_)
 		{
