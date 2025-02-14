@@ -320,9 +320,10 @@ bool CPluginManager::Retry(PluginId id, char *error, size_t len)
 			}
 			else
 			{
-				//We don't need to handle any extra unloading,
-				//as if plugin has failed to load it would be
-				//unloaded by _Load() method itself
+				//Since _Load already queues unload on plugin load failure,
+				//it doesn't removes the plugin from the plugin list nor frees pl
+				//so an actual _Unload() is still required
+				_Unload(pl, true, buffer, sizeof(buffer)-1);
 
 				//We just wasted an id... reclaim it
 				m_LastId--;
