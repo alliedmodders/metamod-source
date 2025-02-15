@@ -32,6 +32,7 @@
 #include <tier1/utlvector.h>
 #include <IEngineService.h>
 #include <string>
+#include <vector>
 
 // TODO: is this still needed for Dota or CS2 on any platform?
 #if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
@@ -61,8 +62,10 @@ public:
 		int flags) override;
 	virtual const char* GetConVarString(MetamodSourceConVar *convar) override;
 	virtual void SetConVarString(MetamodSourceConVar *convar, const char* str) override;
-	virtual bool RegisterConCommandBase(ConCommandBase* pCommand) override;
-	virtual void UnregisterConCommandBase(ConCommandBase* pCommand) override;
+	virtual bool RegisterConCommand(ProviderConCommand *pCommand) override;
+	virtual bool RegisterConVar(ProviderConVar *pVar) override;
+	virtual void UnregisterConCommand(ProviderConCommand *pCommand) override;
+	virtual void UnregisterConVar(ProviderConVar *pVar) override;
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;
 public:
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
@@ -77,6 +80,7 @@ public:
 	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
 private:
 	IFileSystem* baseFs = nullptr;
+	std::vector<CConVar<CUtlString> *> m_RegisteredConVars;
 
 	friend void LocalCommand_Meta(const CCommandContext& context, const CCommand& args);
 };

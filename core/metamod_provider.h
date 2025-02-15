@@ -254,19 +254,34 @@ namespace SourceMM
 		virtual const char *GetGameDescription() =0;
 
 		/**
-		 * @brief Registers a ConCommandBase.
+		 * @brief Registers a ConCommand.
 		 *
-		 * @param pCommand		ConCommandBase to register.
+		 * @param pCommand		ConCommand to register.
 		 * @return				True if successful, false otherwise.
 		 */
-		virtual bool RegisterConCommandBase(ConCommandBase *pCommand) =0;
+		virtual bool RegisterConCommand(ProviderConCommand *pCommand) =0;
 
 		/**
-		 * @brief Unregisters a ConCommandBase.
+		 * @brief Registers a ConVar.
 		 *
-		 * @param pCommand		ConCommandBase to unlink.
+		 * @param pVar			ConVar to register.
+		 * @return				True if successful, false otherwise.
 		 */
-		virtual void UnregisterConCommandBase(ConCommandBase *pCommand) =0;
+		virtual bool RegisterConVar(ProviderConVar *pVar) =0;
+
+		/**
+		 * @brief Unregisters a ConCommand.
+		 *
+		 * @param pCommand		ConCommand to unlink.
+		 */
+		virtual void UnregisterConCommand(ProviderConCommand *pCommand) =0;
+
+		/**
+		 * @brief Unregisters a ConVar.
+		 *
+		 * @param pVar			ConVar to unlink.
+		 */
+		virtual void UnregisterConVar(ProviderConVar *pVar) =0;
 
 		/**
 		 * @brief Returns whether a ConCommandBase is a command or not.

@@ -49,7 +49,7 @@ using namespace SourceMM;
 #define SOURCEMM_VERSION	SVN_FILE_VERSION_STRING
 #define SOURCEMM_DATE		__DATE__
 #define METAMOD_API_MAJOR	2		/* increase this on a breaking change */
-#define METAMOD_API_MINOR	0		/* increase this on a non-breaking API change */
+#define METAMOD_API_MINOR	1		/* increase this on a non-breaking API change */
 
 class MetamodSource : public ISmmAPI
 {
@@ -62,6 +62,10 @@ public: // ISmmAPI
 	CGlobalVars *GetCGlobals() override;
 	bool RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand) override;
 	void UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand) override;
+	bool RegisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand) override;
+	bool RegisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) override;
+	void UnregisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand) override;
+	void UnregisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) override;
 	void ConPrint(const char *str) override;
 	void ConPrintf(const char *fmt, ...) override;
 	void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) override;
@@ -91,7 +95,8 @@ public:
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
 	const char *GetVDFDir();
-	void UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand);
+	void UnregisterConCommand(PluginId id, ProviderConCommand *pCommand);
+	void UnregisterConVar(PluginId id, ProviderConVar *pVar);
 	void NotifyVSPListening(IServerPluginCallbacks *callbacks, int version);
 	const char* GetGameDLLInterfaceName() const;
 	void SetGameDLLInfo(CreateInterfaceFn serverFactory, const char *pGameDllIfaceName, int version, bool loaded);

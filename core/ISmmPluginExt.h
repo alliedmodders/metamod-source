@@ -65,7 +65,7 @@
 #define SOURCE_ENGINE_MCV				27				/**< Military Conflict: Vietnam */
 #define SOURCE_ENGINE_CS2				28				/**< Counter-Strike 2 */
 
-#define METAMOD_PLAPI_VERSION			16				/**< Version of this header file */
+#define METAMOD_PLAPI_VERSION			17				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
 
 namespace SourceMM

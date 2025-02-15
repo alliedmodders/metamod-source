@@ -121,6 +121,7 @@ class MMSConfig(object):
         '-Wall',
         '-Werror',
         '-Wno-uninitialized',
+        '-Wno-sign-compare',
         '-Wno-unused',
         '-Wno-switch',
         '-msse',

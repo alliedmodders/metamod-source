@@ -41,8 +41,19 @@
 class CGlobalVars;
 struct edict_t;
 class ConCommandBase;
+typedef ConCommandBase ProviderConVar;
+typedef ConCommandBase ProviderConCommand;
 #else
 #include <eiface.h>
+
+#if defined META_IS_SOURCE2
+typedef ConVarRefAbstract ProviderConVar;
+typedef ConCommandRef ProviderConCommand;
+class ConCommandBase;
+#else
+typedef ConCommandBase ProviderConVar;
+typedef ConCommandBase ProviderConCommand;
+#endif
 #endif
 
 #include <ISmmPlugin.h>
@@ -130,6 +141,8 @@ namespace SourceMM
 
 		/**
 		 * @brief Registers a ConCommandBase.
+		 * 
+		 * @deprecated since 2.1
 		 *
 		 * @param plugin		Parent plugin API pointer.
 		 * @param pCommand		ConCommandBase to register.
@@ -139,6 +152,8 @@ namespace SourceMM
 
 		/**
 		 * @brief Unregisters a ConCommandBase.
+		 * 
+		 * @deprecated since 2.1
 		 *
 		 * @param plugin		Parent plugin API pointer.
 		 * @param pCommand		ConCommandBase to unlink.
@@ -400,6 +415,40 @@ namespace SourceMM
 								  size_t maxlength,
 								  const char *format,
 								  va_list ap) =0;
+
+		/**
+		 * @brief Registers a ConCommand.
+		 *
+		 * @param plugin		Parent plugin API pointer.
+		 * @param pCommand		ConCommand to register.
+		 * @return				True if successful, false otherwise.
+		 */
+		virtual bool RegisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand) =0;
+
+		/**
+		 * @brief Registers a ConVar.
+		 *
+		 * @param plugin		Parent plugin API pointer.
+		 * @param pCvar			ConVar to register.
+		 * @return				True if successful, false otherwise.
+		 */
+		virtual bool RegisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) =0;
+
+		/**
+		 * @brief Unregisters a ConCommand.
+		 *
+		 * @param plugin		Parent plugin API pointer.
+		 * @param pCommand		ConCommand to unlink.
+		 */
+		virtual void UnregisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand) =0;
+
+		/**
+		 * @brief Unregisters a ConVar.
+		 *
+		 * @param plugin		Parent plugin API pointer.
+		 * @param pCvar			ConVar to unlink.
+		 */
+		virtual void UnregisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) =0;
 	};
 }
 

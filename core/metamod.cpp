@@ -919,33 +919,48 @@ const char *MetamodSource::GetVDFDir()
 bool MetamodSource::RegisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
 	if (provider->IsConCommandBaseACommand(pCommand))
-	{
-		g_PluginMngr.AddPluginCmd(plugin, pCommand);
-	}
+		return RegisterConCommand(plugin, (ProviderConCommand *)pCommand);
 	else
-	{
-		g_PluginMngr.AddPluginCvar(plugin, pCommand);
-	}
-
-	return provider->RegisterConCommandBase(pCommand);
+		return RegisterConVar(plugin, (ProviderConVar *)pCommand);
 }
 
 void MetamodSource::UnregisterConCommandBase(ISmmPlugin *plugin, ConCommandBase *pCommand)
 {
 	if (provider->IsConCommandBaseACommand(pCommand))
-	{
-		g_PluginMngr.RemovePluginCmd(plugin, pCommand);
-	}
+		UnregisterConCommand(plugin, (ProviderConCommand *)pCommand);
 	else
-	{
-		g_PluginMngr.RemovePluginCvar(plugin, pCommand);
-	}
-
-	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
-	UnregisterConCommandBase(pOrig ? pOrig->m_Id : 0, pCommand);
+		UnregisterConVar(plugin, (ProviderConVar *)pCommand);
 }
 
-void MetamodSource::UnregisterConCommandBase(PluginId id, ConCommandBase *pCommand)
+bool MetamodSource::RegisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand)
+{
+	g_PluginMngr.AddPluginCmd(plugin, pCommand);
+	return provider->RegisterConCommand(pCommand);
+}
+
+bool MetamodSource::RegisterConVar(ISmmPlugin *plugin, ProviderConVar *pVar)
+{
+	g_PluginMngr.AddPluginCvar(plugin, pVar);
+	return provider->RegisterConVar(pVar);
+}
+
+void MetamodSource::UnregisterConCommand(ISmmPlugin *plugin, ProviderConCommand *pCommand)
+{
+	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
+
+	g_PluginMngr.RemovePluginCmd(plugin, pCommand);
+	UnregisterConCommand(pOrig ? pOrig->m_Id : 0, pCommand);
+}
+
+void MetamodSource::UnregisterConVar(ISmmPlugin *plugin, ProviderConVar *pVar)
+{
+	CPluginManager::CPlugin *pOrig = g_PluginMngr.FindByAPI(plugin);
+
+	g_PluginMngr.RemovePluginCvar(plugin, pVar);
+	UnregisterConVar(pOrig ? pOrig->m_Id : 0, pVar);
+}
+
+void MetamodSource::UnregisterConCommand(PluginId id, ProviderConCommand *pCommand)
 {
 	PluginIter iter;
 	CPluginManager::CPlugin *pPlugin;
@@ -963,16 +978,74 @@ void MetamodSource::UnregisterConCommandBase(PluginId id, ConCommandBase *pComma
 		{
 			continue;
 		}
-		for (event=pPlugin->m_Events.begin();
-			event!=pPlugin->m_Events.end();
-			event++)
+
+		if(pPlugin->m_API->GetApiVersion() < 17)
 		{
-			pML = (*event);
-			pML->OnUnlinkConCommandBase(id, pCommand);
+			for(event=pPlugin->m_Events.begin();
+				 event != pPlugin->m_Events.end();
+				 event++)
+			{
+				pML = (*event);
+				pML->OnUnlinkConCommandBase(id, (ConCommandBase *)pCommand);
+			}
+		}
+		else
+		{
+			for(event=pPlugin->m_Events.begin();
+				 event != pPlugin->m_Events.end();
+				 event++)
+			{
+				pML = (*event);
+				pML->OnUnlinkConCommand(id, pCommand);
+			}
 		}
 	}
 
-	return provider->UnregisterConCommandBase(pCommand);
+	return provider->UnregisterConCommand(pCommand);
+}
+
+void MetamodSource::UnregisterConVar(PluginId id, ProviderConVar *pVar)
+{
+	PluginIter iter;
+	CPluginManager::CPlugin *pPlugin;
+	List<IMetamodListener *>::iterator event;
+	IMetamodListener *pML;
+	for(iter=g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++)
+	{
+		pPlugin = (*iter);
+		if(pPlugin->m_Status < Pl_Paused)
+		{
+			continue;
+		}
+		/* Only valid for plugins >= 12 (v1:6, SourceMM 1.5) */
+		if(pPlugin->m_API->GetApiVersion() < 12)
+		{
+			continue;
+		}
+
+		if(pPlugin->m_API->GetApiVersion() < 17)
+		{
+			for(event=pPlugin->m_Events.begin();
+				 event != pPlugin->m_Events.end();
+				 event++)
+			{
+				pML = (*event);
+				pML->OnUnlinkConCommandBase(id, (ConCommandBase *)pVar);
+			}
+		}
+		else
+		{
+			for(event=pPlugin->m_Events.begin();
+				 event != pPlugin->m_Events.end();
+				 event++)
+			{
+				pML = (*event);
+				pML->OnUnlinkConVar(id, pVar);
+			}
+		}
+	}
+
+	return provider->UnregisterConVar(pVar);
 }
 
 int MetamodSource::GetUserMessageCount()

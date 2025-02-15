@@ -46,10 +46,17 @@ CGlobalVars *GetGameGlobals()
 	return g_pNetworkServerService->GetIGameServer()->GetGlobals();
 }
 
-#if 0
-// Currently unavailable, requires hl2sdk work!
-ConVar sample_cvar("sample_cvar", "42", 0);
-#endif
+void SampleCvarFChangeCB( CConVar<float> *cvar, CSplitScreenSlot slot, const float *new_val, const float *old_val )
+{
+	META_CONPRINTF( "Sample convar \"%s\" was changed from %f to %f [%s]\n",
+					cvar->GetName(), *old_val, *new_val,
+					// When convar is first initialised with a default value, it would have FCVAR_INITIAL_SETVALUE
+					// flag set, so you can check for it if needed.
+					cvar->IsFlagSet( FCVAR_INITIAL_SETVALUE ) ? "initialised" : "change" );
+}
+
+CConVar<int> sample_cvari("sample_cvari", FCVAR_NONE, "help string", 42);
+CConVar<float> sample_cvarf("sample_cvarf", FCVAR_NONE, "help string", 69.69f, true, 10.0f, true, 100.0f, SampleCvarFChangeCB );
 
 CON_COMMAND_F(sample_command, "Sample command", FCVAR_NONE)
 {
@@ -87,7 +94,81 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	META_CONPRINTF( "All hooks started!\n" );
 
 	g_pCVar = icvar;
-	ConVar_Register( FCVAR_RELEASE | FCVAR_CLIENT_CAN_EXECUTE | FCVAR_GAMEDLL );
+	META_CONVAR_REGISTER( FCVAR_RELEASE | FCVAR_CLIENT_CAN_EXECUTE | FCVAR_GAMEDLL );
+
+	// You can get a convar reference to an already existing cvar via CConVarRef.
+	// This will pre-register it if it's not yet registered and would use default data until
+	// the actual cvar is registered. You can assert data existance via IsConVarDataAvailable().
+	// Make sure the type is correct here otherwise it might prevent actual convar being registered,
+	// since you pre-registered it with a different type or if convar already exists you'd be left with 
+	// an invalid ref, so a check for IsValidRef() is also nice to have.
+	// Generally with these you should just know the type of a cvar you are referencing beforehand
+	// and if not, refer to ConVarRefAbstract usage
+	// 
+	// Side Note: Always make sure you are working with a valid ref (IsValidRef()) before reading/writing to it
+	// as otherwise you'd be reading/writing off of default convar data which is shared across
+	// all the invalid convar refs.
+	CConVarRef<int> ccvar_ref_example( "mp_limitteams" );
+
+	if(ccvar_ref_example.IsValidRef() && ccvar_ref_example.IsConVarDataAvailable())
+	{
+		META_CONPRINTF( "CConVarRef \"%s\" got value pre = %d [float = %f, bool = %d, string = \"%s\"]\n",
+						ccvar_ref_example.GetName(), ccvar_ref_example.Get(),
+						ccvar_ref_example.GetFloat(), ccvar_ref_example.GetBool(),
+						ccvar_ref_example.GetString() );
+		
+		// By default if you are using CConVar or CConVarRef you should be using Get()/Set()
+		// methods to read/write values, as these are templated for the particular type the cvar is of.
+		// It also is usually faster since it skips all the type conversion logic of non templated methods
+		ccvar_ref_example.Set( 5 );
+
+		// As noted above there are methods that support value conversion between certain types
+		// so stuff like this is possible on an int typed cvar for example,
+		// refer to ConVarRefAbstract declaration for more info on these methods
+		ccvar_ref_example.SetFloat( 8.5f );
+
+		META_CONPRINTF( "CConVarRef \"%s\" got value after = %d [float = %f, bool = %d, string = \"%s\"]\n",
+						ccvar_ref_example.GetName(), ccvar_ref_example.Get(),
+						ccvar_ref_example.GetFloat(), ccvar_ref_example.GetBool(),
+						ccvar_ref_example.GetString() );
+	}
+
+	// You can also use ConVarRefAbstract class if you don't want typisation support
+	// or don't know the actual type used, since you are responsible for picking the correct type there!
+	// And ConVarRefAbstract won't pre-register the convar in the system, as it acts as a plain ref,
+	// so make sure to check the ref for validity before usage via IsValidRef()
+	ConVarRefAbstract cvar_ref_example( "mp_limitteams" );
+
+	if(cvar_ref_example.IsValidRef())
+	{
+		META_CONPRINTF( "ConVarRefAbstract \"%s\" got value pre [float = %f, bool = %d, string = \"%s\"]\n",
+						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString() );
+
+		// Since the ref is not typed, you can't use direct Get() and Set() methods,
+		// instead you need to use methods with type conversion support.
+		cvar_ref_example.SetFloat( 10.0f );
+
+		// If you work with convars of non primitive types, you can also use SetAs() methods
+		// to try to set the value as a specific type, if type mismatches it would try to do 
+		// conversion if possible and if not it would do nothing.
+		// There's also an equvialent methods for reading the value, GetAs()
+		cvar_ref_example.SetAs<Vector>( Vector( 1.0f, 2.0f, 3.0f ) );
+
+		// Alternatively you can "promote" plain ref to a typed variant by passing plain ref to a constructor
+		// but be careful, as there's a type checker in place that would invalidate convar ref
+		// if cast to a wrong type was attempted, you can check for that either via IsValidRef()
+		// or IsConVarDataValid() (usually IsValidRef() is enough) afterwards, but generally you should
+		// just know the correct type of the cvar you are casting to beforehand.
+		CConVarRef<int> promoted_ref( cvar_ref_example );
+		if(promoted_ref.IsValidRef() && promoted_ref.IsConVarDataValid())
+		{
+			// If the promoted ref is valid, you can use its templated methods like with CConVarRef/CConVar
+			promoted_ref.Set( 5 );
+		}
+
+		META_CONPRINTF( "ConVarRefAbstract \"%s\" got value after [float = %f, bool = %d, string = \"%s\"]\n",
+						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString() );
+	}
 
 	return true;
 }
