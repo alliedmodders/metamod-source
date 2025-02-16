@@ -291,12 +291,12 @@ mm_DetermineBackendS1(QueryValveInterface engineFactory, QueryValveInterface ser
 			return MMBackend_BMS;
 		}
 
-		if (mm_FindPattern((void *)engineFactory, " Blade Symphony ", sizeof(" Blade Symphony ") - 1))
+		if (serverFactory("VSERVERTOOLS003", NULL) != NULL)
 		{
 			return MMBackend_Blade;
 		}
 
-		if (mm_FindPattern((void *)engineFactory, "Military Conflict: Vietnam", sizeof("Military Conflict: Vietnam") - 1))
+		if (strcmp(game_name, "vietnam") == 0)
 		{
 			return MMBackend_MCV;
 		}
