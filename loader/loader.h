@@ -107,6 +107,7 @@ enum MetamodBackend
 	MMBackend_PVKII,
 	MMBackend_MCV,
 	MMBackend_CS2,
+	MMBackend_Deadlock,
 	MMBackend_UNKNOWN
 };
 

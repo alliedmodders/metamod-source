@@ -362,7 +362,11 @@ public:
 
 	virtual InitReturnVal_t Init()
 	{
-		if (!stricmp("csgo", game_name))
+		if (!stricmp("citadel", game_name))
+		{
+			mm_backend = MMBackend_Deadlock;
+		}
+		else if (!stricmp("csgo", game_name))
 		{
 			mm_backend = MMBackend_CS2;
 		}

@@ -213,6 +213,8 @@ int Source2Provider::DetermineSourceEngine()
 	return SOURCE_ENGINE_DOTA;
 #elif SOURCE_ENGINE == SE_CS2
 	return SOURCE_ENGINE_CS2;
+#elif SOURCE_ENGINE == SE_DEADLOCK
+	return SOURCE_ENGINE_DEADLOCK;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -224,6 +226,8 @@ const char* Source2Provider::GetEngineDescription() const
 	return "Dota 2 (2013)";
 #elif SOURCE_ENGINE == SE_CS2
 	return "Counter-Strike 2 (2023)";
+#elif SOURCE_ENGINE == SE_DEADLOCK
+	return "Deadlock (2024)";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif

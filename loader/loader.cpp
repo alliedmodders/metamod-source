@@ -102,6 +102,7 @@ static const char *backend_names[] =
 	"2.pvkii",
 	"2.mcv",
 	"2.cs2",
+	"2.deadlock",
 };
 
 #if defined _WIN32
