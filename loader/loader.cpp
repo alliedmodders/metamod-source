@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cstdint>
+#include <cstdlib>
 #include "loader.h"
 #include "serverplugin.h"
 #include "gamedll.h"
@@ -214,46 +215,26 @@ mm_GetGameName(char *buffer, size_t size)
 {
 	if (!mm_GetCommandArgument("-game", buffer, size))
 	{
-		char tier0_path[PLATFORM_MAX_PATH];
-#ifdef _WIN32
-		if (mm_ResolvePath("tier0.dll", tier0_path, sizeof(tier0_path), false))
-#elif defined __linux__
-		if (mm_ResolvePath("libtier0.so", tier0_path, sizeof(tier0_path), false))
-#elif defined __APPLE__
-		if (mm_ResolvePath("libtier0.dylib", tier0_path, sizeof(tier0_path), false))
-#else
-#error unsupported platform
-#endif
+		// Source 2 doesn't ever use -game, so we'll hardcode by app id for now. This same approach
+		// won't work for the few Source 1 games that don't require -game, as S1 initializes Steam
+		// too late (although the env var still still be already set if their is a running Steam client
+		// installed). We previously called GetGameInfoString exported from tier0 to look up the first Mod
+		// dir defined. While that worked for CS2 and Dota 2, Deadlock does not define any Mod paths, solely
+		// relying on Game paths. The function only returns the first path defined, and in the case of S2, where
+		// we can't even set MM:S path with GameBin instead of Game, the first Game path will always be MM:S's
+		// location, rather than the real Game dir
+		char *pszAppId = std::getenv("SteamAppId");
+		switch (strtoul(pszAppId, nullptr, 10))
 		{
-			char err[1024];
-			void* pTier0 = mm_LoadLibrary(tier0_path, err, sizeof(err));
-			if (pTier0)
-			{
-#ifdef _WIN32
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "?GetGameInfoString@@YAPEBDPEBD0PEAD_K@Z");
-#else
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "_Z17GetGameInfoStringPKcS0_Pcm");
-#endif
-				if (func != nullptr)
-				{
-					static char szTmp[260];
-					strncpy(buffer, func("FileSystem/SearchPaths/Mod", "", szTmp, sizeof(szTmp)), size);
-				}
-				else
-				{
-					mm_LogFatal("Failed to resolve GetGameInfoString in fallback gamedir lookup.");
-				}
-
-				mm_UnloadLibrary(pTier0);
-			}
-			else
-			{
-				mm_LogFatal("Failed to load tier0 from \"%s\" in fallback gamedir lookup: %s", tier0_path, err);
-			}
-		}
-		else
-		{
-			mm_LogFatal("Failed to resolve tier0 path in fallback gamedir lookup.");
+			case 570ul:
+				strncpy(buffer, "dota", size);
+				break;
+			case 730ul:
+				strncpy(buffer, "csgo", size);
+				break;
+			case 1422450ul:
+				strncpy(buffer, "citadel", size);
+				break;
 		}
 	}
 
