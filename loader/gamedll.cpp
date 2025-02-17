@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet :
  * ======================================================
  * Metamod:Source
- * Copyright (C) 2004-2015 AlliedModders LLC and authors.
+ * Copyright (C) 2004-2025 AlliedModders LLC and authors.
  * All rights reserved.
  * ======================================================
  *
@@ -59,28 +59,24 @@ static char mm_path[PLATFORM_MAX_PATH];
 static bool g_is_source2 = false;
 
 #if defined _WIN32
-#define SERVER_NAME			"server.dll"
+#define SERVER_NAME_S1			"server.dll"
+#define SERVER_NAME_S2			SERVER_NAME_S1
 #if defined _WIN64
-#define PLATFORM_NAME		"win64"
+#define PLATFORM_SUBDIR_S1		"/"
+#define PLATFORM_SUBDIR_S2		"/win64"
 #else
-#define PLATFORM_NAME		"win32"
-#endif
-#elif defined __APPLE__
-#define SERVER_NAME			"server.dylib"
-#if defined __amd64__
-#define PLATFORM_NAME		"osx64"
-#else
-#define PLATFORM_NAME		"osx32"
+#define PLATFORM_SUBDIR_S1		"/"
+#define PLATFORM_SUBDIR_S2		"/win32"
 #endif
 #elif defined __linux__
+#define SERVER_NAME_S1         "server" LIB_SUFFIX
+#define SERVER_NAME_S2         "libserver" LIB_SUFFIX
 #if defined __amd64__
-// hackhack - source2 uses libserver as name on POSIX, but source1 x64 does not
-//              (but source1 x64 is also client-only right now so what-ev)
-#define SERVER_NAME                     "libserver" LIB_SUFFIX
-#define PLATFORM_NAME		"linuxsteamrt64"
+#define PLATFORM_SUBDIR_S1		"/linux64"
+#define PLATFORM_SUBDIR_S2		"/linuxsteamrt64"
 #else
-#define SERVER_NAME                     "server" LIB_SUFFIX
-#define PLATFORM_NAME		"linuxsteamrt32"
+#define PLATFORM_SUBDIR_S1		"/"
+#define PLATFORM_SUBDIR_S2		"/linuxsteamrt32"
 #endif
 #endif
 
@@ -168,13 +164,14 @@ mm_DetectGameInformation()
 		}
 
 		const char *pRelPath = is_source2 ? "../../" : "";
-		const char *pOSDir = is_source2 ? PLATFORM_NAME "/" : "";
+		const char *pOSDir = is_source2 ? PLATFORM_SUBDIR_S2 "/" : PLATFORM_SUBDIR_S1;
+		const char *pServerBin = is_source2 ? SERVER_NAME_S2 : SERVER_NAME_S1;
 		if (stricmp(key, "GameBin") == 0)
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s%s/%s", lptr, pRelPath, ptr, pOSDir, pServerBin);
 		else if (!ptr[0])
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%sbin/%s" SERVER_NAME, lptr, pRelPath, pOSDir);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%sbin%s/%s", lptr, pRelPath, pOSDir, pServerBin);
 		else
-			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/bin/%s" SERVER_NAME, lptr, pRelPath, ptr, pOSDir);
+			mm_PathFormat(temp_path, sizeof(temp_path), "%s/%s%s/bin%s/%s", lptr, pRelPath, ptr, pOSDir, pServerBin);
 
 		if (mm_PathCmp(mm_path, temp_path))
 			continue;
