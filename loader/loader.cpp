@@ -207,7 +207,7 @@ mm_GetProcAddress(const char *name)
 	return mm_GetLibAddress(mm_library, name);
 }
 
-typedef const char *(*GetGameInfoStringFn)(const char *pszKeyName, const char *pszDefaultValue, char *pszOut, uint64_t cbOut);
+typedef uint64_t (*GetGameInfoUint64Fn)(const char *pszKeyName, uint64_t default_value);
 
 void
 mm_GetGameName(char *buffer, size_t size)
@@ -230,14 +230,21 @@ mm_GetGameName(char *buffer, size_t size)
 			if (pTier0)
 			{
 #ifdef _WIN32
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "?GetGameInfoString@@YAPEBDPEBD0PEAD_K@Z");
+				GetGameInfoUint64Fn func = (GetGameInfoUint64Fn)mm_GetLibAddress(pTier0, "?GetGameInfoUint64@@YA_KPEBD_K@Z");
 #else
-				GetGameInfoStringFn func = (GetGameInfoStringFn)mm_GetLibAddress(pTier0, "_Z17GetGameInfoStringPKcS0_Pcm");
+				GetGameInfoUint64Fn func = (GetGameInfoUint64Fn)mm_GetLibAddress(pTier0, "_Z17GetGameInfoUint64PKcy");
 #endif
 				if (func != nullptr)
 				{
-					static char szTmp[260];
-					strncpy(buffer, func("FileSystem/SearchPaths/Mod", "", szTmp, sizeof(szTmp)), size);
+					uint64_t appid = func( "FileSystem/SteamAppId", 0ull );
+
+					switch(appid)
+					{
+						case 570ull:		strncpy( buffer, "dota", size ); break;
+						case 730ull:		strncpy( buffer, "csgo", size ); break;
+						case 1422450ull:	strncpy( buffer, "citadel", size ); break;
+						default: mm_LogFatal( "Failed to resolve SteamAppId in fallback gamedir lookup." );
+					}						
 				}
 				else
 				{
