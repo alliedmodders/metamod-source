@@ -441,6 +441,12 @@ mm_DetermineBackend(QueryValveInterface engineFactory, QueryValveInterface serve
 					{
 						return MMBackend_Mock;
 					}
+					else if (serverFactory("ServerGameClients005", NULL) != nullptr)
+					{
+						// 2025 version of SDK 2013, or maybe hl1mp, or anything else shaped like those.
+						// We may later make a separate SDK for this branch. For now, they match, we'll hack it
+						return MMBackend_HL2DM;
+					}
 					else
 					{
 						return MMBackend_SDK2013;
