@@ -8,8 +8,6 @@ for sdk_name in MMS.sdks:
     if not cxx.target.arch in sdk.platformSpec[cxx.target.platform]:
       continue
 
-    name = 'metamod.' + sdk.ext
-    binary = MMS.HL2Library(builder, cxx, name, sdk)
 
     binary.sources += [
       'metamod.cpp',
@@ -27,6 +25,8 @@ for sdk_name in MMS.sdks:
       'gamedll_bridge.cpp',
       'vsp_bridge.cpp'
     ]
+
+    binary.compiler.defines += ['_ALLOW_KEYWORD_MACROS']
 
     # Source2 hack. TODO: check this more deterministically, "are we doing an x64 build?"
     if binary.compiler.target.arch == 'x86':

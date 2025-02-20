@@ -42,7 +42,7 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 {
 	m_RegisteredCommands.push_back(pCommand);
 #if SOURCE_ENGINE < SE_ALIENSWARM
-	pCommand->SetNext(NULL);
+	pCommand->m_pNext = NULL;
 #endif
 	icvar->RegisterConCommand(pCommand);
 
@@ -52,7 +52,7 @@ bool SMConVarAccessor::RegisterConCommandBase(ConCommandBase *pCommand)
 bool SMConVarAccessor::Register(ConCommandBase *pCommand)
 {
 #if SOURCE_ENGINE < SE_ALIENSWARM
-	pCommand->SetNext(NULL);
+	pCommand->m_pNext = NULL;
 #endif
 	icvar->RegisterConCommand(pCommand);
 
@@ -163,7 +163,7 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	if (pCur == pCommand)
 	{
 		*m_TopConCommandBase = const_cast<ConCommandBase *>(pCommand->GetNext());
-		pCommand->SetNext(NULL);
+		pCommand->m_pNext = NULL;
 		return;
 	}
 	
@@ -174,8 +174,8 @@ void SMConVarAccessor::Unregister(ConCommandBase *pCommand)
 	{
 		if (pCur == pCommand)
 		{
-			pPrev->SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
-			pCommand->SetNext(NULL);
+			pPrev->m_pNext = const_cast<ConCommandBase *>(pCommand->GetNext());
+			pCommand->m_pNext = NULL;
 		}
 
 		pPrev = pCur;

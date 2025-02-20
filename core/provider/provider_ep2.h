@@ -26,6 +26,8 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
 #define _INCLUDE_METAMOD_SOURCE_BASE_PROVIDER_H_
 
+#include "../metamod_convar.h"
+
 #if defined _DEBUG
 #define DEBUG2
 #undef _DEBUG
