@@ -124,6 +124,8 @@ class MMSConfig(object):
         '-Wno-sign-compare',
         '-Wno-unused',
         '-Wno-switch',
+        '-Wno-unknown-pragmas',
+        '-Wno-dangling-else',
         '-msse',
         '-fPIC',
       ]
