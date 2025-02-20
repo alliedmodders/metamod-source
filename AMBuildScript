@@ -121,6 +121,7 @@ class MMSConfig(object):
         '-Wall',
         '-Werror',
         '-Wno-uninitialized',
+        '-Wno-sign-compare',
         '-Wno-unused',
         '-Wno-switch',
         '-Wno-unknown-pragmas',
@@ -142,6 +143,7 @@ class MMSConfig(object):
         '-fno-threadsafe-statics',
         '-Wno-non-virtual-dtor',
         '-Wno-overloaded-virtual',
+        '-Wno-register',
       ]
       if (cxx.version >= 'gcc-4.7' or cxx.family == 'clang'):
         cxx.cxxflags += ['-Wno-delete-non-virtual-dtor']
@@ -225,7 +227,7 @@ class MMSConfig(object):
 
     # Platform-specifics
     if cxx.target.platform == 'linux':
-      cxx.defines += ['_LINUX', 'POSIX', '_FILE_OFFSET_BITS=64']
+      cxx.defines += ['LINUX', '_LINUX', 'POSIX', '_FILE_OFFSET_BITS=64']
       if cxx.family == 'gcc':
         cxx.linkflags += ['-static-libgcc']
       elif cxx.family == 'clang':

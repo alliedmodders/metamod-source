@@ -25,6 +25,7 @@ for sdk_target in MMS.sdk_targets:
     'gamedll_bridge.cpp',
     'vsp_bridge.cpp'
   ]
+  binary.compiler.defines += ['_ALLOW_KEYWORD_MACROS']
 
   if binary.compiler.target.arch == 'x86':
     binary.sources += ['sourcehook/sourcehook_hookmangen_x86.cpp']

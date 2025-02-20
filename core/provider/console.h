@@ -29,7 +29,7 @@
 #define _INCLUDE_CONSOLE_MMS_H_
 
 #include <interface.h>
-#include "convar.h"
+#include "../metamod_convar.h"
 #include <eiface.h>
 #include <sh_list.h>
 
