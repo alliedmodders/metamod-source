@@ -27,8 +27,14 @@
 
 #pragma once
 
+#ifndef META_IS_SOURCE2
 #define protected public
 #define private public
+#endif
+
 #include <convar.h>
+
+#ifndef META_IS_SOURCE2
 #undef protected
 #undef private
+#endif
