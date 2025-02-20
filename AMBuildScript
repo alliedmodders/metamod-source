@@ -193,6 +193,8 @@ class MMSConfig(object):
         '-Wno-uninitialized',
         '-Wno-unused',
         '-Wno-switch',
+        '-Wno-unknown-pragmas',
+        '-Wno-dangling-else',
         '-msse',
         '-fPIC',
       ]
