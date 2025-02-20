@@ -27,7 +27,6 @@
 #include <setjmp.h>
 #include "../metamod_oslink.h"
 #include <sourcehook.h>
-#include <convar.h>
 #include <eiface.h>
 #include <tier0/icommandline.h>
 #include "../metamod_util.h"

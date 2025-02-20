@@ -35,7 +35,6 @@
 
 #include <interface.h>
 #include <eiface.h>
-#include <convar.h>
 #include <sh_list.h>
 #include <sh_string.h>
 #include <IPluginManager.h>

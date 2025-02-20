@@ -37,7 +37,7 @@ bool SourceProvider::SourceConVarAccessor::RegisterConCommandBase(ConCommandBase
 {
 	m_RegisteredCommands.push_back(pCommand);
 #if SOURCE_ENGINE < SE_ALIENSWARM
-	pCommand->SetNext(NULL);
+	pCommand->m_pNext = NULL;
 #endif
 	icvar->RegisterConCommand(pCommand);
 
@@ -47,7 +47,7 @@ bool SourceProvider::SourceConVarAccessor::RegisterConCommandBase(ConCommandBase
 bool SourceProvider::SourceConVarAccessor::Register(ConCommandBase *pCommand)
 {
 #if SOURCE_ENGINE < SE_ALIENSWARM
-	pCommand->SetNext(NULL);
+	pCommand->m_pNext = NULL;
 #endif
 	icvar->RegisterConCommand(pCommand);
 
@@ -158,7 +158,7 @@ void SourceProvider::SourceConVarAccessor::Unregister(ConCommandBase *pCommand)
 	if (pCur == pCommand)
 	{
 		*m_TopConCommandBase = const_cast<ConCommandBase *>(pCommand->GetNext());
-		pCommand->SetNext(NULL);
+		pCommand->m_pNext = NULL;
 		return;
 	}
 
@@ -169,8 +169,8 @@ void SourceProvider::SourceConVarAccessor::Unregister(ConCommandBase *pCommand)
 	{
 		if (pCur == pCommand)
 		{
-			pPrev->SetNext(const_cast<ConCommandBase *>(pCommand->GetNext()));
-			pCommand->SetNext(NULL);
+			pPrev->m_pNext = const_cast<ConCommandBase *>(pCommand->GetNext());
+			pCommand->m_pNext = NULL;
 		}
 
 		pPrev = pCur;
