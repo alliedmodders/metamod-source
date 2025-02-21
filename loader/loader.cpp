@@ -224,17 +224,20 @@ mm_GetGameName(char *buffer, size_t size)
 		// we can't even set MM:S path with GameBin instead of Game, the first Game path will always be MM:S's
 		// location, rather than the real Game dir
 		char *pszAppId = std::getenv("SteamAppId");
-		switch (strtoul(pszAppId, nullptr, 10))
+		if (pszAppId)
 		{
-			case 570ul:
-				strncpy(buffer, "dota", size);
-				break;
-			case 730ul:
-				strncpy(buffer, "csgo", size);
-				break;
-			case 1422450ul:
-				strncpy(buffer, "citadel", size);
-				break;
+			switch (strtoul(pszAppId, nullptr, 10))
+			{
+				case 570ul:
+					strncpy(buffer, "dota", size);
+					break;
+				case 730ul:
+					strncpy(buffer, "csgo", size);
+					break;
+				case 1422450ul:
+					strncpy(buffer, "citadel", size);
+					break;
+			}
 		}
 	}
 
