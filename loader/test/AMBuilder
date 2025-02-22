@@ -17,6 +17,9 @@ for cxx in MMS.all_targets:
   if binary.compiler.target.platform == 'linux' and binary.compiler.target.arch == 'x86_64':
     binary.compiler.defines += ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"']
 
+  if binary.compiler.target.platform == 'linux':
+    binary.compiler.linkflags += ['ldl']
+
   # TODO: hack - something makes it try and compile with /SUBSYSTEM:WINDOWS which then causes it to complain that WinMain is missing
   if binary.compiler.target.platform == 'windows':
     binary.compiler.linkflags = ['Advapi32.lib', 'kernel32.lib', 'shell32.lib']
