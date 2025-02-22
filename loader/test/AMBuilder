@@ -18,7 +18,7 @@ for cxx in MMS.all_targets:
     binary.compiler.defines += ['LIB_PREFIX="lib"', 'LIB_SUFFIX=".so"']
 
   if binary.compiler.target.platform == 'linux':
-    binary.compiler.linkflags += ['ldl']
+    binary.compiler.linkflags += ['-ldl']
 
   # TODO: hack - something makes it try and compile with /SUBSYSTEM:WINDOWS which then causes it to complain that WinMain is missing
   if binary.compiler.target.platform == 'windows':
