@@ -1,0 +1,35 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
+import os
+
+for cxx in MMS.all_targets:
+  name = 'test_loader'
+  binary = MMS.Program(cxx, name)
+
+  if binary.compiler.target.platform == 'windows' and binary.compiler.target.arch == 'x86_64':
+    binary.compiler.defines += ['WIN64']
+
+  # TODO: hack - something makes it try and compile with /SUBSYSTEM:WINDOWS which then causes it to complain that WinMain is missing
+  if binary.compiler.target.platform == 'windows':
+    binary.compiler.linkflags = ['Advapi32.lib', 'kernel32.lib', 'shell32.lib']
+
+  binary.compiler.cxxincludes += [
+    os.path.join(builder.sourcePath, 'core'),
+    os.path.join(builder.sourcePath, 'core', 'sourcehook'),
+    os.path.join(builder.sourcePath, 'loader'),
+  ]
+
+  if binary.compiler.version >= 'gcc-4.9':
+    binary.compiler.cxxflags += ['-fno-devirtualize']
+  if binary.compiler.version >= 'clang-2.9' or binary.compiler.version >= 'apple-clang-3.0':
+    binary.compiler.cxxflags += ['-Wno-null-dereference']
+
+  binary.sources += [
+    'main.cpp',
+	'../gamedll.cpp',
+    '../loader.cpp',
+	'../serverplugin.cpp',
+	'../utility.cpp',
+	'testdeterminebackends1.cpp',
+  ]
+
+  builder.Add(binary)

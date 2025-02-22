@@ -4,6 +4,8 @@ import os
 for cxx in MMS.all_targets:
   name = 'test_sourcehook'
   binary = MMS.Program(cxx, name)
+  if binary.compiler.target.platform == 'windows':
+    continue
   if binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform == 'linux':
     continue
 
@@ -12,6 +14,7 @@ for cxx in MMS.all_targets:
   ]
 
   binary.compiler.cxxincludes += [
+    os.path.join(builder.sourcePath, 'core'),
     os.path.join(builder.sourcePath, 'core', 'sourcehook'),
   ]
   if binary.compiler.version >= 'gcc-4.9':
