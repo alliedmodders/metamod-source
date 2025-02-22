@@ -431,6 +431,11 @@ class MMSConfig(object):
         lib_folder = os.path.join(sdk.path, 'linux_sdk')
       elif sdk.name in ['sdk2013', 'bms']:
         lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
+      elif sdk.name in ['css', 'hl2dm', 'dods', 'tf2']:
+        if compiler.target.arch == 'x86_64':
+          lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux64')
+        else:
+          lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux')
       elif compiler.target.arch == 'x86_64':
         lib_folder = os.path.join(sdk.path, 'lib', 'linux64')
       else:
@@ -486,9 +491,15 @@ class MMSConfig(object):
         libs.append('mathlib')
       for lib in libs:
         if compiler.target.arch == 'x86':
-          lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
+          if sdk.name in ['css', 'hl2dm', 'dods', 'tf2']:
+            lib_path = os.path.join(sdk.path, 'lib', 'public', 'x86', lib) + '.lib'
+          else:
+            lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
         elif compiler.target.arch == 'x86_64':
-          lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
+          if sdk.name in ['css', 'hl2dm', 'dods', 'tf2']:
+            lib_path = os.path.join(sdk.path, 'lib', 'public', 'x64', lib) + '.lib'
+          else:
+            lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
         binary.compiler.linkflags.append(lib_path)
 
     for library in dynamic_libs:
