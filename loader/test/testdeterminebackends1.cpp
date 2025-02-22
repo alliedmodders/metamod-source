@@ -1,9 +1,11 @@
 #include <iostream>
 #include <map>
 #include <string>
-#ifdef _WIN32
+#ifdef _LINUX
+#include <unistd.h>
+#elif _WIN32
 #include <windows.h>
-#endif // _WIN32
+#endif
 #include "loader.h"
 #include "utility.h"
 
@@ -148,7 +150,11 @@ bool TestDetermineBackendS1(std::string &error)
 		/*.is64Bit = */true
 	};
 
+#ifdef _LINUX
+	getcwd(currentDirectoryBuffer, PLATFORM_MAX_PATH);
+#elif _WIN32
 	GetCurrentDirectory(PLATFORM_MAX_PATH, currentDirectoryBuffer);
+#endif
 
 	for (const auto& [gameName, gameAttributes] : games)
 	{
@@ -166,7 +172,11 @@ bool TestDetermineBackendS1(std::string &error)
 		}
 
 		sprintf(directoryBuffer, "%s\\%s\\%s\\", steamInstallationPath.c_str(), gameAttributes.gamePath, gameAttributes.binPath);
+#ifdef _LINUX
+		chdir(directoryBuffer);
+#elif _WIN32
 		SetCurrentDirectory(directoryBuffer);
+#endif
 
 		// get the server library
 		sprintf(directoryBuffer, "%s\\%s\\%s\\%s\\server.dll", steamInstallationPath.c_str(), gameAttributes.gamePath, gameAttributes.gameDirectory, gameAttributes.binPath);
@@ -216,7 +226,11 @@ bool TestDetermineBackendS1(std::string &error)
 		}
 	}
 
-	SetCurrentDirectory(currentDirectoryBuffer);
+#ifdef _LINUX
+	chdir(currentDirectoryBuffer);
+#elif _WIN32
+	SetCurrentDirectory(directoryBuffer);
+#endif
 
 	return true;
 }
