@@ -8,6 +8,8 @@ for sdk_name in MMS.sdks:
     if not cxx.target.arch in sdk.platformSpec[cxx.target.platform]:
       continue
 
+    name = 'metamod.' + sdk.ext
+    binary = MMS.HL2Library(builder, cxx, name, sdk)
 
     binary.sources += [
       'metamod.cpp',
