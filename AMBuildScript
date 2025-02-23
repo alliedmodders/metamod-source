@@ -368,6 +368,7 @@ BuildScripts = [
 if getattr(builder.options, 'enable_tests', False):
     BuildScripts += [
         'core/sourcehook/test/AMBuilder',
+        'loader/test/AMBuilder',
     ]
 
 if builder.backend == 'amb2':
