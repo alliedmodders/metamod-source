@@ -38,12 +38,12 @@ namespace SourceHook
 
 			std::int32_t AddVarToFrame(std::int32_t size);
 			std::int32_t ComputeVarsSize();
-			std::int32_t x64GenContext::GetRealSize(const IntPassInfo& info);
+			std::int32_t GetRealSize(const IntPassInfo& info);
 			std::int32_t AlignSize(std::int32_t x, std::int32_t boundary);
 			std::int32_t GetParamStackSize(const IntPassInfo &info);
 
 			void Clear();
-			void AutoDetectRetType();
+			bool AutoDetectRetType();
 			void AutoDetectParamFlags();
 			bool PassInfoSupported(const IntPassInfo& pi, bool is_ret);
 			void BuildProtoInfo();

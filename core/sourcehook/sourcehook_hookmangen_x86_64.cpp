@@ -238,7 +238,10 @@ namespace SourceHook
 			}
 
 			// Detect the pass flags (if they're missing) for return and parameters type
-			AutoDetectRetType();
+			if (!AutoDetectRetType())
+			{
+				return nullptr;
+			}
 			AutoDetectParamFlags();
 
 			// Calling conventions are gone on x86_64, there's only one to call all functions
@@ -1236,11 +1239,11 @@ static_assert(false, "Missing registers saving for linux");
 				&& (retInfo.flags & (PassInfo::PassFlag_ODtor | PassInfo::PassFlag_AssignOp)));
 		}
 		
-		void x64GenContext::AutoDetectRetType() {
+		bool x64GenContext::AutoDetectRetType() {
 			auto& pi = m_Proto.GetRet();
 			// Void return, ignore
 			if (pi.size == 0) {
-				return;
+				return true;
 			}
 
 			// Only relevant for byval types
@@ -1283,7 +1286,24 @@ static_assert(false, "Missing registers saving for linux");
 							pi.flags |= PassInfo::PassFlag_RetReg;
 						}
 #elif SH_COMP == SH_COMP_GCC
-static_assert(false, "Missing auto-detect type for linux!");
+						// It depends on the object layout.
+						//
+						//
+						//   typedef struct __attribute__((packed)) { char a; int b; } thing;
+						//   = memory (5 bytes)
+						//
+						//   typedef struct __attribute__((packed)) { int a; char b; } thing;
+						//   = register (5 bytes)
+						//
+						//   typedef struct __attribute__((packed)) { char a; short b; char c; } thing;
+						//   = memory (6 bytes)
+						//
+						//   typedef struct __attribute__((packed)) { char a; short b; int c; char d; } thing;
+						//   = memory (8 bytes)
+						//
+						//
+						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
+						return false;
 #endif
 					}
 				}
@@ -1294,6 +1314,7 @@ static_assert(false, "Missing auto-detect type for linux!");
 				pi.flags &= ~PassInfo::PassFlag_RetMem;
 				pi.flags |= PassInfo::PassFlag_RetReg;
 			}
+			return true;
 		}
 
 		void x64GenContext::AutoDetectParamFlags()
