@@ -84,9 +84,7 @@ static MetamodSourceConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-#if !defined( __amd64__ )
 static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
-#endif
 static META_RES last_meta_res;
 static IServerPluginCallbacks *vsp_callbacks = NULL;
 static bool were_plugins_loaded = false;
@@ -846,7 +844,6 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
-#if !defined( __amd64__ )
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
 		if (ret)
@@ -855,7 +852,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
 	}
-#endif
+
 	CPluginManager::CPlugin *pl;
 	List<IMetamodListener *>::iterator event;
 	IMetamodListener *api;
