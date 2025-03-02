@@ -217,8 +217,8 @@ namespace SourceHook
 		// Computes size on the stack
 		std::int32_t x64GenContext::GetParamStackSize(const IntPassInfo &info)
 		{
-			// Align up to 4 byte boundaries
-			return AlignSize(GetRealSize(info), 8);
+			// Align up to 8 byte boundaries
+			return AlignSize(GetRealSize(info), SIZE_PTR);
 		}
 
 		HookManagerPubFunc x64GenContext::Generate()
@@ -404,7 +404,17 @@ namespace SourceHook
 				}
 			}
 #else
-static_assert(false, "Missing registers saving for linux");
+			const x86_64_Reg params_reg[] = { rdi, rsi, rdx, rcx, r8, r9 };
+
+			int reg_index = 0;
+		
+			m_HookFunc.mov(rbp(v_this), rdi);
+			reg_index++;
+
+			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				m_HookFunc.mov(rbp(v_memret_ptr), params_reg[reg_index]);
+				reg_index++;
+			}
 #endif
 
 			// From this point on, no matter what. RSP should be aligned on 16 bytes boundary
@@ -417,6 +427,7 @@ static_assert(false, "Missing registers saving for linux");
 				for (int i = 0; i < 3; i++) {
 					// Shadow space
 					MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+					GCC_ONLY(m_HookFunc.sub(rsp, 8)); // Align to 16 bytes...
 
 					// First param is this
 					MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret_vals[i])));
@@ -426,6 +437,7 @@ static_assert(false, "Missing registers saving for linux");
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pNormalCtor));
 					m_HookFunc.call(r8);
 
+					GCC_ONLY(m_HookFunc.add(rsp, 8)); // Free alignment...
 					// Free shadow space
 					MSVC_ONLY(m_HookFunc.add(rsp, 40));
 				}
