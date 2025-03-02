@@ -1073,7 +1073,7 @@ namespace SourceHook
 			if (retInfo.size == 0) {
 				return;
 			}
-#if SH_COMP == SH_COMP_MSVC
+
 			if ((retInfo.flags & PassInfo::PassFlag_ByRef) == PassInfo::PassFlag_ByRef) {
 				m_HookFunc.mov(rbp(v_ret), rax);
 				return;
@@ -1090,6 +1090,8 @@ namespace SourceHook
 					if (retInfo.pAssignOperator) {
 						// Shadow space 32 bytes + 8 bytes
 						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+						// We need to keep it aligned to 16 bytes on Linux too...
+						GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_ret)));
@@ -1103,6 +1105,9 @@ namespace SourceHook
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
 
+						// Free Linux stack alignment
+						GCC_ONLY(m_HookFunc.add(rsp, 8));
+						// Free shadow space
 						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else {
@@ -1124,6 +1129,8 @@ namespace SourceHook
 					if (retInfo.pDtor) {
 						// Shadow space 32 bytes + 8 bytes
 						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+						// We need to keep it aligned to 16 bytes on Linux too...
+						GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_mem_ret)));
@@ -1133,6 +1140,9 @@ namespace SourceHook
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pDtor));
 						m_HookFunc.call(rax);
 
+						// Free Linux stack alignment
+						GCC_ONLY(m_HookFunc.add(rsp, 8));
+						// Free shadow space
 						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 
@@ -1144,9 +1154,6 @@ namespace SourceHook
 				SH_ASSERT(0, ("Unknown handling of return type!"));
 				return;
 			}
-#else
-			static_assert(false, "Missing SaveReturnValue for linux");
-#endif
 		}
 
 		void x64GenContext::PrepareReturn(int v_status, int v_pContext, int v_retptr)
