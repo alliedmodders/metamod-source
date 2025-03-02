@@ -1400,12 +1400,13 @@ namespace SourceHook
 					// If the user says nothing, auto-detect
 					if ((pi.flags & (PassInfo::PassFlag_RetMem | PassInfo::PassFlag_RetReg)) == 0)
 					{
+						bool hasSpecialFunctions = (pi.flags & (PassInfo::PassFlag_OCtor|PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor)) != 0;
+
 #if SH_COMP == SH_COMP_MSVC
 						// MSVC has various criteria for passing in memory
 						// if object doesn't fit on 8, 16, 32, or 64 bits. It's in memory
 						// if object has a constructor or destructor. It's in memory
 						bool unconventionalsize = (pi.size == 3 || (pi.size != 8 && pi.size > 4));
-						bool hasSpecialFunctions = (pi.flags & PassInfo::PassFlag_OCtor|PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor) != 0;
 
 						if (unconventionalsize || hasSpecialFunctions) {
 							pi.flags |= PassInfo::PassFlag_RetMem;
@@ -1413,7 +1414,18 @@ namespace SourceHook
 							pi.flags |= PassInfo::PassFlag_RetReg;
 						}
 #elif SH_COMP == SH_COMP_GCC
-						// It depends on the object layout.
+						// "If the size of an object is larger than eight eightbytes, or it contains unaligned fields, it has class MEMORY".
+						//
+						// "If a C++ object is non-trivial for the purpose of calls, as specified in the C++ ABI[16], it is passed by invisible reference (the object is replaced in the parameter list by a pointer that has class INTEGER)[17]."
+						// "[17]An object whose type is non-trivial for the purpose of calls cannot be passed by value because such objects must have the same address in the caller and the callee. Similar issues apply when returning an object from a function."
+						//
+						// source: System V AMD64 psABI section 3.2.3 Parameter Passing
+						// https://gitlab.com/x86-psABIs/x86-64-ABI/-/jobs/artifacts/master/raw/x86-64-ABI/abi.pdf?job=build)
+						//
+						// "A type is considered non-trivial for the purposes of call if:
+						// - it has a non-trivial copy constructor, move constructor, or destructor, or
+						// - all of its copy and move constructors are deleted."
+						// source: https://itanium-cxx-abi.github.io/cxx-abi/abi.html (yes, System V copied this definition from Itanium...)
 						//
 						//
 						//   typedef struct __attribute__((packed)) { char a; int b; } thing;
@@ -1430,11 +1442,8 @@ namespace SourceHook
 						//
 						//
 						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
-						//
-						//
-						// It doesn't seem like constructors or copy-constructors matter much.
 
-						if ((pi.flags & PassInfo::PassFlag_ODtor) != 0)
+						if (hasSpecialFunctions)
 						{
 							pi.flags |= PassInfo::PassFlag_RetMem;
 							return true;
