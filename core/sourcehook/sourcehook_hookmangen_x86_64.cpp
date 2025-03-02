@@ -1303,7 +1303,19 @@ static_assert(false, "Missing registers saving for linux");
 						//
 						//
 						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
-						return false;
+						//
+						//
+						// It doesn't seem like constructors or copy-constructors matter much.
+
+						if ((pi.flags & PassInfo::PassFlag_ODtor) != 0)
+						{
+							pi.flags |= PassInfo::PassFlag_RetMem;
+							return true;
+						}
+						else
+						{
+							return false;
+						}
 #endif
 					}
 				}
