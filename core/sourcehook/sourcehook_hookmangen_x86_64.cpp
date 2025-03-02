@@ -1006,7 +1006,64 @@ namespace SourceHook
 
 			return stackSpace;
 #else
-static_assert(false, "Missing registers saving for linux");
+			const x86_64_Reg params_reg[] = { rdi, rsi, rdx, rcx, r8, r9 };
+			const x86_64_FloatReg params_floatreg[] = { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 };
+			const std::uint8_t num_reg = sizeof(params_reg) / sizeof(params_reg[0]);
+			const std::uint8_t num_floatreg = sizeof(params_floatreg) / sizeof(params_floatreg[0]);
+
+			int reg_index = 0;
+			int floatreg_index = 0;
+
+			// setup this parameter
+			m_HookFunc.mov(params_reg[reg_index], rbp(v_this));
+			reg_index++;
+
+			// Non standard return
+			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				m_HookFunc.lea(params_reg[reg_index], rbp(v_ret));
+				reg_index++;
+			}
+
+			// TODO: Doesn't handle custom_register at all........
+
+			int parameters_on_stack = 0;
+
+			// Pass to calculate stack space...
+			for (int i = 0, tmp_reg_index = reg_index, tmp_floatreg_index = floatreg_index; i < m_Proto.GetNumOfParams(); i++) {
+				auto& info = m_Proto.GetParam(i);
+				if (info.type == PassInfo::PassType_Float && (info.flags & PassInfo::PassFlag_ByRef) != PassInfo::PassFlag_ByRef) {
+					if (++tmp_floatreg_index >= num_floatreg) {
+						parameters_on_stack++;
+					}
+				} else {
+					if (++tmp_reg_index >= num_reg) {
+						parameters_on_stack++;
+					}
+				}
+			}
+
+			stackSpace = AlignSize(parameters_on_stack * 8, 16);
+			m_HookFunc.sub(rsp, stackSpace);
+
+			// Actually push registers to stack...
+			for (int i = 0, pushed_stack_parameters = 0; i < m_Proto.GetNumOfParams(); i++) {
+				auto& info = m_Proto.GetParam(i);
+				if (info.type == PassInfo::PassType_Float && (info.flags & PassInfo::PassFlag_ByRef) != PassInfo::PassFlag_ByRef) {
+					if (++floatreg_index >= num_floatreg) {
+						m_HookFunc.mov(rax, rbp(8 + (8 * pushed_stack_parameters)));
+						m_HookFunc.mov(rsp(0 + (8 * pushed_stack_parameters)), rax);
+						pushed_stack_parameters++;
+					}
+				} else {
+					if (++reg_index >= num_reg) {
+						m_HookFunc.mov(rax, rbp(8 + (8 * pushed_stack_parameters)));
+						m_HookFunc.mov(rsp(0 + (8 * pushed_stack_parameters)), rax);
+						pushed_stack_parameters++;
+					}
+				}
+			}
+
+			return stackSpace;
 #endif
 		}
 
