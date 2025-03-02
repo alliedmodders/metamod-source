@@ -23,15 +23,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "provider_source.h"
-#include <metamod.h>
-#include <metamod_util.h>
-#include <metamod_console.h>
-#include <KeyValues.h>
-#include <filesystem.h>
-#include <tier0/icommandline.h>
+ #include <csetjmp>
 
-#include <setjmp.h>
+#include "provider_source.h"
+#include "metamod.h"
+#include "metamod_util.h"
+#include "metamod_console.h"
+#include "KeyValues.h"
+#include "filesystem.h"
+#include "tier0/icommandline.h"
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand& args);

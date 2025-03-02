@@ -25,13 +25,13 @@
  * Version: $Id$
  */
 
-#include <stdio.h>
-#include "metamod_oslink.h"
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #if defined __linux__ || defined __APPLE__
-#include <errno.h>
+#include <cerrno>
 #endif
+
+#include "metamod_oslink.h"
 
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 const char *dlerror()

@@ -28,7 +28,7 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_
 #define _INCLUDE_METAMOD_SOURCE_LOADER_UTILITY_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 extern size_t
 mm_Format(char *buffer, size_t maxlength, const char *fmt, ...);

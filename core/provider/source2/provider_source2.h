@@ -28,11 +28,12 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_SOURCE2_PROVIDER_H_
 #define _INCLUDE_METAMOD_SOURCE_SOURCE2_PROVIDER_H_
 
-#include "../provider_base.h"
-#include <tier1/utlvector.h>
-#include <IEngineService.h>
 #include <string>
 #include <vector>
+
+#include "../provider_base.h"
+#include "tier1/utlvector.h"
+#include "IEngineService.h"
 
 // TODO: is this still needed for Dota or CS2 on any platform?
 #if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )

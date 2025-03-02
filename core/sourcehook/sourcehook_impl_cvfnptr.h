@@ -15,6 +15,8 @@
 #include "sh_memory.h"
 #include "sh_pagealloc.h"
 #include "sourcehook_impl_cleanuptask.h"
+#include "sourcehook_impl_chookmaninfo.h"
+#include "sourcehook_impl_ciface.h"
 
 namespace SourceHook
 {

@@ -85,7 +85,7 @@
 #endif
 
 #if defined __linux__ || defined __APPLE__
-	#include <errno.h>
+	#include <cerrno>
 	int GetLastError();
 #endif
 
@@ -103,7 +103,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 	typedef __int32				int32_t;
 	typedef unsigned __int32	uint32_t;
 #elif defined __GNUC__
-#include <stdint.h>
+#include <cstdint>
 #endif
 
 #if !defined __linux__ && !defined __APPLE__

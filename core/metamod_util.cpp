@@ -26,11 +26,12 @@
  */
 
 #include <cctype>
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <algorithm>
+
 #include "metamod_util.h"
 #include "metamod_oslink.h"
 
