@@ -37,9 +37,9 @@
 #  undef MMS_USE_VERSIONLIB
 # endif
 # if defined MMS_USE_VERSIONLIB
-#  include <versionlib.h>
+#  include "versionlib.h"
 # else 
-#  include <metamod_version_auto.h>
+#  include "metamod_version_auto.h"
 # endif
 #else
 #define MMS_BUILD_TAG		"manual"

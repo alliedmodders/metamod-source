@@ -34,16 +34,16 @@
  * The pure-virtual ISmmPlugin callbacks must be implemented for the load to load.
  */
 
-#include <sourcehook.h>
-#include <IPluginManager.h>
-#include <ISmmAPI.h>
-#include <ISmmPluginExt.h>
+#include "sourcehook.h"
+#include "IPluginManager.h"
+#include "ISmmAPI.h"
+#include "ISmmPluginExt.h"
 
 #ifndef META_NO_HL2SDK
 #if META_IS_SOURCE2
-#include <interfaces/interfaces.h>
+#include "interfaces/interfaces.h"
 #else
-#include <tier1/interface.h>
+#include "tier1/interface.h"
 #endif
 #endif
 

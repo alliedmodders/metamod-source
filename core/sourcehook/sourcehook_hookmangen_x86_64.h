@@ -12,7 +12,8 @@
 #define __SOURCEHOOK_HOOKMANGEN_X86_64_H__
 
 #include <cstdint>
-#include <limits.h>
+#include <climits>
+
 #include "sh_asm_x86_64.h"
 
 namespace SourceHook

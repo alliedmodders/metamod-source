@@ -23,18 +23,19 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdio.h>
+#include <cstdio>
+#include <sys/stat.h>
+
 #include "metamod_oslink.h"
 #include "metamod.h"
-#include <interface.h>
-#include <eiface.h>
-#include <metamod_version.h>
+#include "interface.h"
+#include "eiface.h"
+#include "metamod_version.h"
 #include "metamod_provider.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_base.h"
-#include <sys/stat.h>
 
 #define X64_SUFFIX ".x64"
 

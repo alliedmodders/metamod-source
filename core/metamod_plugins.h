@@ -33,12 +33,13 @@
  * @file CPlugin.cpp
  */
 
-#include <interface.h>
-#include <eiface.h>
-#include <sh_list.h>
-#include <sh_string.h>
-#include <IPluginManager.h>
-#include <ISmmPluginExt.h>
+#include "interface.h"
+#include "eiface.h"
+#include "sh_list.h"
+#include "sh_string.h"
+#include "ISmmAPI.h"
+#include "IPluginManager.h"
+#include "ISmmPluginExt.h"
 #include "metamod_oslink.h"
 
 /**

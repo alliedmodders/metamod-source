@@ -32,7 +32,7 @@
 #define private public
 #endif
 
-#include <convar.h>
+#include "convar.h"
 
 #ifndef META_IS_SOURCE2
 #undef protected

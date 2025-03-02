@@ -23,18 +23,19 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdio.h>
-#include <setjmp.h>
+#include <cstdio>
+#include <csetjmp>
+
 #include "../metamod_oslink.h"
-#include <sourcehook.h>
-#include <eiface.h>
-#include <tier0/icommandline.h>
 #include "../metamod_util.h"
+#include "sourcehook.h"
+#include "eiface.h"
+#include "tier0/icommandline.h"
 #include "provider_base.h"
 #include "metamod_console.h"
-#include <filesystem.h>
+#include "filesystem.h"
 #include "metamod.h"
-#include <tier1/KeyValues.h>
+#include "tier1/KeyValues.h"
 
 
 /* Imports */
