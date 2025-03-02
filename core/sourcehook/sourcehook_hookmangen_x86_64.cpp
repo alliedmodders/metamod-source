@@ -73,6 +73,8 @@ namespace SourceHook
 
 			// Shadow space
 			MSVC_ONLY(jit.sub(rsp, 40));
+			// We need to keep it aligned to 16 bytes on Linux too...
+			GCC_ONLY(jit.sub(rsp, 8));
 
 			MSVC_ONLY(jit.mov(rcx, reinterpret_cast<std::uint64_t>(provider)));
 			GCC_ONLY(jit.mov(rdi, reinterpret_cast<std::uint64_t>(provider)));
@@ -96,6 +98,8 @@ namespace SourceHook
 			jit.mov(rax, rax(sizeof(void*) * mfi2.vtblindex));
 			jit.call(rax);
 
+			// Free Linux stack alignment
+			GCC_ONLY(jit.add(rsp, 8));
 			// Free shadow space
 			MSVC_ONLY(jit.add(rsp, 40));
 		}
@@ -525,6 +529,8 @@ namespace SourceHook
 
 				// Shadow space
 				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+				// We need to keep it aligned to 16 bytes on Linux too...
+				GCC_ONLY(m_HookFunc.sub(rsp, 8));
 				for (int i = 0; i < 3; i++) {
 					// First param is this
 					MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret_vals[i])));
@@ -533,6 +539,8 @@ namespace SourceHook
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pDtor));
 					m_HookFunc.call(r8);
 				}
+				// Free Linux stack alignment
+				GCC_ONLY(m_HookFunc.add(rsp, 8));
 				// Free shadow space
 				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 			}
@@ -576,6 +584,7 @@ namespace SourceHook
 
 			// Allocate the necessary stack space
 			MSVC_ONLY(m_HookFunc.sub(rsp, 88)); // shadow space (32 bytes) + 6 stack arguments (48 bytes) + 8 bytes
+			// TODO: GCC_ONLY(m_HookFunk.sub(rsp, 8 + ?));
 
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, reinterpret_cast<std::uintptr_t>(m_SHPtr)));
@@ -636,6 +645,7 @@ namespace SourceHook
 			// Store the return value
 			m_HookFunc.mov(rbp(v_pContext), rax);
 
+			// TODO: GCC_ONLY(m_HookFunc.add(rsp, 8 + ?));
 			// Restore the rsp value
 			MSVC_ONLY(m_HookFunc.add(rsp, 88));
 		}
@@ -710,6 +720,8 @@ namespace SourceHook
 
 			// Shadow space 32 bytes + 8 bytes
 			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+			// We need to keep it aligned to 16 bytes on Linux too...
+			GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 			GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_pContext)));
 			MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_pContext)));
@@ -718,6 +730,9 @@ namespace SourceHook
 			// store into iter
 			m_HookFunc.mov(rbp(v_iter), rax);
 
+			// Free Linux stack alignment
+			GCC_ONLY(m_HookFunc.add(rsp, 8));
+			// Free shadow space
 			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 			// null check iter
@@ -765,6 +780,8 @@ namespace SourceHook
 
 				// Shadow space 32 bytes + 8 bytes
 				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+				// We need to keep it aligned to 16 bytes on Linux too...
+				GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 				m_HookFunc.mov(rax, rbp(v_pContext));
 				m_HookFunc.mov(rax, rax()); // *this (vtable)
@@ -774,6 +791,8 @@ namespace SourceHook
 				MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_pContext)));
 				m_HookFunc.call(rax); // pContext->GetOverrideRetPtr()
 
+				// Free Linux stack alignment
+				GCC_ONLY(m_HookFunc.add(rsp, 8));
 				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 				// *reinterpret_cast<my_rettype*>(pContext->GetOverrideRetPtr()) = plugin_ret;
@@ -791,6 +810,8 @@ namespace SourceHook
 					{
 						// Shadow space 32 bytes + 8 bytes
 						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+						// We need to keep it aligned to 16 bytes on Linux too...
+						GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.mov(rdi, rax));
@@ -804,6 +825,9 @@ namespace SourceHook
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
 
+						// Free Linux stack alignment
+						GCC_ONLY(m_HookFunc.add(rsp, 8));
+						// Free shadow space
 						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else
@@ -864,6 +888,8 @@ namespace SourceHook
 
 			// Shadow space 32 bytes + 8 bytes
 			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+			// We need to keep it aligned to 16 bytes on Linux too...
+			GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 			m_HookFunc.mov(rax, rbp(v_pContext));
 
@@ -876,6 +902,9 @@ namespace SourceHook
 
 			m_HookFunc.call(rax); // pContext->ShouldCallOrig()
 
+			// Free Linux stack alignment
+			GCC_ONLY(m_HookFunc.add(rsp, 8));
+			// Free shadow space
 			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 			// Don't have the lower register yet, so this will do for now
@@ -915,6 +944,8 @@ namespace SourceHook
 					{
 						// Shadow space 32 bytes + 8 bytes
 						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+						// We need to keep it aligned to 16 bytes on Linux too...
+						GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_orig_ret)));
@@ -928,6 +959,9 @@ namespace SourceHook
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
 
+						// Free Linux stack alignment
+						GCC_ONLY(m_HookFunc.add(rsp, 8));
+						// Free shadow space
 						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else
@@ -1201,6 +1235,8 @@ namespace SourceHook
 
 			// Shadow space 32 bytes + 8 bytes
 			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+			// We need to keep it aligned to 16 bytes on Linux too...
+			GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_pContext)));
@@ -1208,6 +1244,9 @@ namespace SourceHook
 
 			m_HookFunc.call(rax);
 
+			// Free Linux stack alignment
+			GCC_ONLY(m_HookFunc.add(rsp, 8));
+			// Free shadow space
 			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 			m_HookFunc.mov(rbp(v_retptr), rax);
@@ -1243,6 +1282,8 @@ namespace SourceHook
 				{
 					// Shadow space 32 bytes + 8 bytes
 					MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+					// We need to keep it aligned to 16 bytes on Linux too...
+					GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 					// 1st parameter (this)
 					GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_memret_outaddr)));
@@ -1256,6 +1297,9 @@ namespace SourceHook
 					m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pCopyCtor));
 					m_HookFunc.call(rax);
 
+					// Free Linux stack alignment
+					GCC_ONLY(m_HookFunc.add(rsp, 8));
+					// Free shadow space
 					MSVC_ONLY(m_HookFunc.add(rsp, 40));
 				}
 				else
@@ -1294,6 +1338,8 @@ namespace SourceHook
 
 			// Shadow space 32 bytes + 8 bytes
 			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+			// We need to keep it aligned to 16 bytes on Linux too...
+			GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, reinterpret_cast<std::uintptr_t>(m_SHPtr)));
@@ -1307,6 +1353,9 @@ namespace SourceHook
 			m_HookFunc.mov(rax, (*reinterpret_cast<std::uintptr_t**>(m_SHPtr))[mfi.vtblindex]);
 			m_HookFunc.call(rax);
 
+			// Free Linux stack alignment
+			GCC_ONLY(m_HookFunc.add(rsp, 8));
+			// Free shadow space
 			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 		}
 
@@ -1428,6 +1477,7 @@ namespace SourceHook
 
 			// prologue
 			MSVC_ONLY(m_PubFunc.sub(rsp, 0x38)); // Shadow space 32 bytes + 2 * 8 bytes (for our parameters) + 8 bytes
+			// TODO: GCC_ONLY(m_PubFunc.sub(rsp, 8+?));
 			
 			// Unnecessary according to AMD manual (Section 3.2.2 The Stack Frame)
 			// but GCC still does it anyways, so let's do it as well
@@ -1508,6 +1558,9 @@ namespace SourceHook
 
 			// epilogue
 
+			// Free Linux stack alignment
+			// TODO: GCC_ONLY(m_HookFunc.add(rsp, 8 + ?));
+			// Free shadow space & parameter space & stack alignment
 			MSVC_ONLY(m_PubFunc.add(rsp, 0x38));
 
 			GCC_ONLY(m_PubFunc.pop(rbp));
