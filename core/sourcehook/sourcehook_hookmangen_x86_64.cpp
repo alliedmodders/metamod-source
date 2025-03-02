@@ -427,7 +427,8 @@ namespace SourceHook
 				for (int i = 0; i < 3; i++) {
 					// Shadow space
 					MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-					GCC_ONLY(m_HookFunc.sub(rsp, 8)); // Align to 16 bytes...
+					// We need to keep it aligned to 16 bytes on Linux too...
+					GCC_ONLY(m_HookFunc.sub(rsp, 8));
 
 					// First param is this
 					MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret_vals[i])));
@@ -437,7 +438,8 @@ namespace SourceHook
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pNormalCtor));
 					m_HookFunc.call(r8);
 
-					GCC_ONLY(m_HookFunc.add(rsp, 8)); // Free alignment...
+					// Free Linux stack alignment
+					GCC_ONLY(m_HookFunc.add(rsp, 8));
 					// Free shadow space
 					MSVC_ONLY(m_HookFunc.add(rsp, 40));
 				}
@@ -483,7 +485,6 @@ namespace SourceHook
 			CallEndContext(v_pContext);
 
 			// Call destructors of byval object params which have a destructor
-#if SH_COMP == SH_COMP_MSVC
 			int stack_index = 1; // account this pointer
 			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				// Non trivial return value
@@ -493,6 +494,8 @@ namespace SourceHook
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i, ++stack_index) {
 				// Shadow space
 				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
+				// We need to keep it aligned to 16 bytes on Linux too...
+				GCC_ONLY(m_HookFunc.sub(rsp, 8));
 				
 				const IntPassInfo &pi = m_Proto.GetParam(i);
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
@@ -505,12 +508,11 @@ namespace SourceHook
 					m_HookFunc.call(rax);
 				}
 
+				// Free Linux stack alignment
+				GCC_ONLY(m_HookFunc.add(rsp, 8));
 				// Free shadow space
 				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 			}
-#else
-static_assert(false, "Missing parameters destruction for linux");
-#endif
 
 			DoReturn(v_ret_ptr, v_memret_ptr);
 			// From then on, rax cannot be used as a general register
