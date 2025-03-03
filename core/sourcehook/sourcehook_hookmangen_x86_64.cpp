@@ -1443,7 +1443,9 @@ namespace SourceHook
 						//
 						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
 
-						if (hasSpecialFunctions)
+						bool tooBig = (pi.size > (8 * 8));
+
+						if (hasSpecialFunctions || tooBig)
 						{
 							pi.flags |= PassInfo::PassFlag_RetMem;
 							return true;
