@@ -1488,8 +1488,8 @@ namespace SourceHook
 			MSVC_ONLY(m_PubFunc.sub(rsp, 0x38)); // Shadow space 32 bytes + 2 * 8 bytes (for our parameters) + 8 bytes
 			// TODO: GCC_ONLY(m_PubFunc.sub(rsp, 8+?));
 			
-			// Unnecessary according to AMD manual (Section 3.2.2 The Stack Frame)
-			// but GCC still does it anyways, so let's do it as well
+			// Frame pointer! We like working callstacks when debugging crashes!
+			// TODO: Might mean we don't have to `sub rsp, 8`?
 			GCC_ONLY(m_PubFunc.push(rbp));
 			GCC_ONLY(m_PubFunc.mov(rbp, rsp));
 
