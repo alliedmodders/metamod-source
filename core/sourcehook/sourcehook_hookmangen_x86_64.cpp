@@ -1510,7 +1510,7 @@ namespace SourceHook
 			return true;
 		}
 
-		bool x64GenContext::AutoDetectParamFlags()
+		void x64GenContext::AutoDetectParamFlags()
 		{
 		}
 
