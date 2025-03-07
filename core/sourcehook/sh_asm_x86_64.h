@@ -582,6 +582,10 @@ namespace SourceHook
 			void retn() {
 				this->write_ubyte(0xC3);
 			}
+
+			void leave() {
+				this->write_ubyte(0xC9);
+			}
 		};
 	}
 }
