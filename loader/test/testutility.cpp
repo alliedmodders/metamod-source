@@ -1,4 +1,5 @@
 #include <string>
+#include <string.h>
 #include "utility.h"
 
 bool TestTrimComments(std::string &error)
