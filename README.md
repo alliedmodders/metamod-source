@@ -55,18 +55,3 @@ General documentation: <https://wiki.alliedmods.net/Category:Metamod:Source_Docu
 Detouring with SourceHook: <https://wiki.alliedmods.net/SourceHook_Development>
 
 Development: <https://wiki.alliedmods.net/Category:Metamod:Source_Development>
-
-
-Unit testing:
-```
-mkdir build
-cd build
-python ../configure.py --sdks episode1 --enable-tests
-ambuild
-```
-
-To test the loader code on Windows:
-```
-loader/test/test_loader/windows-x86/test_loader.exe
-loader/test/test_loader/windows-x86_64/test_loader.exe
-```

@@ -5,10 +5,6 @@ for cxx in MMS.all_targets:
   name = 'test_loader'
   binary = MMS.Program(cxx, name)
 
-  # NOTE: this macro isn't getting fed through for some reason
-  if binary.compiler.target.platform == 'windows' and binary.compiler.target.arch == 'x86_64':
-    binary.compiler.defines += ['WIN64']
-
   # add some required defines for Linux builds
   if binary.compiler.target.platform == 'linux' and binary.compiler.target.arch == 'x86':
     binary.compiler.defines += ['LIB_PREFIX=""', 'LIB_SUFFIX="_i486.so"']
@@ -20,9 +16,9 @@ for cxx in MMS.all_targets:
   if binary.compiler.target.platform == 'linux':
     binary.compiler.linkflags += ['-ldl']
 
-  # TODO: hack - something makes it try and compile with /SUBSYSTEM:WINDOWS which then causes it to complain that WinMain is missing
+  # TODO: something makes it try and compile with /SUBSYSTEM:WINDOWS which then causes it to complain that WinMain is missing
   if binary.compiler.target.platform == 'windows':
-    binary.compiler.linkflags = ['Advapi32.lib', 'kernel32.lib', 'shell32.lib']
+    binary.compiler.linkflags = ['kernel32.lib', 'shell32.lib']
 
   binary.compiler.cxxincludes += [
     os.path.join(builder.sourcePath, 'core'),
@@ -37,11 +33,12 @@ for cxx in MMS.all_targets:
 
   binary.sources += [
     'main.cpp',
-	'../gamedll.cpp',
-	'../loader.cpp',
-	'../serverplugin.cpp',
-	'../utility.cpp',
-	'testdeterminebackends1.cpp',
+    '../gamedll.cpp',
+    '../loader.cpp',
+    '../serverplugin.cpp',
+    '../utility.cpp',
+    'determinebackends1.cpp',
+    'testutility.cpp',
   ]
 
   builder.Add(binary)

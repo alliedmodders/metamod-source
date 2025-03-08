@@ -3,10 +3,6 @@
 #include <string>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-
-using namespace std;
-bool g_Verbose;
 
 #define DECL_TEST(x) bool Test##x(std::string &error);
 
@@ -15,29 +11,54 @@ bool g_Verbose;
 	if (Test##x(error)) \
 	{ \
 		++passed; \
-		cout << "Test" << #x << " passed" << endl; \
+		std::cout << "Test" << #x << " passed" << std::endl; \
 	} \
 	else \
 	{ \
 		++failed; \
-		cout << "Test" << #x << " FAILED: " << error << endl; \
+		std::cout << "Test" << #x << " FAILED: " << error << std::endl; \
 	} \
 
 
-DECL_TEST(DetermineBackendS1);
+bool DetermineBackendS1(char *gameDir, int expectedBackend);
+DECL_TEST(TrimComments);
 
 int main(int argc, char *argv[])
 {
+	bool testDetermineBackendS1 = false;
+	char *gameDirectory = NULL;
+	int expectedMetamodBackend = -1;
+
+	for (int i = 0; i < argc; i++)
+	{
+		if (!strcmp(argv[i], "-testdbs1"))
+		{
+			testDetermineBackendS1 = true;
+		}
+		if (!strcmp(argv[i], "-gamedir") && argc > i + 1)
+		{
+			gameDirectory = argv[i + 1];
+		}
+		if (!strcmp(argv[i], "-expectedbackend") && argc > i + 1)
+		{
+			expectedMetamodBackend = atoi(argv[i + 1]);
+		}
+	}
+
+	if (testDetermineBackendS1)
+	{
+		bool success = DetermineBackendS1(gameDirectory, expectedMetamodBackend);
+		// invert it because return code from main has 0 as success
+		return success != true;
+	}
+
 	std::string error;
-
-	g_Verbose = argc > 1 && strcmp(argv[1], "-v") == 0;
-
 	int passed = 0, failed = 0;
 
-	DO_TEST(DetermineBackendS1);
+	DO_TEST(TrimComments);
 
-	cout << endl << "----" << endl << "Passed: " << passed << endl << "Failed: " << failed << endl;
-	cout << "Total: " << passed + failed << endl;
+	std::cout << std::endl << "----" << std::endl << "Passed: " << passed << std::endl << "Failed: " << failed << std::endl;
+	std::cout << "Total: " << passed + failed << std::endl;
 
 	if (failed)
 		return 1;
