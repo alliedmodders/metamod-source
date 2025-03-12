@@ -83,6 +83,12 @@ namespace SourceHook
 
 			std::int32_t m_HookFunc_FrameOffset;
 			std::int32_t m_HookFunc_FrameVarsSize;
+
+#if SH_COMP == SH_COMP_GCC
+			// Placed here temporarily so I don't have to pass it around in function calls...
+			std::int32_t v_sysv_floatreg;
+			std::int32_t v_sysv_reg;
+#endif
 		};
 	}
 }

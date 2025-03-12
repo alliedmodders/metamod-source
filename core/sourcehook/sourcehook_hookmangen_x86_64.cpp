@@ -359,17 +359,15 @@ namespace SourceHook
 			// rbp - 80 - sizeof(returntype) * 2    override return
 			// rbp - 80 - sizeof(returntype) * 3    plugin return
 			//
-			// - 64                                 end of unused padding
-			// - 128                                start of unused padding
-			//
 			// MSVC ONLY START
-			// - 128                                end of 80 bytes of shadow space
-			// - 208                                start of 80 bytes of shadow space
+			// - 64                                 end of 80 bytes of shadow space
+			// - 144                                start of 80 bytes of shadow space
 			// MSVC ONLY END
 			//
 			// GCC ONLY START
-			// - 128                                end of stack arg copies
-			// - ???                                start of stack arg copies
+			// - 64                                 end of XMM register copies (lower 64-bits)
+			// - 128                                start of XMM register copies (lower 64-bits)
+			// - 176                                start of regular register copies
 			// GCC ONLY END
 
 			const std::int8_t v_this =               AddVarToFrame(SIZE_PTR); // -8
@@ -397,10 +395,6 @@ namespace SourceHook
 				v_plugin_ret =   AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16));
 				v_mem_ret =      AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16));
 			}
-
-			// TODO: Only added to *maybe* prevent crashes when people fuck up their parameters.
-			//       Probably shouldn't be kept...
-			std::int32_t v_padding_after_ret = AddVarToFrame(64);
 
 #if SH_COMP == SH_COMP_MSVC
 			// Regular shadow space + 6 stack args for CallSetupHookLoop.
@@ -462,122 +456,18 @@ namespace SourceHook
 			m_HookFunc.mov(rbp(v_this), params_reg[reg_index]);
 			reg_index++;
 
-			// Linux objects can be passed
-			// - inline on the stack
-			// - unpacked into registers
-			// - as a pointer
-			// This is pretty complicated and we can't know what will happen without knowing the object layout.
-			// And we don't know the object layout...
-			//
-			// From Agner Fog's Calling conventions pdf:
-			// >Objects with inheritance, member functions, or constructors can be passed in registers [and on stack].
-			// >Objects with copy constructor, destructor, or virtual are passed by pointers.
-			//
-			// For now, we'll assume that any object passed inline on the stack can be safely copied around.
-			// This probably doesn't hold in 100% of cases but for now it's the easiest.
-			//
-			// Another option would be to fuck up our stack frame:
-			// - move all offsets and data we use like 32KiB or 64KiB deeper into the stack
-			// - `pop` the real return address off the stack and store it in the deep stack (until we need it)
-			// This would allow to use the original objects that are inlined on the stack in.
-
-			// TODO: Allow 2 floats per custom_register.
-			//       Allow 2 ints per custom_register too!
-			//       This helps with objects being unpacked into registers.
-
 			// We're going to backup ALL parameter registers.
-			std::int32_t v_sysv_floatreg = AddVarToFrame(num_floatreg * 8);
-			std::int32_t v_sysv_reg = AddVarToFrame(num_reg * 8);
-
-			auto orig_reg_index = reg_index;
-			// Next we need to figure out how must stack space for stack args...
-			std::int32_t stack_args_size = 0;
-			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i) {
-				const IntPassInfo &pi = m_Proto.GetParam(i);
-
-				if (pi.type == PassInfo::PassType_Basic) {
-					if (++reg_index >= num_reg) {
-						stack_args_size += 8;
-					}
-				} else if (pi.type == PassInfo::PassType_Float) {
-					if (++floatreg_index >= num_floatreg) {
-						stack_args_size += 8;
-					}
-				} else if (pi.type == PassInfo::PassType_Object) {
-					if (pi.flags & PassInfo::PassFlag_ByRef) {
-						if (++reg_index >= num_reg) {
-							stack_args_size += 8;
-						}
-					} else {
-						stack_args_size += pi.size;
-					}
-				}
-			}
-			std::int32_t v_sysv_stack_copy = AddVarToFrame(stack_args_size);
+			v_sysv_floatreg = AddVarToFrame(num_floatreg * 8);
+			v_sysv_reg = AddVarToFrame(num_reg * 8);
 
 			std::int32_t stack_frame_size = AlignSize(ComputeVarsSize(), 16);
 			m_HookFunc.sub(rsp, stack_frame_size);
 
-			for (int i = 0; i < num_floatreg; i++) {
-				m_HookFunc.movsd(rbp(v_sysv_floatreg + i*8), params_floatreg[i]);
-			}
 			for (int i = 0; i < num_reg; i++) {
 				m_HookFunc.mov(rbp(v_sysv_reg + i*8), params_reg[i]);
 			}
-
-			// Now let's copy stack params!
-			reg_index = orig_reg_index;
-			floatreg_index = 0;
-			std::int32_t stack_offset = 0;
-			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i) {
-				const IntPassInfo &pi = m_Proto.GetParam(i);
-
-				if (pi.type == PassInfo::PassType_Basic) {
-					if (++reg_index >= num_reg) {
-						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
-						m_HookFunc.mov(rax, rax());
-						m_HookFunc.mov(rsp(stack_offset), rax);
-						stack_offset += 8;
-					}
-				} else if (pi.type == PassInfo::PassType_Float) {
-					if (++floatreg_index >= num_floatreg) {
-						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
-						m_HookFunc.mov(rax, rax());
-						m_HookFunc.mov(rsp(stack_offset), rax);
-						stack_offset += 8;
-					}
-				} else if (pi.type == PassInfo::PassType_Object) {
-					if (pi.flags & PassInfo::PassFlag_ByRef) {
-						if (++reg_index >= num_reg) {
-							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
-							m_HookFunc.mov(rax, rax());
-							m_HookFunc.mov(rsp(stack_offset), rax);
-							stack_offset += 8;
-						}
-					} else {
-						if (pi.pAssignOperator || pi.pCopyCtor) {
-							// 1st parameter (this)
-							m_HookFunc.lea(rdi, rbp(OffsetToCallerStack + stack_offset));
-							// 2nd parameter (copy)
-							m_HookFunc.lea(rsi, rsp(stack_offset));
-							// Move address and call
-							m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
-								pi.pAssignOperator ? pi.pAssignOperator : pi.pCopyCtor));
-							m_HookFunc.call(rax);
-						} else {
-							// from
-							m_HookFunc.lea(rsi, rbp(OffsetToCallerStack + stack_offset));
-							// to
-							m_HookFunc.lea(rdi, rsp(stack_offset));
-							// size
-							m_HookFunc.mov(rcx, pi.size);
-							// do the copy
-							m_HookFunc.rep_movs_bytes();
-						}
-
-						stack_offset += pi.size;
-					}
-				}
+			for (int i = 0; i < num_floatreg; i++) {
+				m_HookFunc.movsd(rbp(v_sysv_floatreg + i*8), params_floatreg[i]);
 			}
 #endif
 
@@ -733,7 +623,6 @@ namespace SourceHook
 			GCC_ONLY(m_HookFunc.mov(rdx, rbp(v_this)));
 			GCC_ONLY(m_HookFunc.mov(rdx, rdx(m_VtblOffs))); // *(this + m_VtblOffs)
 			GCC_ONLY(m_HookFunc.add(rdx, SIZE_PTR * m_VtblIdx)); // vtable + m_VtblIdx
-
 			MSVC_ONLY(m_HookFunc.mov(r8, rbp(v_this)));
 			MSVC_ONLY(m_HookFunc.mov(r8, r8(m_VtblOffs))); // *(this + m_VtblOffs)
 			MSVC_ONLY(m_HookFunc.add(r8, SIZE_PTR * m_VtblIdx)); // vtable + m_VtblIdx
@@ -883,8 +772,11 @@ namespace SourceHook
 			m_HookFunc.mov(rax, rax()); // *this (vtable)
 			m_HookFunc.mov(rax, rax(callMfi.vtblindex * SIZE_PTR)); // vtable[vtblindex] iter -> Call
 			m_HookFunc.call(rax);
-			// epilog free the stack
-			m_HookFunc.add(rsp, stackSpace);
+			if (stackSpace)
+			{
+				// epilog free the stack
+				m_HookFunc.add(rsp, stackSpace);
+			}
 
 			SaveReturnValue(v_mem_ret, v_plugin_ret);
 
@@ -1017,8 +909,11 @@ namespace SourceHook
 			std::int32_t stackSpace = PushParameters(v_this, MemRetWithTempObj() ? v_place_for_memret : v_orig_ret);
 			m_HookFunc.mov(rax, rbp(v_vfnptr_origentry));
 			m_HookFunc.call(rax);
-			// epilog free the stack
-			m_HookFunc.add(rsp, stackSpace);
+			if (stackSpace)
+			{
+				// epilog free the stack
+				m_HookFunc.add(rsp, stackSpace);
+			}
 
 			SaveReturnValue(v_place_for_memret, v_orig_ret);
 
@@ -1124,8 +1019,6 @@ namespace SourceHook
 
 			return stackSpace;
 #else
-			// TODO: Fix up this shit for objects passed inline on the stack
-
 			const x86_64_Reg params_reg[] = { rdi, rsi, rdx, rcx, r8, r9 };
 			const x86_64_FloatReg params_floatreg[] = { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 };
 			const std::uint8_t num_reg = sizeof(params_reg) / sizeof(params_reg[0]);
@@ -1134,55 +1027,132 @@ namespace SourceHook
 			int reg_index = 0;
 			int floatreg_index = 0;
 
-			// TODO: What am I doing here?
+			// Non standard return
+			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				reg_index++;
+			}
+
+			reg_index++; // this parameter
+
+			// Linux objects can be passed
+			// - inline on the stack
+			// - unpacked into registers
+			// - as a pointer
+			// This is pretty complicated and we can't know what will happen without knowing the object layout.
+			// And we don't know the object layout...
+			//
+			// From Agner Fog's Calling conventions pdf:
+			// >Objects with inheritance, member functions, or constructors can be passed in registers [and on stack].
+			// >Objects with copy constructor, destructor, or virtual are passed by pointers.
+			//
+			// For now, we'll assume that any object passed inline on the stack can be safely copied around.
+			// This probably doesn't hold in 100% of cases but for now it's the easiest.
+			//
+			// Another option would be to fuck up our stack frame:
+			// - move all offsets and data we use like 32KiB or 64KiB deeper into the stack
+			// - `pop` the real return address off the stack and store it in the deep stack (until we need it)
+			// This would allow to use the original objects that are inlined on the stack.
+
+			auto orig_reg_index = reg_index;
+
+			// Pass to calculate stack space...
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i) {
+				const auto& info = m_Proto.GetParam(i);
+
+				if (info.type == PassInfo::PassType_Basic) {
+					if (++reg_index >= num_reg) {
+						stackSpace += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Float) {
+					if (++floatreg_index >= num_floatreg) {
+						stackSpace += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Object) {
+					if (info.flags & PassInfo::PassFlag_ByRef) {
+						if (++reg_index >= num_reg) {
+							stackSpace += 8;
+						}
+					} else {
+						stackSpace += info.size;
+					}
+				}
+			}
+
+			if (stackSpace == 0) return 0;
+
+			stackSpace = AlignSize(stackSpace, 16);
+			m_HookFunc.sub(rsp, stackSpace);
+
+			// Actually push registers to stack...
+			reg_index = orig_reg_index;
+			floatreg_index = 0;
+			std::int32_t stack_offset = 0;
+			for (int i = 0; i < m_Proto.GetNumOfParams(); i++) {
+				const auto& info = m_Proto.GetParam(i);
+
+				if (info.type == PassInfo::PassType_Basic) {
+					if (++reg_index >= num_reg) {
+						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+						m_HookFunc.mov(rax, rax());
+						m_HookFunc.mov(rsp(stack_offset), rax);
+						stack_offset += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Float) {
+					if (++floatreg_index >= num_floatreg) {
+						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+						m_HookFunc.mov(rax, rax());
+						m_HookFunc.mov(rsp(stack_offset), rax);
+						stack_offset += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Object) {
+					if (info.flags & PassInfo::PassFlag_ByRef) {
+						if (++reg_index >= num_reg) {
+							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+							m_HookFunc.mov(rax, rax());
+							m_HookFunc.mov(rsp(stack_offset), rax);
+							stack_offset += 8;
+						}
+					} else {
+						if (info.pAssignOperator || info.pCopyCtor) {
+							// 1st parameter (this)
+							m_HookFunc.lea(rdi, rbp(OffsetToCallerStack + stack_offset));
+							// 2nd parameter (copy)
+							m_HookFunc.lea(rsi, rsp(stack_offset));
+							// Move address and call
+							m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
+								info.pAssignOperator ? info.pAssignOperator : info.pCopyCtor));
+							m_HookFunc.call(rax);
+						} else {
+							// from
+							m_HookFunc.lea(rsi, rbp(OffsetToCallerStack + stack_offset));
+							// to
+							m_HookFunc.lea(rdi, rsp(stack_offset));
+							// size
+							m_HookFunc.mov(rcx, info.size);
+							// do the copy
+							m_HookFunc.rep_movs_bytes();
+						}
+
+						stack_offset += info.size;
+					}
+				}
+			}
+
+			// Load ALL the parameter registers...
+			// We do it now because the copy/assignment calls above could've clobbered our registers.
+			reg_index = 0;
+
 			// Non standard return
 			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				m_HookFunc.lea(params_reg[reg_index], rbp(v_ret));
 				reg_index++;
 			}
 
-			// setup this parameter
-			m_HookFunc.mov(params_reg[reg_index], rbp(v_this));
-			reg_index++;
-
-			// TODO: Doesn't handle custom_register at all........
-
-			int parameters_on_stack = 0;
-
-			// Pass to calculate stack space...
-			for (int i = 0, tmp_reg_index = reg_index, tmp_floatreg_index = floatreg_index; i < m_Proto.GetNumOfParams(); i++) {
-				auto& info = m_Proto.GetParam(i);
-				if (info.type == PassInfo::PassType_Float && (info.flags & PassInfo::PassFlag_ByRef) != PassInfo::PassFlag_ByRef) {
-					if (++tmp_floatreg_index >= num_floatreg) {
-						parameters_on_stack++;
-					}
-				} else {
-					if (++tmp_reg_index >= num_reg) {
-						parameters_on_stack++;
-					}
-				}
+			for (int i = reg_index; i < num_reg; i++) {
+				m_HookFunc.mov(params_reg[i], rbp(v_sysv_reg + i*8));
 			}
-
-			stackSpace = AlignSize(parameters_on_stack * 8, 16);
-			m_HookFunc.sub(rsp, stackSpace);
-
-			// Actually push registers to stack...
-			for (int i = 0, pushed_stack_parameters = 0; i < m_Proto.GetNumOfParams(); i++) {
-				auto& info = m_Proto.GetParam(i);
-				// TODO: These offsets are WRONG
-				if (info.type == PassInfo::PassType_Float && (info.flags & PassInfo::PassFlag_ByRef) != PassInfo::PassFlag_ByRef) {
-					if (++floatreg_index >= num_floatreg) {
-						m_HookFunc.mov(rax, rbp(OffsetToCallerStack + (8 * pushed_stack_parameters)));
-						m_HookFunc.mov(rsp(0 + (8 * pushed_stack_parameters)), rax);
-						pushed_stack_parameters++;
-					}
-				} else {
-					if (++reg_index >= num_reg) {
-						m_HookFunc.mov(rax, rbp(OffsetToCallerStack + (8 * pushed_stack_parameters)));
-						m_HookFunc.mov(rsp(0 + (8 * pushed_stack_parameters)), rax);
-						pushed_stack_parameters++;
-					}
-				}
+			for (int i = 0; i < num_floatreg; i++) {
+				m_HookFunc.movsd(params_floatreg[i], rbp(v_sysv_floatreg + i*8));
 			}
 
 			return stackSpace;
@@ -1466,19 +1436,6 @@ namespace SourceHook
 						// - it has a non-trivial copy constructor, move constructor, or destructor, or
 						// - all of its copy and move constructors are deleted."
 						// source: https://itanium-cxx-abi.github.io/cxx-abi/abi.html (yes, System V copied this definition from Itanium...)
-						//
-						//
-						//   typedef struct __attribute__((packed)) { char a; int b; } thing;
-						//   = memory (5 bytes)
-						//
-						//   typedef struct __attribute__((packed)) { int a; char b; } thing;
-						//   = register (5 bytes)
-						//
-						//   typedef struct __attribute__((packed)) { char a; short b; char c; } thing;
-						//   = memory (6 bytes)
-						//
-						//   typedef struct __attribute__((packed)) { char a; short b; int c; char d; } thing;
-						//   = memory (8 bytes)
 						//
 						//
 						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
