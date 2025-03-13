@@ -1078,62 +1078,63 @@ namespace SourceHook
 				}
 			}
 
-			if (stackSpace == 0) return 0;
-
-			stackSpace = AlignSize(stackSpace, 16);
-			m_HookFunc.sub(rsp, stackSpace);
-
-			// Actually push registers to stack...
-			reg_index = orig_reg_index;
-			floatreg_index = 0;
-			std::int32_t stack_offset = 0;
-			for (int i = 0; i < m_Proto.GetNumOfParams(); i++) {
-				const auto& info = m_Proto.GetParam(i);
-
-				if (info.type == PassInfo::PassType_Basic) {
-					if (++reg_index >= num_reg) {
-						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
-						m_HookFunc.mov(rax, rax());
-						m_HookFunc.mov(rsp(stack_offset), rax);
-						stack_offset += 8;
-					}
-				} else if (info.type == PassInfo::PassType_Float) {
-					if (++floatreg_index >= num_floatreg) {
-						m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
-						m_HookFunc.mov(rax, rax());
-						m_HookFunc.mov(rsp(stack_offset), rax);
-						stack_offset += 8;
-					}
-				} else if (info.type == PassInfo::PassType_Object) {
-					if (info.flags & PassInfo::PassFlag_ByRef) {
+			if (stackSpace != 0)
+			{
+				stackSpace = AlignSize(stackSpace, 16);
+				m_HookFunc.sub(rsp, stackSpace);
+	
+				// Actually push registers to stack...
+				reg_index = orig_reg_index;
+				floatreg_index = 0;
+				std::int32_t stack_offset = 0;
+				for (int i = 0; i < m_Proto.GetNumOfParams(); i++) {
+					const auto& info = m_Proto.GetParam(i);
+	
+					if (info.type == PassInfo::PassType_Basic) {
 						if (++reg_index >= num_reg) {
 							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
 							m_HookFunc.mov(rax, rax());
 							m_HookFunc.mov(rsp(stack_offset), rax);
 							stack_offset += 8;
 						}
-					} else {
-						if (info.pAssignOperator || info.pCopyCtor) {
-							// 1st parameter (this)
-							m_HookFunc.lea(rdi, rbp(OffsetToCallerStack + stack_offset));
-							// 2nd parameter (copy)
-							m_HookFunc.lea(rsi, rsp(stack_offset));
-							// Move address and call
-							m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
-								info.pAssignOperator ? info.pAssignOperator : info.pCopyCtor));
-							m_HookFunc.call(rax);
-						} else {
-							// from
-							m_HookFunc.lea(rsi, rbp(OffsetToCallerStack + stack_offset));
-							// to
-							m_HookFunc.lea(rdi, rsp(stack_offset));
-							// size
-							m_HookFunc.mov(rcx, info.size);
-							// do the copy
-							m_HookFunc.rep_movs_bytes();
+					} else if (info.type == PassInfo::PassType_Float) {
+						if (++floatreg_index >= num_floatreg) {
+							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+							m_HookFunc.mov(rax, rax());
+							m_HookFunc.mov(rsp(stack_offset), rax);
+							stack_offset += 8;
 						}
-
-						stack_offset += info.size;
+					} else if (info.type == PassInfo::PassType_Object) {
+						if (info.flags & PassInfo::PassFlag_ByRef) {
+							if (++reg_index >= num_reg) {
+								m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+								m_HookFunc.mov(rax, rax());
+								m_HookFunc.mov(rsp(stack_offset), rax);
+								stack_offset += 8;
+							}
+						} else {
+							if (info.pAssignOperator || info.pCopyCtor) {
+								// 1st parameter (this)
+								m_HookFunc.lea(rdi, rbp(OffsetToCallerStack + stack_offset));
+								// 2nd parameter (copy)
+								m_HookFunc.lea(rsi, rsp(stack_offset));
+								// Move address and call
+								m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
+									info.pAssignOperator ? info.pAssignOperator : info.pCopyCtor));
+								m_HookFunc.call(rax);
+							} else {
+								// from
+								m_HookFunc.lea(rsi, rbp(OffsetToCallerStack + stack_offset));
+								// to
+								m_HookFunc.lea(rdi, rsp(stack_offset));
+								// size
+								m_HookFunc.mov(rcx, info.size);
+								// do the copy
+								m_HookFunc.rep_movs_bytes();
+							}
+	
+							stack_offset += info.size;
+						}
 					}
 				}
 			}
