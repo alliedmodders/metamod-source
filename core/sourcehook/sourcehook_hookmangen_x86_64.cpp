@@ -535,7 +535,7 @@ namespace SourceHook
 				stack_index++;
 			}
 
-			// TODO: Linux will need this to be using offsets into the original stack
+			// TODO: Linux64...
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i, ++stack_index) {
 				const IntPassInfo &pi = m_Proto.GetParam(i);
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
@@ -548,13 +548,6 @@ namespace SourceHook
 					m_HookFunc.call(rax);
 				}
 			}
-
-			DoReturn(v_ret_ptr, v_memret_ptr);
-			// TODO: VERY IMPORTANT! The destructor below can clobber RAX/XMM0!
-			//       It should be safe to move DoReturn() right before .leave().
-			//       FIGURE IT OUT THOUGH!!!!
-			// From then on, rax cannot be used as a general register
-			// Use r8 or r9 instead
 
 			// If return value type has a destructor, call it
 			if ((retInfo.flags & PassInfo::PassFlag_ByVal) && retInfo.pDtor != nullptr)
@@ -570,6 +563,10 @@ namespace SourceHook
 					m_HookFunc.call(r8);
 				}
 			}
+
+			DoReturn(v_ret_ptr, v_memret_ptr);
+			// From then on, rax cannot be used as a general register
+			// Use r8 or r9 instead
 
 			// Restore RSP and RBP
 			// (same as `mov rsp, rbp` + `pop rbp`)
@@ -1172,7 +1169,16 @@ namespace SourceHook
 				return;
 			}
 
-			// TOOD: handle Vector3f into XMM0 & XMM1 for Linux64 here....
+#if SH_COMP == SH_COMP_GCC
+			// We are assuming that an object being returned is actually the SDK's Vector3f type.
+			// This hack should be removed eventually...
+			// TODO: Change to PassType_Float and use size=12?
+			if (retInfo.type == PassInfo::PassType_Object && retInfo.size == 12) {
+				m_HookFunc.movsd(rbp(v_ret+0), xmm0);
+				m_HookFunc.movsd(rbp(v_ret+8), xmm1);
+				return;
+			}
+#endif
 
 			// ByVal
 			if (retInfo.type == PassInfo::PassType_Float) {
@@ -1288,9 +1294,18 @@ namespace SourceHook
 				return;
 			}
 
-			m_HookFunc.mov(r8, rbp(v_retptr));
+#if SH_COMP == SH_COMP_GCC
+			// We are assuming that an object being returned is actually the SDK's Vector3f type.
+			// This hack should be removed eventually...
+			// TODO: Change to PassType_Float and use size=12?
+			if (retInfo.type == PassInfo::PassType_Object && retInfo.size == 12) {
+				m_HookFunc.movsd(xmm0, rbp(v_retptr+0));
+				m_HookFunc.movsd(xmm1, rbp(v_retptr+8));
+				return;
+			}
+#endif
 
-			// TOOD: handle Vector3f into XMM0 & XMM1 for Linux64 here....
+			m_HookFunc.mov(r8, rbp(v_retptr));
 
 			if (retInfo.flags & PassInfo::PassFlag_ByRef) {
 				m_HookFunc.mov(rax, r8());
