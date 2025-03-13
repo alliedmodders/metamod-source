@@ -1461,9 +1461,14 @@ namespace SourceHook
 
 						bool probablyVector = (pi.size == 12);
 
-						if (hasSpecialFunctions || tooBig || probablyVector)
+						if (hasSpecialFunctions || tooBig)
 						{
 							pi.flags |= PassInfo::PassFlag_RetMem;
+							return true;
+						}
+						else if (probablyVector)
+						{
+							pi.flags |= PassInfo::PassFlag_RetReg;
 							return true;
 						}
 						else
