@@ -26,7 +26,7 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 #define _INCLUDE_METAMOD_SOURCE_PLUGIN_EXT_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 /**
  * @file ISmmPluginExt.h Provides an alternate method for loading plugins, 

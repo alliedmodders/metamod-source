@@ -12,6 +12,8 @@
 #ifndef __SHINT_MEMORY_H__
 #define __SHINT_MEMORY_H__
 
+#include "sourcehook.h"
+
 // Feb 17 / 2005:
 //  Unprotect now sets to readwrite
 //  The vtable doesn't need to be executable anyway

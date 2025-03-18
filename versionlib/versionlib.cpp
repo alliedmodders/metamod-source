@@ -23,8 +23,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <metamod_version.h>
-#include <versionlib.h>
+#include "metamod_version.h"
+#include "versionlib.h"
 
 const char *METAMOD_LOCAL_REV = MMS_BUILD_LOCAL_REV;
 const char *METAMOD_SHA = MMS_BUILD_CSET;

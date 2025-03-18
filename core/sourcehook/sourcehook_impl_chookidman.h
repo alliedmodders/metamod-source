@@ -11,6 +11,8 @@
 #ifndef __SOURCEHOOK_IMPL_CHOOKIDMAN_H__
 #define __SOURCEHOOK_IMPL_CHOOKIDMAN_H__
 
+#include "sourcehook.h"
+#include "sourcehook_impl_cproto.h"
 #include "sh_vector.h"
 
 namespace SourceHook

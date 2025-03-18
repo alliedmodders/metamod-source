@@ -23,14 +23,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <time.h>
-#include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <ctime>
+#include <cassert>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <cstdint>
 #include <cstdlib>
+
 #include "loader.h"
 #include "serverplugin.h"
 #include "gamedll.h"

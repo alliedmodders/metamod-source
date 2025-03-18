@@ -23,11 +23,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <memory>
 
-#include <amtl/am-string.h>
+#include "amtl/am-string.h"
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include "metamod_plugins.h"

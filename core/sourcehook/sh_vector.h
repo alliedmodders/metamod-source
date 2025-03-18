@@ -11,6 +11,7 @@
 #ifndef __CVECTOR_H__
 #define __CVECTOR_H__
 
+#include <cstddef>
 #include <assert.h>
 
 //This file originally from AMX Mod X

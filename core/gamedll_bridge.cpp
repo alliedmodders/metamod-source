@@ -23,11 +23,12 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <assert.h>
+#include <cassert>
+
 #include "metamod.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"
-#include <loader_bridge.h>
+#include "loader_bridge.h"
 #include "provider/provider_base.h"
 
 using namespace SourceMM;

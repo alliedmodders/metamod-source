@@ -25,12 +25,13 @@
  * Version: $Id$
  */
 
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cassert>
+#include <cstring>
+#include <cctype>
+#include <cstdarg>
+#include <cstdlib>
+
 #include "loader.h"
 #include "utility.h"
 

@@ -28,7 +28,8 @@
 #ifndef _INCLUDE_UTIL_H
 #define _INCLUDE_UTIL_H
 
-#include <stdarg.h>
+#include <cstddef>
+#include <cstdarg>
 
 #if defined(WIN32) || defined(_WIN32)
 #define BINARY_EXT ".dll"

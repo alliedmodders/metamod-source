@@ -12,8 +12,9 @@
 #ifndef __SOURCEHOOK_HOOKMANGEN_X86_H__
 #define __SOURCEHOOK_HOOKMANGEN_X86_H__
 
-#include <limits.h>
+#include <climits>
 
+#include "sourcehook_hookmangen.h"
 #include "sh_asm.h"
 
 #undef REG_EAX

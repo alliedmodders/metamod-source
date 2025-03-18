@@ -22,16 +22,16 @@
  * misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
+#include <cassert>
 
 #include "metamod.h"
 #include "metamod_util.h"
-#include <interface.h>
-#include <eiface.h>
-#include <iplayerinfo.h>
-#include <assert.h>
-#include <loader_bridge.h>
-#include <metamod_version.h>
-#include <sh_string.h>
+#include "interface.h"
+#include "eiface.h"
+#include "iplayerinfo.h"
+#include "loader_bridge.h"
+#include "metamod_version.h"
+#include "sh_string.h"
 #include "provider/provider_base.h"
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX

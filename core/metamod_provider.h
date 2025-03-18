@@ -26,6 +26,8 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 #define _INCLUDE_METAMOD_SOURCE_SUPPORT_H_
 
+#include "ISmmAPI.h"
+
 namespace SourceMM
 {
 	class MetamodSourceConVar;

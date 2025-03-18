@@ -24,14 +24,14 @@
  */
 
 #include "provider_source2.h"
-#include <metamod.h>
-#include <metamod_util.h>
-#include <metamod_console.h>
-#include <amtl/am-string.h>
-#include <eiface.h>
-#include <KeyValues.h>
-#include <filesystem.h>
-#include <iserver.h>
+#include "metamod.h"
+#include "metamod_util.h"
+#include "metamod_console.h"
+#include "amtl/am-string.h"
+#include "eiface.h"
+#include "KeyValues.h"
+#include "filesystem.h"
+#include "iserver.h"
 
 
 static Source2Provider g_Source2Provider;

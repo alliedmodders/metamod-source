@@ -23,10 +23,11 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdio.h>
+#include <cstdio>
+#include <cctype>
+
 #include "metamod_oslink.h"
-#include <ctype.h>
-#include <metamod_version.h>
+#include "metamod_version.h"
 #include "metamod.h"
 #include "metamod_util.h"
 #include "metamod_console.h"

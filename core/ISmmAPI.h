@@ -33,9 +33,10 @@
  * @file ISmmAPI.h
  */
 
-#include <stdarg.h>
-#include <sourcehook.h>
-#include <IPluginManager.h>
+#include <cstdarg>
+
+#include "sourcehook.h"
+#include "IPluginManager.h"
 
 #if defined META_NO_HL2SDK
 class CGlobalVars;
@@ -44,7 +45,7 @@ class ConCommandBase;
 typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #else
-#include <eiface.h>
+#include "eiface.h"
 
 #if defined META_IS_SOURCE2
 typedef ConVarRefAbstract ProviderConVar;
@@ -55,9 +56,6 @@ typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #endif
 #endif
-
-#include <ISmmPlugin.h>
-#include <ISmmPluginExt.h>
 
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */

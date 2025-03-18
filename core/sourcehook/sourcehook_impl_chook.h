@@ -11,6 +11,8 @@
 #ifndef __SOURCEHOOK_IMPL_CHOOK_H__
 #define __SOURCEHOOK_IMPL_CHOOK_H__
 
+#include "sourcehook.h"
+
 namespace SourceHook
 {
 	namespace Impl

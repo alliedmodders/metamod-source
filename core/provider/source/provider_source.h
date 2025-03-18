@@ -28,10 +28,11 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_SOURCE1_PROVIDER_H_
 #define _INCLUDE_METAMOD_SOURCE_SOURCE1_PROVIDER_H_
 
-#include "../provider_base.h"
 #include <string>
 #include <vector>
-#include <sh_list.h>
+
+#include "../provider_base.h"
+#include "sh_list.h"
 
 class IFileSystem;
 

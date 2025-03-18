@@ -11,6 +11,11 @@
 #ifndef __SOURCEHOOK_IMPL_CPROTO_H__
 #define __SOURCEHOOK_IMPL_CPROTO_H__
 
+#include <cstddef>
+
+#include "sourcehook.h"
+#include "sh_vector.h"
+
 namespace SourceHook
 {
 	namespace Impl

@@ -26,6 +26,8 @@
 #ifndef _INCLUDE_METAMOD_SOURCE_LOADER_BRIDGE_H_
 #define _INCLUDE_METAMOD_SOURCE_LOADER_BRIDGE_H_
 
+#include <cstddef>
+
 typedef void* (*QueryValveInterface)(const char *pName, int *pReturnCode);
 class IServerPluginCallbacks;
 
