@@ -464,7 +464,8 @@ namespace SourceHook
 				this->write_int32(imm);
 			}
 
-			void xor(x86_64_Reg dst, x86_64_Reg src) {
+			// can't name it `xor` because that's a C++ keyword (it works in VS tho but not clang)
+			void xor_reg(x86_64_Reg dst, x86_64_Reg src) {
 				this->write_ubyte(w_rex(src, dst));
 				this->write_ubyte(0x31);
 				this->write_ubyte(modrm(src, dst));
@@ -580,6 +581,10 @@ namespace SourceHook
 
 			void retn() {
 				this->write_ubyte(0xC3);
+			}
+
+			void leave() {
+				this->write_ubyte(0xC9);
 			}
 		};
 	}

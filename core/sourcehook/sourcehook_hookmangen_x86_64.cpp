@@ -14,6 +14,7 @@
 // https://defuse.ca/online-x86-assembler.htm
 // https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
 // https://refspecs.linuxbase.orgz/elf/x86_64-abi-0.99.pdf
+// SystemV AMD64 https://gitlab.com/x86-psABIs/x86-64-ABI/-/jobs/artifacts/master/raw/x86-64-ABI/abi.pdf?job=build
 
 #include <stdio.h>
 #include <string>
@@ -39,6 +40,10 @@ extern SourceMM::IMetamodSourceProvider *provider;
 # define GCC_ONLY(x) x
 # define MSVC_ONLY(x)
 #endif
+
+// On Windows: this is the start of the shadow space.
+// On Linux: this is the start of the stack args.
+const std::int32_t OffsetToCallerStack = 16;
 
 using namespace SourceHook::Asm;
 
@@ -71,8 +76,6 @@ namespace SourceHook
 				}
 			}
 
-			// Shadow space
-			MSVC_ONLY(jit.sub(rsp, 40));
 
 			MSVC_ONLY(jit.mov(rcx, reinterpret_cast<std::uint64_t>(provider)));
 			GCC_ONLY(jit.mov(rdi, reinterpret_cast<std::uint64_t>(provider)));
@@ -95,9 +98,6 @@ namespace SourceHook
 			jit.mov(rax, rax(mfi2.vtbloffs));
 			jit.mov(rax, rax(sizeof(void*) * mfi2.vtblindex));
 			jit.call(rax);
-
-			// Free shadow space
-			MSVC_ONLY(jit.add(rsp, 40));
 		}
 
 		x64GenContext::x64GenContext()
@@ -217,8 +217,8 @@ namespace SourceHook
 		// Computes size on the stack
 		std::int32_t x64GenContext::GetParamStackSize(const IntPassInfo &info)
 		{
-			// Align up to 4 byte boundaries
-			return AlignSize(GetRealSize(info), 8);
+			// Align up to 8 byte boundaries
+			return AlignSize(GetRealSize(info), SIZE_PTR);
 		}
 
 		HookManagerPubFunc x64GenContext::Generate()
@@ -238,7 +238,10 @@ namespace SourceHook
 			}
 
 			// Detect the pass flags (if they're missing) for return and parameters type
-			AutoDetectRetType();
+			if (!AutoDetectRetType())
+			{
+				return nullptr;
+			}
 			AutoDetectParamFlags();
 
 			// Calling conventions are gone on x86_64, there's only one to call all functions
@@ -305,72 +308,105 @@ namespace SourceHook
 		void* x64GenContext::GenerateHookFunc()
 		{
 			const auto& retInfo = m_Proto.GetRet();
-			//m_HookFunc.breakpoint();
+			m_HookFunc.breakpoint();
 
 			// For the time being, we only consider xmm0-xmm15 registers
 			// are only used to store 64bits worth of data, despite being
 			// able to store up to 128bits
 
-			// RBP is a general purpose register on x86_64
-			// we will therefore use it on both linux and windows
-			// to refer to our space in the stack where we grew
+			// Linux uses RBP as the frame pointer while Windows mostly doesn't*.
+			// It's a good register to index stack variables so we'll still use it like a Linux frame pointer.
+			// It'll probably help Accelerator's crash-logging too (at least on Linux).
+			//
+			// *: MSVC does not support the frame pointer option (/Oy-) in x64!
+			//    alloca() and some exception handling things will use it though.
+			//    Their usage is also weird: https://stackoverflow.com/q/75722486
+
+			// Save our frame pointer.
+			// This also realigns the stack to 16 bytes.
+			m_HookFunc.push(rbp);
+			m_HookFunc.mov(rbp, rsp);
 
 			// *********** stack frame *************
 
 			// MSVC ONLY START
-			// rbp + 40                             end of shadow space
-			// rbp + 8                              start of shadow space
+			// rbp + ??                             end of stack args
+			// rbp + 48                             start of stack args
+			// rbp + 40                             shadow space 4
+			// rbp + 32                             shadow space 3
+			// rbp + 24                             shadow space 2
+			// rbp + 16                             shadow space 1
 			// MSVC ONLY END
 			//
-			// rbp - 0                              begining of (old) rsp
-			// rbp - 8                              saved old rbp value
+			// GCC ONLY START
+			// rbp + ??                             end of stack args
+			// rbp + 16                             start of stack args
+			// GCC ONLY END
+			//
+			// rbp + 8                              return address
+			// rbp - 0                              original rbp
+			// rbp - 8                              this ptr
 			// rbp - 16                             vfnptr_origentry
 			// rbp - 24                             status
 			// rbp - 32                             prev_res
 			// rbp - 40                             cur_res
 			// rbp - 48                             iter
 			// rbp - 56                             context
-			// rbp - 64                             this ptr
 			// [Non void functions:]
-			// rbp - 64 - sizeof(returntype)        original return
-			// rbp - 64 - sizeof(returntype) * 2    override return
-			// rbp - 64 - sizeof(returntype) * 3    plugin return
+			// rbp - 64                             ret ptr
+			// rbp - 72                             memret ptr
+			// rbp - 80 - sizeof(returntype)        original return
+			// rbp - 80 - sizeof(returntype) * 2    override return
+			// rbp - 80 - sizeof(returntype) * 3    plugin return
+			//
+			// MSVC ONLY START
+			// - 64                                 end of 80 bytes of shadow space
+			// - 144                                start of 80 bytes of shadow space
+			// MSVC ONLY END
+			//
+			// GCC ONLY START
+			// - 64                                 end of XMM register copies (lower 64-bits)
+			// - 128                                start of XMM register copies (lower 64-bits)
+			// - 176                                start of regular register copies
+			// GCC ONLY END
 
-			const std::int8_t v_original_rbp =       AddVarToFrame(SIZE_PTR); // -8
+			const std::int8_t v_this =               AddVarToFrame(SIZE_PTR); // -8
 			const std::int8_t v_vfnptr_origentry =   AddVarToFrame(SIZE_PTR); // -16
 			const std::int8_t v_status =             AddVarToFrame(SIZE_PTR /*sizeof(META_RES)*/); // -24
 			const std::int8_t v_prev_res =           AddVarToFrame(SIZE_PTR /*sizeof(META_RES)*/); // -32
 			const std::int8_t v_cur_res =            AddVarToFrame(SIZE_PTR /*sizeof(META_RES)*/); // -40
 			const std::int8_t v_iter =               AddVarToFrame(SIZE_PTR); // -48
 			const std::int8_t v_pContext =           AddVarToFrame(SIZE_PTR); // -56
-			const std::int8_t v_this =               AddVarToFrame(SIZE_PTR); // -64
 
 			// Non void return, track the values
-			std::int32_t v_ret_ptr =      0;
-			std::int32_t v_memret_ptr =   0;
+			std::int8_t v_ret_ptr =       0;
+			std::int8_t v_memret_ptr =    0;
 			std::int32_t v_orig_ret =     0;
 			std::int32_t v_override_ret = 0;
 			std::int32_t v_plugin_ret =   0;
 			std::int32_t v_mem_ret =      0;
 			if (m_Proto.GetRet().size != 0)
 			{
-				v_ret_ptr =      AddVarToFrame(SIZE_PTR);
-				v_memret_ptr =   AddVarToFrame(SIZE_PTR);
-				v_orig_ret =     AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16)); // 16 bytes aligned
+				v_ret_ptr =      AddVarToFrame(SIZE_PTR); // -64
+				v_memret_ptr =   AddVarToFrame(SIZE_PTR); // -72
+				// Did you know that 80 is 5*16? I'm gonna be sick...
+				v_orig_ret =     AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16)); // -80 // 16 bytes aligned
 				v_override_ret = AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16));
 				v_plugin_ret =   AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16));
 				v_mem_ret =      AddVarToFrame(AlignSize(GetParamStackSize(retInfo), 16));
 			}
 
-			std::int32_t stack_frame_size = ComputeVarsSize();
+#if SH_COMP == SH_COMP_MSVC
+			// Regular shadow space + 6 stack args for CallSetupHookLoop.
+			// Don't actually use this variable, just index `rsp` instead.
+			std::int32_t v_local_shadow_space = AddVarToFrame(32 + 6*8);
+#endif
+
+#if SH_COMP == SH_COMP_MSVC
+			std::int32_t stack_frame_size = AlignSize(ComputeVarsSize(), 16);
 			m_HookFunc.sub(rsp, stack_frame_size);
 
-			// Store rbp where it should be
-			m_HookFunc.mov(rsp(stack_frame_size - SIZE_PTR), rbp);
-			m_HookFunc.lea(rbp, rsp(stack_frame_size));
-
 			// MSVC ONLY - Save the registers into shadow space
-#if SH_COMP == SH_COMP_MSVC
 			const x86_64_Reg params_reg[] = { rcx, rdx, r8, r9 };
 			const x86_64_FloatReg params_floatreg[] = { xmm0, xmm1, xmm2, xmm3 };
 
@@ -378,30 +414,61 @@ namespace SourceHook
 
 			// retrieve this ptr
 			m_HookFunc.mov(rbp(v_this), params_reg[reg_index]);
-			m_HookFunc.mov(rbp(reg_index * 8 + 8), params_reg[reg_index]);
+			m_HookFunc.mov(rbp(reg_index * 8 + OffsetToCallerStack), params_reg[reg_index]);
 			reg_index++;
 
 			// Non standard return size, a ptr has been passed into rcx. Shifting all the parameters
 			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
-				m_HookFunc.mov(rbp(reg_index * 8 + 8), params_reg[reg_index]);
+				m_HookFunc.mov(rbp(reg_index * 8 + OffsetToCallerStack), params_reg[reg_index]);
 				m_HookFunc.mov(rbp(v_memret_ptr), params_reg[reg_index]);
 				reg_index++;
 			}
 
+			// START DEBUG HELPERS
 			m_HookFunc.mov(rax, m_Proto.GetNumOfParams());
 			m_HookFunc.mov(rax, reg_index);
+			// END DEBUG HELPERS
 			m_HookFunc.mov(rax, retInfo.size);
 
 			for (int i = 0; i < m_Proto.GetNumOfParams() && reg_index < 4; reg_index++, i++) {
 				auto& info = m_Proto.GetParam(i);
 				if (info.type == PassInfo::PassType_Float && (info.flags & PassInfo::PassFlag_ByRef) != PassInfo::PassFlag_ByRef) {
-					m_HookFunc.movsd(rbp(reg_index * 8 + 8), params_floatreg[reg_index]);
+					m_HookFunc.movsd(rbp(reg_index * 8 + OffsetToCallerStack), params_floatreg[reg_index]);
 				} else {
-					m_HookFunc.mov(rbp(reg_index * 8 + 8), params_reg[reg_index]);
+					m_HookFunc.mov(rbp(reg_index * 8 + OffsetToCallerStack), params_reg[reg_index]);
 				}
 			}
 #else
-static_assert(false, "Missing registers saving for linux");
+			const x86_64_Reg params_reg[] = { rdi, rsi, rdx, rcx, r8, r9 };
+			const x86_64_FloatReg params_floatreg[] = { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 };
+			int num_reg = sizeof(params_reg) / sizeof(params_reg[0]);
+			int num_floatreg = sizeof(params_floatreg) / sizeof(params_floatreg[0]);
+
+			int reg_index = 0;
+			int floatreg_index = 0;
+
+			// Retmem is in RDI even when thiscall!
+			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				m_HookFunc.mov(rbp(v_memret_ptr), params_reg[reg_index]);
+				reg_index++;
+			}
+
+			m_HookFunc.mov(rbp(v_this), params_reg[reg_index]);
+			reg_index++;
+
+			// We're going to backup ALL parameter registers.
+			v_sysv_floatreg = AddVarToFrame(num_floatreg * 8);
+			v_sysv_reg = AddVarToFrame(num_reg * 8);
+
+			std::int32_t stack_frame_size = AlignSize(ComputeVarsSize(), 16);
+			m_HookFunc.sub(rsp, stack_frame_size);
+
+			for (int i = 0; i < num_reg; i++) {
+				m_HookFunc.mov(rbp(v_sysv_reg + i*8), params_reg[i]);
+			}
+			for (int i = 0; i < num_floatreg; i++) {
+				m_HookFunc.movsd(rbp(v_sysv_floatreg + i*8), params_floatreg[i]);
+			}
 #endif
 
 			// From this point on, no matter what. RSP should be aligned on 16 bytes boundary
@@ -412,9 +479,6 @@ static_assert(false, "Missing registers saving for linux");
 				std::int32_t v_ret_vals[] = {v_orig_ret, v_override_ret, v_plugin_ret};
 
 				for (int i = 0; i < 3; i++) {
-					// Shadow space
-					MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 					// First param is this
 					MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret_vals[i])));
 					GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_ret_vals[i])));
@@ -422,9 +486,6 @@ static_assert(false, "Missing registers saving for linux");
 					// We've saved (or not) r8 value, use the freed register to store function ptr
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pNormalCtor));
 					m_HookFunc.call(r8);
-
-					// Free shadow space
-					MSVC_ONLY(m_HookFunc.add(rsp, 40));
 				}
 			}
 
@@ -468,46 +529,31 @@ static_assert(false, "Missing registers saving for linux");
 			CallEndContext(v_pContext);
 
 			// Call destructors of byval object params which have a destructor
-#if SH_COMP == SH_COMP_MSVC
 			int stack_index = 1; // account this pointer
 			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				// Non trivial return value
 				stack_index++;
 			}
 
+			// TODO: Linux64...
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i, ++stack_index) {
-				// Shadow space
-				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-				
 				const IntPassInfo &pi = m_Proto.GetParam(i);
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
 					(pi.flags & PassInfo::PassFlag_ByVal)) {
-					// Every non trivial types are passed as a pointer to a special dedicated space
-					MSVC_ONLY(m_HookFunc.mov(rcx, rbp(8 + stack_index * 8)));
-					GCC_ONLY(m_HookFunc.mov(rdi, rbp(8 + stack_index * 8)));
+					// All non-trivial types are passed as a pointer to a special dedicated space
+					MSVC_ONLY(m_HookFunc.mov(rcx, rbp(OffsetToCallerStack + stack_index * 8)));
+					GCC_ONLY(m_HookFunc.mov(rdi, rbp(OffsetToCallerStack + stack_index * 8)));
 
 					m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(pi.pDtor));
 					m_HookFunc.call(rax);
 				}
-
-				// Free shadow space
-				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 			}
-#else
-static_assert(false, "Missing parameters destruction for linux");
-#endif
-
-			DoReturn(v_ret_ptr, v_memret_ptr);
-			// From then on, rax cannot be used as a general register
-			// Use r8 or r9 instead
 
 			// If return value type has a destructor, call it
 			if ((retInfo.flags & PassInfo::PassFlag_ByVal) && retInfo.pDtor != nullptr)
 			{
 				std::int32_t v_ret_vals[] = {v_orig_ret, v_override_ret, v_plugin_ret};
 
-				// Shadow space
-				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
 				for (int i = 0; i < 3; i++) {
 					// First param is this
 					MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret_vals[i])));
@@ -516,14 +562,15 @@ static_assert(false, "Missing parameters destruction for linux");
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pDtor));
 					m_HookFunc.call(r8);
 				}
-				// Free shadow space
-				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 			}
 
-			// Restore rbp
-			m_HookFunc.mov(rbp, rbp(v_original_rbp));
-			// Free the stack frame
-			m_HookFunc.add(rsp, stack_frame_size);
+			DoReturn(v_ret_ptr, v_memret_ptr);
+			// From then on, rax cannot be used as a general register
+			// Use r8 or r9 instead
+
+			// Restore RSP and RBP
+			// (same as `mov rsp, rbp` + `pop rbp`)
+			m_HookFunc.leave();
 
 			m_HookFunc.retn();
 			
@@ -558,7 +605,8 @@ static_assert(false, "Missing parameters destruction for linux");
 			}
 
 			// Allocate the necessary stack space
-			MSVC_ONLY(m_HookFunc.sub(rsp, 88)); // shadow space (32 bytes) + 6 stack arguments (48 bytes) + 8 bytes
+			// (we already allocated enough shadow space for Windows)
+			GCC_ONLY(m_HookFunc.sub(rsp, 32));
 
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, reinterpret_cast<std::uintptr_t>(m_SHPtr)));
@@ -572,7 +620,6 @@ static_assert(false, "Missing parameters destruction for linux");
 			GCC_ONLY(m_HookFunc.mov(rdx, rbp(v_this)));
 			GCC_ONLY(m_HookFunc.mov(rdx, rdx(m_VtblOffs))); // *(this + m_VtblOffs)
 			GCC_ONLY(m_HookFunc.add(rdx, SIZE_PTR * m_VtblIdx)); // vtable + m_VtblIdx
-
 			MSVC_ONLY(m_HookFunc.mov(r8, rbp(v_this)));
 			MSVC_ONLY(m_HookFunc.mov(r8, r8(m_VtblOffs))); // *(this + m_VtblOffs)
 			MSVC_ONLY(m_HookFunc.add(r8, SIZE_PTR * m_VtblIdx)); // vtable + m_VtblIdx
@@ -588,28 +635,34 @@ static_assert(false, "Missing parameters destruction for linux");
 			MSVC_ONLY(m_HookFunc.lea(rax, rbp(v_status)));
 			MSVC_ONLY(m_HookFunc.mov(rsp(0x28), rax));
 			// 7th argument - META_RES* prevResPtr
-			MSVC_ONLY(m_HookFunc.lea(rax, rbp(v_prev_res)));
+			m_HookFunc.lea(rax, rbp(v_prev_res));
 			MSVC_ONLY(m_HookFunc.mov(rsp(0x30), rax));
+			GCC_ONLY(m_HookFunc.mov(rsp(0x00), rax));
 			// 8th argument - META_RES* curResPtr
-			MSVC_ONLY(m_HookFunc.lea(rax, rbp(v_cur_res)));
+			m_HookFunc.lea(rax, rbp(v_cur_res));
 			MSVC_ONLY(m_HookFunc.mov(rsp(0x38), rax));
+			GCC_ONLY(m_HookFunc.mov(rsp(0x08), rax));
 			if (m_Proto.GetRet().size == 0) // void return function
 			{
 				// nullptr
-				m_HookFunc.xor(rax, rax);
+				m_HookFunc.xor_reg(rax, rax);
 				// 9th argument - const void* origRetPtr
 				MSVC_ONLY(m_HookFunc.mov(rsp(0x40), rax));
+				GCC_ONLY(m_HookFunc.mov(rsp(0x10), rax));
 				// 10th argument - void* overrideRetPtr
 				MSVC_ONLY(m_HookFunc.mov(rsp(0x48), rax));
+				GCC_ONLY(m_HookFunc.mov(rsp(0x18), rax));
 			}
 			else
 			{
 				// 9th argument - const void* origRetPtr
-				MSVC_ONLY(m_HookFunc.lea(rax, rbp(v_orig_ret)));
+				m_HookFunc.lea(rax, rbp(v_orig_ret));
 				MSVC_ONLY(m_HookFunc.mov(rsp(0x40), rax));
+				GCC_ONLY(m_HookFunc.mov(rsp(0x10), rax));
 				// 10th argument - void* overrideRetPtr
-				MSVC_ONLY(m_HookFunc.lea(rax, rbp(v_override_ret)));
+				m_HookFunc.lea(rax, rbp(v_override_ret));
 				MSVC_ONLY(m_HookFunc.mov(rsp(0x48), rax));
+				GCC_ONLY(m_HookFunc.mov(rsp(0x18), rax));
 			}
 
 			// Retrieve the function address
@@ -620,7 +673,7 @@ static_assert(false, "Missing parameters destruction for linux");
 			m_HookFunc.mov(rbp(v_pContext), rax);
 
 			// Restore the rsp value
-			MSVC_ONLY(m_HookFunc.add(rsp, 88));
+			GCC_ONLY(m_HookFunc.add(rsp, 32));
 		}
 
 		// Extension of MAKE_DELEG macro
@@ -691,17 +744,12 @@ static_assert(false, "Missing parameters destruction for linux");
 			m_HookFunc.mov(rax, rax()); // *this (vtable)
 			m_HookFunc.mov(rax, rax(getNext.vtblindex * SIZE_PTR)); // vtable[vtblindex]
 
-			// Shadow space 32 bytes + 8 bytes
-			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 			GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_pContext)));
 			MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_pContext)));
 			m_HookFunc.call(rax); // pContext->GetNext()
 
 			// store into iter
 			m_HookFunc.mov(rbp(v_iter), rax);
-
-			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 			// null check iter
 			m_HookFunc.test(rax, rax);
@@ -721,8 +769,11 @@ static_assert(false, "Missing parameters destruction for linux");
 			m_HookFunc.mov(rax, rax()); // *this (vtable)
 			m_HookFunc.mov(rax, rax(callMfi.vtblindex * SIZE_PTR)); // vtable[vtblindex] iter -> Call
 			m_HookFunc.call(rax);
-			// epilog free the stack
-			m_HookFunc.add(rsp, stackSpace);
+			if (stackSpace)
+			{
+				// epilog free the stack
+				m_HookFunc.add(rsp, stackSpace);
+			}
 
 			SaveReturnValue(v_mem_ret, v_plugin_ret);
 
@@ -746,9 +797,6 @@ static_assert(false, "Missing parameters destruction for linux");
 				std::int32_t earlyLoopBack = m_HookFunc.get_outputpos() - startLoop;
 				m_HookFunc.rewrite<std::int32_t>(m_HookFunc.get_outputpos() - sizeof(std::int32_t), -earlyLoopBack);
 
-				// Shadow space 32 bytes + 8 bytes
-				MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 				m_HookFunc.mov(rax, rbp(v_pContext));
 				m_HookFunc.mov(rax, rax()); // *this (vtable)
 				m_HookFunc.mov(rax, rax(getOverrideRetPtrMfi.vtblindex * SIZE_PTR)); // vtable[vtblindex]
@@ -756,8 +804,6 @@ static_assert(false, "Missing parameters destruction for linux");
 				GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_pContext)));
 				MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_pContext)));
 				m_HookFunc.call(rax); // pContext->GetOverrideRetPtr()
-
-				MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 				// *reinterpret_cast<my_rettype*>(pContext->GetOverrideRetPtr()) = plugin_ret;
 
@@ -772,9 +818,6 @@ static_assert(false, "Missing parameters destruction for linux");
 					// custom assignment operator, so call it
 					if (retInfo.pAssignOperator)
 					{
-						// Shadow space 32 bytes + 8 bytes
-						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.mov(rdi, rax));
 						MSVC_ONLY(m_HookFunc.mov(rcx, rax));
@@ -786,8 +829,6 @@ static_assert(false, "Missing parameters destruction for linux");
 						// Move address and call
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
-
-						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else
 					{
@@ -845,9 +886,6 @@ static_assert(false, "Missing parameters destruction for linux");
 			m_HookFunc.je(0x0);
 			auto statusCmpOff = m_HookFunc.get_outputpos();
 
-			// Shadow space 32 bytes + 8 bytes
-			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 			m_HookFunc.mov(rax, rbp(v_pContext));
 
 			// 1st parameter (this)
@@ -859,8 +897,6 @@ static_assert(false, "Missing parameters destruction for linux");
 
 			m_HookFunc.call(rax); // pContext->ShouldCallOrig()
 
-			MSVC_ONLY(m_HookFunc.add(rsp, 40));
-
 			// Don't have the lower register yet, so this will do for now
 			m_HookFunc.test(rax, 0x1);
 			m_HookFunc.jz(0x0);
@@ -870,8 +906,11 @@ static_assert(false, "Missing parameters destruction for linux");
 			std::int32_t stackSpace = PushParameters(v_this, MemRetWithTempObj() ? v_place_for_memret : v_orig_ret);
 			m_HookFunc.mov(rax, rbp(v_vfnptr_origentry));
 			m_HookFunc.call(rax);
-			// epilog free the stack
-			m_HookFunc.add(rsp, stackSpace);
+			if (stackSpace)
+			{
+				// epilog free the stack
+				m_HookFunc.add(rsp, stackSpace);
+			}
 
 			SaveReturnValue(v_place_for_memret, v_orig_ret);
 
@@ -896,9 +935,6 @@ static_assert(false, "Missing parameters destruction for linux");
 					// custom assignment operator, so call it
 					if (retInfo.pAssignOperator)
 					{
-						// Shadow space 32 bytes + 8 bytes
-						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_orig_ret)));
 						MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_orig_ret)));
@@ -910,8 +946,6 @@ static_assert(false, "Missing parameters destruction for linux");
 						// Move address and call
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
-
-						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else
 					{
@@ -969,27 +1003,157 @@ static_assert(false, "Missing parameters destruction for linux");
 			}
 
 			// Allocate the shadow space
-			m_HookFunc.sub(rsp, 32);
 			stackSpace += 32;
-
 			int parameters_on_stack = m_Proto.GetNumOfParams() - parameter_index;
-			m_HookFunc.sub(rsp, parameters_on_stack * 8);
 			stackSpace += parameters_on_stack * 8;
-
-			// If this number is even we need to allocate an extra 8 bytes
-			if (parameters_on_stack % 2 == 0) {
-				m_HookFunc.sub(rsp, 8);
-				stackSpace += 8;
-			}
+			// And it needs to be 16-byte aligned...
+			m_HookFunc.sub(rsp, AlignSize(stackSpace, 16));
 
 			for (int i = 0; parameter_index < m_Proto.GetNumOfParams(); parameter_index++, i++) {
-				m_HookFunc.mov(rax, rbp(40 + (8 * i))); // We need to skip the shadow space + return address
+				m_HookFunc.mov(rax, rbp(OffsetToCallerStack + (8 * 4) + (8 * i))); // We need to skip the shadow space
 				m_HookFunc.mov(rsp(32 + (8 * i)), rax);
 			}
 
 			return stackSpace;
 #else
-static_assert(false, "Missing registers saving for linux");
+			const x86_64_Reg params_reg[] = { rdi, rsi, rdx, rcx, r8, r9 };
+			const x86_64_FloatReg params_floatreg[] = { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 };
+			const std::uint8_t num_reg = sizeof(params_reg) / sizeof(params_reg[0]);
+			const std::uint8_t num_floatreg = sizeof(params_floatreg) / sizeof(params_floatreg[0]);
+
+			int reg_index = 0;
+			int floatreg_index = 0;
+
+			// Non standard return
+			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				reg_index++;
+			}
+
+			reg_index++; // this parameter
+
+			// Linux objects can be passed
+			// - inline on the stack
+			// - unpacked into registers
+			// - as a pointer
+			// This is pretty complicated and we can't know what will happen without knowing the object layout.
+			// And we don't know the object layout...
+			//
+			// From Agner Fog's Calling conventions pdf:
+			// >Objects with inheritance, member functions, or constructors can be passed in registers [and on stack].
+			// >Objects with copy constructor, destructor, or virtual are passed by pointers.
+			//
+			// For now, we'll assume that any object passed inline on the stack can be safely copied around.
+			// This probably doesn't hold in 100% of cases but for now it's the easiest.
+			//
+			// Another option would be to fuck up our stack frame:
+			// - move all offsets and data we use like 32KiB or 64KiB deeper into the stack
+			// - `pop` the real return address off the stack and store it in the deep stack (until we need it)
+			// This would allow to use the original objects that are inlined on the stack.
+
+			auto orig_reg_index = reg_index;
+
+			// Pass to calculate stack space...
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i) {
+				const auto& info = m_Proto.GetParam(i);
+
+				if (info.type == PassInfo::PassType_Basic) {
+					if (++reg_index >= num_reg) {
+						stackSpace += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Float) {
+					if (++floatreg_index >= num_floatreg) {
+						stackSpace += 8;
+					}
+				} else if (info.type == PassInfo::PassType_Object) {
+					if (info.flags & PassInfo::PassFlag_ByRef) {
+						if (++reg_index >= num_reg) {
+							stackSpace += 8;
+						}
+					} else {
+						stackSpace += info.size;
+					}
+				}
+			}
+
+			if (stackSpace != 0)
+			{
+				stackSpace = AlignSize(stackSpace, 16);
+				m_HookFunc.sub(rsp, stackSpace);
+	
+				// Actually push registers to stack...
+				reg_index = orig_reg_index;
+				floatreg_index = 0;
+				std::int32_t stack_offset = 0;
+				for (int i = 0; i < m_Proto.GetNumOfParams(); i++) {
+					const auto& info = m_Proto.GetParam(i);
+	
+					if (info.type == PassInfo::PassType_Basic) {
+						if (++reg_index >= num_reg) {
+							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+							m_HookFunc.mov(rax, rax());
+							m_HookFunc.mov(rsp(stack_offset), rax);
+							stack_offset += 8;
+						}
+					} else if (info.type == PassInfo::PassType_Float) {
+						if (++floatreg_index >= num_floatreg) {
+							m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+							m_HookFunc.mov(rax, rax());
+							m_HookFunc.mov(rsp(stack_offset), rax);
+							stack_offset += 8;
+						}
+					} else if (info.type == PassInfo::PassType_Object) {
+						if (info.flags & PassInfo::PassFlag_ByRef) {
+							if (++reg_index >= num_reg) {
+								m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
+								m_HookFunc.mov(rax, rax());
+								m_HookFunc.mov(rsp(stack_offset), rax);
+								stack_offset += 8;
+							}
+						} else {
+							if (info.pAssignOperator || info.pCopyCtor) {
+								// 1st parameter (this)
+								m_HookFunc.lea(rdi, rbp(OffsetToCallerStack + stack_offset));
+								// 2nd parameter (copy)
+								m_HookFunc.lea(rsi, rsp(stack_offset));
+								// Move address and call
+								m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
+									info.pAssignOperator ? info.pAssignOperator : info.pCopyCtor));
+								m_HookFunc.call(rax);
+							} else {
+								// from
+								m_HookFunc.lea(rsi, rbp(OffsetToCallerStack + stack_offset));
+								// to
+								m_HookFunc.lea(rdi, rsp(stack_offset));
+								// size
+								m_HookFunc.mov(rcx, info.size);
+								// do the copy
+								m_HookFunc.rep_movs_bytes();
+							}
+	
+							stack_offset += info.size;
+						}
+					}
+				}
+			}
+
+			// Load ALL the parameter registers...
+			// We do it now because the copy/assignment calls above could've clobbered our registers.
+			reg_index = 0;
+
+			// Non standard return
+			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+				m_HookFunc.lea(params_reg[reg_index], rbp(v_ret));
+				reg_index++;
+			}
+
+			for (int i = reg_index; i < num_reg; i++) {
+				m_HookFunc.mov(params_reg[i], rbp(v_sysv_reg + i*8));
+			}
+			for (int i = 0; i < num_floatreg; i++) {
+				m_HookFunc.movsd(params_floatreg[i], rbp(v_sysv_floatreg + i*8));
+			}
+
+			return stackSpace;
 #endif
 		}
 
@@ -999,14 +1163,24 @@ static_assert(false, "Missing registers saving for linux");
 			if (retInfo.size == 0) {
 				return;
 			}
-#if SH_COMP == SH_COMP_MSVC
+
 			if ((retInfo.flags & PassInfo::PassFlag_ByRef) == PassInfo::PassFlag_ByRef) {
 				m_HookFunc.mov(rbp(v_ret), rax);
 				return;
 			}
 
-			// ByVal
+#if SH_COMP == SH_COMP_GCC
+			// We are assuming that an object being returned is actually the SDK's Vector3f type.
+			// This hack should be removed eventually...
+			// TODO: Change to PassType_Float and use size=12?
+			if (retInfo.type == PassInfo::PassType_Object && retInfo.size == 12) {
+				m_HookFunc.movsd(rbp(v_ret+0), xmm0);
+				m_HookFunc.movsd(rbp(v_ret+8), xmm1);
+				return;
+			}
+#endif
 
+			// ByVal
 			if (retInfo.type == PassInfo::PassType_Float) {
 				m_HookFunc.movsd(rbp(v_ret), xmm0);
 			} else if (retInfo.type == PassInfo::PassType_Basic) {
@@ -1014,9 +1188,6 @@ static_assert(false, "Missing registers saving for linux");
 			} else if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				if (MemRetWithTempObj()) {
 					if (retInfo.pAssignOperator) {
-						// Shadow space 32 bytes + 8 bytes
-						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_ret)));
 						MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_ret)));
@@ -1028,8 +1199,6 @@ static_assert(false, "Missing registers saving for linux");
 						// Move address and call
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pAssignOperator));
 						m_HookFunc.call(rax);
-
-						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 					else {
 						m_HookFunc.push(rdi);
@@ -1048,9 +1217,6 @@ static_assert(false, "Missing registers saving for linux");
 					}
 
 					if (retInfo.pDtor) {
-						// Shadow space 32 bytes + 8 bytes
-						MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 						// 1st parameter (this)
 						GCC_ONLY(m_HookFunc.lea(rdi, rbp(v_mem_ret)));
 						MSVC_ONLY(m_HookFunc.lea(rcx, rbp(v_mem_ret)));
@@ -1058,8 +1224,6 @@ static_assert(false, "Missing registers saving for linux");
 						// Move address and call
 						m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pDtor));
 						m_HookFunc.call(rax);
-
-						MSVC_ONLY(m_HookFunc.add(rsp, 40));
 					}
 
 				} else {
@@ -1070,9 +1234,6 @@ static_assert(false, "Missing registers saving for linux");
 				SH_ASSERT(0, ("Unknown handling of return type!"));
 				return;
 			}
-#else
-			static_assert(false, "Missing SaveReturnValue for linux");
-#endif
 		}
 
 		void x64GenContext::PrepareReturn(int v_status, int v_pContext, int v_retptr)
@@ -1112,22 +1273,16 @@ static_assert(false, "Missing registers saving for linux");
 			m_HookFunc.mov(rax, rax(getOrigRetPtrMfi.vtblindex * SIZE_PTR));
 			m_HookFunc.mov(r8, r8(getOverrideRetPtrMfi.vtblindex * SIZE_PTR));
 
-			m_HookFunc.xor(r9, r9);
 			m_HookFunc.mov(r9, rbp(v_status));
 			m_HookFunc.cmp(r9, MRES_OVERRIDE);
 
 			m_HookFunc.cmovge(rax, r8);
-
-			// Shadow space 32 bytes + 8 bytes
-			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
 
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_pContext)));
 			MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_pContext)));
 
 			m_HookFunc.call(rax);
-
-			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 
 			m_HookFunc.mov(rbp(v_retptr), rax);
 		}
@@ -1138,6 +1293,17 @@ static_assert(false, "Missing registers saving for linux");
 			if (retInfo.size == 0) {
 				return;
 			}
+
+#if SH_COMP == SH_COMP_GCC
+			// We are assuming that an object being returned is actually the SDK's Vector3f type.
+			// This hack should be removed eventually...
+			// TODO: Change to PassType_Float and use size=12?
+			if (retInfo.type == PassInfo::PassType_Object && retInfo.size == 12) {
+				m_HookFunc.movsd(xmm0, rbp(v_retptr+0));
+				m_HookFunc.movsd(xmm1, rbp(v_retptr+8));
+				return;
+			}
+#endif
 
 			m_HookFunc.mov(r8, rbp(v_retptr));
 
@@ -1160,9 +1326,6 @@ static_assert(false, "Missing registers saving for linux");
 				// *memret_outaddr = plugin_ret
 				if (retInfo.pCopyCtor)
 				{
-					// Shadow space 32 bytes + 8 bytes
-					MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 					// 1st parameter (this)
 					GCC_ONLY(m_HookFunc.mov(rdi, rbp(v_memret_outaddr)));
 					MSVC_ONLY(m_HookFunc.mov(rcx, rbp(v_memret_outaddr)));
@@ -1174,8 +1337,6 @@ static_assert(false, "Missing registers saving for linux");
 					// Move address and call
 					m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(retInfo.pCopyCtor));
 					m_HookFunc.call(rax);
-
-					MSVC_ONLY(m_HookFunc.add(rsp, 40));
 				}
 				else
 				{
@@ -1211,9 +1372,6 @@ static_assert(false, "Missing registers saving for linux");
 				}
 			}
 
-			// Shadow space 32 bytes + 8 bytes
-			MSVC_ONLY(m_HookFunc.sub(rsp, 40));
-
 			// 1st parameter (this)
 			GCC_ONLY(m_HookFunc.mov(rdi, reinterpret_cast<std::uintptr_t>(m_SHPtr)));
 			MSVC_ONLY(m_HookFunc.mov(rcx, reinterpret_cast<std::uintptr_t>(m_SHPtr)));
@@ -1225,8 +1383,6 @@ static_assert(false, "Missing registers saving for linux");
 			// Move address and call
 			m_HookFunc.mov(rax, (*reinterpret_cast<std::uintptr_t**>(m_SHPtr))[mfi.vtblindex]);
 			m_HookFunc.call(rax);
-
-			MSVC_ONLY(m_HookFunc.add(rsp, 40));
 		}
 
 		bool x64GenContext::MemRetWithTempObj() {
@@ -1236,11 +1392,11 @@ static_assert(false, "Missing registers saving for linux");
 				&& (retInfo.flags & (PassInfo::PassFlag_ODtor | PassInfo::PassFlag_AssignOp)));
 		}
 		
-		void x64GenContext::AutoDetectRetType() {
+		bool x64GenContext::AutoDetectRetType() {
 			auto& pi = m_Proto.GetRet();
 			// Void return, ignore
 			if (pi.size == 0) {
-				return;
+				return true;
 			}
 
 			// Only relevant for byval types
@@ -1270,12 +1426,13 @@ static_assert(false, "Missing registers saving for linux");
 					// If the user says nothing, auto-detect
 					if ((pi.flags & (PassInfo::PassFlag_RetMem | PassInfo::PassFlag_RetReg)) == 0)
 					{
+
 #if SH_COMP == SH_COMP_MSVC
 						// MSVC has various criteria for passing in memory
 						// if object doesn't fit on 8, 16, 32, or 64 bits. It's in memory
 						// if object has a constructor or destructor. It's in memory
 						bool unconventionalsize = (pi.size == 3 || (pi.size != 8 && pi.size > 4));
-						bool hasSpecialFunctions = (pi.flags & PassInfo::PassFlag_OCtor|PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor) != 0;
+						bool hasSpecialFunctions = (pi.flags & (PassInfo::PassFlag_OCtor|PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor)) != 0;
 
 						if (unconventionalsize || hasSpecialFunctions) {
 							pi.flags |= PassInfo::PassFlag_RetMem;
@@ -1283,7 +1440,41 @@ static_assert(false, "Missing registers saving for linux");
 							pi.flags |= PassInfo::PassFlag_RetReg;
 						}
 #elif SH_COMP == SH_COMP_GCC
-static_assert(false, "Missing auto-detect type for linux!");
+						// "If the size of an object is larger than eight eightbytes, or it contains unaligned fields, it has class MEMORY".
+						//
+						// "If a C++ object is non-trivial for the purpose of calls, as specified in the C++ ABI[16], it is passed by invisible reference (the object is replaced in the parameter list by a pointer that has class INTEGER)[17]."
+						// "[17]An object whose type is non-trivial for the purpose of calls cannot be passed by value because such objects must have the same address in the caller and the callee. Similar issues apply when returning an object from a function."
+						//
+						// source: System V AMD64 psABI section 3.2.3 Parameter Passing
+						// https://gitlab.com/x86-psABIs/x86-64-ABI/-/jobs/artifacts/master/raw/x86-64-ABI/abi.pdf?job=build)
+						//
+						// "A type is considered non-trivial for the purposes of call if:
+						// - it has a non-trivial copy constructor, move constructor, or destructor, or
+						// - all of its copy and move constructors are deleted."
+						// source: https://itanium-cxx-abi.github.io/cxx-abi/abi.html (yes, System V copied this definition from Itanium...)
+						//
+						//
+						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
+
+						bool tooBig = (pi.size > (8 * 8));
+						bool hasSpecialFunctions = (pi.flags & (PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor)) != 0;
+
+						bool probablyVector = (pi.size == 12);
+
+						if (hasSpecialFunctions || tooBig)
+						{
+							pi.flags |= PassInfo::PassFlag_RetMem;
+							return true;
+						}
+						else if (probablyVector)
+						{
+							pi.flags |= PassInfo::PassFlag_RetReg;
+							return true;
+						}
+						else
+						{
+							return false;
+						}
 #endif
 					}
 				}
@@ -1294,6 +1485,7 @@ static_assert(false, "Missing auto-detect type for linux!");
 				pi.flags &= ~PassInfo::PassFlag_RetMem;
 				pi.flags |= PassInfo::PassFlag_RetReg;
 			}
+			return true;
 		}
 
 		void x64GenContext::AutoDetectParamFlags()
@@ -1314,14 +1506,14 @@ static_assert(false, "Missing auto-detect type for linux!");
 			//    if (hi)
 			//      hi->SetInfo(HOOKMAN_VERSION, m_VtblOffs, m_VtblIdx, m_Proto.GetProto(), m_HookfuncVfnptr)
 			//  }
+			
+			// Save our frame pointer. (somewhat needlessly on Windows...)
+			// This also realigns the stack to 16 bytes.
+			m_PubFunc.push(rbp);
+			m_PubFunc.mov(rbp, rsp);
 
 			// prologue
-			MSVC_ONLY(m_PubFunc.sub(rsp, 0x38)); // Shadow space 32 bytes + 2 * 8 bytes (for our parameters) + 8 bytes
-			
-			// Unnecessary according to AMD manual (Section 3.2.2 The Stack Frame)
-			// but GCC still does it anyways, so let's do it as well
-			GCC_ONLY(m_PubFunc.push(rbp));
-			GCC_ONLY(m_PubFunc.mov(rbp, rsp));
+			MSVC_ONLY(m_PubFunc.sub(rsp, 0x30)); // Shadow space 32 bytes + 2 * 8 bytes (for our parameters)
 
 			// Both Microsoft and AMD uses r8 and r9 as argument parameters
 			// Therefore they need not to be preserved across function calls
@@ -1396,13 +1588,12 @@ static_assert(false, "Missing auto-detect type for linux!");
 			m_PubFunc.rewrite<std::int32_t>(jumpOff - sizeof(std::int32_t), endOff);
 
 			// epilogue
-
-			MSVC_ONLY(m_PubFunc.add(rsp, 0x38));
-
-			GCC_ONLY(m_PubFunc.pop(rbp));
+			// Restore RSP and RBP
+			// (same as `mov rsp, rbp` + `pop rbp`)
+			m_PubFunc.leave();
 
 			// Return 0
-			m_PubFunc.xor(rax, rax);
+			m_PubFunc.xor_reg(rax, rax);
 
 			m_PubFunc.retn();
 
