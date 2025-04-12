@@ -26,7 +26,7 @@ DECL_TEST(TrimComments);
 int main(int argc, char *argv[])
 {
 	bool testDetermineBackendS1 = false;
-	char *gameDirectory = NULL;
+	char *gameDirectory = "";
 	int expectedMetamodBackend = -1;
 
 	for (int i = 0; i < argc; i++)
@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
 	if (testDetermineBackendS1)
 	{
 		bool success = DetermineBackendS1(gameDirectory, expectedMetamodBackend);
+
 		// invert it because return code from main has 0 as success
 		return success != true;
 	}
