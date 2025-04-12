@@ -57,6 +57,9 @@ bool DetermineBackendS1(char *gameDir, int expectedBackend)
 
 	MetamodBackend actualBackend = mm_DetermineBackendS1(engineQvi, serverQvi, gameDir);
 
+	mm_UnloadLibrary(engineLib);
+	mm_UnloadLibrary(serverLib);
+
 	if (actualBackend != expectedBackend)
 	{
 		std::cout << "Got MetamodBackend " << actualBackend << " instead of expected " << expectedBackend << std::endl;

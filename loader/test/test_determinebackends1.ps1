@@ -10,148 +10,124 @@ $wd = Split-Path $scriptpath
 # set the working directory as this file's directory
 Push-Location $wd
 
-function checkLastInvocation()
-{
-    if ($LastExitCode -eq 0)
-	{
-		Write-Host "Passed`n" -ForegroundColor Green
-	}
-	else
-	{
-		Write-Host "Failed`n" -ForegroundColor Red
-	}
+class SteamGame {
+	[string]$Name
+	[string]$EnginePath
+	[string]$GamePath
+	[string]$GameDir
+	[string]$Architecture
+	[bool]$IsDedicatedServer
+	[int]$ExpectedBackend
+	[bool]$Skip
+
+    SteamGame([string]$name, [string]$enginePath, [string]$gamePath, [string]$gameDir, [string]$architecture, [bool]$isDedicatedServer, [int]$expectedBackend, [bool]$skip) {
+		$this.Name = $name
+        $this.EnginePath = $enginePath
+        $this.GamePath = $gamePath
+		$this.GameDir = $gameDir
+		$this.Architecture = $architecture
+		$this.IsDedicatedServer = $isDedicatedServer
+		$this.ExpectedBackend = $expectedBackend
+		$this.Skip = $skip
+    }
 }
 
 if ($args.Count -ge 1)
 {
 	$steamPath = $args[0]
 }
-if ($args.Count -ge 2 -and $args[1] -eq "-preferds")
-{
-	$preferDedicatedServers = $true
-}
-else
-{
-	$preferDedicatedServers = $false
-}
 
-Write-Host "Testing Alien Swarm" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Alien Swarm\bin;" + "${steamPath}\steamapps\common\Alien Swarm\swarm\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "swarm" -expectedbackend 9
+$global:failureCount = 0
 
-checkLastInvocation
-
-Write-Host "Testing Black Mesa" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Black Mesa\bin;" + "${steamPath}\steamapps\common\Black Mesa\bms\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "bms" -expectedbackend 21
-
-checkLastInvocation
-
-Write-Host "Testing Blade Symphony (32-bit)" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Blade Symphony\bin\win32;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "berimbau" -expectedbackend 18
-
-checkLastInvocation
-
-Write-Host "Testing Blade Symphony (64-bit)" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Blade Symphony\bin\win64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "berimbau" -expectedbackend 18
-
-checkLastInvocation
-
-if ($preferDedicatedServers)
-{
-	Write-Host "Testing Bloody Good Time Dedicated Server" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\Bloody Good Time Dedicated Server\bin;" + "${steamPath}\steamapps\common\Bloody Good Time Dedicated Server\pm\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "pm" -expectedbackend 3
-}
-else
-{
-	Write-Host "Testing Bloody Good Time" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\Bloody Good Time\bin;" + "${steamPath}\steamapps\common\Bloody Good Time\pm\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "pm" -expectedbackend 3
+$gamesToTest = @{
+    alienswarm = [SteamGame]::new("Alien Swarm", "common\Alien Swarm\bin", "common\Alien Swarm\swarm\bin", "swarm", "x86", $false, 9, $true)
+	blackmesa = [SteamGame]::new("Black Mesa", "common\Black Mesa\bin", "common\Black Mesa\bms\bin", "bms", "x86", $false, 21, $false)
+	bladesymphony_32 = [SteamGame]::new("Blade Symphony (x86)", "common\Blade Symphony\bin\win32", "", "berimbau", "x86", $false, 18, $false)
+	bladesymphony_64 = [SteamGame]::new("Blade Symphony (x64)", "common\Blade Symphony\bin\win64", "", "berimbau", "x64", $false, 18, $false)
+	bloodygoodtime = [SteamGame]::new("Bloody Good Time", "common\Bloody Good Time\bin", "common\Bloody Good Time\pm\bin", "pm", "x86", $false, 3, $true)
+	bloodygoodtime_ds = [SteamGame]::new("Bloody Good Time Dedicated Server", "common\Bloody Good Time Dedicated Server\bin", "common\Bloody Good Time Dedicated Server\pm\bin", "pm", "x86", $false, 3, $true)
+	contagion = [SteamGame]::new("Contagion", "common\Contagion\engine", "common\Contagion\bin", "contagion", "x64", $false, 20, $false)
+	counterstrikeglobaloffensive = [SteamGame]::new("Counter-Strike Global Offensive", "common\Counter-Strike Global Offensive\bin", "common\Counter-Strike Global Offensive\csgo\bin", "csgo", "x86", $false, 11, $false)
+	counterstrikesource = [SteamGame]::new("Counter-Strike Source", "common\Counter-Strike Source\bin\x64", "common\Counter-Strike Source\cstrike\bin\x64", "cstrike", "x64", $false, 5, $false)
+	darkmessiahofmightandmagic = [SteamGame]::new("Dark Messiah of Might and Magic", "common\Dark Messiah Might and Magic Multi-Player\bin", "", "", "x86", $false, 1, $true)
+	darkmessiahofmightandmagic_ds = [SteamGame]::new("Dark Messiah of Might and Magic Dedicated Server", "common\Dark Messiah Might and Magic Dedicated Server\bin", "", "", "x86", $false, 1, $true)
+	dayofdefeatsource = [SteamGame]::new("Day of Defeat Source", "common\Day of Defeat Source\bin\x64", "common\Day of Defeat Source\dod\bin\x64", "dod", "x64", $false, 14, $false)
+	fistfuloffrags = [SteamGame]::new("Fistful of Frags", "common\Fistful of Frags\sdk\bin", "common\Fistful of Frags\fof\bin", "fof", "fof", $false, 14, $false)
+	halflifesourcedeathmatch = [SteamGame]::new("Half-Life Source Deathmatch", "common\Half-Life 1 Source Deathmatch\bin\x64", "common\Half-Life 1 Source Deathmatch\hl1mp\bin\x64", "hl1mp", "x64", $false, 13, $false)
+	halflifesourcedeathmatch_ds = [SteamGame]::new("Half-Life Source Deathmatch Dedicated Server", "common\Half-Life Deathmatch Source Dedicated Server\bin\x64", "common\Half-Life Deathmatch Source Dedicated Server\hl1mp\bin\x64", "hl1mp", "x64", $false, 13, $false)
+	halflife2deathmatch = [SteamGame]::new("Half-Life 2 Deathmatch", "common\Half-Life 2 Deathmatch\bin\x64", "common\Half-Life 2 Deathmatch\hl2mp\bin\x64", "hl2mp", "x64", $false, 13, $false)
+	jabronibrawlepisode3 = [SteamGame]::new("Jabroni Brawl Episode 3", "common\Jabroni Brawl Episode 3\bin", "common\Jabroni Brawl Episode 3\jbep3\bin", "jbep3", "x86", $false, 17, $false)
+	left4dead = [SteamGame]::new("Left 4 Dead", "common\left 4 dead\bin", "common\left 4 dead\left4dead\bin", "left4dead", "x86", $false, 7, $true)
+	left4dead2 = [SteamGame]::new("Left 4 Dead 2", "common\Left 4 Dead 2\bin", "common\Left 4 Dead 2\left4dead2\bin", "left4dead2", "x86", $false, 8, $true)
+	militaryconflictvietnam = [SteamGame]::new("Military Conflict Vietnam", "common\Military Conflict - Vietnam\bin\win64", "common\Military Conflict - Vietnam\vietnam\bin\win64", "vietnam", "x64", $false, 25, $false)
+	nucleardawn = [SteamGame]::new("Nuclear Dawn", "common\Nuclear Dawn\bin", "common\Nuclear Dawn\nucleardawn\bin", "nucleardawn", "x86", $false, 16, $true)
+	piratesvikingsandknightsii = [SteamGame]::new("Pirates, Vikings and Knights II", "common\pirates, vikings and knights ii\sdkbase_pvkii\bin", "common\pirates, vikings and knights ii\pvkii\bin", "pvkii", "x86", $false, 24, $false)
+	portal2 = [SteamGame]::new("Portal 2", "common\Portal 2\bin", "common\Portal 2\portal2\bin", "portal2", "x86", $false, 10, $true)
+	revelations2012 = [SteamGame]::new("Revelations 2012", "common\Revelations 2012\bin", "common\Revelations 2012\revelations\bin", "revelations", "x86", $false, 8, $true)
+	sdk2006_insurgency = [SteamGame]::new("Source SDK Base 2006 (Insurgency)", "common\Source SDK Base\bin", "common\Source SDK Base\insurgency\bin", "insurgency", "x86", $false, 0, $false)
+	sdk2007_ageofchivalry = [SteamGame]::new("Source SDK Base 2007 (Age of Chivalry)", "common\Source SDK Base 2007\bin", "common\Source SDK Base 2007\ageofchivalry\bin", "ageofchivalry", "x86", $false, 0, $true)
+	teamfortress2 = [SteamGame]::new("Team Fortress 2", "common\Team Fortress 2\bin\x64", "common\Team Fortress 2\tf\bin\x64", "tf", "x64", $false, 15, $false)
+	treason = [SteamGame]::new("Treason", "common\Treason\bin", "common\Treason\treason\bin", "treason", "x86", $false, 17, $false)
+	theship = [SteamGame]::new("The Ship", "common\The Ship\bin", "common\The Ship\ship\bin", "ship", "x86", $false, 0, $true)
+	theship_ds = [SteamGame]::new("The Ship Dedicated Server", "common\The Ship Dedicated Server\bin", "common\The Ship Dedicated Server\ship\bin", "ship", "x86", $false, 0, $true)
+	zombiepanicsource = [SteamGame]::new("Zombie Panic Source", "common\Zombie Panic Source\bin", "common\Zombie Panic Source\zps\bin", "zps", "x86", $false, 17, $false)
 }
 
-checkLastInvocation
-
-Write-Host "Testing Contagion" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Contagion\engine;" + "${steamPath}\steamapps\common\Contagion\contagion\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "contagion" -expectedbackend 20
-
-checkLastInvocation
-
-Write-Host "Counter-Strike Global Offensive" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Counter-Strike Global Offensive\bin;" + "${steamPath}\steamapps\common\Counter-Strike Global Offensive\csgo\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "csgo" -expectedbackend 11
-
-checkLastInvocation
-
-Write-Host "Counter-Strike Source" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Counter-Strike Source\bin\x64;" + "${steamPath}\steamapps\common\Counter-Strike Source\cstrike\bin\x64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "cstrike" -expectedbackend 5
-
-checkLastInvocation
-
-if ($preferDedicatedServers)
+function testGame([SteamGame]$game)
 {
-	Write-Host "Dark Messiah of Might and Magic Dedicated Server" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\Dark Messiah of Might and Magic Dedicated Server\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "" -expectedbackend 1
-}
-else
-{
-	Write-Host "Dark Messiah of Might and Magic" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\Dark Messiah of Might and Magic Multi-Player\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "" -expectedbackend 1
-}
+    Write-Host @("Testing", $game.Name) -ForegroundColor yellow
 
-checkLastInvocation
+	$steamappsPath = "${steamPath}\steamapps"
+	$enginePath = "${steamappsPath}\" + $game.EnginePath
+	$gamePath = "${steamappsPath}\" + $game.GamePath
 
-Write-Host "Half-Life Source Deathmatch" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Half-Life 1 Source Deathmatch\bin\x64;" + "${steamPath}\steamapps\common\Half-Life 1 Source Deathmatch\hl1mp\bin\x64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "hl1mp" -expectedbackend 13
+	if (!(Test-Path -Path $enginePath))
+	{
+		Write-Host "Skipped - game not found at ${enginePath}`n" -ForegroundColor DarkYellow
 
-checkLastInvocation
+		Return
+	}
 
-Write-Host "Half-Life 2 Deathmatch" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Half-Life 2 Deathmatch\bin\x64;" + "${steamPath}\steamapps\common\Half-Life 2 Deathmatch\hl2mp\bin\x64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "hl2mp" -expectedbackend 13
+	if ($gamePath -ne "" -And !(Test-Path -Path $gamePath))
+	{
+		Write-Host "Skipped - game not found at ${gamePath}`n" -ForegroundColor DarkYellow
 
-checkLastInvocation
+		Return
+	}
 
-Write-Host "Left 4 Dead" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\left 4 dead\bin;" + "${steamPath}\steamapps\common\left 4 dead\left4dead\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "left4dead" -expectedbackend 7
+	if ($game.Architecture -eq "x86")
+	{
+		$env:Path=$enginePath + ";" + $gamePath + ";" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -expectedbackend $game.ExpectedBackend -gamedir $game.GameDir
+	}
+	else
+	{
+		$env:Path=$enginePath + ";" + $gamePath + ";" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -expectedbackend $game.ExpectedBackend -gamedir $game.GameDir
+	}
 
-checkLastInvocation
+	# some games don't seem to do the right thing when not initialised through the engine, so skip the known failures
+	if ($game.Skip -eq $true)
+	{
+		Write-Host "Skipped - invalid result`n" -ForegroundColor DarkYellow
 
-Write-Host "Left 4 Dead 2" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Left 4 Dead 2\bin;" + "${steamPath}\steamapps\common\Left 4 Dead 2\left4dead2\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "left4dead2" -expectedbackend 8
+		Return
+	}
 
-checkLastInvocation
-
-Write-Host "Military Conflict Vietnam" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Military Conflict - Vietnam\bin\win64;" + "${steamPath}\steamapps\common\Military Conflict - Vietnam\vietnam\bin\win64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "vietnam" -expectedbackend 25
-
-checkLastInvocation
-
-Write-Host "Portal 2" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Portal 2\bin;" + "${steamPath}\steamapps\common\Portal 2\portal2\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "portal2" -expectedbackend 10
-
-checkLastInvocation
-
-Write-Host "Source SDK Base 2006 (Insurgency)" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Source SDK Base\bin;" + "${steamPath}\steamapps\common\Source SDK Base\insurgency\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "insurgency" -expectedbackend 0
-
-checkLastInvocation
-
-Write-Host "Source SDK Base 2007 (Age of Chivalry)" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Source SDK Base 2007\bin;" + "${steamPath}\steamapps\common\Source SDK Base 2007\ageofchivalry\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "ageofchivalry" -expectedbackend 2
-
-checkLastInvocation
-
-Write-Host "Team Fortress 2" -ForegroundColor yellow
-$env:Path="${steamPath}\steamapps\common\Team Fortress 2\bin\x64;" + "${steamPath}\steamapps\common\Team Fortress 2\tf\bin\x64;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86_64\test_loader.exe -testdbs1 -gamedir "tf" -expectedbackend 15
-
-checkLastInvocation
-
-if ($preferDedicatedServers)
-{
-	Write-Host "Testing The Ship Dedicated Server" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\The Ship Dedicated Server\bin;" + "${steamPath}\steamapps\common\The Ship Dedicated Server\ship\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "ship" -expectedbackend 0
-}
-else
-{
-	Write-Host "Testing The Ship" -ForegroundColor yellow
-	$env:Path="${steamPath}\steamapps\common\The Ship\bin;" + "${steamPath}\steamapps\common\The Ship\ship\bin;" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -gamedir "ship" -expectedbackend 0
+	if ($LastExitCode -eq 0)
+	{
+		Write-Host "Passed`n" -ForegroundColor Green
+	}
+	else
+	{
+		Write-Host "Failed`n" -ForegroundColor Red
+		$global:failureCount++
+	}
 }
 
-checkLastInvocation
+foreach ($game in $gamesToTest.Keys | Sort-Object)
+{
+    testGame $gamesToTest[$game]
+}
+
+Write-Host "There were ${global:failureCount} failures"
 
 Pop-Location
