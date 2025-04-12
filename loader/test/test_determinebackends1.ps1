@@ -20,10 +20,10 @@ class SteamGame {
 	[int]$ExpectedBackend
 	[bool]$Skip
 
-    SteamGame([string]$name, [string]$enginePath, [string]$gamePath, [string]$gameDir, [string]$architecture, [bool]$isDedicatedServer, [int]$expectedBackend, [bool]$skip) {
+	SteamGame([string]$name, [string]$enginePath, [string]$gamePath, [string]$gameDir, [string]$architecture, [bool]$isDedicatedServer, [int]$expectedBackend, [bool]$skip) {
 		$this.Name = $name
-        $this.EnginePath = $enginePath
-        $this.GamePath = $gamePath
+		$this.EnginePath = $enginePath
+		$this.GamePath = $gamePath
 		$this.GameDir = $gameDir
 		$this.Architecture = $architecture
 		$this.IsDedicatedServer = $isDedicatedServer
@@ -40,7 +40,7 @@ if ($args.Count -ge 1)
 $global:failureCount = 0
 
 $gamesToTest = @{
-    alienswarm = [SteamGame]::new("Alien Swarm", "common\Alien Swarm\bin", "common\Alien Swarm\swarm\bin", "swarm", "x86", $false, 9, $true)
+	alienswarm = [SteamGame]::new("Alien Swarm", "common\Alien Swarm\bin", "common\Alien Swarm\swarm\bin", "swarm", "x86", $false, 9, $true)
 	blackmesa = [SteamGame]::new("Black Mesa", "common\Black Mesa\bin", "common\Black Mesa\bms\bin", "bms", "x86", $false, 21, $false)
 	bladesymphony_32 = [SteamGame]::new("Blade Symphony (x86)", "common\Blade Symphony\bin\win32", "", "berimbau", "x86", $false, 18, $false)
 	bladesymphony_64 = [SteamGame]::new("Blade Symphony (x64)", "common\Blade Symphony\bin\win64", "", "berimbau", "x64", $false, 18, $false)
@@ -75,7 +75,7 @@ $gamesToTest = @{
 
 function testGame([SteamGame]$game)
 {
-    Write-Host @("Testing", $game.Name) -ForegroundColor yellow
+	Write-Host @("Testing", $game.Name) -ForegroundColor yellow
 
 	$steamappsPath = "${steamPath}\steamapps"
 	$enginePath = "${steamappsPath}\" + $game.EnginePath
@@ -95,6 +95,7 @@ function testGame([SteamGame]$game)
 		Return
 	}
 
+	# make gamedir the last parameter as something weird is going on where if it's "" then PowerShell is collapsing it and the next argument gets passed as gamedir
 	if ($game.Architecture -eq "x86")
 	{
 		$env:Path=$enginePath + ";" + $gamePath + ";" + $env:Path; ..\..\build\loader\test\test_loader\windows-x86\test_loader.exe -testdbs1 -expectedbackend $game.ExpectedBackend -gamedir $game.GameDir
@@ -125,7 +126,7 @@ function testGame([SteamGame]$game)
 
 foreach ($game in $gamesToTest.Keys | Sort-Object)
 {
-    testGame $gamesToTest[$game]
+	testGame $gamesToTest[$game]
 }
 
 Write-Host "There were ${global:failureCount} failures"
