@@ -31,37 +31,37 @@
 #include "iplayerinfo.h"
 #include "loader_bridge.h"
 #include "metamod_version.h"
-#include "sh_string.h"
 #include "provider/provider_base.h"
 
-#if SOURCE_ENGINE >= SE_ORANGEBOX
-SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, false, const CCommand &);
-#else
-SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
-#endif
+#include <string>
 
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
-SourceHook::String vsp_desc("Metamod:Source");
+std::string vsp_desc("Metamod:Source");
 static char gamedll_iface_name[128] = { 0 };
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-void InterceptPluginUnloads(const CCommand &args)
+KHook::Return<void> InterceptPluginUnloads(ConCommand* thisCmd, const CCommand& args)
 #else
-void InterceptPluginUnloads()
+KHook::Return<void> InterceptPluginUnloads(ConCommand* thisCmd)
 #endif
 {
 	g_bIsTryingToUnload = true;
+
+	return { KHook::Action::Ignore };
 }
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-void InterceptPluginUnloads_Post(const CCommand &args)
+KHook::Return<void> InterceptPluginUnloads_Post(ConCommand* thisCmd, const CCommand& args)
 #else
-void InterceptPluginUnloads_Post()
+KHook::Return<void> InterceptPluginUnloads_Post(ConCommand* thisCmd)
 #endif
 {
 	g_bIsTryingToUnload = false;
+
+	return { KHook::Action::Ignore };
 }
+KHook::Virtual CmdDispatch(&ConCommand::Dispatch, InterceptPluginUnloads, InterceptPluginUnloads_Post);
 
 class VspBridge : public IVspBridge
 {
@@ -149,8 +149,7 @@ public:
 
 		if (g_plugin_unload != NULL)
 		{
-			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
-			SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
+			CmdDispatch.Add(g_plugin_unload, false);
 		}
 
 		return true;
@@ -167,8 +166,7 @@ public:
 
 		if (g_plugin_unload != NULL)
 		{
-			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads, false);
-			SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, g_plugin_unload, InterceptPluginUnloads_Post, true);
+			CmdDispatch.Remove(g_plugin_unload, false);
 			g_plugin_unload = NULL;
 		}
 		if (!g_Metamod.IsLoadedAsGameDLL())

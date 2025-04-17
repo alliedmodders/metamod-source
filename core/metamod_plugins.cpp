@@ -25,6 +25,8 @@
 
 #include <cstdio>
 #include <memory>
+#include <list>
+#include <stdio.h>
 
 #include "amtl/am-string.h"
 #include "metamod_oslink.h"
@@ -41,7 +43,7 @@ using namespace SourceMM;
 
 #define ITER_PLEVENT(evn, plid) \
 	CPluginManager::CPlugin *_Xpl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	std::list<IMetamodListener *>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		_Xpl = (*iter); \
@@ -59,8 +61,6 @@ MetamodVersionInfo GlobVersionInfo =
 {
 	METAMOD_API_MAJOR,
 	METAMOD_API_MINOR,
-	SH_IFACE_VERSION,
-	SH_IMPL_VERSION,
 	PLAPI_MIN_VERSION,
 	METAMOD_PLAPI_VERSION,
 	SOURCE_ENGINE_UNKNOWN,
@@ -75,7 +75,7 @@ CPluginManager::CPluginManager()
 
 CPluginManager::~CPluginManager()
 {
-	SourceHook::List<CNameAlias *>::iterator iter;
+	std::list<CNameAlias *>::iterator iter;
 
 	for (iter = m_Aliases.begin(); iter != m_Aliases.end(); iter++)
 	{
@@ -87,7 +87,7 @@ CPluginManager::~CPluginManager()
 
 const char *CPluginManager::LookupAlias(const char *alias)
 {
-	SourceHook::List<CNameAlias *>::iterator iter;
+	std::list<CNameAlias *>::iterator iter;
 	CNameAlias *p;
 
 	for (iter = m_Aliases.begin(); iter != m_Aliases.end(); iter++)
@@ -102,19 +102,19 @@ const char *CPluginManager::LookupAlias(const char *alias)
 	return NULL;
 }
 
-SourceHook::List<CNameAlias *>::iterator CPluginManager::_alias_begin()
+std::list<CNameAlias *>::iterator CPluginManager::_alias_begin()
 {
 	return m_Aliases.begin();
 }
 
-SourceHook::List<CNameAlias *>::iterator CPluginManager::_alias_end()
+std::list<CNameAlias *>::iterator CPluginManager::_alias_end()
 {
 	return m_Aliases.end();
 }
 
 void CPluginManager::SetAlias(const char *alias, const char *value)
 {
-	SourceHook::List<CNameAlias *>::iterator iter;
+	std::list<CNameAlias *>::iterator iter;
 	CNameAlias *p;
 
 	for (iter = m_Aliases.begin(); iter != m_Aliases.end(); iter++)
@@ -387,37 +387,6 @@ const char *CPluginManager::GetStatusText(CPlugin *pl)
 	}
 }
 
-struct Unloader : public SourceHook::Impl::UnloadListener
-{
-	CPluginManager::CPlugin *plugin_;
-	bool destroy_;
-
-	Unloader(CPluginManager::CPlugin *plugin, bool destroy)
-	  : plugin_(plugin), destroy_(destroy)
-	{ }
-
-	void ReadyToUnload(SourceHook::Plugin plug)
-	{
-		if (plugin_->m_UnloadFn != NULL)
-			plugin_->m_UnloadFn();
-
-		if(plugin_->m_Lib)
-			dlclose(plugin_->m_Lib);
-
-		if (destroy_)
-		{
-			delete plugin_;
-		}
-		else
-		{
-			plugin_->m_Lib = NULL;
-			plugin_->m_API = NULL;
-		}
-
-		delete this;
-	}
-};
-
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
 	std::unique_ptr<FILE, decltype(&::fclose)> fp(nullptr, ::fclose);
@@ -602,7 +571,7 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 	{
 		pl->m_Events.clear();
 		UnregAllConCmds(pl);
-		g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, false));
+		//g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, false));
 	}
 
 	return pl;
@@ -635,7 +604,7 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 			}
 
 			//Make sure to detach it from sourcehook!
-			g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, true));
+			//g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, true));
 			return true;
 		}
 	} else {
@@ -675,7 +644,7 @@ bool CPluginManager::_Pause(CPluginManager::CPlugin *pl, char *error, size_t max
 	{
 		if (pl->m_API->Pause(error, maxlen))
 		{
-			g_SourceHook.PausePlugin(pl->m_Id);
+			//g_SourceHook.PausePlugin(pl->m_Id);
 			pl->m_Status = Pl_Paused;
 
 			return true;
@@ -703,7 +672,7 @@ bool CPluginManager::_Unpause(CPluginManager::CPlugin *pl, char *error, size_t m
 	{
 		if (pl->m_API->Unpause(error, maxlen))
 		{
-			g_SourceHook.UnpausePlugin(pl->m_Id);
+			//g_SourceHook.UnpausePlugin(pl->m_Id);
 			pl->m_Status = Pl_Running;
 
 			return true;

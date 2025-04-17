@@ -7,6 +7,7 @@ for sdk_target in MMS.sdk_targets:
   
   name = 'metamod.' + sdk['extension']
   binary = MMS.HL2Library(builder, cxx, name, sdk)
+  binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'core', 'khook', 'include')]
 
   binary.sources += [
     'metamod.cpp',
@@ -15,12 +16,6 @@ for sdk_target in MMS.sdk_targets:
     'metamod_plugins.cpp',
     'metamod_util.cpp',
     'provider/provider_base.cpp',
-    'sourcehook/sourcehook.cpp',
-    'sourcehook/sourcehook_impl_chookidman.cpp',
-    'sourcehook/sourcehook_impl_chookmaninfo.cpp',
-    'sourcehook/sourcehook_impl_cproto.cpp',
-    'sourcehook/sourcehook_impl_cvfnptr.cpp',
-    'sourcehook/sourcehook_hookmangen.cpp',
     'gamedll_bridge.cpp'
   ]
 
@@ -38,10 +33,5 @@ for sdk_target in MMS.sdk_targets:
       'vsp_bridge.cpp'
       ]
     binary.compiler.defines += ['_ALLOW_KEYWORD_MACROS']
-
-  if cxx.target.arch == 'x86':
-    binary.sources += ['sourcehook/sourcehook_hookmangen_x86.cpp']
-  elif binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform != 'linux':
-    binary.sources += ['sourcehook/sourcehook_hookmangen_x86_64.cpp']
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
