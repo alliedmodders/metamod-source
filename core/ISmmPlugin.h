@@ -34,7 +34,6 @@
  * The pure-virtual ISmmPlugin callbacks must be implemented for the load to load.
  */
 
-#include "sourcehook.h"
 #include "IPluginManager.h"
 #include "ISmmAPI.h"
 #include "ISmmPluginExt.h"
