@@ -33,9 +33,6 @@
 
 #include "interface.h"
 #include "eiface.h"
-#include "sourcehook/sourcehook_impl.h"
-#include "sourcehook/sourcehook_hookmangen.h"
-#include "sourcehook/sourcehook.h"
 #include "ISmmPlugin.h"
 #include "metamod_provider.h"
 
@@ -69,7 +66,6 @@ public: // ISmmAPI
 	void ConPrint(const char *str) override;
 	void ConPrintf(const char *fmt, ...) override;
 	void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) override;
-	void GetShVersions(int &shvers, int &shimpl) override;
 	void AddListener(ISmmPlugin *plugin, IMetamodListener *pListener) override;
 	void *MetaFactory(const char *iface, int *ret, PluginId *id) override;
 	int FormatIface(char iface[], size_t maxlength) override;
@@ -89,8 +85,6 @@ public: // ISmmAPI
 	size_t Format(char *buffer, size_t maxlength, const char *format, ...) override;
 	size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
 public:
-	void SetLastMetaReturn(META_RES res);
-	META_RES GetLastMetaReturn();
 	bool IsLoadedAsGameDLL();
 	const char *GetGameBinaryPath();
 	const char *GetPluginsFile();
@@ -134,7 +128,6 @@ bool
 mm_IsVspLoadComplete();
 
 extern MetamodSource g_Metamod;
-extern SourceHook::Impl::CSourceHookImpl g_SourceHook;
 
 #endif //_INCLUDE_SOURCEMM_H
 

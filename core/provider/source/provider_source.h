@@ -30,15 +30,17 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 #include "../provider_base.h"
-#include "sh_list.h"
 
 class IFileSystem;
 
 class SourceProvider : public BaseProvider
 {
 public: // BaseProvider
+	SourceProvider();
+
 	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
 	virtual void Notify_DLLShutdown_Pre() override;
 	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override;
@@ -78,19 +80,24 @@ public: // IConCommandBaseAccessor
 		ConCommandBase** m_TopConCommandBase = nullptr;
 #endif
 	private:
-		SourceHook::List<ConCommandBase*> m_RegisteredCommands;
+		std::list<ConCommandBase*> m_RegisteredCommands;
 
 	friend class SourceProvider;
 	} m_ConVarAccessor;
 public:
-	bool Hook_GameInit();
-	bool Hook_LevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel,
+	KHook::Virtual<IServerGameDLL, bool> m_GameInit;
+	KHook::Return<bool> Hook_GameInit(IServerGameDLL*);
+	KHook::Virtual<IServerGameDLL, bool, char const*, char const*, char const *, char const*, bool, bool> m_LevelInit;
+	KHook::Return<bool> Hook_LevelInit(IServerGameDLL*, char const* pMapName, char const* pMapEntities, char const* pOldLevel,
 		char const* pLandmarkName, bool loadGame, bool background);
-	void Hook_LevelShutdown();
+	KHook::Virtual<IServerGameDLL, void> m_LevelShutdown;
+	KHook::Return<void> Hook_LevelShutdown(IServerGameDLL*);
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-	void Hook_ClientCommand(edict_t* pEdict, const CCommand& args);
+	KHook::Virtual<IServerGameClients, void, edict_t*, const CCommand&> m_ClientCommand;
+	KHook::Return<void> Hook_ClientCommand(IServerGameClients*, edict_t* pEdict, const CCommand& args);
 #else
-	void Hook_ClientCommand(edict_t* pEdict);
+	KHook::Virtual<IServerGameClients, void, edict_t*> m_ClientCommand;
+	KHook::Return<void> Hook_ClientCommand(IServerGameClients*, edict_t* pEdict);
 #endif
 private:
 	struct UsrMsgInfo

@@ -29,10 +29,10 @@
 #include <cstddef>
 
 #include "loader.h"
-#include "sh_memfuncinfo.h"
-#include "sh_memory.h"
 #include "serverplugin.h"
 #include "gamedll.h"
+#include "khook/memory.hpp"
+#include "khook.hpp"
 
 typedef enum
 {
@@ -111,26 +111,18 @@ public:
 			/* We need to insert the right type of call into this vtable */
 			void **vtable_src;
 			IRandomThings sample;
-			SourceHook::MemFuncInfo mfp_dest, mfp_src;
 
-			mfp_dest.isVirtual = false;
-			mfp_src.isVirtual = false;
+			auto mfp_dest = KHook::__GetMFPVtableIndex__(&ServerPlugin::ClientCommand);
+			auto mfp_src = KHook::__GetMFPVtableIndex__(&IRandomThings::ClientCommand);
 
-			SourceHook::GetFuncInfo(&ServerPlugin::ClientCommand, mfp_dest);
-			SourceHook::GetFuncInfo(&IRandomThings::ClientCommand, mfp_src);
-
-			assert(mfp_dest.isVirtual);
-			assert(mfp_dest.thisptroffs == 0);
-			assert(mfp_dest.vtbloffs == 0);
-			assert(mfp_src.isVirtual);
-			assert(mfp_src.thisptroffs == 0);
-			assert(mfp_src.vtbloffs == 0);
+			assert(mfp_dest != -1);
+			assert(mfp_src != -1);
 
 			vtable_src = (void **)*(void **)&sample;
-			SourceHook::SetMemAccess(&this_vtable[mfp_dest.vtblindex],
+			KHook::Memory::SetAccess(&this_vtable[mfp_dest],
 									 sizeof(void*),
-									 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
-			this_vtable[mfp_dest.vtblindex] = vtable_src[mfp_src.vtblindex];
+									 KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
+			this_vtable[mfp_dest] = vtable_src[mfp_src];
 		}
 
 		/* AS inserted ClientFullyConnect into vtable, so move entries up on older engines */
@@ -142,23 +134,18 @@ public:
 			&& mm_backend != MMBackend_CSGO
 			&& mm_backend != MMBackend_MCV)
 		{
-			SourceHook::MemFuncInfo mfp_fconnect;
-			mfp_fconnect.isVirtual = false;
+			auto mfp_fconnect = KHook::__GetMFPVtableIndex__(&ServerPlugin::ClientFullyConnect);
 
-			SourceHook::GetFuncInfo(&ServerPlugin::ClientFullyConnect, mfp_fconnect);
-
-			assert(mfp_fconnect.isVirtual);
-			assert(mfp_fconnect.thisptroffs == 0);
-			assert(mfp_fconnect.vtbloffs == 0);
+			assert(mfp_fconnect != -1);
 
 			/* Shifting ClientDisconnect through OnQueryCvarValueFinished up into slot for
 			 * ClientFullyConnect (8 entries)
 			 */
-			SourceHook::SetMemAccess(&this_vtable[mfp_fconnect.vtblindex],
+			KHook::Memory::SetAccess(&this_vtable[mfp_fconnect],
 									 sizeof(void *) * 8,
-									 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
-			memmove(&this_vtable[mfp_fconnect.vtblindex],
-					&this_vtable[mfp_fconnect.vtblindex + 1],
+									 KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
+			memmove(&this_vtable[mfp_fconnect],
+					&this_vtable[mfp_fconnect + 1],
 					sizeof(void *) * 8);
 		}
 
