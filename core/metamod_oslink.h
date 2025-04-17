@@ -34,9 +34,7 @@
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define WIN32_LEAN_AND_MEAN
 	#define OS_WIN32
-	#if defined _MSC_VER && _MSC_VER >= 1400
-		#undef ARRAYSIZE
-	#else
+	#if !defined _MSC_VER || _MSC_VER < 1400
 		#define mkdir(a) _mkdir(a)
 	#endif
 	#include <windows.h>
