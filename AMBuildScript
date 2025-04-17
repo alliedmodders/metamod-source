@@ -139,6 +139,7 @@ class MMSConfig(object):
         '-fno-rtti',
         '-fno-threadsafe-statics',
         '-Wno-non-virtual-dtor',
+        '-Wno-class-memaccess',
         '-Wno-overloaded-virtual',
         '-Wno-register',
       ]
