@@ -56,9 +56,7 @@ bool SourceProvider::SourceConVarAccessor::Register(ConCommandBase *pCommand)
 
 void SourceProvider::SourceConVarAccessor::RemoveMetamodCommands()
 {
-	List<ConCommandBase *>::iterator iter;
-
-	for (iter = m_RegisteredCommands.begin(); iter != m_RegisteredCommands.end(); iter++)
+	for (auto iter = m_RegisteredCommands.begin(); iter != m_RegisteredCommands.end(); iter++)
 	{
 		Unregister(*iter);
 	}
