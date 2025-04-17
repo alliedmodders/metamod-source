@@ -39,20 +39,17 @@ void LocalCommand_Meta(const CCommand& args);
 void LocalCommand_Meta();
 #endif
 static ConCommand meta_local_cmd("meta", LocalCommand_Meta, "Metamod:Source control options");
-
 static SourceProvider g_SourceProvider;
 
 IMetamodSourceProvider* provider = &g_SourceProvider;
 
-SH_DECL_HOOK0(IServerGameDLL, GameInit, SH_NOATTRIB, 0, bool);
-SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, const char*, const char*, const char*, const char*, bool, bool);
-SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
-
-#if SOURCE_ENGINE >= SE_ORANGEBOX
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t*, const CCommand&);
-#else
-SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t*);
-#endif
+SourceProvider::SourceProvider() : 
+	m_GameInit(&IServerGameDLL::GameInit, this, &SourceProvider::Hook_GameInit, nullptr),
+	m_LevelInit(&IServerGameDLL::LevelInit, this, nullptr, &SourceProvider::Hook_LevelInit),
+	m_LevelShutdown(&IServerGameDLL::LevelShutdown, this, nullptr, &SourceProvider::Hook_LevelShutdown),
+	m_ClientCommand(&IServerGameClients::ClientCommand, this, &SourceProvider::Hook_ClientCommand, nullptr)
+	{
+}
 
 void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	CreateInterfaceFn serverFactory)
@@ -124,19 +121,24 @@ void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	if (gameclients)
 	{
-		SH_ADD_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &SourceProvider::Hook_ClientCommand), false);
+		m_ClientCommand.Add(gameclients, false);
 	}
 
-	SH_ADD_HOOK(IServerGameDLL, GameInit, server, SH_MEMBER(this, &SourceProvider::Hook_GameInit), false);
-	SH_ADD_HOOK(IServerGameDLL, LevelInit, server, SH_MEMBER(this, &SourceProvider::Hook_LevelInit), true);
-	SH_ADD_HOOK(IServerGameDLL, LevelShutdown, server, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown), true);
+	m_GameInit.Add(server, false);
+	m_LevelInit.Add(server, true);
+	m_LevelShutdown.Add(server, true);
 }
 
 void SourceProvider::Notify_DLLShutdown_Pre()
 {
-	SH_REMOVE_HOOK(IServerGameDLL, GameInit, server, SH_MEMBER(this, &SourceProvider::Hook_GameInit), false);
-	SH_REMOVE_HOOK(IServerGameDLL, LevelInit, server, SH_MEMBER(this, &SourceProvider::Hook_LevelInit), true);
-	SH_REMOVE_HOOK(IServerGameDLL, LevelShutdown, server, SH_MEMBER(this, &SourceProvider::Hook_LevelShutdown), true);
+	m_GameInit.Remove(server, false);
+	m_LevelInit.Remove(server, true);
+	m_LevelShutdown.Remove(server, true);
+
+	if (gameclients)
+	{
+		m_ClientCommand.Remove(gameclients, false);
+	}
 
 	m_ConVarAccessor.RemoveMetamodCommands();
 
@@ -534,7 +536,7 @@ void SourceProvider::CacheUserMessages()
 	memcpy(orig_bytes, target, sizeof(orig_bytes));
 
 	/* Patch in relative jump to our Error() detour */
-	SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+	KHook::Memory::SetAccess(target, sizeof(orig_bytes), KHook::Memory::Flags::READ | KHook::Memory::Flags::EXECUTE | KHook::Memory::Flags::READ);
 	target[0] = IA32_JMP_IMM32;
 	*(int32_t*)&target[1] = (int32_t)(detour - (target + 5));
 
@@ -543,7 +545,7 @@ void SourceProvider::CacheUserMessages()
 	{
 		/* Restore bytes and memory protection */
 		memcpy(target, orig_bytes, sizeof(orig_bytes));
-		SetMemAccess(target, sizeof(orig_bytes), SH_MEM_READ | SH_MEM_EXEC);
+		KHook::Memory::SetAccess(target, sizeof(orig_bytes), KHook::Memory::Flags::READ | KHook::Memory::Flags::EXECUTE);
 		return;
 	}
 
@@ -634,17 +636,17 @@ bool SourceProvider::KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, cons
 	return retOK;
 }
 
-bool SourceProvider::Hook_GameInit()
+KHook::Return<bool> SourceProvider::Hook_GameInit(IServerGameDLL*)
 {
 	if (nullptr != m_pCallbacks)
 	{
 		m_pCallbacks->OnGameInit();
 	}
 
-	RETURN_META_VALUE(MRES_IGNORED, true);
+	return { KHook::Action::Ignore };
 }
 
-bool SourceProvider::Hook_LevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel,
+KHook::Return<bool> SourceProvider::Hook_LevelInit(IServerGameDLL*, char const* pMapName, char const* pMapEntities, char const* pOldLevel,
 	char const* pLandmarkName, bool loadGame, bool background)
 {
 	if (nullptr != m_pCallbacks)
@@ -652,25 +654,25 @@ bool SourceProvider::Hook_LevelInit(char const* pMapName, char const* pMapEntiti
 		m_pCallbacks->OnLevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
 	}
 
-	RETURN_META_VALUE(MRES_IGNORED, true);
+	return { KHook::Action::Ignore };
 }
 
-void SourceProvider::Hook_LevelShutdown()
+KHook::Return<void> SourceProvider::Hook_LevelShutdown(IServerGameDLL*)
 {
 	if (nullptr != m_pCallbacks)
 	{
 		m_pCallbacks->OnLevelShutdown();
 	}
 
-	RETURN_META(MRES_IGNORED);
+	return { KHook::Action::Ignore };
 }
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-void SourceProvider::Hook_ClientCommand(edict_t* client, const CCommand& _cmd)
+KHook::Return<void> SourceProvider::Hook_ClientCommand(IServerGameClients*, edict_t* client, const CCommand& _cmd)
 {
 	GlobCommand cmd(&_cmd);
 #else
-void SourceProvider::Hook_ClientCommand(edict_t * client)
+KHook::Return<void> SourceProvider::Hook_ClientCommand(IServerGameClients*, edict_t * client)
 {
 	GlobCommand cmd;
 #endif
@@ -681,8 +683,8 @@ void SourceProvider::Hook_ClientCommand(edict_t * client)
 			m_pCallbacks->OnCommand_ClientMeta(client, &cmd);
 		}
 
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
 
-	RETURN_META(MRES_IGNORED);
+	return { KHook::Action::Ignore };
 }
