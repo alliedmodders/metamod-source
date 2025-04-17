@@ -340,7 +340,6 @@ namespace SourceMM
 };
 
 extern PluginId g_PLID;
-extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceMM::IMetamodSourceProvider *provider;
 extern SourceMM::ISmmAPI *g_pMetamod;
 
