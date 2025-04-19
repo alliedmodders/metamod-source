@@ -121,23 +121,23 @@ void SourceProvider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	if (gameclients)
 	{
-		m_ClientCommand.Add(gameclients, false);
+		m_ClientCommand.Add(gameclients);
 	}
 
-	m_GameInit.Add(server, false);
-	m_LevelInit.Add(server, true);
-	m_LevelShutdown.Add(server, true);
+	m_GameInit.Add(server);
+	m_LevelInit.Add(server);
+	m_LevelShutdown.Add(server);
 }
 
 void SourceProvider::Notify_DLLShutdown_Pre()
 {
-	m_GameInit.Remove(server, false);
-	m_LevelInit.Remove(server, true);
-	m_LevelShutdown.Remove(server, true);
+	m_GameInit.Remove(server);
+	m_LevelInit.Remove(server);
+	m_LevelShutdown.Remove(server);
 
 	if (gameclients)
 	{
-		m_ClientCommand.Remove(gameclients, false);
+		m_ClientCommand.Remove(gameclients);
 	}
 
 	m_ConVarAccessor.RemoveMetamodCommands();
