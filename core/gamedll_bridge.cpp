@@ -27,6 +27,7 @@
 #include "metamod.h"
 #include "metamod_plugins.h"
 #include "metamod_util.h"
+#include "khook.hpp"
 #include <loader_bridge.h>
 #include "provider/provider_base.h"
 
@@ -61,18 +62,13 @@ public:
 	}
 	virtual void DLLInit_Post(int *isgdUnload)
 	{
-		SourceHook::MemFuncInfo mfi;
-
-		mfi.isVirtual = false;
 #ifdef META_IS_SOURCE2
-		SourceHook::GetFuncInfo(&ISource2ServerConfig::Disconnect, mfi);
+		auto mfi = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Disconnect);
 #else
-		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfi);
+		auto mfi = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLShutdown);
 #endif
-		assert(mfi.isVirtual);
-		assert(mfi.vtbloffs == 0);
-		assert(mfi.thisptroffs == 0);
-		*isgdUnload = mfi.vtblindex;
+		assert(mfi != -1);
+		*isgdUnload = mfi;
 
 		g_PluginMngr.SetAllLoaded();
 	}

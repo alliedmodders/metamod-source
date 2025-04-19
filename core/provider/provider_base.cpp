@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <setjmp.h>
 #include "../metamod_oslink.h"
-#include <sourcehook.h>
 #include <eiface.h>
 #include <tier0/icommandline.h>
 #include "../metamod_util.h"
@@ -45,8 +44,6 @@ DLL_IMPORT ICommandLine *CommandLine();
 
 void _ServerCommand();
 /* Variables */
-static List<ConCommandBase *> conbases_unreg;
-
 ICvar *icvar = NULL;
 IServerGameDLL *server = NULL;
 IVEngineServer *engine = NULL;

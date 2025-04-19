@@ -30,10 +30,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include "loader.h"
-#include <sh_memfuncinfo.h>
-#include <sh_memory.h>
 #include "utility.h"
 #include "gamedll.h"
+#include "khook/memory.hpp"
+#include "khook.hpp"
 
 class IServerGameDLL;
 class ISource2ServerConfig;
@@ -609,20 +609,17 @@ mm_PatchDllInit(bool patch)
 {
 	void **vtable_src;
 	void **vtable_dest;
-	SourceHook::MemFuncInfo mfp;
+	std::int32_t mfp;
 
 	if (g_is_source2)
 	{
-		SourceHook::GetFuncInfo(&ISource2Server::Init, mfp);
+		mfp = KHook::__GetMFPVtableIndex__(&ISource2Server::Init);
 	}
 	else
 	{
-		SourceHook::GetFuncInfo(&IServerGameDLL::DLLInit, mfp);
+		mfp = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLInit);
 	}
-
-	assert(mfp.isVirtual);
-	assert(mfp.thisptroffs == 0);
-	assert(mfp.vtbloffs == 0);
+	assert(mfp != -1);
 
 	if (g_is_source2)
 	{
@@ -634,20 +631,20 @@ mm_PatchDllInit(bool patch)
 	}
 	vtable_dest = (void **)*(void **)gamedll_iface;
 
-	SourceHook::SetMemAccess(&vtable_dest[mfp.vtblindex],
+	KHook::Memory::SetAccess(&vtable_dest[mfp],
 							 sizeof(void*),
-							 SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+							 KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
 
 	if (patch)
 	{
 		assert(isgd_orig_init == NULL);
-		isgd_orig_init = vtable_dest[mfp.vtblindex];
-		vtable_dest[mfp.vtblindex] = vtable_src[mfp.vtblindex];
+		isgd_orig_init = vtable_dest[mfp];
+		vtable_dest[mfp] = vtable_src[mfp];
 	}
 	else
 	{
 		assert(isgd_orig_init != NULL);
-		vtable_dest[mfp.vtblindex] = isgd_orig_init;
+		vtable_dest[mfp] = isgd_orig_init;
 		isgd_orig_init = NULL;
 	}
 }
@@ -657,20 +654,17 @@ mm_PatchDllShutdown()
 {
 	void **vtable_src;
 	void **vtable_dest;
-	SourceHook::MemFuncInfo mfp;
+	std::int32_t mfp;
 
-	mfp.isVirtual = false;
 	if (g_is_source2)
 	{
-		SourceHook::GetFuncInfo(&ISource2ServerConfig::Disconnect, mfp);
+		mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Disconnect);
 	}
 	else
 	{
-		SourceHook::GetFuncInfo(&IServerGameDLL::DLLShutdown, mfp);
+		mfp = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLShutdown);
 	}
-	assert(mfp.isVirtual);
-	assert(mfp.thisptroffs == 0);
-	assert(mfp.vtbloffs == 0);
+	assert(mfp != -1);
 
 	if (g_is_source2)
 	{
@@ -684,7 +678,7 @@ mm_PatchDllShutdown()
 	}
 
 	isgd_orig_shutdown = vtable_dest[isgd_shutdown_index];
-	vtable_dest[isgd_shutdown_index] = vtable_src[mfp.vtblindex];
+	vtable_dest[isgd_shutdown_index] = vtable_src[mfp];
 }
 
 #if defined _WIN32
@@ -693,26 +687,23 @@ mm_PatchAllowDedicated(bool patch)
 {
 	void **vtable_src;
 	void **vtable_dest;
-	SourceHook::MemFuncInfo mfp;
 
-	SourceHook::GetFuncInfo(&ISource2ServerConfig::AllowDedicatedServers, mfp);
+	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers, mfp);
 
-	assert(mfp.isVirtual);
-	assert(mfp.thisptroffs == 0);
-	assert(mfp.vtbloffs == 0);
+	assert(mfp != -1);
 
 	vtable_src = (void **) *(void **) &is2sc_thunk;
 	vtable_dest = (void **) *(void **) config_iface;
 
-	SourceHook::SetMemAccess(&vtable_dest[is2sc_allowdedi_index],
+	KHook::Memory::SetAccess(&vtable_dest[is2sc_allowdedi_index],
 		sizeof(void*),
-		SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+		KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
 
 	if (patch)
 	{
 		assert(is2sc_orig_allowdedi == NULL);
 		is2sc_orig_allowdedi = vtable_dest[is2sc_allowdedi_index];
-		vtable_dest[is2sc_allowdedi_index] = vtable_src[mfp.vtblindex];
+		vtable_dest[is2sc_allowdedi_index] = vtable_src[mfp];
 	}
 	else
 	{
@@ -728,31 +719,26 @@ mm_PatchConnect(bool patch)
 {
 	void **vtable_src;
 	void **vtable_dest;
-	SourceHook::MemFuncInfo mfp;
 
-	SourceHook::GetFuncInfo(&ISource2ServerConfig::Connect, mfp);
-
-	assert(mfp.isVirtual);
-	assert(mfp.thisptroffs == 0);
-	assert(mfp.vtbloffs == 0);
+	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Connect);
 
 	vtable_src = (void **) *(void **) &is2sc_thunk;
 	vtable_dest = (void **) *(void **) config_iface;
 
-	SourceHook::SetMemAccess(&vtable_dest[mfp.vtblindex],
+	KHook::Memory::SetAccess(&vtable_dest[mfp],
 		sizeof(void*),
-		SH_MEM_READ | SH_MEM_WRITE | SH_MEM_EXEC);
+		KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
 
 	if (patch)
 	{
 		assert(is2sc_orig_connect == NULL);
-		is2sc_orig_connect = vtable_dest[mfp.vtblindex];
-		vtable_dest[mfp.vtblindex] = vtable_src[mfp.vtblindex];
+		is2sc_orig_connect = vtable_dest[mfp];
+		vtable_dest[mfp] = vtable_src[mfp];
 	}
 	else
 	{
 		assert(is2sc_orig_connect != NULL);
-		vtable_dest[mfp.vtblindex] = is2sc_orig_connect;
+		vtable_dest[mfp] = is2sc_orig_connect;
 		is2sc_orig_connect = NULL;
 	}
 }
