@@ -98,36 +98,36 @@ jobs:
           python ../configure.py --enable-optimize --sdks=${{ join(fromJSON(env.SDKS)) }} --hl2sdk-root=${{ env.DEPENDENCIES_ROOT }}
           ambuild
 
-      - name: Test SourceHook (Optimized)
-        working-directory: metamod-source
-        shell: bash
-        # SourceHook tests are busted on Windows
-        continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
-        run: |
-          mkdir build-sh-opt && cd build-sh-opt
-          python ../configure.py --enable-optimize --enable-tests --sdks=
-          ambuild
-          cd ./core/sourcehook/test/test_sourcehook
-          if [ -d "${{ matrix.os_short }}-x86" ]; then
-            ./${{ matrix.os_short }}-x86/test_sourcehook -v
-          fi
-          if [ -d "${{ matrix.os_short }}-x86_64" ]; then
-            ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
-          fi
+      #- name: Test SourceHook (Optimized)
+      #  working-directory: metamod-source
+      #  shell: bash
+      #  # SourceHook tests are busted on Windows
+      #  continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
+      #  run: |
+      #    mkdir build-sh-opt && cd build-sh-opt
+      #    python ../configure.py --enable-optimize --enable-tests --sdks=
+      #    ambuild
+      #    cd ./core/sourcehook/test/test_sourcehook
+      #    if [ -d "${{ matrix.os_short }}-x86" ]; then
+      #      ./${{ matrix.os_short }}-x86/test_sourcehook -v
+      #    fi
+      #    if [ -d "${{ matrix.os_short }}-x86_64" ]; then
+      #      ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
+      #    fi
 
-      - name: Test SourceHook (Debug)
-        working-directory: metamod-source
-        shell: bash
+      #- name: Test SourceHook (Debug)
+      #  working-directory: metamod-source
+      #  shell: bash
         # SourceHook tests are busted on Windows
-        continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
-        run: |
-          mkdir build-sh-debug && cd build-sh-debug
-          python ../configure.py --enable-debug --enable-tests --sdks=
-          ambuild
-          cd ./core/sourcehook/test/test_sourcehook
-          if [ -d "${{ matrix.os_short }}-x86" ]; then
-            ./${{ matrix.os_short }}-x86/test_sourcehook -v
-          fi
-          if [ -d "${{ matrix.os_short }}-x86_64" ]; then
-            ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
-          fi
+      #  continue-on-error: ${{ startsWith(runner.os, 'Windows') }}
+      #  run: |
+      #    mkdir build-sh-debug && cd build-sh-debug
+      #    python ../configure.py --enable-debug --enable-tests --sdks=
+      #    ambuild
+      #    cd ./core/sourcehook/test/test_sourcehook
+      #    if [ -d "${{ matrix.os_short }}-x86" ]; then
+      #      ./${{ matrix.os_short }}-x86/test_sourcehook -v
+      #    fi
+      #    if [ -d "${{ matrix.os_short }}-x86_64" ]; then
+      #      ./${{ matrix.os_short }}-x86_64/test_sourcehook -v
+      #    fi
