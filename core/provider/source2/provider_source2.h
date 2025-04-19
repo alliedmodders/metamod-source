@@ -73,7 +73,8 @@ public:
 	virtual bool IsConCommandBaseACommand(ConCommandBase* pCommand) override;
 public:
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-	bool Hook_AllowDedicatedServers(EUniverse universe) const;
+	KHook::Member<ISource2ServerConfig, bool, EUniverse> m_AllowDedicatedServers;
+	bool Hook_AllowDedicatedServers(ISource2ServerConfig*, EUniverse universe) const;
 #endif
 	KHook::Virtual<IEngineServiceMgr, void, const char*, ILoopModeFactory*, void **> m_RegisterLoopMode;
 	KHook::Return<void> Hook_RegisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer);
