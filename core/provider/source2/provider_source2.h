@@ -34,6 +34,7 @@
 #include "../provider_base.h"
 #include "tier1/utlvector.h"
 #include "IEngineService.h"
+#include "khook.hpp"
 
 // TODO: is this still needed for Dota or CS2 on any platform?
 #if SOURCE_ENGINE == SE_DOTA && defined( _WIN32 )
@@ -46,6 +47,8 @@ class ISource2WorldSession;
 class Source2Provider : public BaseProvider
 {
 public:
+	Source2Provider();
+
 	virtual void Notify_DLLInit_Pre(CreateInterfaceFn engineFactory, CreateInterfaceFn serverFactory) override;
 	virtual void Notify_DLLShutdown_Pre() override;
 	virtual bool ProcessVDF(const char* file, char path[], size_t path_len, char alias[], size_t alias_len) override;
@@ -72,13 +75,26 @@ public:
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 	bool Hook_AllowDedicatedServers(EUniverse universe) const;
 #endif
-	void Hook_RegisterLoopMode(const char* pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer);
-	void Hook_UnregisterLoopMode(const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer);
-	ILoopMode *Hook_CreateLoopModePost();
-	void Hook_DestroyLoopMode(ILoopMode*);
-	bool Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry);
-	void Hook_LoopShutdownPost();
-	void Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& args);
+	KHook::Virtual<IEngineServiceMgr, void, const char*, ILoopModeFactory*, void **> m_RegisterLoopMode;
+	KHook::Return<void> Hook_RegisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer);
+
+	KHook::Virtual<IEngineServiceMgr, void, const char*, ILoopModeFactory*, void**> m_UnregisterLoopMode;
+	KHook::Return<void> Hook_UnregisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer);
+
+	KHook::Virtual<ILoopModeFactory, ILoopMode*> m_CreateLoopMode;
+	KHook::Return<ILoopMode*> Hook_CreateLoopModePost(ILoopModeFactory*);
+
+	KHook::Virtual<ILoopModeFactory, void, ILoopMode*> m_DestroyLoopMode;
+	KHook::Return<void> Hook_DestroyLoopMode(ILoopModeFactory*, ILoopMode*);
+
+	KHook::Virtual<ILoopMode, bool, KeyValues*, ILoopModePrerequisiteRegistry*> m_LoopInit;
+	KHook::Return<bool> Hook_LoopInitPost(ILoopMode*, KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry);
+
+	KHook::Virtual<ILoopMode, void> m_LoopShutdown;
+	KHook::Return<void> Hook_LoopShutdownPost(ILoopMode*);
+
+	KHook::Virtual<IServerGameClients, void, CPlayerSlot, const CCommand&> m_ClientCommand;
+	KHook::Return<void> Hook_ClientCommand(IServerGameClients*, CPlayerSlot nSlot, const CCommand& args);
 private:
 	IFileSystem* baseFs = nullptr;
 	std::vector<CConVar<CUtlString> *> m_RegisteredConVars;
