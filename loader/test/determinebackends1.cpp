@@ -11,7 +11,7 @@
 #define ENGINE_LIB_NAME "engine" LIB_SUFFIX
 #endif
 
-bool DetermineBackendS1(char *gameDir, int expectedBackend)
+bool DetermineBackendS1(const char *gameDir, int expectedBackend)
 {
 	char errorBuffer[128];
 	void *serverLib = nullptr;
@@ -56,6 +56,9 @@ bool DetermineBackendS1(char *gameDir, int expectedBackend)
 	}
 
 	MetamodBackend actualBackend = mm_DetermineBackendS1(engineQvi, serverQvi, gameDir);
+
+	mm_UnloadLibrary(engineLib);
+	mm_UnloadLibrary(serverLib);
 
 	if (actualBackend != expectedBackend)
 	{
