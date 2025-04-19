@@ -40,14 +40,9 @@ IMetamodSourceProvider* provider = &g_Source2Provider;
 
 CON_COMMAND_EXTERN(meta, LocalCommand_Meta, "Metamod:Source control options");
 
-
 static ISource2ServerConfig* serverconfig = NULL;
 INetworkServerService* netservice = NULL;
 IEngineServiceMgr* enginesvcmgr = NULL;
-
-#ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
-#endif
 
 Source2Provider::Source2Provider() :
 	m_RegisterLoopMode(&IEngineServiceMgr::RegisterLoopMode, this, &Source2Provider::Hook_RegisterLoopMode, nullptr),
@@ -57,6 +52,9 @@ Source2Provider::Source2Provider() :
 	m_LoopInit(&ILoopMode::LoopInit, this, nullptr, &Source2Provider::Hook_LoopInitPost),
 	m_LoopShutdown(&ILoopMode::LoopShutdown, this, nullptr, &Source2Provider::Hook_LoopShutdownPost),
 	m_ClientCommand(&IServerGameClients::ClientCommand, this, &Source2Provider::Hook_ClientCommand, nullptr)
+#ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
+	,m_AllowDedicatedServers(this, &Source2Provider::Hook_AllowDedicatedServers, nullptr)
+#endif
 {
 }
 
@@ -145,7 +143,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	}
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &Source2Provider::Hook_AllowDedicatedServers), false);
+	m_AllowDedicatedServers.Configure(KHook::GetVirtualFunction(&ISource2ServerConfig::AllowDedicatedServers, serverconfig));
 #endif
 
 	m_RegisterLoopMode.Add(enginesvcmgr);
@@ -249,9 +247,9 @@ const char* Source2Provider::GetGameDescription()
 }
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-bool Source2Provider::Hook_AllowDedicatedServers(EUniverse universe) const
+KHook::Return<bool> Source2Provider::Hook_AllowDedicatedServers(ISource2ServerConfig*, EUniverse universe) const
 {
-	RETURN_META_VALUE(MRES_SUPERCEDE, true);
+	return { KHook::Action::Supercede, true };
 }
 #endif
 
