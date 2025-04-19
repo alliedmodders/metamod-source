@@ -45,17 +45,20 @@ static ISource2ServerConfig* serverconfig = NULL;
 INetworkServerService* netservice = NULL;
 IEngineServiceMgr* enginesvcmgr = NULL;
 
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CPlayerSlot, const CCommand&);
-SH_DECL_HOOK3_void(IEngineServiceMgr, RegisterLoopMode, SH_NOATTRIB, 0, const char *, ILoopModeFactory *, void **);
-SH_DECL_HOOK3_void(IEngineServiceMgr, UnregisterLoopMode, SH_NOATTRIB, 0, const char*, ILoopModeFactory*, void**);
-SH_DECL_HOOK0(ILoopModeFactory, CreateLoopMode, SH_NOATTRIB, 0, ILoopMode *);
-SH_DECL_HOOK1_void(ILoopModeFactory, DestroyLoopMode, SH_NOATTRIB, 0, ILoopMode *);
-SH_DECL_HOOK2(ILoopMode, LoopInit, SH_NOATTRIB, 0, bool, KeyValues*, ILoopModePrerequisiteRegistry *);
-SH_DECL_HOOK0_void(ILoopMode, LoopShutdown, SH_NOATTRIB, 0);
-
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 SH_DECL_HOOK1(ISource2ServerConfig, AllowDedicatedServers, const, 0, bool, EUniverse);
 #endif
+
+Source2Provider::Source2Provider() :
+	m_RegisterLoopMode(&IEngineServiceMgr::RegisterLoopMode, this, &Source2Provider::Hook_RegisterLoopMode, nullptr),
+	m_UnregisterLoopMode(&IEngineServiceMgr::UnregisterLoopMode, this, &Source2Provider::Hook_UnregisterLoopMode, nullptr),
+	m_CreateLoopMode(&ILoopModeFactory::CreateLoopMode, this, nullptr, &Source2Provider::Hook_CreateLoopModePost),
+	m_DestroyLoopMode(&ILoopModeFactory::DestroyLoopMode, this, nullptr, &Source2Provider::Hook_DestroyLoopMode),
+	m_LoopInit(&ILoopMode::LoopInit, this, nullptr, &Source2Provider::Hook_LoopInitPost),
+	m_LoopShutdown(&ILoopMode::LoopShutdown, this, nullptr, &Source2Provider::Hook_LoopShutdownPost),
+	m_ClientCommand(&IServerGameClients::ClientCommand, this, &Source2Provider::Hook_ClientCommand, nullptr)
+{
+}
 
 void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	CreateInterfaceFn serverFactory)
@@ -138,15 +141,15 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 
 	if (gameclients)
 	{
-		SH_ADD_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &Source2Provider::Hook_ClientCommand), false);
+		m_ClientCommand.Add(gameclients);
 	}
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 	SH_ADD_VPHOOK(ISource2ServerConfig, AllowDedicatedServers, serverconfig, SH_MEMBER(this, &Source2Provider::Hook_AllowDedicatedServers), false);
 #endif
 
-	SH_ADD_HOOK(IEngineServiceMgr, RegisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_RegisterLoopMode), false);
-	SH_ADD_HOOK(IEngineServiceMgr, UnregisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_UnregisterLoopMode), false);
+	m_RegisterLoopMode.Add(enginesvcmgr);
+	m_UnregisterLoopMode.Add(enginesvcmgr);
 }
 
 void Source2Provider::Notify_DLLShutdown_Pre()
@@ -156,12 +159,12 @@ void Source2Provider::Notify_DLLShutdown_Pre()
 
 	ConVar_Unregister();
 
-	SH_REMOVE_HOOK(IEngineServiceMgr, RegisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_RegisterLoopMode), false);
-	SH_REMOVE_HOOK(IEngineServiceMgr, UnregisterLoopMode, enginesvcmgr, SH_MEMBER(this, &Source2Provider::Hook_UnregisterLoopMode), false);
+	m_RegisterLoopMode.Remove(enginesvcmgr);
+	m_UnregisterLoopMode.Remove(enginesvcmgr);
 
 	if (gameclients)
 	{
-		SH_REMOVE_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &Source2Provider::Hook_ClientCommand), false);
+		m_ClientCommand.Remove(gameclients);
 	}
 }
 
@@ -387,48 +390,52 @@ void LocalCommand_Meta(const CCommandContext &, const CCommand& args)
 	}
 }
 
-void Source2Provider::Hook_RegisterLoopMode(const char *pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer)
+KHook::Return<void> Source2Provider::Hook_RegisterLoopMode(IEngineServiceMgr*, const char *pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer)
 {
 	if (!strcmp(pszLoopModeName, "game"))
 	{
-		SH_ADD_HOOK(ILoopModeFactory, CreateLoopMode, pLoopModeFactory, SH_MEMBER(this, &Source2Provider::Hook_CreateLoopModePost), true);
-		SH_ADD_HOOK(ILoopModeFactory, DestroyLoopMode, pLoopModeFactory, SH_MEMBER(this, &Source2Provider::Hook_DestroyLoopMode), false);
+		m_CreateLoopMode.Add(pLoopModeFactory);
+		m_DestroyLoopMode.Add(pLoopModeFactory);
 
 		if (nullptr != m_pCallbacks)
 		{
 			m_pCallbacks->OnGameInit();
 		}
 	}
+
+	return { KHook::Action::Ignore };
 }
 
-void Source2Provider::Hook_UnregisterLoopMode(const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer)
+KHook::Return<void> Source2Provider::Hook_UnregisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer)
 {
 	if (!strcmp(pszLoopModeName, "game"))
 	{
-		SH_REMOVE_HOOK(ILoopModeFactory, CreateLoopMode, pLoopModeFactory, SH_MEMBER(this, &Source2Provider::Hook_CreateLoopModePost), true);
-		SH_REMOVE_HOOK(ILoopModeFactory, DestroyLoopMode, pLoopModeFactory, SH_MEMBER(this, &Source2Provider::Hook_DestroyLoopMode), false);
+		m_CreateLoopMode.Remove(pLoopModeFactory);
+		m_DestroyLoopMode.Remove(pLoopModeFactory);
 	}
 
-	RETURN_META(MRES_IGNORED);
+	return { KHook::Action::Ignore };
 }
 
-ILoopMode *Source2Provider::Hook_CreateLoopModePost()
+KHook::Return<ILoopMode*> Source2Provider::Hook_CreateLoopModePost(ILoopModeFactory*)
 {
-	ILoopMode *pLoopMode = META_RESULT_ORIG_RET(ILoopMode *);
-	SH_ADD_HOOK(ILoopMode, LoopInit, pLoopMode, SH_MEMBER(this, &Source2Provider::Hook_LoopInitPost), true);
-	SH_ADD_HOOK(ILoopMode, LoopShutdown, pLoopMode, SH_MEMBER(this, &Source2Provider::Hook_LoopShutdownPost), true);
+	auto pLoopMode = (ILoopMode*)KHook::GetOriginalValuePtr();
+	m_LoopInit.Add(pLoopMode);
+	m_LoopShutdown.Add(pLoopMode);
 
 	// Post-hook. Ignored
-	return nullptr;
+	return { KHook::Action::Ignore, nullptr };
 }
 
-void Source2Provider::Hook_DestroyLoopMode(ILoopMode* pLoopMode)
+KHook::Return<void> Source2Provider::Hook_DestroyLoopMode(ILoopModeFactory*, ILoopMode* pLoopMode)
 {
-	SH_REMOVE_HOOK(ILoopMode, LoopInit, pLoopMode, SH_MEMBER(this, &Source2Provider::Hook_LoopInitPost), true);
-	SH_REMOVE_HOOK(ILoopMode, LoopShutdown, pLoopMode, SH_MEMBER(this, &Source2Provider::Hook_LoopShutdownPost), true);
+	m_LoopInit.Remove(pLoopMode);
+	m_LoopShutdown.Remove(pLoopMode);
+
+	return { KHook::Action::Ignore };
 }
 
-bool Source2Provider::Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry)
+KHook::Return<bool> Source2Provider::Hook_LoopInitPost(ILoopMode*, KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry)
 {
 	if (nullptr != m_pCallbacks)
 	{
@@ -443,18 +450,20 @@ bool Source2Provider::Hook_LoopInitPost(KeyValues* pKeyValues, ILoopModePrerequi
 	}
 	
 	// Post-hook. Ignored
-	return true;
+	return { KHook::Action::Ignore };
 }
 
-void Source2Provider::Hook_LoopShutdownPost()
+KHook::Return<void> Source2Provider::Hook_LoopShutdownPost(ILoopMode*)
 {
 	if (nullptr != m_pCallbacks)
 	{
 		m_pCallbacks->OnLevelShutdown();
 	}
+
+	return { KHook::Action::Ignore };
 }
 
-void Source2Provider::Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& _cmd)
+KHook::Return<void> Source2Provider::Hook_ClientCommand(IServerGameClients*, CPlayerSlot nSlot, const CCommand& _cmd)
 {
 	GlobCommand cmd(&_cmd);
 
@@ -465,8 +474,8 @@ void Source2Provider::Hook_ClientCommand(CPlayerSlot nSlot, const CCommand& _cmd
 			m_pCallbacks->OnCommand_ClientMeta(nSlot, &cmd);
 		}
 		
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
 
-	RETURN_META(MRES_IGNORED);
+	return { KHook::Action::Ignore };
 }
