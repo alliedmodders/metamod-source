@@ -150,7 +150,7 @@ public:
 
 		if (g_plugin_unload != NULL)
 		{
-			CmdDispatch.Add(g_plugin_unload, false);
+			CmdDispatch.Add(g_plugin_unload);
 		}
 
 		return true;
@@ -167,7 +167,7 @@ public:
 
 		if (g_plugin_unload != NULL)
 		{
-			CmdDispatch.Remove(g_plugin_unload, false);
+			CmdDispatch.Remove(g_plugin_unload);
 			g_plugin_unload = NULL;
 		}
 		if (!g_Metamod.IsLoadedAsGameDLL())
