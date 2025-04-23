@@ -486,11 +486,15 @@ using namespace SourceMM;
 #define PL_EXPOSURE_FUNC(name, var)	EXPOSE_SINGLE_INTERFACE_GLOBALVAR(ISmmPlugin, ISmmPlugin, METAMOD_PLAPI_NAME, var);
 #endif
 
+namespace KHook {
+class IKHook;
+}
+
 #define PLUGIN_EXPOSE(name, var) \
 	ISmmAPI *g_SMAPI = NULL; \
 	ISmmPlugin *g_PLAPI = NULL; \
 	PluginId g_PLID = (PluginId)0; \
-	SourceHook::ISourceHook *g_SHPtr = NULL; \
+	KHook::IKHook* __exported__khook = nullptr; \
 	PL_EXPOSURE_FUNC(name, var)
 	
 	
@@ -502,7 +506,7 @@ using namespace SourceMM;
  * to use values like g_SHPtr in other files.
  */
 #define PLUGIN_GLOBALVARS()	\
-	extern SourceHook::ISourceHook *g_SHPtr; \
+	extern KHook::IKHook* __exported__khook; \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
 	extern PluginId g_PLID; 
@@ -512,7 +516,7 @@ using namespace SourceMM;
  */
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
-	g_SHPtr = static_cast<SourceHook::ISourceHook *>(ismm->MetaFactory(MMIFACE_SOURCEHOOK, NULL, NULL)); \
+	__exported__khook = static_cast<KHook::IKHook*>(ismm->MetaFactory(MMIFACE_KHOOK, nullptr, nullptr)); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 
