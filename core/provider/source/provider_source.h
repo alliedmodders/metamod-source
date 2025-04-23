@@ -33,6 +33,7 @@
 #include <list>
 
 #include "../provider_base.h"
+#include "khook.hpp"
 
 class IFileSystem;
 
