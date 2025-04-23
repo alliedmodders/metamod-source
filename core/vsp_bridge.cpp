@@ -23,6 +23,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 #include <cassert>
+#include <string>
 
 #include "metamod.h"
 #include "metamod_util.h"
@@ -32,8 +33,7 @@
 #include "loader_bridge.h"
 #include "metamod_version.h"
 #include "provider/provider_base.h"
-
-#include <string>
+#include "khook.hpp"
 
 ConCommand *g_plugin_unload = NULL;
 bool g_bIsTryingToUnload;
