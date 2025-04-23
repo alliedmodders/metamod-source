@@ -36,6 +36,7 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_base.h"
+#include "khook.hpp"
 
 #include <list>
 
@@ -92,6 +93,31 @@ static bool g_bIsVspBridged = false;
 MetamodSource g_Metamod;
 PluginId g_PLID = Pl_Console;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
+
+#ifndef KHOOK_STANDALONE
+static_assert(false, "KHOOK_STANDALONE wasn't defined!");
+#endif
+class KHookImpl : public KHook::IKHook {
+public:
+	virtual KHook::HookID_t SetupHook(void* function, void* hookPtr, void* removedFunctionMFP, KHook::Action* hookAction, void* overrideReturnPtr, void* originalReturnPtr, void* preMFP, void* postMFP, void* returnOverrideMFP, void* returnOriginalMFP, void* callOriginalMFP, bool async = false) override {
+		return KHook::SetupHook(function, hookPtr, removedFunctionMFP, hookAction, overrideReturnPtr, originalReturnPtr, preMFP, postMFP, returnOverrideMFP, returnOriginalMFP, callOriginalMFP, async);
+	}
+	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
+		return KHook::RemoveHook(id, async);
+	}
+	virtual void* GetCurrent() override {
+		return KHook::GetCurrent();
+	}
+	virtual void* GetOriginalFunction() override {
+		return KHook::GetOriginalFunction();
+	}
+	virtual void* GetOriginalValuePtr(bool pop = false) override {
+		return KHook::GetOriginalValuePtr(pop);
+	}
+	virtual void* GetOverrideValuePtr(bool pop = false) override {
+		return KHook::GetOverrideValuePtr(pop);
+	}
+} g_KHook;
 
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
@@ -806,7 +832,11 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	}
 
 	/* First check ours... we get first chance! */
-	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
+	if (strcmp(iface, MMIFACE_KHOOK) == 0)
+	{
+		return static_cast<void*>(static_cast<KHook::IKHook*>(&g_KHook));
+	}
+	else if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
 	{
 		return nullptr;
 	}
