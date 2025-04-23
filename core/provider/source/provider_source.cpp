@@ -32,6 +32,7 @@
 #include "KeyValues.h"
 #include "filesystem.h"
 #include "tier0/icommandline.h"
+#include "khook/memory.hpp"
 
 /* Imports */
 #if SOURCE_ENGINE < SE_ORANGEBOX
