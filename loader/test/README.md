@@ -40,8 +40,3 @@ You can run the following to test all supported games in Steam:
 ```
 .\loader\test\test_determinebackends1.ps1 "C:\Program Files (x86)\Steam"
 ```
-
-If you want to use dedicated server installs you can pass the `-preferds` parameter:
-```
-.\loader\test\test_determinebackends1.ps1 "C:\Program Files (x86)\Steam" -preferds
-```
