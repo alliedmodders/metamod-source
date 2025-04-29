@@ -128,8 +128,6 @@ struct MetamodVersionInfo
 {
 	int api_major;			/**< ISmmAPI major version */
 	int api_minor;			/**< ISmmAPI minor version */
-	int sh_iface;			/**< SourceHook interface version */
-	int sh_impl;			/**< SourceHook implementation version */
 	int pl_min;				/**< Plugin API minimum version */
 	int pl_max;				/**< Plugin API maximum version */
 	int source_engine;		/**< Source Engine version (SOURCE_* constants) */

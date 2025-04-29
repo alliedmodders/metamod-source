@@ -56,9 +56,7 @@ bool SourceProvider::SourceConVarAccessor::Register(ConCommandBase *pCommand)
 
 void SourceProvider::SourceConVarAccessor::RemoveMetamodCommands()
 {
-	List<ConCommandBase *>::iterator iter;
-
-	for (iter = m_RegisteredCommands.begin(); iter != m_RegisteredCommands.end(); iter++)
+	for (auto iter = m_RegisteredCommands.begin(); iter != m_RegisteredCommands.end(); iter++)
 	{
 		Unregister(*iter);
 	}
@@ -84,7 +82,7 @@ void SourceProvider::SourceConVarAccessor::RemoveMetamodCommands()
  */
 bool SourceProvider::SourceConVarAccessor::InitConCommandBaseList()
 {
-	char *vfunc = (char *)SH_GET_ORIG_VFNPTR_ENTRY(icvar, &ICvar::GetCommands);
+	char *vfunc = (char *)KHook::ExtractMFP(KHook::GetVtableFunction(icvar, &ICvar::GetCommands));
 
 	if (*vfunc == '\xE9')
 	{

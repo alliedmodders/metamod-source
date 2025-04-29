@@ -31,6 +31,8 @@ class MMSConfig(object):
     self.versionlib = None
     self.all_targets = []
     self.target_archs = set()
+    self.libsafetyhook = {}
+    self.libkhook = {}
 
     if builder.options.targets:
       target_archs = builder.options.targets.split(',')
@@ -322,7 +324,6 @@ class MMSConfig(object):
 
     cxx.cxxincludes += [
       os.path.join(context.currentSourcePath),
-      os.path.join(context.currentSourcePath, 'sourcehook'),
       os.path.join(context.sourcePath, 'loader'),
     ]
 
@@ -367,7 +368,6 @@ BuildScripts = [
 ]
 if getattr(builder.options, 'enable_tests', False):
     BuildScripts += [
-        'core/sourcehook/test/AMBuilder',
         'loader/test/AMBuilder',
     ]
 
@@ -376,6 +376,7 @@ if builder.backend == 'amb2':
     'support/buildbot/PackageScript',
   ]
 
+builder.Build(['third_party/khook/AMBuilder', 'third_party/khook/third_party/safetyhook/AMBuilder'], { 'KHook': MMS, 'SafetyHook': MMS })
 builder.Build(BuildScripts, { 'MMS': MMS })
 
 if builder.options.breakpad_dump:
