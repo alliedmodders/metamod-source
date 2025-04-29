@@ -9,7 +9,7 @@ for sdk_target in MMS.sdk_targets:
   binary = MMS.HL2Library(builder, cxx, name, sdk)
   binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'third_party', 'khook', 'include')]
 
-  binary.compiler.defines += ['KHOOK_STANDALONE']
+  binary.compiler.defines += ['KHOOK_STANDALONE', 'KHOOK_EXPORT']
   for task in MMS.libkhook:
     if task.target.arch == binary.compiler.target.arch:
       binary.compiler.linkflags += [task.binary]

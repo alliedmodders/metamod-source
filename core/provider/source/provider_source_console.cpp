@@ -82,7 +82,7 @@ void SourceProvider::SourceConVarAccessor::RemoveMetamodCommands()
  */
 bool SourceProvider::SourceConVarAccessor::InitConCommandBaseList()
 {
-	char *vfunc = (char *)KHook::GetVirtualFunction(&ICvar::GetCommands, icvar);
+	char *vfunc = (char *)KHook::ExtractMFP(KHook::GetVtableFunction(icvar, &ICvar::GetCommands));
 
 	if (*vfunc == '\xE9')
 	{
