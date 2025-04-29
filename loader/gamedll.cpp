@@ -614,11 +614,11 @@ mm_PatchDllInit(bool patch)
 
 	if (g_is_source2)
 	{
-		mfp = KHook::__GetMFPVtableIndex__(&ISource2Server::Init);
+		mfp = KHook::GetVtableIndex(&ISource2Server::Init);
 	}
 	else
 	{
-		mfp = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLInit);
+		mfp = KHook::GetVtableIndex(&IServerGameDLL::DLLInit);
 	}
 	assert(mfp != -1);
 
@@ -659,11 +659,11 @@ mm_PatchDllShutdown()
 
 	if (g_is_source2)
 	{
-		mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Disconnect);
+		mfp = KHook::GetVtableIndex(&ISource2ServerConfig::Disconnect);
 	}
 	else
 	{
-		mfp = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLShutdown);
+		mfp = KHook::GetVtableIndex(&IServerGameDLL::DLLShutdown);
 	}
 	assert(mfp != -1);
 
@@ -689,7 +689,7 @@ mm_PatchAllowDedicated(bool patch)
 	void **vtable_src;
 	void **vtable_dest;
 
-	std::int32_t mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers);
+	std::int32_t mfp = KHook::GetVtableIndex(&ISource2ServerConfig::AllowDedicatedServers);
 
 	assert(mfp != -1);
 
@@ -721,7 +721,7 @@ mm_PatchConnect(bool patch)
 	void **vtable_src;
 	void **vtable_dest;
 
-	std::int32_t mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Connect);
+	std::int32_t mfp = KHook::GetVtableIndex(&ISource2ServerConfig::Connect);
 
 	vtable_src = (void **) *(void **) &is2sc_thunk;
 	vtable_dest = (void **) *(void **) config_iface;
