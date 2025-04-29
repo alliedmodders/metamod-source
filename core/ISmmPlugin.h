@@ -494,7 +494,7 @@ class IKHook;
 	ISmmAPI *g_SMAPI = NULL; \
 	ISmmPlugin *g_PLAPI = NULL; \
 	PluginId g_PLID = (PluginId)0; \
-	KHook::IKHook* __exported__khook = nullptr; \
+	namespace KHook { KHook::IKHook* __exported__khook = nullptr; } \
 	PL_EXPOSURE_FUNC(name, var)
 	
 	
@@ -506,7 +506,7 @@ class IKHook;
  * to use values like g_SHPtr in other files.
  */
 #define PLUGIN_GLOBALVARS()	\
-	extern KHook::IKHook* __exported__khook; \
+	namespace KHooK { extern KHook::IKHook* __exported__khook; } \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
 	extern PluginId g_PLID; 
@@ -516,7 +516,7 @@ class IKHook;
  */
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
-	__exported__khook = static_cast<KHook::IKHook*>(ismm->MetaFactory(MMIFACE_KHOOK, nullptr, nullptr)); \
+	KHook::__exported__khook = static_cast<KHook::IKHook*>(ismm->MetaFactory(MMIFACE_KHOOK, nullptr, nullptr)); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 
