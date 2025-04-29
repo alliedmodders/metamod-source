@@ -112,8 +112,8 @@ public:
 			void **vtable_src;
 			IRandomThings sample;
 
-			auto mfp_dest = KHook::__GetMFPVtableIndex__(&ServerPlugin::ClientCommand);
-			auto mfp_src = KHook::__GetMFPVtableIndex__(&IRandomThings::ClientCommand);
+			auto mfp_dest = KHook::GetVtableIndex(&ServerPlugin::ClientCommand);
+			auto mfp_src = KHook::GetVtableIndex(&IRandomThings::ClientCommand);
 
 			assert(mfp_dest != -1);
 			assert(mfp_src != -1);
@@ -134,7 +134,7 @@ public:
 			&& mm_backend != MMBackend_CSGO
 			&& mm_backend != MMBackend_MCV)
 		{
-			auto mfp_fconnect = KHook::__GetMFPVtableIndex__(&ServerPlugin::ClientFullyConnect);
+			auto mfp_fconnect = KHook::GetVtableIndex(&ServerPlugin::ClientFullyConnect);
 
 			assert(mfp_fconnect != -1);
 

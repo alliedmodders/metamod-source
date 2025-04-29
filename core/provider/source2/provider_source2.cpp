@@ -143,7 +143,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	}
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-	m_AllowDedicatedServers.Configure(KHook::GetVirtualFunction(&ISource2ServerConfig::AllowDedicatedServers, serverconfig));
+	m_AllowDedicatedServers.Configure((void*)KHook::ExtractMFP(KHook::GetVtableFunction(serverconfig, &ISource2ServerConfig::AllowDedicatedServers)));
 #endif
 
 	m_RegisterLoopMode.Add(enginesvcmgr);
@@ -247,7 +247,7 @@ const char* Source2Provider::GetGameDescription()
 }
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-KHook::Return<bool> Source2Provider::Hook_AllowDedicatedServers(ISource2ServerConfig*, EUniverse universe) const
+KHook::Return<bool> Source2Provider::Hook_AllowDedicatedServers(const ISource2ServerConfig*, EUniverse universe)
 {
 	return { KHook::Action::Supercede, true };
 }

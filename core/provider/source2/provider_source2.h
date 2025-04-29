@@ -74,7 +74,7 @@ public:
 public:
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 	KHook::Member<ISource2ServerConfig, bool, EUniverse> m_AllowDedicatedServers;
-	bool Hook_AllowDedicatedServers(ISource2ServerConfig*, EUniverse universe) const;
+	KHook::Return<bool> Hook_AllowDedicatedServers(const ISource2ServerConfig*, EUniverse universe);
 #endif
 	KHook::Virtual<IEngineServiceMgr, void, const char*, ILoopModeFactory*, void **> m_RegisterLoopMode;
 	KHook::Return<void> Hook_RegisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory *pLoopModeFactory, void **ppGlobalPointer);
