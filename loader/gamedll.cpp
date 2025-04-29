@@ -689,7 +689,7 @@ mm_PatchAllowDedicated(bool patch)
 	void **vtable_src;
 	void **vtable_dest;
 
-	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers);
+	std::int32_t mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers);
 
 	assert(mfp != -1);
 
@@ -721,7 +721,7 @@ mm_PatchConnect(bool patch)
 	void **vtable_src;
 	void **vtable_dest;
 
-	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Connect);
+	std::int32_t mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Connect);
 
 	vtable_src = (void **) *(void **) &is2sc_thunk;
 	vtable_dest = (void **) *(void **) config_iface;

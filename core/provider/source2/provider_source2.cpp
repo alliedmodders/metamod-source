@@ -53,7 +53,7 @@ Source2Provider::Source2Provider() :
 	m_LoopShutdown(&ILoopMode::LoopShutdown, this, nullptr, &Source2Provider::Hook_LoopShutdownPost),
 	m_ClientCommand(&IServerGameClients::ClientCommand, this, &Source2Provider::Hook_ClientCommand, nullptr)
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-	,m_AllowDedicatedServers(this, &Source2Provider::Hook_AllowDedicatedServers, nullptr)
+	,m_AllowDedicatedServers(&ISource2ServerConfig::AllowDedicatedServers, this, &Source2Provider::Hook_AllowDedicatedServers, nullptr)
 #endif
 {
 }
