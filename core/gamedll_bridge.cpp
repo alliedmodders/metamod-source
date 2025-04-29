@@ -64,9 +64,9 @@ public:
 	virtual void DLLInit_Post(int *isgdUnload)
 	{
 #ifdef META_IS_SOURCE2
-		auto mfi = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::Disconnect);
+		auto mfi = KHook::GetVtableIndex(&ISource2ServerConfig::Disconnect);
 #else
-		auto mfi = KHook::__GetMFPVtableIndex__(&IServerGameDLL::DLLShutdown);
+		auto mfi = KHook::GetVtableIndex(&IServerGameDLL::DLLShutdown);
 #endif
 		assert(mfi != -1);
 		*isgdUnload = mfi;
