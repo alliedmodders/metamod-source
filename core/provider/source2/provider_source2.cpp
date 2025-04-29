@@ -143,7 +143,7 @@ void Source2Provider::Notify_DLLInit_Pre(CreateInterfaceFn engineFactory,
 	}
 
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
-	m_AllowDedicatedServers.Configure((void*)KHook::ExtractMFP(KHook::GetVtableFunction(serverconfig, &ISource2ServerConfig::AllowDedicatedServers)));
+	m_AllowDedicatedServers.Configure(KHook::ExtractMFP(KHook::GetVtableFunction(serverconfig, &ISource2ServerConfig::AllowDedicatedServers)));
 #endif
 
 	m_RegisterLoopMode.Add(enginesvcmgr);
