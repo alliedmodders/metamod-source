@@ -4,7 +4,7 @@ import os.path
 def configure_library(cxx, name, linux_defines):
   libname = name
   binary = MMS.Library(cxx, libname)
-  binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'core', 'khook', 'include')]
+  binary.compiler.cxxincludes += [os.path.join(builder.sourcePath, 'third_party', 'khook', 'include')]
   binary.sources += [
     'loader.cpp',
     'gamedll.cpp',
