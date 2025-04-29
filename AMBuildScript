@@ -371,7 +371,6 @@ BuildScripts = [
 ]
 if getattr(builder.options, 'enable_tests', False):
     BuildScripts += [
-        'core/sourcehook/test/AMBuilder',
         'loader/test/AMBuilder',
     ]
 
@@ -380,8 +379,7 @@ if builder.backend == 'amb2':
     'support/buildbot/PackageScript',
   ]
 
-builder.Build('core/khook/AMBuilder', { 'KHook': MMS })
-builder.Build('core/khook/third_party/safetyhook/AMBuilder', { 'SafetyHook': MMS })
+builder.Build(['third_party/khook/AMBuilder', 'third_party/khook/third_party/safetyhook/AMBuilder'], { 'KHook': MMS, 'SafetyHook': MMS })
 builder.Build(BuildScripts, { 'MMS': MMS })
 
 if builder.options.breakpad_dump:
