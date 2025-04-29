@@ -689,7 +689,7 @@ mm_PatchAllowDedicated(bool patch)
 	void **vtable_src;
 	void **vtable_dest;
 
-	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers, mfp);
+	auto mfp = KHook::__GetMFPVtableIndex__(&ISource2ServerConfig::AllowDedicatedServers);
 
 	assert(mfp != -1);
 
