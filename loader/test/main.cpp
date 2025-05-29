@@ -20,7 +20,7 @@
 	} \
 
 
-bool DetermineBackendS1(char *gameDir, int expectedBackend);
+bool DetermineBackendS1(const char *gameDir, int expectedBackend);
 DECL_TEST(TrimComments);
 
 int main(int argc, char *argv[])
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 	if (testDetermineBackendS1)
 	{
-		bool success = DetermineBackendS1(gameDirectory, expectedMetamodBackend);
+		bool success = DetermineBackendS1(gameDirectory ? gameDirectory : "", expectedMetamodBackend);
 		// invert it because return code from main has 0 as success
 		return success != true;
 	}
