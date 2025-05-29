@@ -11,10 +11,12 @@
 #ifndef __SOURCEHOOK_HOOKMANGEN_H__
 #define __SOURCEHOOK_HOOKMANGEN_H__
 
-#include "sh_pagealloc.h"
-#include "sh_asm.h"
 #include <list>
 #include <memory>
+
+#include "sourcehook_impl_cproto.h"
+#include "sh_pagealloc.h"
+#include "sh_asm.h"
 
 namespace SourceHook
 {
@@ -23,7 +25,7 @@ namespace SourceHook
 
 		// Code gen stuff
 #if SH_COMP == SH_COMP_GCC
-#include <stdint.h>
+#include <cstdint>
 		typedef int8_t jit_int8_t;
 		typedef uint8_t jit_uint8_t;
 		typedef int32_t jit_int32_t;

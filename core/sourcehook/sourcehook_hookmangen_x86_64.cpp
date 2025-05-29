@@ -15,8 +15,9 @@
 // https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention
 // https://refspecs.linuxbase.orgz/elf/x86_64-abi-0.99.pdf
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
+
 #include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
 #include "sourcehook_hookmangen_x86_64.h"
@@ -24,10 +25,10 @@
 
 #include "metamod_oslink.h"
 #include "metamod.h"
-#include <interface.h>
-#include <eiface.h>
-#include <metamod_version.h>
-#include <metamod_provider.h>
+#include "interface.h"
+#include "eiface.h"
+#include "metamod_version.h"
+#include "metamod_provider.h"
 
 extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceMM::IMetamodSourceProvider *provider;

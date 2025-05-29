@@ -34,9 +34,7 @@
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 	#define WIN32_LEAN_AND_MEAN
 	#define OS_WIN32
-	#if defined _MSC_VER && _MSC_VER >= 1400
-		#undef ARRAYSIZE
-	#else
+	#if !defined _MSC_VER || _MSC_VER < 1400
 		#define mkdir(a) _mkdir(a)
 	#endif
 	#include <windows.h>
@@ -85,7 +83,7 @@
 #endif
 
 #if defined __linux__ || defined __APPLE__
-	#include <errno.h>
+	#include <cerrno>
 	int GetLastError();
 #endif
 
@@ -103,7 +101,7 @@ bool GetFileOfAddress(void *pAddr, char *buffer, size_t maxlength);
 	typedef __int32				int32_t;
 	typedef unsigned __int32	uint32_t;
 #elif defined __GNUC__
-#include <stdint.h>
+#include <cstdint>
 #endif
 
 #if !defined __linux__ && !defined __APPLE__

@@ -33,7 +33,7 @@
  * @file IPluginManager.h
  */
 
-#include <ISmmPluginExt.h>
+#include "ISmmPluginExt.h"
 
 namespace SourceMM
 {

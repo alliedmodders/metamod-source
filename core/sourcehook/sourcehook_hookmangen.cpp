@@ -15,7 +15,9 @@
 // http://www.angelcode.com/dev/callconv/callconv.html
 // http://www.arl.wustl.edu/~lockwood/class/cs306/books/artofasm/Chapter_6/CH06-1.html
 
-#include <stdio.h>
+#include <cstdio>
+#include <cstdarg>							// we might need the address of vsnprintf
+
 #include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
 #if defined( PLATFORM_64BITS ) && !defined( _LINUX )
@@ -26,7 +28,6 @@ typedef SourceHook::Impl::x64GenContext SHGenContext;
 typedef SourceHook::Impl::GenContext SHGenContext;
 #endif
 #include "sh_memory.h"
-#include <stdarg.h>							// we might need the address of vsnprintf
 
 #if SH_COMP == SH_COMP_MSVC
 # define GCC_ONLY(x)

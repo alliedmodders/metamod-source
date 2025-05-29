@@ -32,10 +32,10 @@
 #define DEBUG2
 #undef _DEBUG
 #endif
-#include <sourcehook.h>
-#include <sh_memfuncinfo.h>
+#include "sourcehook.h"
+#include "sh_memfuncinfo.h"
 #if !defined META_IS_SOURCE2
-#include <iserverplugin.h>
+#include "iserverplugin.h"
 #endif
 #include "ISmmAPI.h"
 #include "metamod_provider.h"

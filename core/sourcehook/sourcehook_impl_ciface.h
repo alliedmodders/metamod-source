@@ -12,6 +12,7 @@
 #define __SOURCEHOOK_IMPL_CIFACE_H__
 
 #include "sh_list.h"
+#include "sourcehook_impl_chook.h"
 
 namespace SourceHook
 {

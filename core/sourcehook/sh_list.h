@@ -11,7 +11,6 @@
 #ifndef _INCLUDE_SMM_LIST_H
 #define _INCLUDE_SMM_LIST_H
 
-#include <new>
 #include <stdlib.h>
 
 namespace SourceHook

@@ -23,15 +23,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <stddef.h>
+#include <cstdio>
+#include <cctype>
+#include <cstring>
+#include <cassert>
+#include <cstdlib>
+#include <cstddef>
+
 #include "loader.h"
-#include <sh_memfuncinfo.h>
-#include <sh_memory.h>
+#include "sh_memfuncinfo.h"
+#include "sh_memory.h"
 #include "utility.h"
 #include "gamedll.h"
 

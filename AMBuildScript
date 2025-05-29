@@ -145,7 +145,10 @@ class MMSConfig(object):
       if (cxx.version >= 'gcc-4.7' or cxx.family == 'clang'):
         cxx.cxxflags += ['-Wno-delete-non-virtual-dtor']
       if cxx.family == 'gcc':
-        cxx.cflags += ['-mfpmath=sse']
+        cxx.cflags += [
+          '-mfpmath=sse',
+          '-Wno-class-memaccess'
+        ]
       if cxx.family == 'clang':
         cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
         if cxx.version >= 'clang-3.9' or cxx.version >= 'apple-clang-10.0':
