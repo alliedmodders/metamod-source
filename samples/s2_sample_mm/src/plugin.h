@@ -12,20 +12,20 @@
  * This sample plugin is public domain.
  */
 
-#ifndef _INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
-#define _INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
+#ifndef _INCLUDE_METAMOD_SOURCE_PLUGIN_H_
+#define _INCLUDE_METAMOD_SOURCE_PLUGIN_H_
 
 #include <ISmmPlugin.h>
 #include <igameevents.h>
 #include <sh_vector.h>
+#include "version_gen.h"
 
-class SamplePlugin : public ISmmPlugin, public IMetamodListener
+
+class MMSPlugin : public ISmmPlugin, public IMetamodListener
 {
 public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 	bool Unload(char *error, size_t maxlen);
-	bool Pause(char *error, size_t maxlen);
-	bool Unpause(char *error, size_t maxlen);
 	void AllPluginsLoaded();
 public: //hooks
 	void OnLevelInit( char const *pMapName,
@@ -44,18 +44,18 @@ public: //hooks
 	bool Hook_ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason );
 	void Hook_ClientCommand( CPlayerSlot nSlot, const CCommand &_cmd );
 public:
-	const char *GetAuthor();
-	const char *GetName();
-	const char *GetDescription();
-	const char *GetURL();
-	const char *GetLicense();
-	const char *GetVersion();
-	const char *GetDate();
-	const char *GetLogTag();
+	const char *GetAuthor() { return PLUGIN_AUTHOR; }
+	const char *GetName() { return PLUGIN_DISPLAY_NAME; }
+	const char *GetDescription() { return PLUGIN_DESCRIPTION; }
+	const char *GetURL() { return PLUGIN_URL; }
+	const char *GetLicense() { return PLUGIN_LICENSE; }
+	const char *GetVersion() { return PLUGIN_FULL_VERSION; }
+	const char *GetDate() { return __DATE__; }
+	const char *GetLogTag() { return PLUGIN_LOGTAG; }
 };
 
-extern SamplePlugin g_SamplePlugin;
+extern MMSPlugin g_ThisPlugin;
 
 PLUGIN_GLOBALVARS();
 
-#endif //_INCLUDE_METAMOD_SOURCE_STUB_PLUGIN_H_
+#endif //_INCLUDE_METAMOD_SOURCE_PLUGIN_H_
