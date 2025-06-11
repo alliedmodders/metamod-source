@@ -16,7 +16,7 @@ jobs:
           - os: windows-latest
             os_short: windows
             compiler_cc: msvc-vs2022
-          - os: windows-2019
+          - os: windows-2022
             os_short: windows
             compiler_cc: msvc-vs2019
           - os: ubuntu-latest
