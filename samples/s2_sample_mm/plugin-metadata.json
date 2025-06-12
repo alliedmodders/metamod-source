@@ -1,0 +1,11 @@
+{
+    "name": "sample_mm",
+    "alias": "sample",
+    "display_name": "Sample Plugin",
+    "description": "Sample basic plugin",
+    "author": "AlliedModders LLC",
+    "url": "http://www.sourcemm.net/",
+    "log_tag": "SAMPLE",
+    "license": "Public Domain",
+    "version": "1.0.0.{{git-shorthash}}"
+}

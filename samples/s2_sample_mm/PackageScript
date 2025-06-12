@@ -1,47 +1,113 @@
 # vim: set ts=2 sw=2 tw=99 noet ft=python: 
 import os
+import glob
 
 builder.SetBuildFolder('package')
 
-metamod_folder = builder.AddFolder(os.path.join('addons', 'metamod'))
-bin_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin')
-bin_folder = builder.AddFolder(bin_folder_path)
+class SDKPackage:
+  sdk_name = None
 
-for cxx in MMSPlugin.all_targets:
-  if cxx.target.arch == 'x86_64':
-    if cxx.target.platform == 'windows':
-      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'win64')
-      bin64_folder = builder.AddFolder(bin64_folder_path)
-    elif cxx.target.platform == 'linux':
-      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'linuxsteamrt64')
-      bin64_folder = builder.AddFolder(bin64_folder_path)
-    elif cxx.target.platform == 'mac':
-      bin64_folder_path = os.path.join('addons', MMSPlugin.plugin_name, 'bin', 'osx64')
-      bin64_folder = builder.AddFolder(bin64_folder_path)
+  plugin_folder_path = None
+  plugin_folder = None
+
+  metamod_path = None
+  metamod = None
+
+  bin_path = None
+  bin = None
+
+  def __init__(self, cxx, sdk_name):
+    self.sdk_name = sdk_name
+
+    self.plugin_folder_path = os.path.join(self.sdk_name, 'addons', MMSPlugin.metadata['name'])
+    self.plugin_folder = builder.AddFolder(self.plugin_folder_path)
+
+    self.metamod_path = os.path.join(self.sdk_name, 'addons', 'metamod')
+    self.metamod = builder.AddFolder(self.metamod_path)
+
+    self.addBinFolder(cxx)
+    self.generateVDF()
+
+  def addBinFolder(self, cxx):
+    platform64_path_map = {
+      'windows': 'win64',
+      'linux': 'linuxsteamrt64',
+      'mac': 'osx64'
+    }
+
+    if cxx.target.arch == 'x86_64':
+      self.bin_path = os.path.join(self.plugin_folder_path, 'bin', platform64_path_map[cxx.target.platform])
+    else:
+      self.bin_path = os.path.join(self.plugin_folder_path, 'bin')
+    
+    self.bin = builder.AddFolder(self.bin_path)
+
+  def generateVDF(self):
+    vdf_content = '"Metamod Plugin"\n'
+    vdf_content += '{\n'
+    vdf_content += f'\t"alias"\t"{MMSPlugin.metadata["alias"]}"\n'
+    vdf_content += f'\t"file"\t"{os.path.join(os.path.relpath(self.bin_path, self.sdk_name), MMSPlugin.metadata["name"])}"\n'
+    vdf_content += '}'
+
+    builder.AddOutputFile(os.path.join(self.metamod_path, f'{MMSPlugin.metadata["name"]}.vdf'), vdf_content.encode('utf8'))
+
+  def addBinary(self, binary):
+    (_, plugin_bin_name) = os.path.split(binary.path)
+    plugin_bin_ext = os.path.splitext(plugin_bin_name)[1]
+
+    builder.AddCopy(binary, os.path.join(self.bin_path, MMSPlugin.metadata['name'] + plugin_bin_ext))
+
+  # Adds file relative to plugin folder
+  def addFile(self, file_path, result_path = None):
+    if not os.path.isabs(file_path):
+      file_path = os.path.join(builder.sourcePath, file_path)
+
+    if result_path is None:
+      result_path = os.path.join(self.plugin_folder_path, os.path.basename(file_path))
+    else:
+      result_path = os.path.join(self.plugin_folder_path, result_path)
+
+    builder.AddFolder(os.path.dirname(result_path))
+    builder.AddCopy(file_path, result_path)
+
+  # Adds directory relative to plugins folder
+  def addFolder(self, folder_path, result_path = None, search_ext = '*', recursive = True):
+    if not os.path.isabs(folder_path):
+      folder_path = os.path.join(builder.sourcePath, folder_path)
+
+    if result_path is None:
+      result_path = os.path.join(self.plugin_folder_path, os.path.basename(folder_path))
+
+    search_param = f'*.{search_ext}'
+    if recursive:
+      search_param = os.path.join('**', search_param)
+
+    for file in glob.glob(os.path.join(folder_path, search_param), recursive = recursive):
+      self.addFile(file, os.path.join(result_path, os.path.relpath(file, folder_path)))
+
+packages = dict()
+
+for sdk_target in MMSPlugin.sdk_targets:
+  sdk = sdk_target.sdk
+  cxx = sdk_target.cxx
+
+  packages[sdk['name']] = SDKPackage(cxx, sdk['name'])
 
 pdb_list = []
 for task in MMSPlugin.binaries:
-  # This hardly assumes there's only 1 targetted platform and would be overwritten
-  # with whatever comes last if multiple are used!
-  with open(os.path.join(builder.buildPath, MMSPlugin.plugin_name + '.vdf'), 'w') as fp:
-    fp.write('"Metamod Plugin"\n')
-    fp.write('{\n')
-    fp.write(f'\t"alias"\t"{MMSPlugin.plugin_alias}"\n')
-    if task.target.arch == 'x86_64':
-      fp.write(f'\t"file"\t"{os.path.join(bin64_folder_path, MMSPlugin.plugin_name)}"\n')
-    else:
-      fp.write(f'\t"file"\t"{os.path.join(bin_folder_path, MMSPlugin.plugin_name)}"\n')
-    fp.write('}\n')
+  # Determine which sdk this binary belongs to since we encode it in its name
+  binary_filename = os.path.splitext(os.path.basename(task.binary.path))[0]
+  sdk_name = binary_filename.split('.')[-1]
+  
+  packages[sdk_name].addBinary(task.binary)
 
-  if task.target.arch == 'x86_64':
-    builder.AddCopy(task.binary, bin64_folder)
-  else:
-    builder.AddCopy(task.binary, bin_folder)
+  # Add custom stuff here
+  # Examples:
+  # packages[sdk_name].addFolder('some_folder_with_files')
+  # packages[sdk_name].addFile('configs/config.cfg', 'other/new_name_for_a_config.cfg')
 
   if task.debug:
     pdb_list.append(task.debug)
-
-builder.AddCopy(os.path.join(builder.buildPath, MMSPlugin.plugin_name + '.vdf'), metamod_folder)
 
 # Generate PDB info.
 with open(os.path.join(builder.buildPath, 'pdblog.txt'), 'wt') as fp:
