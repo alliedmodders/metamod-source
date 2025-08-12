@@ -47,7 +47,7 @@ def runAndReturn(argv):
   output, ignored = p.communicate()
   rval = p.poll()
   if rval:
-    raise subprocess.CalledProcessError(rval, argv)
+    return None
   text = output.decode('utf8')
   return text.strip()
 
@@ -227,8 +227,16 @@ extern const char* PLUGIN_REVISION_COUNT;
       builder.AddConfigureFile(git_head_path)
       builder.AddConfigureFile(direct_head)
 
-      revision_count = runAndReturn(['git', 'rev-list', '--count', 'HEAD'])
-      revision_hash = runAndReturn(['git', 'log', '--pretty=format:%h:%H', '-n', '1'])
+      tag = runAndReturn(['git', 'describe', '--tags']) or 'MISSING_TAG'
+      commits_after_tag = '0'
+
+      tag_match = re.match(r'(.+?)\-(\d+)\-g[a-f\d]+$', tag, re.MULTILINE)
+      if tag_match is not None:
+        tag = tag_match.group(1)
+        commits_after_tag = tag_match.group(2)
+
+      revision_count = runAndReturn(['git', 'rev-list', '--count', 'HEAD']) or 'MISSING_COUNT'
+      revision_hash = runAndReturn(['git', 'log', '--pretty=format:%h:%H', '-n', '1']) or 'MISSING_SHORTHASH:MISSING_LONGHASH'
       shorthash, longhash = revision_hash.split(':')
 
     if '{{git-shorthash}}' in version:
@@ -239,6 +247,12 @@ extern const char* PLUGIN_REVISION_COUNT;
 
     if '{{git-count}}' in version:
       version = version.replace('{{git-count}}', revision_count)
+
+    if '{{git-tag}}' in version:
+      version = version.replace('{{git-tag}}', tag)
+
+    if '{{git-commits-after-tag}}' in version:
+      version = version.replace('{{git-commits-after-tag}}', commits_after_tag)
 
     # For the version strings and git hashes compile that to a static library instead,
     # to prevent a full recompilation on version/git changes which would only trigger this cpp
