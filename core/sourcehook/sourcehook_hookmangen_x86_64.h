@@ -39,12 +39,12 @@ namespace SourceHook
 
 			std::int32_t AddVarToFrame(std::int32_t size);
 			std::int32_t ComputeVarsSize();
-			std::int32_t x64GenContext::GetRealSize(const IntPassInfo& info);
+			std::int32_t GetRealSize(const IntPassInfo& info);
 			std::int32_t AlignSize(std::int32_t x, std::int32_t boundary);
 			std::int32_t GetParamStackSize(const IntPassInfo &info);
 
 			void Clear();
-			void AutoDetectRetType();
+			bool AutoDetectRetType();
 			void AutoDetectParamFlags();
 			bool PassInfoSupported(const IntPassInfo& pi, bool is_ret);
 			void BuildProtoInfo();
@@ -84,6 +84,12 @@ namespace SourceHook
 
 			std::int32_t m_HookFunc_FrameOffset;
 			std::int32_t m_HookFunc_FrameVarsSize;
+
+#if SH_COMP == SH_COMP_GCC
+			// Placed here temporarily so I don't have to pass it around in function calls...
+			std::int32_t v_sysv_floatreg;
+			std::int32_t v_sysv_reg;
+#endif
 		};
 	}
 }
