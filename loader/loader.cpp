@@ -124,8 +124,10 @@ static const char *backend_names[] =
 bool
 mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 {
+#ifdef KHOOK_DEBUG
 	std::cout << "Pausing 10 seconds to allow debugger to attach" << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(10));
+#endif
 
 	size_t len, temp_len;
 	char mm_path[PLATFORM_MAX_PATH * 2];
