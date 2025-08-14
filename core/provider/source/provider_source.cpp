@@ -543,7 +543,7 @@ void SourceProvider::CacheUserMessages()
 	memcpy(orig_bytes, target, sizeof(orig_bytes));
 
 	/* Patch in relative jump to our Error() detour */
-	KHook::Memory::SetAccess(target, sizeof(orig_bytes), KHook::Memory::Flags::READ | KHook::Memory::Flags::EXECUTE | KHook::Memory::Flags::READ);
+	KHook::Memory::SetAccess(target, sizeof(orig_bytes), KHook::Memory::Flags::READ | KHook::Memory::Flags::EXECUTE | KHook::Memory::Flags::WRITE);
 	target[0] = IA32_JMP_IMM32;
 	*(int32_t*)&target[1] = (int32_t)(detour - (target + 5));
 
