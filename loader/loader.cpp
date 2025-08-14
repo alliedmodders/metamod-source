@@ -31,6 +31,9 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "loader.h"
 #include "serverplugin.h"
@@ -121,6 +124,9 @@ static const char *backend_names[] =
 bool
 mm_LoadMetamodLibrary(MetamodBackend backend, char *buffer, size_t maxlength)
 {
+	std::cout << "Pausing 10 seconds to allow debugger to attach" << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+
 	size_t len, temp_len;
 	char mm_path[PLATFORM_MAX_PATH * 2];
 
