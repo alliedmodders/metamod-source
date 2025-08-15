@@ -94,7 +94,7 @@ for sdk_target in MMSPlugin.sdk_targets:
   packages[sdk['name']] = SDKPackage(cxx, sdk['name'])
 
 pdb_list = []
-for task in MMSPlugin.binaries:
+for task in MMSPlugin.tasks:
   # Determine which sdk this binary belongs to since we encode it in its name
   binary_filename = os.path.splitext(os.path.basename(task.binary.path))[0]
   sdk_name = binary_filename.split('.')[-1]
