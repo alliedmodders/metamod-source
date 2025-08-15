@@ -1,0 +1,16 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
+import os
+
+project = builder.LibraryProject(MMSPlugin.metadata["name"])
+
+for sdk_target in MMSPlugin.sdk_targets:
+  sdk = sdk_target.sdk
+  cxx = sdk_target.cxx
+
+  binary = MMSPlugin.HL2Library(builder, cxx, project, sdk)
+
+  binary.sources += [
+    'src/sample_mm.cpp',
+  ]
+
+MMSPlugin.tasks += builder.Add(project)

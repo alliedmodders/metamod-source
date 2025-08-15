@@ -15,24 +15,6 @@
 #include <stdio.h>
 #include "sample_mm.h"
 
-SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
-SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, int, int);
-SH_DECL_HOOK1_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool);
-SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, 0);
-SH_DECL_HOOK2_void(IServerGameClients, ClientActive, SH_NOATTRIB, 0, edict_t *, bool);
-SH_DECL_HOOK1_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, edict_t *);
-SH_DECL_HOOK2_void(IServerGameClients, ClientPutInServer, SH_NOATTRIB, 0, edict_t *, char const *);
-SH_DECL_HOOK1_void(IServerGameClients, SetCommandClient, SH_NOATTRIB, 0, int);
-SH_DECL_HOOK1_void(IServerGameClients, ClientSettingsChanged, SH_NOATTRIB, 0, edict_t *);
-SH_DECL_HOOK5(IServerGameClients, ClientConnect, SH_NOATTRIB, 0, bool, edict_t *, const char*, const char *, char *, int);
-SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, 0, bool, IGameEvent *, bool);
-
-#if SOURCE_ENGINE >= SE_ORANGEBOX
-SH_DECL_HOOK2_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *, const CCommand &);
-#else
-SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *);
-#endif
-
 SamplePlugin g_SamplePlugin;
 IServerGameDLL *server = NULL;
 IServerGameClients *gameclients = NULL;
@@ -59,6 +41,21 @@ public:
 	}
 } s_BaseAccessor;
 
+SamplePlugin::SamplePlugin() :
+	m_LevelInit(&IServerGameDLL::LevelInit, this, nullptr, &SamplePlugin::Hook_LevelInit),
+	m_ServerActivate(&IServerGameDLL::ServerActivate, this, nullptr, &SamplePlugin::Hook_ServerActivate),
+	m_GameFrame(&IServerGameDLL::GameFrame, this, nullptr, &SamplePlugin::Hook_GameFrame),
+	m_LevelShutdown(&IServerGameDLL::LevelShutdown, this, &SamplePlugin::Hook_LevelShutdown, nullptr),
+	m_ClientActive(&IServerGameClients::ClientActive, this, nullptr, &SamplePlugin::Hook_ClientActive),
+	m_ClientDisconnect(&IServerGameClients::ClientDisconnect, this, nullptr, &SamplePlugin::Hook_ClientDisconnect),
+	m_ClientPutInServer(&IServerGameClients::ClientPutInServer, this, nullptr, &SamplePlugin::Hook_ClientPutInServer),
+	m_SetCommandClient(&IServerGameClients::SetCommandClient, this, nullptr, &SamplePlugin::Hook_SetCommandClient),
+	m_ClientSettingsChanged(&IServerGameClients::ClientSettingsChanged, this, &SamplePlugin::Hook_ClientSettingsChanged, nullptr),
+	m_ClientConnect(&IServerGameClients::ClientConnect, this, &SamplePlugin::Hook_ClientConnect, nullptr),
+	m_ClientCommand(&IServerGameClients::ClientCommand, this, &SamplePlugin::Hook_ClientCommand, nullptr)
+{
+}
+
 PLUGIN_EXPOSE(SamplePlugin, g_SamplePlugin);
 bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -83,19 +80,30 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 		ismm->EnableVSPListener();
 	}
 
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &SamplePlugin::Hook_LevelInit, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &SamplePlugin::Hook_ServerActivate, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &SamplePlugin::Hook_GameFrame, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &SamplePlugin::Hook_LevelShutdown, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &SamplePlugin::Hook_ClientActive, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &SamplePlugin::Hook_ClientDisconnect, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &SamplePlugin::Hook_ClientPutInServer, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &SamplePlugin::Hook_SetCommandClient, true);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &SamplePlugin::Hook_ClientSettingsChanged, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
+	META_LOG(g_PLAPI, "level init");
+	m_LevelInit.Add(server);
+	META_LOG(g_PLAPI, "server activate");
+	m_ServerActivate.Add(server);
+	META_LOG(g_PLAPI, "game frame");
+	m_GameFrame.Add(server);
+	META_LOG(g_PLAPI, "lvl shutdown");
+	m_LevelShutdown.Add(server);
+	META_LOG(g_PLAPI, "client active");
+	m_ClientActive.Add(gameclients);
+	META_LOG(g_PLAPI, "client disconnect");
+	m_ClientDisconnect.Add(gameclients);
+	META_LOG(g_PLAPI, "put in server");
+	m_ClientPutInServer.Add(gameclients);
+	META_LOG(g_PLAPI, "set cmd");
+	m_SetCommandClient.Add(gameclients);
+	META_LOG(g_PLAPI, "settings changed");
+	m_ClientSettingsChanged.Add(gameclients);
+	META_LOG(g_PLAPI, "client connect");
+	m_ClientConnect.Add(gameclients);
+	META_LOG(g_PLAPI, "client cmd");
+	m_ClientCommand.Add(gameclients);
 
-	ENGINE_CALL(LogPrint)("All hooks started!\n");
+	META_LOG(g_PLAPI, "All hooks started!");
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
@@ -109,17 +117,17 @@ bool SamplePlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 bool SamplePlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &SamplePlugin::Hook_LevelInit, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &SamplePlugin::Hook_ServerActivate, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &SamplePlugin::Hook_GameFrame, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &SamplePlugin::Hook_LevelShutdown, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &SamplePlugin::Hook_ClientActive, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &SamplePlugin::Hook_ClientDisconnect, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &SamplePlugin::Hook_ClientPutInServer, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, SetCommandClient, gameclients, this, &SamplePlugin::Hook_SetCommandClient, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, gameclients, this, &SamplePlugin::Hook_ClientSettingsChanged, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &SamplePlugin::Hook_ClientConnect, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &SamplePlugin::Hook_ClientCommand, false);
+	m_LevelInit.Remove(server);
+	m_ServerActivate.Remove(server);
+	m_GameFrame.Remove(server);
+	m_LevelShutdown.Remove(server);
+	m_ClientActive.Remove(gameclients);
+	m_ClientDisconnect.Remove(gameclients);
+	m_ClientPutInServer.Remove(gameclients);
+	m_SetCommandClient.Remove(gameclients);
+	m_ClientSettingsChanged.Remove(gameclients);
+	m_ClientConnect.Remove(gameclients);
+	m_ClientCommand.Remove(gameclients);
 
 	return true;
 }
@@ -129,9 +137,11 @@ void SamplePlugin::OnVSPListening(IServerPluginCallbacks *iface)
 	vsp_callbacks = iface;
 }
 
-void SamplePlugin::Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
+KHook::Return<void> SamplePlugin::Hook_ServerActivate(IServerGameDLL*, edict_t *pEdictList, int edictCount, int clientMax)
 {
 	META_LOG(g_PLAPI, "ServerActivate() called: edictCount = %d, clientMax = %d", edictCount, clientMax);
+
+	return { KHook::Action::Ignore };
 }
 
 void SamplePlugin::AllPluginsLoaded()
@@ -141,15 +151,17 @@ void SamplePlugin::AllPluginsLoaded()
 	 */
 }
 
-void SamplePlugin::Hook_ClientActive(edict_t *pEntity, bool bLoadGame)
+KHook::Return<void> SamplePlugin::Hook_ClientActive(IServerGameClients*, edict_t *pEntity, bool bLoadGame)
 {
 	META_LOG(g_PLAPI, "Hook_ClientActive(%d, %d)", IndexOfEdict(pEntity), bLoadGame);
+
+	return { KHook::Action::Ignore };
 }
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-void SamplePlugin::Hook_ClientCommand(edict_t *pEntity, const CCommand &args)
+KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_t *pEntity, const CCommand &args)
 #else
-void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
+KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_t *pEntity)
 #endif
 {
 #if SOURCE_ENGINE <= SE_DARKMESSIAH
@@ -158,7 +170,7 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 
 	if (!pEntity || pEntity->IsFree())
 	{
-		return;
+		return { KHook::Action::Ignore };
 	}
 
 	const char *cmd = args.Arg(0);
@@ -185,7 +197,7 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 
 		helpers->CreateMessage(pEntity, DIALOG_MENU, kv, vsp_callbacks);
 		kv->deleteThis();
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
 	else if (strcmp(cmd, "rich") == 0)
 	{
@@ -197,7 +209,7 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 
 		helpers->CreateMessage(pEntity, DIALOG_TEXT, kv, vsp_callbacks);
 		kv->deleteThis();
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
 	else if (strcmp(cmd, "msg") == 0)
 	{
@@ -208,7 +220,7 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 
 		helpers->CreateMessage(pEntity, DIALOG_MSG, kv, vsp_callbacks);
 		kv->deleteThis();
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
 	else if (strcmp(cmd, "entry") == 0)
 	{
@@ -221,11 +233,12 @@ void SamplePlugin::Hook_ClientCommand(edict_t *pEntity)
 
 		helpers->CreateMessage(pEntity, DIALOG_ENTRY, kv, vsp_callbacks);
 		kv->deleteThis();
-		RETURN_META(MRES_SUPERCEDE);
+		return { KHook::Action::Supercede };
 	}
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_ClientSettingsChanged(edict_t *pEdict)
+KHook::Return<void> SamplePlugin::Hook_ClientSettingsChanged(IServerGameClients*, edict_t *pEdict)
 {
 	if (playerinfomanager)
 	{
@@ -244,9 +257,10 @@ void SamplePlugin::Hook_ClientSettingsChanged(edict_t *pEdict)
 			engine->ClientPrintf(pEdict, msg);
 		}
 	}
+	return { KHook::Action::Ignore };
 }
 
-bool SamplePlugin::Hook_ClientConnect(edict_t *pEntity,
+KHook::Return<bool> SamplePlugin::Hook_ClientConnect(IServerGameClients*, edict_t *pEntity,
 									const char *pszName,
 									const char *pszAddress,
 									char *reject,
@@ -254,10 +268,10 @@ bool SamplePlugin::Hook_ClientConnect(edict_t *pEntity,
 {
 	META_LOG(g_PLAPI, "Hook_ClientConnect(%d, \"%s\", \"%s\")", IndexOfEdict(pEntity), pszName, pszAddress);
 
-	return true;
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_ClientPutInServer(edict_t *pEntity, char const *playername)
+KHook::Return<void> SamplePlugin::Hook_ClientPutInServer(IServerGameClients*, edict_t *pEntity, char const *playername)
 {
 	KeyValues *kv = new KeyValues( "msg" );
 	kv->SetString( "title", "Hello" );
@@ -267,14 +281,17 @@ void SamplePlugin::Hook_ClientPutInServer(edict_t *pEntity, char const *playerna
 	kv->SetInt( "time", 10);
 	helpers->CreateMessage(pEntity, DIALOG_MSG, kv, vsp_callbacks);
 	kv->deleteThis();
+
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_ClientDisconnect(edict_t *pEntity)
+KHook::Return<void> SamplePlugin::Hook_ClientDisconnect(IServerGameClients*, edict_t *pEntity)
 {
 	META_LOG(g_PLAPI, "Hook_ClientDisconnect(%d)", IndexOfEdict(pEntity));
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_GameFrame(bool simulating)
+KHook::Return<void> SamplePlugin::Hook_GameFrame(IServerGameDLL*, bool simulating)
 {
 	/**
 	 * simulating:
@@ -282,9 +299,10 @@ void SamplePlugin::Hook_GameFrame(bool simulating)
 	 * true  | game is ticking
 	 * false | game is not ticking
 	 */
+	return { KHook::Action::Ignore };
 }
 
-bool SamplePlugin::Hook_LevelInit(const char *pMapName,
+KHook::Return<bool> SamplePlugin::Hook_LevelInit(IServerGameDLL*, const char *pMapName,
 								char const *pMapEntities,
 								char const *pOldLevel,
 								char const *pLandmarkName,
@@ -293,17 +311,21 @@ bool SamplePlugin::Hook_LevelInit(const char *pMapName,
 {
 	META_LOG(g_PLAPI, "Hook_LevelInit(%s)", pMapName);
 
-	return true;
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_LevelShutdown()
+KHook::Return<void> SamplePlugin::Hook_LevelShutdown(IServerGameDLL*)
 {
 	META_LOG(g_PLAPI, "Hook_LevelShutdown()");
+
+	return { KHook::Action::Ignore };
 }
 
-void SamplePlugin::Hook_SetCommandClient(int index)
+KHook::Return<void> SamplePlugin::Hook_SetCommandClient(IServerGameClients*, int index)
 {
 	META_LOG(g_PLAPI, "Hook_SetCommandClient(%d)", index);
+
+	return { KHook::Action::Ignore };
 }
 
 bool SamplePlugin::Pause(char *error, size_t maxlen)
