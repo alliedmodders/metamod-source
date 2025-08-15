@@ -250,10 +250,6 @@ static void *is2sc_orig_allowdedi = NULL;
 #endif
 static void *is2sc_orig_connect = NULL;
 
-class VEmptyClass
-{
-};
-
 gamedll_bridge_info g_bridge_info;
 
 // Source2 - Rough start order
@@ -285,24 +281,8 @@ public:
 		/* Call the original */
 		bool result;
 		{
-			union
-			{
-				bool(VEmptyClass::*mfpnew)(QueryValveInterface factory);
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = is2sc_orig_connect;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-			} u;
-			u.s.addr = is2sc_orig_connect;
-			u.s.adjustor = 0;
-#endif
-			result = (((VEmptyClass *)config_iface)->*u.mfpnew)(factory);
+			auto mfp = KHook::BuildMFP<ISource2ServerConfig, bool, QueryValveInterface>(is2sc_orig_connect);
+			result = (config_iface->*mfp)(factory);
 		}
 
 		mm_PatchConnect(false);
@@ -318,24 +298,8 @@ public:
 
 		/* Call original function */
 		{
-			union
-			{
-				void (VEmptyClass::*mfpnew)();
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = isgd_orig_shutdown;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-			} u;
-			u.s.addr = isgd_orig_shutdown;
-			u.s.adjustor = 0;
-#endif
-			(((VEmptyClass *)config_iface)->*u.mfpnew)();
+			auto mfp = KHook::BuildMFP<ISource2ServerConfig, void>(isgd_orig_shutdown);
+			(config_iface->*mfp)();
 		}
 
 		mm_UnloadLibrary(gamedll_lib);
@@ -414,24 +378,8 @@ public:
 		/* Call the original */
 		InitReturnVal_t result;
 		{
-			union
-			{
-				InitReturnVal_t(VEmptyClass::*mfpnew)();
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = isgd_orig_init;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-		} u;
-			u.s.addr = isgd_orig_init;
-			u.s.adjustor = 0;
-#endif
-			result = (((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
+			auto mfp = KHook::BuildMFP<IServerGameDLL, InitReturnVal_t>(isgd_orig_init);
+			result = (gamedll_iface->*mfp)();
 		}
 
 		/**
@@ -519,27 +467,8 @@ public:
 		/* Call the original */
 		bool result;
 		{
-			union
-			{
-				bool (VEmptyClass::*mfpnew)(QueryValveInterface engineFactory, 
-										 	QueryValveInterface physicsFactory, 
-										 	QueryValveInterface fileSystemFactory, 
-										 	void *pGlobals);
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = isgd_orig_init;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-			} u;
-			u.s.addr = isgd_orig_init;
-			u.s.adjustor = 0;
-#endif
-			result = (((VEmptyClass *)gamedll_iface)->*u.mfpnew)(engineFactory,
+			auto mfp = KHook::BuildMFP<IServerGameDLL, bool, QueryValveInterface, QueryValveInterface, QueryValveInterface, void*>(isgd_orig_init);
+			result = (gamedll_iface->*mfp)(engineFactory,
 																 physicsFactory,
 																 fileSystemFactory,
 																 pGlobals);
@@ -576,24 +505,8 @@ public:
 
 		/* Call original function */
 		{
-			union
-			{
-				void (VEmptyClass::*mfpnew)();
-#if defined _WIN32
-				void *addr;
-			} u;
-			u.addr = isgd_orig_shutdown;
-#else
-				struct
-				{
-					void *addr;
-					intptr_t adjustor;
-				} s;
-			} u;
-			u.s.addr = isgd_orig_shutdown;
-			u.s.adjustor = 0;
-#endif
-			(((VEmptyClass *)gamedll_iface)->*u.mfpnew)();
+			auto mfp = KHook::BuildMFP<IServerGameDLL, void>(isgd_orig_shutdown);
+			(gamedll_iface->*mfp)();
 		}
 
 		mm_UnloadLibrary(gamedll_lib);
@@ -624,13 +537,14 @@ mm_PatchDllInit(bool patch)
 
 	if (g_is_source2)
 	{
-		vtable_src = (void **)*(void **)&is2s_thunk;
+		vtable_src = *(void ***)&is2s_thunk;
+		vtable_dest = *(void ***)config_iface;
 	}
 	else
 	{
-		vtable_src = (void **)*(void **)&isgd_thunk;
+		vtable_src = *(void ***)&isgd_thunk;
+		vtable_dest = *(void ***)gamedll_iface;
 	}
-	vtable_dest = (void **)*(void **)gamedll_iface;
 
 	KHook::Memory::SetAccess(&vtable_dest[mfp],
 							 sizeof(void*),
@@ -655,46 +569,41 @@ mm_PatchDllShutdown()
 {
 	void **vtable_src;
 	void **vtable_dest;
-	std::int32_t mfp;
 
 	if (g_is_source2)
 	{
-		mfp = KHook::GetVtableIndex(&ISource2ServerConfig::Disconnect);
+		isgd_shutdown_index = KHook::GetVtableIndex(&ISource2ServerConfig::Disconnect);
 	}
 	else
 	{
-		mfp = KHook::GetVtableIndex(&IServerGameDLL::DLLShutdown);
+		isgd_shutdown_index = KHook::GetVtableIndex(&IServerGameDLL::DLLShutdown);
 	}
-	assert(mfp != -1);
+	assert(isgd_shutdown_index != -1);
 
 	if (g_is_source2)
 	{
-		vtable_src = (void **)*(void **)&is2sc_thunk;
-		vtable_dest = (void **)*(void **)config_iface;
+		vtable_src = *(void ***)&is2sc_thunk;
+		vtable_dest = *(void ***)config_iface;
 	}
 	else
 	{
-		vtable_src = (void **)*(void **)&isgd_thunk;
-		vtable_dest = (void **)*(void **)gamedll_iface;
+		vtable_src = *(void ***)&isgd_thunk;
+		vtable_dest = *(void ***)gamedll_iface;
 	}
 
 	isgd_orig_shutdown = vtable_dest[isgd_shutdown_index];
-	vtable_dest[isgd_shutdown_index] = vtable_src[mfp];
+	vtable_dest[isgd_shutdown_index] = vtable_src[isgd_shutdown_index];
 }
 
 #if defined _WIN32
 static void
 mm_PatchAllowDedicated(bool patch)
 {
-	void **vtable_src;
-	void **vtable_dest;
+	std::int32_t is2sc_allowdedi_index = KHook::GetVtableIndex(&ISource2ServerConfig::AllowDedicatedServers);
+	assert(is2sc_allowdedi_index != -1);
 
-	std::int32_t mfp = KHook::GetVtableIndex(&ISource2ServerConfig::AllowDedicatedServers);
-
-	assert(mfp != -1);
-
-	vtable_src = (void **) *(void **) &is2sc_thunk;
-	vtable_dest = (void **) *(void **) config_iface;
+	auto vtable_src = *(void***) &is2sc_thunk;
+	auto vtable_dest = *(void ***) config_iface;
 
 	KHook::Memory::SetAccess(&vtable_dest[is2sc_allowdedi_index],
 		sizeof(void*),
@@ -704,7 +613,7 @@ mm_PatchAllowDedicated(bool patch)
 	{
 		assert(is2sc_orig_allowdedi == NULL);
 		is2sc_orig_allowdedi = vtable_dest[is2sc_allowdedi_index];
-		vtable_dest[is2sc_allowdedi_index] = vtable_src[mfp];
+		vtable_dest[is2sc_allowdedi_index] = vtable_src[is2sc_allowdedi_index];
 	}
 	else
 	{
@@ -718,28 +627,26 @@ mm_PatchAllowDedicated(bool patch)
 static void
 mm_PatchConnect(bool patch)
 {
-	void **vtable_src;
-	void **vtable_dest;
+	std::int32_t index = KHook::GetVtableIndex(&ISource2ServerConfig::Connect);
+	assert(index != -1);
 
-	std::int32_t mfp = KHook::GetVtableIndex(&ISource2ServerConfig::Connect);
+	auto vtable_src = *(void***) &is2sc_thunk;
+	auto vtable_dest = *(void ***) config_iface;
 
-	vtable_src = (void **) *(void **) &is2sc_thunk;
-	vtable_dest = (void **) *(void **) config_iface;
-
-	KHook::Memory::SetAccess(&vtable_dest[mfp],
+	KHook::Memory::SetAccess(&vtable_dest[index],
 		sizeof(void*),
 		KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
 
 	if (patch)
 	{
 		assert(is2sc_orig_connect == NULL);
-		is2sc_orig_connect = vtable_dest[mfp];
-		vtable_dest[mfp] = vtable_src[mfp];
+		is2sc_orig_connect = vtable_dest[index];
+		vtable_dest[index] = vtable_src[index];
 	}
 	else
 	{
 		assert(is2sc_orig_connect != NULL);
-		vtable_dest[mfp] = is2sc_orig_connect;
+		vtable_dest[index] = is2sc_orig_connect;
 		is2sc_orig_connect = NULL;
 	}
 }
