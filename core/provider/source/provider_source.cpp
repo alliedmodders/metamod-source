@@ -690,7 +690,7 @@ KHook::Return<void> SourceProvider::Hook_ClientCommand(IServerGameClients*, edic
 			m_pCallbacks->OnCommand_ClientMeta(client, &cmd);
 		}
 
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 
 	return { KHook::Action::Ignore };
