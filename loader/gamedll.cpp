@@ -387,7 +387,7 @@ public:
 		 * I'm pretty sure we'll die horribly.
 		 */
 
-		if (!result)
+		if (result != INIT_OK)
 		{
 			gamedll_bridge->Unload();
 			mm_UnloadMetamodLibrary();
@@ -401,7 +401,6 @@ public:
 		}
 
 		mm_PatchDllInit(false);
-
 		return result;
 	}
 };
@@ -523,43 +522,42 @@ mm_PatchDllInit(bool patch)
 {
 	void **vtable_src;
 	void **vtable_dest;
-	std::int32_t mfp;
+	std::int32_t src_mfp;
 
 	if (g_is_source2)
 	{
-		mfp = KHook::GetVtableIndex(&ISource2Server::Init);
+		src_mfp = KHook::GetVtableIndex(&ISource2Server::Init);
 	}
 	else
 	{
-		mfp = KHook::GetVtableIndex(&IServerGameDLL::DLLInit);
+		src_mfp = KHook::GetVtableIndex(&IServerGameDLL::DLLInit);
 	}
-	assert(mfp != -1);
+	assert(src_mfp != -1);
 
 	if (g_is_source2)
 	{
 		vtable_src = *(void ***)&is2s_thunk;
-		vtable_dest = *(void ***)config_iface;
 	}
 	else
 	{
 		vtable_src = *(void ***)&isgd_thunk;
-		vtable_dest = *(void ***)gamedll_iface;
 	}
+	vtable_dest = *(void ***)gamedll_iface;
 
-	KHook::Memory::SetAccess(&vtable_dest[mfp],
+	KHook::Memory::SetAccess(&vtable_dest[src_mfp],
 							 sizeof(void*),
 							 KHook::Memory::Flags::READ | KHook::Memory::Flags::WRITE | KHook::Memory::Flags::EXECUTE);
 
 	if (patch)
 	{
 		assert(isgd_orig_init == NULL);
-		isgd_orig_init = vtable_dest[mfp];
-		vtable_dest[mfp] = vtable_src[mfp];
+		isgd_orig_init = vtable_dest[src_mfp];
+		vtable_dest[src_mfp] = vtable_src[src_mfp];
 	}
 	else
 	{
 		assert(isgd_orig_init != NULL);
-		vtable_dest[mfp] = isgd_orig_init;
+		vtable_dest[src_mfp] = isgd_orig_init;
 		isgd_orig_init = NULL;
 	}
 }
