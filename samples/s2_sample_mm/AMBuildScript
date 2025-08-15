@@ -323,7 +323,6 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
         '-Wno-switch',
         '-Wno-unknown-pragmas',
         '-Wno-dangling-else',
-        '-Wno-non-pod-varargs',
         '-msse',
         '-fPIC',
       ]
