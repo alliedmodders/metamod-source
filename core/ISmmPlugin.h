@@ -486,10 +486,7 @@ using namespace SourceMM;
 #define PL_EXPOSURE_FUNC(name, var)	EXPOSE_SINGLE_INTERFACE_GLOBALVAR(ISmmPlugin, ISmmPlugin, METAMOD_PLAPI_NAME, var);
 #endif
 
-namespace KHook {
-class IKHook;
-}
-
+#include "khook.hpp"
 #define PLUGIN_EXPOSE(name, var) \
 	ISmmAPI *g_SMAPI = NULL; \
 	ISmmPlugin *g_PLAPI = NULL; \
