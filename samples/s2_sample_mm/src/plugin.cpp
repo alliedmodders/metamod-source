@@ -16,17 +16,6 @@
 #include "plugin.h"
 #include "iserver.h"
 
-SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
-SH_DECL_HOOK4_void(IServerGameClients, ClientActive, SH_NOATTRIB, 0, CPlayerSlot, bool, const char *, uint64);
-SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason, const char *, uint64, const char *);
-SH_DECL_HOOK4_void(IServerGameClients, ClientPutInServer, SH_NOATTRIB, 0, CPlayerSlot, char const *, int, uint64);
-SH_DECL_HOOK1_void(IServerGameClients, ClientSettingsChanged, SH_NOATTRIB, 0, CPlayerSlot );
-SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char *, const char *, bool);
-SH_DECL_HOOK6(IServerGameClients, ClientConnect, SH_NOATTRIB, 0, bool, CPlayerSlot, const char*, uint64, const char *, bool, CBufferString *);
-SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, 0, bool, IGameEvent *, bool);
-
-SH_DECL_HOOK2_void( IServerGameClients, ClientCommand, SH_NOATTRIB, 0, CPlayerSlot, const CCommand & );
-
 MMSPlugin g_ThisPlugin;
 IServerGameDLL *server = NULL;
 IServerGameClients *gameclients = NULL;
@@ -63,6 +52,18 @@ CON_COMMAND_F(sample_command, "Sample command", FCVAR_NONE)
 	META_CONPRINTF( "Sample command called by %d. Command: %s\n", context.GetPlayerSlot(), args.GetCommandString() );
 }
 
+MMSPlugin::MMSPlugin() :
+	m_GameFrame(&IServerGameDLL::GameFrame, this, nullptr, &MMSPlugin::Hook_GameFrame),
+	m_ClientActive(&IServerGameClients::ClientActive, this, nullptr, &MMSPlugin::Hook_ClientActive),
+	m_ClientDisconnect(&IServerGameClients::ClientDisconnect, this, nullptr, &MMSPlugin::Hook_ClientDisconnect),
+	m_ClientPutInServer(&IServerGameClients::ClientPutInServer, this, nullptr, &MMSPlugin::Hook_ClientPutInServer),
+	m_ClientSettingsChanged(&IServerGameClients::ClientSettingsChanged, this, &MMSPlugin::Hook_ClientSettingsChanged, nullptr),
+	m_OnClientConnected(&IServerGameClients::OnClientConnected, this, &MMSPlugin::Hook_OnClientConnected, nullptr),
+	m_ClientConnect(&IServerGameClients::ClientConnect, this, &MMSPlugin::Hook_ClientConnect, nullptr),
+	m_ClientCommand(&IServerGameClients::ClientCommand, this, &MMSPlugin::Hook_ClientCommand, nullptr)
+{
+}
+
 PLUGIN_EXPOSE(MMSPlugin, g_ThisPlugin);
 bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -82,14 +83,14 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 
 	META_CONPRINTF( "Starting plugin.\n" );
 
-	SH_ADD_HOOK(IServerGameDLL, GameFrame, server, SH_MEMBER(this, &MMSPlugin::Hook_GameFrame), true);
-	SH_ADD_HOOK(IServerGameClients, ClientActive, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientActive), true);
-	SH_ADD_HOOK(IServerGameClients, ClientDisconnect, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientDisconnect), true);
-	SH_ADD_HOOK(IServerGameClients, ClientPutInServer, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientPutInServer), true);
-	SH_ADD_HOOK(IServerGameClients, ClientSettingsChanged, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientSettingsChanged), false);
-	SH_ADD_HOOK(IServerGameClients, OnClientConnected, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_OnClientConnected), false);
-	SH_ADD_HOOK(IServerGameClients, ClientConnect, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientConnect), false);
-	SH_ADD_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientCommand), false);
+	m_GameFrame.Add(server);
+	m_ClientActive.Add(gameclients);
+	m_ClientDisconnect.Add(gameclients);
+	m_ClientPutInServer.Add(gameclients);
+	m_ClientSettingsChanged.Add(gameclients);
+	m_OnClientConnected.Add(gameclients);
+	m_ClientConnect.Add(gameclients);
+	m_ClientCommand.Add(gameclients);
 
 	META_CONPRINTF( "All hooks started!\n" );
 
@@ -175,14 +176,14 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 
 bool MMSPlugin::Unload(char *error, size_t maxlen)
 {
-	SH_REMOVE_HOOK(IServerGameDLL, GameFrame, server, SH_MEMBER(this, &MMSPlugin::Hook_GameFrame), true);
-	SH_REMOVE_HOOK(IServerGameClients, ClientActive, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientActive), true);
-	SH_REMOVE_HOOK(IServerGameClients, ClientDisconnect, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientDisconnect), true);
-	SH_REMOVE_HOOK(IServerGameClients, ClientPutInServer, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientPutInServer), true);
-	SH_REMOVE_HOOK(IServerGameClients, ClientSettingsChanged, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientSettingsChanged), false);
-	SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_OnClientConnected), false);
-	SH_REMOVE_HOOK(IServerGameClients, ClientConnect, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientConnect), false);
-	SH_REMOVE_HOOK(IServerGameClients, ClientCommand, gameclients, SH_MEMBER(this, &MMSPlugin::Hook_ClientCommand), false);
+	m_GameFrame.Remove(server);
+	m_ClientActive.Remove(gameclients);
+	m_ClientDisconnect.Remove(gameclients);
+	m_ClientPutInServer.Remove(gameclients);
+	m_ClientSettingsChanged.Remove(gameclients);
+	m_OnClientConnected.Remove(gameclients);
+	m_ClientConnect.Remove(gameclients);
+	m_ClientCommand.Remove(gameclients);
 
 	return true;
 }
@@ -194,44 +195,56 @@ void MMSPlugin::AllPluginsLoaded()
 	 */
 }
 
-void MMSPlugin::Hook_ClientActive( CPlayerSlot slot, bool bLoadGame, const char *pszName, uint64 xuid )
+KHook::Return<void> MMSPlugin::Hook_ClientActive( IServerGameClients*, CPlayerSlot slot, bool bLoadGame, const char *pszName, uint64 xuid )
 {
 	META_CONPRINTF( "Hook_ClientActive(%d, %d, \"%s\", %d)\n", slot, bLoadGame, pszName, xuid );
+
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_ClientCommand( CPlayerSlot slot, const CCommand &args )
+KHook::Return<void> MMSPlugin::Hook_ClientCommand( IServerGameClients*, CPlayerSlot slot, const CCommand &args )
 {
 	META_CONPRINTF( "Hook_ClientCommand(%d, \"%s\")\n", slot, args.GetCommandString() );
+
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_ClientSettingsChanged( CPlayerSlot slot )
+KHook::Return<void> MMSPlugin::Hook_ClientSettingsChanged( IServerGameClients*, CPlayerSlot slot )
 {
 	META_CONPRINTF( "Hook_ClientSettingsChanged(%d)\n", slot );
+
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_OnClientConnected( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, const char *pszAddress, bool bFakePlayer )
+KHook::Return<void> MMSPlugin::Hook_OnClientConnected( IServerGameClients*, CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, const char *pszAddress, bool bFakePlayer )
 {
 	META_CONPRINTF( "Hook_OnClientConnected(%d, \"%s\", %d, \"%s\", \"%s\", %d)\n", slot, pszName, xuid, pszNetworkID, pszAddress, bFakePlayer );
+
+	return { KHook::Action::Ignore };
 }
 
-bool MMSPlugin::Hook_ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason )
+KHook::Return<bool> MMSPlugin::Hook_ClientConnect( IServerGameClients*, CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason )
 {
 	META_CONPRINTF( "Hook_ClientConnect(%d, \"%s\", %d, \"%s\", %d, \"%s\")\n", slot, pszName, xuid, pszNetworkID, unk1, pRejectReason->Get() );
 
-	RETURN_META_VALUE(MRES_IGNORED, true);
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid )
+KHook::Return<void> MMSPlugin::Hook_ClientPutInServer( IServerGameClients*, CPlayerSlot slot, char const *pszName, int type, uint64 xuid )
 {
 	META_CONPRINTF( "Hook_ClientPutInServer(%d, \"%s\", %d, %d)\n", slot, pszName, type, xuid );
+
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_ClientDisconnect( CPlayerSlot slot, ENetworkDisconnectionReason reason, const char *pszName, uint64 xuid, const char *pszNetworkID )
+KHook::Return<void> MMSPlugin::Hook_ClientDisconnect( IServerGameClients*, CPlayerSlot slot, ENetworkDisconnectionReason reason, const char *pszName, uint64 xuid, const char *pszNetworkID )
 {
 	META_CONPRINTF( "Hook_ClientDisconnect(%d, %d, \"%s\", %d, \"%s\")\n", slot, reason, pszName, xuid, pszNetworkID );
+
+	return { KHook::Action::Ignore };
 }
 
-void MMSPlugin::Hook_GameFrame( bool simulating, bool bFirstTick, bool bLastTick )
+KHook::Return<void> MMSPlugin::Hook_GameFrame( IServerGameDLL*, bool simulating, bool bFirstTick, bool bLastTick )
 {
 	/**
 	 * simulating:
@@ -239,6 +252,7 @@ void MMSPlugin::Hook_GameFrame( bool simulating, bool bFirstTick, bool bLastTick
 	 * true  | game is ticking
 	 * false | game is not ticking
 	 */
+	return { KHook::Action::Ignore };
 }
 
 void MMSPlugin::OnLevelInit( char const *pMapName,

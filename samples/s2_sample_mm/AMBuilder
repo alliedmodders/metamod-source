@@ -1,11 +1,13 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
 import os
 
+project = builder.LibraryProject(MMSPlugin.metadata["name"])
+
 for sdk_target in MMSPlugin.sdk_targets:
   sdk = sdk_target.sdk
   cxx = sdk_target.cxx
 
-  binary = MMSPlugin.HL2Library(builder, cxx, f'{MMSPlugin.metadata["name"]}.{sdk["name"]}', sdk)
+  binary = MMSPlugin.HL2Library(builder, cxx, project, sdk)
 
   binary.sources += [
     'src/plugin.cpp',
@@ -15,5 +17,4 @@ for sdk_target in MMSPlugin.sdk_targets:
     os.path.join(sdk['path'], 'common', 'network_connection.proto'),
   ])]
 
-  nodes = builder.Add(binary)
-  MMSPlugin.binaries += [nodes]
+MMSPlugin.tasks += builder.Add(project)
