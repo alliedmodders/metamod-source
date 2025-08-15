@@ -106,7 +106,7 @@ class MMSPluginConfig(object):
     self.sdk_manifests = []
     self.sdks = {}
     self.sdk_targets = []
-    self.binaries = []
+    self.tasks = []
     self.mms_root = mms_root
     self.version_header_deps = []
     self.versionlib_deps = dict()
@@ -165,10 +165,6 @@ class MMSPluginConfig(object):
     self.sdks = SdkHelpers.sdks
     self.sdk_manifests = SdkHelpers.sdk_manifests
     self.sdk_targets = SdkHelpers.sdk_targets
-
-    for sdk_target in self.sdk_targets:
-      if not sdk_target.sdk['source2']:
-        raise Exception('Only Source2 games are supported by this script.')
   
   def addVersioning(self, cxx):
     cxx.includes += [
@@ -325,6 +321,9 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
         '-Wno-uninitialized',
         '-Wno-unused',
         '-Wno-switch',
+        '-Wno-unknown-pragmas',
+        '-Wno-dangling-else',
+        '-Wno-non-pod-varargs',
         '-msse',
         '-fPIC',
       ]
@@ -430,22 +429,17 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
       cxx.linkflags += ['-static-libstdc++']
     elif cxx.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
-
-  def Library(self, cxx, name):
-    binary = cxx.Library(name)
-    return binary
   
-  def HL2Library(self, context, compiler, name, sdk):
-    binary = self.Library(compiler, name)
-    mms_core_path = os.path.join(self.mms_root, 'core')
+  def HL2Library(self, context, compiler, project, sdk):
+    binary = project.Configure(compiler, '{0}.{1}'.format(project.name, sdk['extension']), '{0} {1}'.format(sdk['name'], compiler.target.arch))
     cxx = binary.compiler
     
     self.addVersioning(cxx)
 
     cxx.cxxincludes += [
       os.path.join(context.currentSourcePath),
-      os.path.join(mms_core_path),
-      os.path.join(mms_core_path, 'sourcehook'),
+      os.path.join(self.mms_root, 'core'),
+      os.path.join(self.mms_root, 'third_party', 'khook', 'include')
     ]
 
     for other_sdk in self.sdk_manifests:
