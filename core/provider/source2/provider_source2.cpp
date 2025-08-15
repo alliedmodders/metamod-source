@@ -472,7 +472,7 @@ KHook::Return<void> Source2Provider::Hook_ClientCommand(IServerGameClients*, CPl
 			m_pCallbacks->OnCommand_ClientMeta(nSlot, &cmd);
 		}
 		
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 
 	return { KHook::Action::Ignore };

@@ -117,6 +117,9 @@ public:
 	virtual void* GetOverrideValuePtr(bool pop = false) override {
 		return KHook::GetOverrideValuePtr(pop);
 	}
+	virtual void* GetOriginal(void* function) override {
+		return KHook::GetOriginal(function);
+	}
 } g_KHook;
 
 /* Helper Macro */
