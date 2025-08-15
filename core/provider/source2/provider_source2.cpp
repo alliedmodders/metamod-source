@@ -417,7 +417,7 @@ KHook::Return<void> Source2Provider::Hook_UnregisterLoopMode(IEngineServiceMgr*,
 
 KHook::Return<ILoopMode*> Source2Provider::Hook_CreateLoopModePost(ILoopModeFactory*)
 {
-	auto pLoopMode = (ILoopMode*)KHook::GetOriginalValuePtr();
+	auto pLoopMode = *(ILoopMode**)KHook::GetOriginalValuePtr();
 	m_LoopInit.Add(pLoopMode);
 	m_LoopShutdown.Add(pLoopMode);
 
