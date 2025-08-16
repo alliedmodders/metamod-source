@@ -120,6 +120,9 @@ public:
 	virtual void* GetOriginal(void* function) override {
 		return KHook::GetOriginal(function);
 	}
+	virtual void* DoRecall(KHook::Action action, void** pointerToReturnValue) override {
+		return KHook::DoRecall(action, pointerToReturnValue);
+	}
 } g_KHook;
 
 /* Helper Macro */
