@@ -197,7 +197,7 @@ KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_
 
 		helpers->CreateMessage(pEntity, DIALOG_MENU, kv, vsp_callbacks);
 		kv->deleteThis();
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 	else if (strcmp(cmd, "rich") == 0)
 	{
@@ -209,7 +209,7 @@ KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_
 
 		helpers->CreateMessage(pEntity, DIALOG_TEXT, kv, vsp_callbacks);
 		kv->deleteThis();
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 	else if (strcmp(cmd, "msg") == 0)
 	{
@@ -220,7 +220,7 @@ KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_
 
 		helpers->CreateMessage(pEntity, DIALOG_MSG, kv, vsp_callbacks);
 		kv->deleteThis();
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 	else if (strcmp(cmd, "entry") == 0)
 	{
@@ -233,7 +233,7 @@ KHook::Return<void> SamplePlugin::Hook_ClientCommand(IServerGameClients*, edict_
 
 		helpers->CreateMessage(pEntity, DIALOG_ENTRY, kv, vsp_callbacks);
 		kv->deleteThis();
-		return { KHook::Action::Supercede };
+		return { KHook::Action::Supersede };
 	}
 	return { KHook::Action::Ignore };
 }
