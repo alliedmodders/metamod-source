@@ -99,8 +99,8 @@ static_assert(false, "KHOOK_STANDALONE wasn't defined!");
 #endif
 class KHookImpl : public KHook::IKHook {
 public:
-	virtual KHook::HookID_t SetupHook(void* function, void* hookPtr, void* removedFunctionMFP, KHook::Action* hookAction, void* overrideReturnPtr, void* originalReturnPtr, void* preMFP, void* postMFP, void* returnOverrideMFP, void* returnOriginalMFP, void* callOriginalMFP, bool async = false) override {
-		return KHook::SetupHook(function, hookPtr, removedFunctionMFP, hookAction, overrideReturnPtr, originalReturnPtr, preMFP, postMFP, returnOverrideMFP, returnOriginalMFP, callOriginalMFP, async);
+	virtual KHook::HookID_t SetupHook(void* function, void* hookPtr, void* removedFunctionMFP, void* preMFP, void* postMFP, void* returnMFP, void* callOriginalMFP, bool async = false) override {
+		return KHook::SetupHook(function, hookPtr, removedFunctionMFP, preMFP, postMFP, returnMFP, callOriginalMFP, async);
 	}
 	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
 		return KHook::RemoveHook(id, async);
@@ -111,17 +111,29 @@ public:
 	virtual void* GetOriginalFunction() override {
 		return KHook::GetOriginalFunction();
 	}
-	virtual void* GetOriginalValuePtr(bool pop = false) override {
-		return KHook::GetOriginalValuePtr(pop);
+	virtual void* GetOriginalValuePtr() override {
+		return KHook::GetOriginalValuePtr();
 	}
-	virtual void* GetOverrideValuePtr(bool pop = false) override {
-		return KHook::GetOverrideValuePtr(pop);
+	virtual void* GetOverrideValuePtr() override {
+		return KHook::GetOverrideValuePtr();
+	}
+	virtual void* GetCurrentValuePtr(bool pop = false) override {
+		return KHook::GetCurrentValuePtr(pop);
+	}
+	virtual void DestroyReturnValue() override {
+		return KHook::DestroyReturnValue();
 	}
 	virtual void* GetOriginal(void* function) override {
 		return KHook::GetOriginal(function);
 	}
-	virtual void* DoRecall(KHook::Action action, void** pointerToReturnValue) override {
-		return KHook::DoRecall(action, pointerToReturnValue);
+	virtual void* DoRecall(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op) override {
+		return KHook::DoRecall(action, ptr_to_return, return_size, init_op, delete_op);
+	}
+	virtual void SaveReturnValue(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op, bool original) {
+		return KHook::SaveReturnValue(action, ptr_to_return, return_size, init_op, delete_op, original);
+	}
+	virtual KHook::Action GetHookAction() {
+		return KHook::GetHookAction();
 	}
 } g_KHook;
 
