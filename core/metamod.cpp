@@ -132,9 +132,6 @@ public:
 	virtual void SaveReturnValue(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op, bool original) {
 		return KHook::SaveReturnValue(action, ptr_to_return, return_size, init_op, delete_op, original);
 	}
-	virtual KHook::Action GetHookAction() {
-		return KHook::GetHookAction();
-	}
 } g_KHook;
 
 /* Helper Macro */
