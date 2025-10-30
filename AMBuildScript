@@ -339,7 +339,7 @@ class MMSConfig(object):
         os.path.join(sdk['path'], 'tier1', 'convar.cpp'),
       ]
 
-    SdkHelpers.configureCxx(context, binary.compiler, sdk)
+    SdkHelpers.configureCxx(context, binary, sdk)
 
     return binary
 
