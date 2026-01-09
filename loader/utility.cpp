@@ -502,22 +502,13 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	phdrCount = file->e_phnum;
 	phdr = reinterpret_cast<ElfPHeader *>(baseAddr + file->e_phoff);
 
+	lib.memorySize = 0;
 	for (uint16_t i = 0; i < phdrCount; i++)
 	{
 		ElfPHeader &hdr = phdr[i];
-
-		/* We only really care about the segment with executable code */
-		if (hdr.p_type == PT_LOAD && hdr.p_flags == (PF_X|PF_R))
+		if (hdr.p_type == PT_LOAD)
 		{
-			/* From glibc, elf/dl-load.c:
-			 * c->mapend = ((ph->p_vaddr + ph->p_filesz + GLRO(dl_pagesize) - 1)
-			 * & ~(GLRO(dl_pagesize) - 1));
-			 *
-			 * In glibc, the segment file size is aligned up to the nearest page size and
-			 * added to the virtual address of the segment. We just want the size here.
-			 */
-			lib.memorySize = PAGE_ALIGN_UP(hdr.p_filesz);
-			break;
+			lib.memorySize += hdr.p_memsz;
 		}
 	}
 
