@@ -519,6 +519,10 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 			}
 		}
 	}
+	if (minAddr > maxAddr)
+	{
+		return false;
+	}
 	lib.memorySize = maxAddr - minAddr;
 
 #elif defined __APPLE__
