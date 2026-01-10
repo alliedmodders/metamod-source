@@ -503,14 +503,23 @@ mm_GetLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	phdr = reinterpret_cast<ElfPHeader *>(baseAddr + file->e_phoff);
 
 	lib.memorySize = 0;
+	size_t minAddr = SIZE_MAX, maxAddr = 0;
 	for (uint16_t i = 0; i < phdrCount; i++)
 	{
 		ElfPHeader &hdr = phdr[i];
 		if (hdr.p_type == PT_LOAD)
 		{
-			lib.memorySize += hdr.p_memsz;
+			if (hdr.p_vaddr < minAddr)
+			{
+				minAddr = hdr.p_vaddr;
+			}
+			if ((hdr.p_vaddr + hdr.p_memsz) > maxAddr)
+			{
+				maxAddr = hdr.p_vaddr + hdr.p_memsz;
+			}
 		}
 	}
+	lib.memorySize = maxAddr - minAddr;
 
 #elif defined __APPLE__
 
