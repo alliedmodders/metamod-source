@@ -33,6 +33,12 @@
 #include "filesystem.h"
 #include "tier0/icommandline.h"
 
+/* Imports */
+#if SOURCE_ENGINE < SE_ORANGEBOX
+#undef CommandLine
+DLL_IMPORT ICommandLine *CommandLine();
+#endif
+
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 void LocalCommand_Meta(const CCommand& args);
 #else
