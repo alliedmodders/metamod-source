@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/PeakKS/hl2sdk.git
+revision = cs2
+depth = 1
+
+[provide]
+cs2 = cs2_dep
