@@ -99,14 +99,17 @@ static_assert(false, "KHOOK_STANDALONE wasn't defined!");
 #endif
 class KHookImpl : public KHook::IKHook {
 public:
-	virtual KHook::HookID_t SetupHook(void* function, void* hookPtr, void* removedFunctionMFP, void* preMFP, void* postMFP, void* returnMFP, void* callOriginalMFP, bool async = false) override {
-		return KHook::SetupHook(function, hookPtr, removedFunctionMFP, preMFP, postMFP, returnMFP, callOriginalMFP, async);
+	virtual KHook::HookID_t SetupHook(void* function, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
+		return KHook::SetupHook(function, context, removed_function, pre, post, make_return, make_call_original, async);
+	}
+	virtual KHook::HookID_t SetupVirtualHook(void** vtable, int index, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
+		return KHook::SetupVirtualHook(vtable, index, context, removed_function, pre, post, make_return, make_call_original, async);
 	}
 	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
 		return KHook::RemoveHook(id, async);
 	}
-	virtual void* GetCurrent() override {
-		return KHook::GetCurrent();
+	virtual void* GetContext() override {
+		return KHook::GetContext();
 	}
 	virtual void* GetOriginalFunction() override {
 		return KHook::GetOriginalFunction();
@@ -123,14 +126,17 @@ public:
 	virtual void DestroyReturnValue() override {
 		return KHook::DestroyReturnValue();
 	}
-	virtual void* GetOriginal(void* function) override {
-		return KHook::GetOriginal(function);
-	}
 	virtual void* DoRecall(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op) override {
 		return KHook::DoRecall(action, ptr_to_return, return_size, init_op, delete_op);
 	}
 	virtual void SaveReturnValue(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op, bool original) {
 		return KHook::SaveReturnValue(action, ptr_to_return, return_size, init_op, delete_op, original);
+	}
+	virtual void* FindOriginal(void* function) override {
+		return KHook::FindOriginal(function);
+	}
+	virtual void* FindOriginalVirtual(void** vtable, int index) override {
+		return KHook::FindOriginalVirtual(vtable, index);
 	}
 } g_KHook;
 
