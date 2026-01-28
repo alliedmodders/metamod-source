@@ -249,7 +249,7 @@ const char* Source2Provider::GetGameDescription()
 #ifdef SHOULD_OVERRIDE_ALLOWDEDICATED_SERVER
 KHook::Return<bool> Source2Provider::Hook_AllowDedicatedServers(const ISource2ServerConfig*, EUniverse universe)
 {
-	return { KHook::Action::Supercede, true };
+	return { KHook::Action::Supersede, true };
 }
 #endif
 
