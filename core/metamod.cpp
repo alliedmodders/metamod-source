@@ -36,12 +36,13 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "provider/provider_base.h"
+#include "khook.hpp"
+
+#include <list>
 
 #define X64_SUFFIX ".x64"
 
 using namespace SourceMM;
-using namespace SourceHook;
-using namespace SourceHook::Impl;
 
 /**
  * @brief Implementation of main SourceMM GameDLL functionality
@@ -65,14 +66,14 @@ struct game_dll_t
 	CreateInterfaceFn factory;
 };
 
-static String mod_path;
-static String metamod_path;
-static String full_bin_path;
+static std::string mod_path;
+static std::string metamod_path;
+static std::string full_bin_path;
 static int vsp_version = 0;
 static int gamedll_version = 0;
 static const char *gamedll_interface_name = nullptr;
 static int engine_build = SOURCE_ENGINE_UNKNOWN;
-static List<game_dll_t *> gamedll_list;
+static std::list<game_dll_t *> gamedll_list;
 static bool is_gamedll_loaded = false;
 static bool in_first_level = true;
 static bool is_game_init = false;
@@ -85,24 +86,64 @@ static MetamodSourceConVar *mm_basedir = NULL;
 static CreateInterfaceFn engine_factory = NULL;
 static CreateInterfaceFn physics_factory = NULL;
 static CreateInterfaceFn filesystem_factory = NULL;
-#if !defined( __amd64__ )
-static CHookManagerAutoGen g_SH_HookManagerAutoGen(&g_SourceHook);
-#endif
-static META_RES last_meta_res;
 static IServerPluginCallbacks *vsp_callbacks = NULL;
 static bool were_plugins_loaded = false;
 static bool g_bIsVspBridged = false;
 
 MetamodSource g_Metamod;
 PluginId g_PLID = Pl_Console;
-CSourceHookImpl g_SourceHook(mm_LogMessage);
-ISourceHook *g_SHPtr = &g_SourceHook;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
+
+#ifndef KHOOK_STANDALONE
+static_assert(false, "KHOOK_STANDALONE wasn't defined!");
+#endif
+class KHookImpl : public KHook::IKHook {
+public:
+	virtual KHook::HookID_t SetupHook(void* function, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
+		return KHook::SetupHook(function, context, removed_function, pre, post, make_return, make_call_original, async);
+	}
+	virtual KHook::HookID_t SetupVirtualHook(void** vtable, int index, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
+		return KHook::SetupVirtualHook(vtable, index, context, removed_function, pre, post, make_return, make_call_original, async);
+	}
+	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
+		return KHook::RemoveHook(id, async);
+	}
+	virtual void* GetContext() override {
+		return KHook::GetContext();
+	}
+	virtual void* GetOriginalFunction() override {
+		return KHook::GetOriginalFunction();
+	}
+	virtual void* GetOriginalValuePtr() override {
+		return KHook::GetOriginalValuePtr();
+	}
+	virtual void* GetOverrideValuePtr() override {
+		return KHook::GetOverrideValuePtr();
+	}
+	virtual void* GetCurrentValuePtr(bool pop = false) override {
+		return KHook::GetCurrentValuePtr(pop);
+	}
+	virtual void DestroyReturnValue() override {
+		return KHook::DestroyReturnValue();
+	}
+	virtual void* DoRecall(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op) override {
+		return KHook::DoRecall(action, ptr_to_return, return_size, init_op, delete_op);
+	}
+	virtual void SaveReturnValue(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op, bool original) {
+		return KHook::SaveReturnValue(action, ptr_to_return, return_size, init_op, delete_op, original);
+	}
+	virtual void* FindOriginal(void* function) override {
+		return KHook::FindOriginal(function);
+	}
+	virtual void* FindOriginalVirtual(void** vtable, int index) override {
+		return KHook::FindOriginalVirtual(vtable, index);
+	}
+} g_KHook;
 
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
+	std::list<IMetamodListener *>::iterator event; \
 	IMetamodListener *api; \
 	int mret = 0; \
 	void *val = NULL; \
@@ -121,11 +162,10 @@ SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
 #define ITER_EVENT(evn, args) \
 	CPluginManager::CPlugin *pl; \
-	SourceHook::List<IMetamodListener *>::iterator event; \
 	IMetamodListener *api; \
 	for (PluginIter iter = g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++) { \
 		pl = (*iter); \
-		for (event=pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
+		for (auto event = pl->m_Events.begin(); event!=pl->m_Events.end(); event++) { \
 			api = (*event); \
 			api->evn args; \
 		} \
@@ -560,8 +600,6 @@ mm_UnloadMetamod()
 	g_PluginMngr.UnloadAll();
 
 	provider->Notify_DLLShutdown_Pre();
-
-	g_SourceHook.CompleteShutdown();
 }
 
 void MetamodSource::LogMsg(ISmmPlugin *pl, const char *msg, ...)
@@ -609,16 +647,6 @@ CGlobalVars *MetamodSource::GetCGlobals()
 	return gpGlobals;
 }
 
-void MetamodSource::SetLastMetaReturn(META_RES res)
-{
-	last_meta_res = res;
-}
-
-META_RES MetamodSource::GetLastMetaReturn()
-{
-	return last_meta_res;
-}
-
 void MetamodSource::ConPrint(const char *str)
 {
 	provider->ConsolePrint(str);
@@ -642,12 +670,6 @@ void MetamodSource::GetApiVersions(int &major, int &minor, int &plvers, int &plm
 	minor = METAMOD_API_MINOR;
 	plvers = METAMOD_PLAPI_VERSION;
 	plmin = PLAPI_MIN_VERSION;
-}
-
-void MetamodSource::GetShVersions(int &shvers, int &shimpl)
-{
-	shvers = SH_IFACE_VERSION;
-	shimpl = SH_IMPL_VERSION;
 }
 
 int MetamodSource::FormatIface(char iface[], size_t maxlength)
@@ -831,13 +853,13 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	}
 
 	/* First check ours... we get first chance! */
-	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
+	if (strcmp(iface, MMIFACE_KHOOK) == 0)
 	{
-		if (ret)
-		{
-			*ret = META_IFACE_OK;
-		}
-		return static_cast<void *>(static_cast<SourceHook::ISourceHook *>(&g_SourceHook));
+		return static_cast<void*>(static_cast<KHook::IKHook*>(&g_KHook));
+	}
+	else if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
+	{
+		return nullptr;
 	}
 	else if (strcmp(iface, MMIFACE_PLMANAGER) == 0)
 	{
@@ -847,18 +869,12 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
-#if !defined( __amd64__ )
 	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
 	{
-		if (ret)
-		{
-			*ret = META_IFACE_OK;
-		}
-		return static_cast<void *>(static_cast<SourceHook::IHookManagerAutoGen *>(&g_SH_HookManagerAutoGen));
+		return nullptr;
 	}
-#endif
 	CPluginManager::CPlugin *pl;
-	List<IMetamodListener *>::iterator event;
+	std::list<IMetamodListener *>::iterator event;
 	IMetamodListener *api;
 	void *value;
 	
@@ -965,7 +981,7 @@ void MetamodSource::UnregisterConCommand(PluginId id, ProviderConCommand *pComma
 {
 	PluginIter iter;
 	CPluginManager::CPlugin *pPlugin;
-	List<IMetamodListener *>::iterator event;
+	std::list<IMetamodListener *>::iterator event;
 	IMetamodListener *pML;
 	for (iter=g_PluginMngr._begin(); iter!=g_PluginMngr._end(); iter++)
 	{
@@ -1009,7 +1025,7 @@ void MetamodSource::UnregisterConVar(PluginId id, ProviderConVar *pVar)
 {
 	PluginIter iter;
 	CPluginManager::CPlugin *pPlugin;
-	List<IMetamodListener *>::iterator event;
+	std::list<IMetamodListener *>::iterator event;
 	IMetamodListener *pML;
 	for(iter=g_PluginMngr._begin(); iter != g_PluginMngr._end(); iter++)
 	{

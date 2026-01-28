@@ -10,11 +10,7 @@ for sdk_target in MMSPlugin.sdk_targets:
   binary = MMSPlugin.HL2Library(builder, cxx, project, sdk)
 
   binary.sources += [
-    'src/plugin.cpp',
+    'src/sample_mm.cpp',
   ]
-
-  binary.custom = [builder.tools.Protoc(protoc = sdk_target.protoc, sources = [
-    os.path.join(sdk['path'], 'common', 'network_connection.proto'),
-  ])]
 
 MMSPlugin.tasks += builder.Add(project)
