@@ -503,7 +503,7 @@ using namespace SourceMM;
  * to use values like g_SHPtr in other files.
  */
 #define PLUGIN_GLOBALVARS()	\
-	namespace KHooK { extern KHook::IKHook* __exported__khook; } \
+	namespace KHook { extern KHook::IKHook* __exported__khook; } \
 	extern ISmmAPI *g_SMAPI; \
 	extern ISmmPlugin *g_PLAPI; \
 	extern PluginId g_PLID; 
