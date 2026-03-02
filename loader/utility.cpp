@@ -638,7 +638,7 @@ void *mm_FindPattern(const void *libPtr, const char *pattern, size_t len)
 	DynLibInfo lib;
 	bool found = false;
 
-	memset(&lib, 0, sizeof(DynLibInfo));
+	memset((void*)&lib, 0, sizeof(DynLibInfo));
 
 	if (!mm_GetLibraryInfo(libPtr, lib))
 	{
