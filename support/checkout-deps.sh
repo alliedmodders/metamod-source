@@ -36,7 +36,7 @@ fi
 checkout ()
 {
   if [ ! -d "$name" ]; then
-    git clone $repo -b $branch $name
+    git clone --recursive $repo -b $branch $name
     if [ -n "$origin" ]; then
       cd $name
       git remote set-url origin $origin
@@ -84,9 +84,9 @@ do
   checkout
 done
 
-python_cmd=`command -v python`
+python_cmd=`command -v python3`
 if [ -z "$python_cmd" ]; then
-  python_cmd=`command -v python3`
+  python_cmd=`command -v python`
 
   if [ -z "$python_cmd" ]; then
     echo "No suitable installation of Python detected"
@@ -128,7 +128,11 @@ if [ $? -eq 1 ]; then
   name=ambuild
   checkout
 
-  if [ $iswin -eq 1 ] || [ $ismac -eq 1 ]; then
+  if [ $iswin -eq 1 ]; then
+    # Without first doing this explicitly, ambuild install fails on newer Python versions on Windows
+    $python_cmd -m pip install wheel
+    $python_cmd -m pip install ./ambuild
+  elif [ $ismac -eq 1 ]; then
     $python_cmd -m pip install ./ambuild
   else
     echo "Installing AMBuild at the user level. Location can be: ~/.local/bin"
