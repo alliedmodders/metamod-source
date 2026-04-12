@@ -29,7 +29,7 @@ jobs:
       image: ${{ matrix.container_image }}
     steps:
       - name: Checkout Metamod:Source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: metamod-source
           fetch-depth: 0
@@ -88,7 +88,7 @@ jobs:
           echo "sdk_list=$(printf '%s\n' "${sdk_list[@]}" | jq --raw-input . | jq --slurp --compact-output .)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: hl2sdk
         with:
