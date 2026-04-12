@@ -80,8 +80,11 @@ jobs:
               continue
             fi
 
-            # Unlike SourceMod, MM:S supports Source2 SDKs on master (2.x branch).
-            # AMBuildScript's shouldIncludeSdk() handles per-branch filtering at build time.
+            source2=$(jq -r '.source2' "$file")
+            if [[ $source2 == "null" || $source2 == "true" ]]; then
+              continue
+            fi
+
             sdk_list+=("$sdk")
           done
           echo "sdk_list=$(printf '%s\n' "${sdk_list[@]}" | jq --raw-input . | jq --slurp --compact-output .)" >> $GITHUB_OUTPUT
