@@ -4,7 +4,6 @@ on:
     branches:
       - master
       - '[0-9]+.[0-9]+-dev'
-      - 'psy/gh-ci'
 env:
   ARCH: x86,x86_64
   DUMP_SYMS_VERSION: '2.3.7'
@@ -151,33 +150,33 @@ jobs:
           echo "filename=$filename" >> $GITHUB_OUTPUT
           echo "content_type=$content_type" >> $GITHUB_OUTPUT
 
-      # - name: Create Release
-      #   id: create_release
-      #   uses: ncipollo/release-action@v1.21.0
-      #   with:
-      #     # Windows and Linux packages will need to upload to the same release
-      #     allowUpdates: true
-      #     replacesArtifacts: false
-      #     omitBodyDuringUpdate: true
-      #     omitDraftDuringUpdate: true
-      #     omitNameDuringUpdate: true
-      #     omitPrereleaseDuringUpdate: true
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          # Windows and Linux packages will need to upload to the same release
+          allowUpdates: true
+          replacesArtifacts: false
+          omitBodyDuringUpdate: true
+          omitDraftDuringUpdate: true
+          omitNameDuringUpdate: true
+          omitPrereleaseDuringUpdate: true
 
-      #     # This gets overly large and meaningless with our existing release patterns
-      #     omitBody: true
+          # This gets overly large and meaningless with our existing release patterns
+          omitBody: true
 
-      #     artifacts: metamod-source/build/package/${{ steps.package.outputs.filename }}
-      #     artifactContentType: ${{ steps.package.outputs.content_type }}
-      #     artifactErrorsFailBuild: true
+          artifacts: metamod-source/build/package/${{ steps.package.outputs.filename }}
+          artifactContentType: ${{ steps.package.outputs.content_type }}
+          artifactErrorsFailBuild: true
 
-      #     tag: ${{ steps.package.outputs.version }}
-      #     commit: ${{ github.sha }}
-      #     generateReleaseNotes: true
+          tag: ${{ steps.package.outputs.version }}
+          commit: ${{ github.sha }}
+          generateReleaseNotes: true
 
-      #     draft: false
-      #     prerelease: ${{ github.ref == 'refs/heads/master' }}
-      #     makeLatest: ${{ github.ref != 'refs/heads/master' }}
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          prerelease: ${{ github.ref == 'refs/heads/master' }}
+          makeLatest: ${{ github.ref != 'refs/heads/master' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output PDBs
         if: startsWith(matrix.os, 'windows')
@@ -207,7 +206,7 @@ jobs:
       - name: Upload PDBs
         if: startsWith(matrix.os, 'windows')
         id: upload_pdbs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pdbs
           path: pdbs/*
