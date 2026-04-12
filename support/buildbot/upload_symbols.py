@@ -1,11 +1,15 @@
 # vim: ts=8 sts=2 sw=2 tw=99 et ft=python: 
+import shutil
 import sys
 import subprocess
 import os
+import time
 try:
   import urllib.request as urllib
+  import urllib.error as urllib_error
 except ImportError:
   import urllib2 as urllib
+  urllib_error = urllib
 
 if len(sys.argv) < 3:
   sys.stderr.write('Usage: <symbol-file> <dump-syms-cmd> <args...>\n')
@@ -14,6 +18,9 @@ if len(sys.argv) < 3:
 SYMBOL_SERVER = os.environ['BREAKPAD_SYMBOL_SERVER']
 symbol_file = sys.argv[1]
 cmd_argv = sys.argv[2:]
+
+# Find the dump_syms executable. (On Windows, subprocess.Popen doesn't use PATH unless shell=True.)
+cmd_argv[0] = shutil.which(cmd_argv[0])
 
 sys.stdout.write(' '.join(cmd_argv))
 sys.stdout.write('\n')
@@ -26,7 +33,7 @@ p = subprocess.Popen(
 )
 stdout, stderr = p.communicate()
 out = stdout.decode('utf8')
-err = stdout.decode('utf8')
+err = stderr.decode('utf8')
 
 with open(symbol_file, 'w') as fp:
   fp.write(out)
@@ -99,16 +106,40 @@ for i, line in enumerate(lines):
   roots[root] = (url, rev)
 
 index = 1
-while lines[index].split(None, 1)[0] == 'INFO':
-  index += 1;
+while index < len(lines) and lines[index].split(None, 1)[0] == 'INFO':
+  index += 1
 
 for root, info in roots.items():
   lines.insert(index, 'INFO REPO ' + ' '.join([info[1], info[0], root]))
-  index += 1;
+  index += 1
 
 out = os.linesep.join(lines).encode('utf8')
 
 request = urllib.Request(SYMBOL_SERVER, out)
 request.add_header('Content-Type', 'text/plain')
-server_response = urllib.urlopen(request).read().decode('utf8').strip()
-print(server_response)
+if 'BREAKPAD_SYMBOL_SERVER_TOKEN' in os.environ:
+  request.add_header('X-Auth', os.environ['BREAKPAD_SYMBOL_SERVER_TOKEN'])
+
+max_retries = 4
+for attempt in range(max_retries):
+  try:
+    server_response = urllib.urlopen(request).read().decode('utf8').strip()
+    print(server_response)
+    break
+  except urllib_error.HTTPError as e:
+    if e.code < 500:
+      raise
+    if attempt < max_retries - 1:
+      delay = 2 ** (attempt + 2)
+      sys.stderr.write('Symbol upload failed (HTTP {}), retrying in {}s...\n'.format(e.code, delay))
+      time.sleep(delay)
+    else:
+      raise
+  except Exception as e:
+    if attempt < max_retries - 1:
+      delay = 2 ** (attempt + 2)
+      sys.stderr.write('Symbol upload failed ({}), retrying in {}s...\n'.format(e, delay))
+      time.sleep(delay)
+    else:
+      raise
+
