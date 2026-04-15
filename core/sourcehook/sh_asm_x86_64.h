@@ -273,6 +273,8 @@ namespace SourceHook
 		
 		class x64JitWriter : public GenBuffer {
 		public:
+			x64JitWriter(CPageAlloc* alloc) : GenBuffer(alloc) {}
+
 			void breakpoint() {
 				this->write_ubyte(0xCC);
 			}
