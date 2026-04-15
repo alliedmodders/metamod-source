@@ -101,20 +101,9 @@ namespace SourceHook
 			MSVC_ONLY(jit.add(rsp, 40));
 		}
 
-		x64GenContext::x64GenContext()
-			: m_GeneratedPubFunc(nullptr), m_VtblOffs(0),
-			  m_VtblIdx(666), m_SHPtr((ISourceHook*)0x1122334455667788), m_pHI(nullptr), m_HookfuncVfnptr(nullptr), m_HookFunc_FrameOffset(0), m_HookFunc_FrameVarsSize(0) {
-			m_pHI = new void*;
-			*m_pHI = (void*)0x77777777;
-			m_HookfuncVfnptr = new void*;
-			m_BuiltPI = new ProtoInfo;
-			m_BuiltPI_Params = nullptr;
-			m_BuiltPI_Params2 = nullptr;
-		}
-
-		x64GenContext::x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
+		x64GenContext::x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr, CPageAlloc* allocator)
 			: m_GeneratedPubFunc(nullptr), m_OrigProto(proto), m_Proto(proto), m_VtblOffs(vtbl_offs),
-			  m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr), m_pHI(nullptr), m_HookfuncVfnptr(nullptr), m_HookFunc_FrameOffset(0), m_HookFunc_FrameVarsSize(0)
+			  m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr), m_HookFunc(allocator), m_PubFunc(allocator), m_pHI(nullptr), m_HookfuncVfnptr(nullptr), m_HookFunc_FrameOffset(0), m_HookFunc_FrameVarsSize(0)
 		{
 			m_pHI = new void*;
 			*m_pHI = (void*)0x77777777; // Magic number for debugging

@@ -48,9 +48,9 @@ namespace SourceHook
 			return static_cast<jit_uint32_t>(size);
 		}
 
-		GenContext::GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
+		GenContext::GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr, CPageAlloc* allocator)
 			: m_GeneratedPubFunc(NULL), m_OrigProto(proto), m_Proto(proto), m_VtblOffs(vtbl_offs),
-			  m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr), m_pHI(NULL), m_HookfuncVfnptr(NULL), m_RegCounter(0)
+			  m_VtblIdx(vtbl_idx), m_SHPtr(pSHPtr), m_HookFunc(allocator), m_PubFunc(allocator), m_pHI(NULL), m_HookfuncVfnptr(NULL), m_RegCounter(0)
 		{
 			m_pHI = new void*;
 			m_HookfuncVfnptr = new void*;

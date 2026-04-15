@@ -1715,7 +1715,7 @@ namespace SourceHook
 			HookManagerPubFunc Generate();
 		public:
 			// Level 1 -> Public interface
-			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
+			GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr, CPageAlloc* allocator);
 			virtual ~GenContext();
 
 			virtual bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx) override;
