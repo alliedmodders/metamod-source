@@ -63,7 +63,7 @@ namespace SourceHook
 			};
 			std::list<StoredContext> m_Contexts;
 			ISourceHook *m_pSHPtr;
-			CPageAlloc ms_Allocator;
+			CPageAlloc *m_Allocator;
 
 		public:
 			CHookManagerAutoGen(ISourceHook *pSHPtr);
