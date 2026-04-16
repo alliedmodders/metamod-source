@@ -9,14 +9,12 @@ namespace SourceHook
 	{
 		class GenBuffer
 		{
-			static CPageAlloc ms_Allocator;
-
 			unsigned char *m_pData;
 			std::uint32_t m_Size;
 			std::uint32_t m_AllocatedSize;
-
+			CPageAlloc* ms_Allocator;
 		public:
-			GenBuffer() : m_pData(NULL), m_Size(0), m_AllocatedSize(0)
+			GenBuffer(CPageAlloc* allocator) : m_pData(NULL), m_Size(0), m_AllocatedSize(0), ms_Allocator(allocator)
 			{
 			}
 			~GenBuffer()
@@ -47,8 +45,8 @@ namespace SourceHook
 						m_AllocatedSize = 64;
 
 					unsigned char *newBuf;
-					newBuf = reinterpret_cast<unsigned char*>(ms_Allocator.Alloc(m_AllocatedSize));
-					ms_Allocator.SetRW(newBuf);
+					newBuf = reinterpret_cast<unsigned char*>(ms_Allocator->Alloc(m_AllocatedSize));
+					ms_Allocator->SetRW(newBuf);
 					if (!newBuf)
 					{
 						SH_ASSERT(0, ("bad_alloc: couldn't allocate 0x%08X bytes of memory\n", m_AllocatedSize));
@@ -58,9 +56,9 @@ namespace SourceHook
 					memcpy((void*)newBuf, (const void*)m_pData, m_Size);
 					if (m_pData)
 					{
-						ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
-						ms_Allocator.SetRW(newBuf);
-						ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
+						ms_Allocator->SetRE(reinterpret_cast<void*>(m_pData));
+						ms_Allocator->SetRW(newBuf);
+						ms_Allocator->Free(reinterpret_cast<void*>(m_pData));
 					}
 					m_pData = newBuf;
 				}
@@ -83,7 +81,7 @@ namespace SourceHook
 			void clear()
 			{
 				if (m_pData)
-					ms_Allocator.Free(reinterpret_cast<void*>(m_pData));
+					ms_Allocator->Free(reinterpret_cast<void*>(m_pData));
 				m_pData = NULL;
 				m_Size = 0;
 				m_AllocatedSize = 0;
@@ -91,7 +89,7 @@ namespace SourceHook
 
 			void SetRE()
 			{
-				ms_Allocator.SetRE(reinterpret_cast<void*>(m_pData));
+				ms_Allocator->SetRE(reinterpret_cast<void*>(m_pData));
 			}
 
 			operator void *()

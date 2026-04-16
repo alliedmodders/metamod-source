@@ -23,8 +23,7 @@ namespace SourceHook
 		class x64GenContext : public IGenContext
 		{
 		public:
-			x64GenContext();
-			x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
+			x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr, CPageAlloc* allocator);
 			virtual ~x64GenContext();
 
 			virtual bool Equal(const CProto &proto, int vtbl_offs, int vtbl_idx) override;

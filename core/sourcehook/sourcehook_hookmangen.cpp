@@ -41,14 +41,12 @@ typedef SourceHook::Impl::GenContext SHGenContext;
 
 namespace SourceHook
 {
-	CPageAlloc Asm::GenBuffer::ms_Allocator(16);
-	
 	namespace Impl
 	{
 		// *********************************** class GenContextContainer
-		CHookManagerAutoGen::CHookManagerAutoGen(ISourceHook *pSHPtr) : m_pSHPtr(pSHPtr) { }
+		CHookManagerAutoGen::CHookManagerAutoGen(ISourceHook *pSHPtr) : m_pSHPtr(pSHPtr) { m_Allocator = new CPageAlloc(16); }
 
-		CHookManagerAutoGen::~CHookManagerAutoGen() { }
+		CHookManagerAutoGen::~CHookManagerAutoGen() { m_Contexts.clear(); delete m_Allocator; }
 
 		int CHookManagerAutoGen::GetIfaceVersion()
 		{
@@ -78,7 +76,7 @@ namespace SourceHook
 			// Not found yet -> new one
 			StoredContext sctx;
 			sctx.m_RefCnt = 1;
-			sctx.m_GenContext = std::make_unique<SHGenContext>(proto, vtbl_offs, vtbl_idx, m_pSHPtr);
+			sctx.m_GenContext = std::make_unique<SHGenContext>(proto, vtbl_offs, vtbl_idx, m_pSHPtr, m_Allocator);
 
 			auto pubFunc = sctx.m_GenContext->GetPubFunc();
 			if (pubFunc != nullptr)
