@@ -566,7 +566,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				int id = atoi(info->GetArg(2));
 				char error[255]={0};
 
-				if (!g_PluginMngr.Unload(id, false, error, sizeof(error)))
+				if (!g_PluginMngr.Unload(id, true, error, sizeof(error)))
 				{
 					CONMSG("Force unload failed: %s\n", error);
 					return true;
