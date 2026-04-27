@@ -2,7 +2,6 @@
 #include "sourcehook.h"
 #include "sourcehook_test.h"
 #include "testevents.h"
-#include <ctime>
 
 // TEST VP HOOKS
 // Test vfnptr-wide hooks
@@ -116,11 +115,17 @@ namespace
 //	p->Func1()
 //
 // May bypass the vtable, since p_d1i2 has exactly one assignment. We try to
-// defeat the analysis that produces this result here.
+// defeat the analysis that produces this result here by preventing inlining,
+// which stops the compiler from tracking the concrete type across the call.
 template <typename T>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+__attribute__((noinline))
+#endif
 T defeat_ssa(const T& t)
 {
-	return time(NULL) ? t : nullptr;
+	return t;
 }
 
 bool TestVPHooks(std::string &error)
