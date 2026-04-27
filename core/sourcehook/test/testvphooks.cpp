@@ -115,16 +115,16 @@ namespace
 //	p->Func1()
 //
 // May bypass the vtable, since p_d1i2 has exactly one assignment. We try to
-// defeat the analysis that produces this result here by preventing inlining,
-// which stops the compiler from tracking the concrete type across the call.
+// defeat the analysis that produces this result here. noinline is insufficient
+// for Clang 22+ which propagates type info interprocedurally; instead we pass
+// the pointer through an asm barrier that makes its value opaque to the
+// optimizer. "+r" works for pointer-sized values on both x86 and x86_64.
 template <typename T>
-#if defined(_MSC_VER)
-__declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-__attribute__((noinline))
-#endif
-T defeat_ssa(const T& t)
+T defeat_ssa(T t)
 {
+#if defined(__GNUC__) || defined(__clang__)
+	asm volatile("" : "+r"(t));
+#endif
 	return t;
 }
 
