@@ -937,9 +937,9 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	META_RES cur_res; \
 	\
 	typedef ReferenceCarrier< rettype >::type my_rettype; \
-	my_rettype orig_ret; \
-	my_rettype override_ret; \
-	my_rettype plugin_ret; \
+	my_rettype orig_ret{}; \
+	my_rettype override_ret{}; \
+	my_rettype plugin_ret{}; \
 	IMyDelegate *iter; \
 	IHookContext *pContext = SH_GLOB_SHPTR->SetupHookLoop(ms_HI, ourvfnptr, reinterpret_cast<void*>(this), \
 		&vfnptr_origentry, &status, &prev_res, &cur_res, &orig_ret, &override_ret);

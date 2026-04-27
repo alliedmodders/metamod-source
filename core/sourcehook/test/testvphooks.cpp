@@ -2,7 +2,6 @@
 #include "sourcehook.h"
 #include "sourcehook_test.h"
 #include "testevents.h"
-#include <ctime>
 
 // TEST VP HOOKS
 // Test vfnptr-wide hooks
@@ -116,11 +115,17 @@ namespace
 //	p->Func1()
 //
 // May bypass the vtable, since p_d1i2 has exactly one assignment. We try to
-// defeat the analysis that produces this result here.
+// defeat the analysis that produces this result here. noinline is insufficient
+// for Clang 22+ which propagates type info interprocedurally; instead we pass
+// the pointer through an asm barrier that makes its value opaque to the
+// optimizer. "+r" works for pointer-sized values on both x86 and x86_64.
 template <typename T>
-T defeat_ssa(const T& t)
+T defeat_ssa(T t)
 {
-	return time(NULL) ? t : nullptr;
+#if defined(__GNUC__) || defined(__clang__)
+	asm volatile("" : "+r"(t));
+#endif
+	return t;
 }
 
 bool TestVPHooks(std::string &error)

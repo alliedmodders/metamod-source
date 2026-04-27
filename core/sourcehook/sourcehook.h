@@ -914,10 +914,7 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 		/* patch mfp */ \
 		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
 		if (sizeof(mfp) == 2*sizeof(void*)) /* gcc */ \
-		{ \
-			void** pleaseShutUpMsvc = reinterpret_cast<void**>(&mfp); \
-			pleaseShutUpMsvc[1] = 0; \
-		} \
+			*(reinterpret_cast<void**>(&mfp) + 1) = 0; \
 		return SH_MFHCls(hookname)::CallEC(reinterpret_cast< ::SourceHook::EmptyClass* >(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
 	} \
 	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \
@@ -940,9 +937,9 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 	META_RES cur_res; \
 	\
 	typedef ReferenceCarrier< rettype >::type my_rettype; \
-	my_rettype orig_ret; \
-	my_rettype override_ret; \
-	my_rettype plugin_ret; \
+	my_rettype orig_ret{}; \
+	my_rettype override_ret{}; \
+	my_rettype plugin_ret{}; \
 	IMyDelegate *iter; \
 	IHookContext *pContext = SH_GLOB_SHPTR->SetupHookLoop(ms_HI, ourvfnptr, reinterpret_cast<void*>(this), \
 		&vfnptr_origentry, &status, &prev_res, &cur_res, &orig_ret, &override_ret);
