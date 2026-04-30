@@ -114,6 +114,15 @@
 
 #define SH_PTRSIZE sizeof(void*)
 
+#if SH_COMP == SH_COMP_MSVC
+# define SH__MFP_ZERO_HIGH_WORD(mfp) \
+	__pragma(warning(suppress: 4789)) \
+	*(reinterpret_cast<void**>(&(mfp)) + 1) = 0
+#else
+# define SH__MFP_ZERO_HIGH_WORD(mfp) \
+	*(reinterpret_cast<void**>(&(mfp)) + 1) = 0
+#endif
+
 #include "sh_memfuncinfo.h"
 #include "FastDelegate.h"
 
@@ -913,8 +922,8 @@ SourceHook::CallClass<T> *SH_GET_CALLCLASS(T *p)
 			*reinterpret_cast<void***>( (reinterpret_cast<char*>(ptr) + SH_MFHCls(hookname)::ms_MFI.thisptroffs + SH_MFHCls(hookname)::ms_MFI.vtbloffs) ) + SH_MFHCls(hookname)::ms_MFI.vtblindex); \
 		/* patch mfp */ \
 		*reinterpret_cast<void**>(&mfp) = *reinterpret_cast<void**>(vfnptr); \
-		if (sizeof(mfp) == 2*sizeof(void*)) /* gcc */ \
-			*(reinterpret_cast<void**>(&mfp) + 1) = 0; \
+		if (sizeof(mfp) == 2*sizeof(void*)) \
+			SH__MFP_ZERO_HIGH_WORD(mfp); \
 		return SH_MFHCls(hookname)::CallEC(reinterpret_cast< ::SourceHook::EmptyClass* >(ptr), mfp, vfnptr, SH_GLOB_SHPTR); \
 	} \
 	void __SourceHook_FHM_Reconfigure##hookname(int p_vtblindex, int p_vtbloffs, int p_thisptroffs) \
