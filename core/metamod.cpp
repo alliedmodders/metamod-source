@@ -99,11 +99,53 @@ static_assert(false, "KHOOK_STANDALONE wasn't defined!");
 #endif
 class KHookImpl : public KHook::IKHook {
 public:
-	virtual KHook::HookID_t SetupHook(void* function, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
-		return KHook::SetupHook(function, context, removed_function, pre, post, make_return, make_call_original, async);
+	virtual KHook::HookID_t SetupHook(
+		void* function,
+		void* context,
+		void* removed_function,
+		void* pre,
+		void* post,
+		void* make_return,
+		void* make_call_original,
+		unsigned int stack_size, 
+		bool async = false
+	) override {
+		return KHook::SetupHook(
+			function,
+			context,
+			removed_function,
+			pre,
+			post,
+			make_return,
+			make_call_original,
+			stack_size,
+			async
+		);
 	}
-	virtual KHook::HookID_t SetupVirtualHook(void** vtable, int index, void* context, void* removed_function, void* pre, void* post, void* make_return, void* make_call_original, bool async = false) override {
-		return KHook::SetupVirtualHook(vtable, index, context, removed_function, pre, post, make_return, make_call_original, async);
+	virtual KHook::HookID_t SetupVirtualHook(
+		void** vtable,
+		int index,
+		void* context,
+		void* removed_function,
+		void* pre,
+		void* post,
+		void* make_return,
+		void* make_call_original,
+		unsigned int stack_size,
+		bool async = false
+	) override {
+		return KHook::SetupVirtualHook(
+			vtable,
+			index,
+			context,
+			removed_function,
+			pre,
+			post,
+			make_return,
+			make_call_original,
+			stack_size,
+			async
+		);
 	}
 	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
 		return KHook::RemoveHook(id, async);
