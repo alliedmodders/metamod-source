@@ -435,6 +435,12 @@ KHook::Return<void> Source2Provider::Hook_DestroyLoopMode(ILoopModeFactory*, ILo
 
 KHook::Return<bool> Source2Provider::Hook_LoopInitPost(ILoopMode*, KeyValues* pKeyValues, ILoopModePrerequisiteRegistry *pRegistry)
 {
+	if (!m_bInLevelInit)
+	{
+		return { KHook::Action::Ignore };
+	}
+	m_bInLevelInit = false;
+
 	if (nullptr != m_pCallbacks)
 	{
 		m_pCallbacks->OnLevelInit(
@@ -453,6 +459,12 @@ KHook::Return<bool> Source2Provider::Hook_LoopInitPost(ILoopMode*, KeyValues* pK
 
 KHook::Return<void> Source2Provider::Hook_LoopShutdownPost(ILoopMode*)
 {
+	if (m_bInLevelInit)
+	{
+		return { KHook::Action::Ignore };
+	}
+	m_bInLevelInit = true;
+
 	if (nullptr != m_pCallbacks)
 	{
 		m_pCallbacks->OnLevelShutdown();

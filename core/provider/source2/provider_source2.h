@@ -82,6 +82,7 @@ public:
 	KHook::Virtual<IEngineServiceMgr, void, const char*, ILoopModeFactory*, void**> m_UnregisterLoopMode;
 	KHook::Return<void> Hook_UnregisterLoopMode(IEngineServiceMgr*, const char* pszLoopModeName, ILoopModeFactory* pLoopModeFactory, void** ppGlobalPointer);
 
+	bool m_bInLevelInit = true;
 	KHook::Virtual<ILoopModeFactory, ILoopMode*> m_CreateLoopMode;
 	KHook::Return<ILoopMode*> Hook_CreateLoopModePost(ILoopModeFactory*);
 
