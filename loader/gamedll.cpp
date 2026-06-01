@@ -281,7 +281,7 @@ public:
 		/* Call the original */
 		bool result;
 		{
-			auto mfp = KHook::BuildMFP<ISource2ServerConfig, bool, QueryValveInterface>(is2sc_orig_connect);
+			auto mfp = KHook::BuildMFP<bool (ISource2ServerConfig::*)(QueryValveInterface)>(is2sc_orig_connect);
 			result = (config_iface->*mfp)(factory);
 		}
 
@@ -298,7 +298,7 @@ public:
 
 		/* Call original function */
 		{
-			auto mfp = KHook::BuildMFP<ISource2ServerConfig, void>(isgd_orig_shutdown);
+			auto mfp = KHook::BuildMFP<void (ISource2ServerConfig::*)()>(isgd_orig_shutdown);
 			(config_iface->*mfp)();
 		}
 
@@ -378,7 +378,7 @@ public:
 		/* Call the original */
 		InitReturnVal_t result;
 		{
-			auto mfp = KHook::BuildMFP<IServerGameDLL, InitReturnVal_t>(isgd_orig_init);
+			auto mfp = KHook::BuildMFP<InitReturnVal_t (IServerGameDLL::*)()>(isgd_orig_init);
 			result = (gamedll_iface->*mfp)();
 		}
 
@@ -466,7 +466,7 @@ public:
 		/* Call the original */
 		bool result;
 		{
-			auto mfp = KHook::BuildMFP<IServerGameDLL, bool, QueryValveInterface, QueryValveInterface, QueryValveInterface, void*>(isgd_orig_init);
+			auto mfp = KHook::BuildMFP<bool (IServerGameDLL::*)(QueryValveInterface, QueryValveInterface, QueryValveInterface, void*)>(isgd_orig_init);
 			result = (gamedll_iface->*mfp)(engineFactory,
 																 physicsFactory,
 																 fileSystemFactory,
@@ -504,7 +504,7 @@ public:
 
 		/* Call original function */
 		{
-			auto mfp = KHook::BuildMFP<IServerGameDLL, void>(isgd_orig_shutdown);
+			auto mfp = KHook::BuildMFP<void (IServerGameDLL::*)()>(isgd_orig_shutdown);
 			(gamedll_iface->*mfp)();
 		}
 
