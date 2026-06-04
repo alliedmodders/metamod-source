@@ -35,7 +35,6 @@
 
 #include <cstdarg>
 
-#include "sourcehook.h"
 #include "IPluginManager.h"
 
 #if defined META_NO_HL2SDK
@@ -57,6 +56,7 @@ typedef ConCommandBase ProviderConCommand;
 #endif
 #endif
 
+#define MMIFACE_KHOOK			"IKHook"				/**< IKHook Pointer */
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define MMIFACE_SH_HOOKMANAUTOGEN	"IHookManagerAutoGen"		/**< SourceHook::IHookManagerAutoGen Pointer */
@@ -188,14 +188,6 @@ namespace SourceMM
 		 * 						supported.
 		 */
 		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) =0;
-	
-		/** 
-		 * @brief Returns sourcehook API version and implementation version.
-		 *
-		 * @param shvers		Filled with the SourceHook API version number.
-		 * @param shimpl		Filled with the SourceHook implementation number.
-		 */
-		virtual void GetShVersions(int &shvers, int &shimpl) =0;
 	
 		/**
 		 * @brief Adds a Metamod listener.
@@ -468,4 +460,3 @@ using namespace SourceMM;
  */
 
 #endif //_INCLUDE_ISMM_API_H
-
