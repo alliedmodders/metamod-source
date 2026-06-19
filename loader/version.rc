@@ -43,13 +43,13 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "Metamod: Source Loader"
+            VALUE "Comments", "Metamod: Source Loader - maintained by Snaximusss+ server infrastructure. Original project by AlliedModders."
             VALUE "FileDescription", "Metamod: Source Loader"
             VALUE "FileVersion", MMS_VERSION_STRING
             VALUE "InternalName", "mmsource"
             VALUE "LegalCopyright", "Copyright (c) 2004-2010, Metamod: Source Development Team"
             VALUE "OriginalFilename", BINARY_NAME
-            VALUE "ProductName", "Metamod:Source Loader"
+            VALUE "ProductName", "Metamod:Source Loader (Snaximusss+ fork)"
             VALUE "ProductVersion", MMS_VERSION_STRING
         END
     END

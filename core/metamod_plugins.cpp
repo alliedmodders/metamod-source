@@ -425,12 +425,17 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 
 	pl = new CPlugin();
 	*error = '\0';
-	
+
 	//Add plugin to list
 	pl->m_Id = m_LastId;
 	pl->m_File.assign(file);
 	m_Plugins.push_back(pl);
 	m_LastId++;
+
+	/* Debug-only: record the start of a load attempt with its path. Keeps
+	 * normal logs quiet while making load hangs/failures traceable. */
+	if (provider)
+		provider->DisplayDevMsg("[META] Loading plugin \"%s\" (id %d)\n", file, pl->m_Id);
 
 	if (ke::EndsWith(file, BINARY_EXT))
 	{
@@ -482,7 +487,11 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				}
 				if (GlobVersionInfo.game_dir == NULL)
 				{
-					GlobVersionInfo.game_dir = strrchr(g_Metamod.GetBaseDir(), PATH_SEP_CHAR) + 1;
+					/* GetBaseDir()/strrchr may return NULL; never dereference
+					 * blindly or a missing path separator crashes the loader. */
+					const char *base = g_Metamod.GetBaseDir();
+					const char *sep = base ? strrchr(base, PATH_SEP_CHAR) : NULL;
+					GlobVersionInfo.game_dir = sep ? (sep + 1) : base;
 				}
 
 				/* Build path information */
@@ -600,6 +609,14 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 
 	if (pl->m_Lib && (pl->m_Status < Pl_Paused))
 	{
+		/* Partial-load / refused failure: queue a safe cleanup so a bad
+		 * plugin cannot leave half-registered hooks or commands behind.
+		 * Debug-log the phase and reason so the failure is traceable. */
+		if (provider)
+		{
+			provider->DisplayDevMsg("[META] Plugin \"%s\" failed to load (status=%s): %s\n",
+				pl->m_File.c_str(), GetStatusText(pl), error);
+		}
 		pl->m_Events.clear();
 		UnregAllConCmds(pl);
 		g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, false));
@@ -614,6 +631,19 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 	{
 		*error = '\0';
 	}
+
+	/* Defensive: never dereference a null plugin handle (guards against
+	 * double-unload / use-after-free from buggy callers). */
+	if (!pl)
+	{
+		if (error)
+			UTIL_Format(error, maxlen, "Plugin handle is null");
+		return false;
+	}
+
+	if (provider)
+		provider->DisplayDevMsg("[META] Unloading plugin \"%s\" (id %d, force=%d)\n",
+			pl->m_File.c_str(), pl->m_Id, force ? 1 : 0);
 
 	if (pl->m_API && pl->m_Lib)
 	{
@@ -637,6 +667,14 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 			//Make sure to detach it from sourcehook!
 			g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, true));
 			return true;
+		}
+
+		/* Plugin refused unload and force was not requested. Make the
+		 * failure visible so silent leaks do not accumulate. */
+		if (provider)
+		{
+			provider->DisplayDevMsg("[META] Plugin \"%s\" refused unload: %s\n",
+				pl->m_File.c_str(), error ? error : "(no reason)");
 		}
 	} else {
 		//The plugin is not valid, and let's just remove it from the list anyway

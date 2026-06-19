@@ -119,6 +119,10 @@ class MMSConfig(object):
         '-pipe',
         '-fno-strict-aliasing',
         '-Wall',
+        '-Wextra',
+        '-Wformat=2',
+        '-Wformat-security',
+        '-Wnull-dereference',
         '-Werror',
         '-Wno-uninitialized',
         '-Wno-sign-compare',
@@ -126,6 +130,7 @@ class MMSConfig(object):
         '-Wno-switch',
         '-Wno-unknown-pragmas',
         '-Wno-dangling-else',
+        '-Wno-missing-field-initializers',
         '-msse',
         '-fPIC',
       ]
@@ -210,7 +215,7 @@ class MMSConfig(object):
     if builder.options.opt == '1':
       cxx.defines += ['NDEBUG']
       if cxx.behavior == 'gcc':
-        cxx.cflags += ['-O3']
+        cxx.cflags += ['-O2']
       elif cxx.behavior == 'msvc':
         cxx.cflags += ['/Ox', '/Zo']
         cxx.linkflags += ['/OPT:ICF', '/OPT:REF']

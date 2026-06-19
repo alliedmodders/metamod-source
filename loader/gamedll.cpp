@@ -312,8 +312,12 @@ public:
 
 	virtual void Disconnect()
 	{
-		gamedll_bridge->Unload();
-		gamedll_bridge = NULL;
+		/* Guard against a disconnect with no bridge (e.g. init failed early). */
+		if (gamedll_bridge != NULL)
+		{
+			gamedll_bridge->Unload();
+			gamedll_bridge = NULL;
+		}
 		mm_UnloadMetamodLibrary();
 
 		/* Call original function */
@@ -441,9 +445,14 @@ public:
 
 		if (!result)
 		{
-			gamedll_bridge->Unload();
+			/* The gamedll's own Init failed. Only tear down our bridge if we
+			 * actually built one, otherwise this is a null dereference. */
+			if (gamedll_bridge != NULL)
+			{
+				gamedll_bridge->Unload();
+				gamedll_bridge = NULL;
+			}
 			mm_UnloadMetamodLibrary();
-			gamedll_bridge = NULL;
 		}
 		else if (gamedll_bridge != NULL)
 		{
@@ -471,7 +480,9 @@ public:
 		char error[255];
 		if (mm_backend == MMBackend_UNKNOWN)
 		{
-			mm_LogFatal("Could not detect engine version");
+			mm_LogFatal("Could not detect engine version (game=\"%s\"). "
+					"Unsupported or too-new Source engine. "
+					"Check that the game is supported by this Metamod:Source build.", game_name);
 		}
 		else
 		{
@@ -552,9 +563,14 @@ public:
 
 		if (!result)
 		{
-			gamedll_bridge->Unload();
+			/* The gamedll's own DLLInit failed. Only tear down our bridge if
+			 * we actually built one, otherwise this is a null dereference. */
+			if (gamedll_bridge != NULL)
+			{
+				gamedll_bridge->Unload();
+				gamedll_bridge = NULL;
+			}
 			mm_UnloadMetamodLibrary();
-			gamedll_bridge = NULL;
 		}
 		else if (gamedll_bridge != NULL)
 		{
@@ -570,8 +586,12 @@ public:
 
 	virtual void DLLShutdown()
 	{
-		gamedll_bridge->Unload();
-		gamedll_bridge = NULL;
+		/* Guard against a shutdown with no bridge (e.g. init failed early). */
+		if (gamedll_bridge != NULL)
+		{
+			gamedll_bridge->Unload();
+			gamedll_bridge = NULL;
+		}
 		mm_UnloadMetamodLibrary();
 
 		/* Call original function */
@@ -826,7 +846,8 @@ mm_GameDllRequest(const char *name, int *ret)
 	else if (strncmp(name, "Source2Server", 13) == 0 && atoi(&name[13]) != 0)
 	{
 		gamedll_iface = (IServerGameDLL *)gamedll_qvi(name, ret);
-		strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name));
+		strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name) - 1);
+		gamedll_iface_name[sizeof(gamedll_iface_name) - 1] = '\0';
 		gamedll_version = atoi(&name[13]);
 		mm_PatchDllInit(true);
 
@@ -873,7 +894,8 @@ mm_GameDllRequest(const char *name, int *ret)
 			mm_FreeCachedLibraries();	
 			gamedll_lib = lib;
 			gamedll_iface = (IServerGameDLL *)ptr;
-			strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name));
+			strncpy(gamedll_iface_name, name, sizeof(gamedll_iface_name) - 1);
+			gamedll_iface_name[sizeof(gamedll_iface_name) - 1] = '\0';
 			gamedll_qvi = qvi;
 			gamedll_version = atoi(&name[13]);
 			mm_PatchDllInit(true);

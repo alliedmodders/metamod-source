@@ -328,7 +328,8 @@ LoadPluginsFromFile(const char *filepath, int &skipped)
 		g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
 
 		id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
-		if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+		CPluginManager::CPlugin *pl = (id < Pl_MinId) ? NULL : g_PluginMngr.FindById(id);
+		if (!pl || pl->m_Status < Pl_Paused)
 		{
 			mm_LogMessage("[META] Failed to load plugin %s.  %s", buffer, error);
 		}
@@ -457,11 +458,21 @@ mm_LogMessage(const char *msg, ...)
 	buffer[len] = '\0';
 
 	
-	if (!provider->LogMessage(buffer))
+	/* provider may be NULL if logging is called before globals are
+	 * initialized (very early start-up or after shutdown). Fall back
+	 * to stdout instead of crashing. */
+	if (provider)
+	{
+		if (!provider->LogMessage(buffer))
+		{
+			ret = fprintf(stdout, "%s", buffer);
+		}
+		provider->ConsolePrint(buffer);
+	}
+	else
 	{
 		ret = fprintf(stdout, "%s", buffer);
 	}
-	provider->ConsolePrint(buffer);
 
 	return ret;
 }
@@ -1214,7 +1225,8 @@ ProcessVDF(const char *path, bool &skipped)
 
 	id = g_PluginMngr.Load(full_path, Pl_File, already, error, sizeof(error));
 	skipped = already;
-	if (id < Pl_MinId || g_PluginMngr.FindById(id)->m_Status < Pl_Paused)
+	CPluginManager::CPlugin *pl = (id < Pl_MinId) ? NULL : g_PluginMngr.FindById(id);
+	if (!pl || pl->m_Status < Pl_Paused)
 	{
 		mm_LogMessage("[META] Failed to load plugin %s: %s", file, error);
 		return false;

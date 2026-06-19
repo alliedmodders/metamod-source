@@ -98,7 +98,9 @@ public:
 
 		if (mm_backend == MMBackend_UNKNOWN)
 		{
-			mm_LogFatal("Could not detect engine version");
+			mm_LogFatal("Could not detect engine version (game=\"%s\"). "
+				"Unsupported or too-new Source engine. "
+				"Check that the game is supported by this Metamod:Source build.", game_name);
 			return false;
 		}
 		
