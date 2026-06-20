@@ -180,6 +180,9 @@ public:
 	virtual void* FindOriginalVirtual(void** vtable, int index) override {
 		return KHook::FindOriginalVirtual(vtable, index);
 	}
+	virtual void* LookupSignature(void* start, std::size_t size, const char* signature) override {
+		return KHook::LookupSignature(start, size, signature);
+	}
 } g_KHook;
 
 /* Helper Macro */
