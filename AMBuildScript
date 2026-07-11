@@ -90,13 +90,6 @@ class MMSConfig(object):
     sdk_list = [s for s in builder.options.sdks.split(',') if s]
     SdkHelpers.sdk_filter = self.shouldIncludeSdk
     SdkHelpers.find_sdk_path = self.findSdkPath
-    # The tier1/mathlib SDK static libraries are configured here (during findSdks)
-    # by cloning the base compilers, and are then linked into shared objects. Apply
-    # -fPIC before cloning so it propagates into them; configure() runs afterward
-    # and would otherwise only affect the main binaries.
-    for cxx in self.all_targets:
-      if cxx.behavior == 'gcc':
-        cxx.cflags += ['-fPIC']
     SdkHelpers.findSdks(builder, self.all_targets, sdk_list)
 
     self.sdks = SdkHelpers.sdks
@@ -134,6 +127,7 @@ class MMSConfig(object):
         '-Wno-unknown-pragmas',
         '-Wno-dangling-else',
         '-msse',
+        '-fPIC',
       ]
 
       cxx.cxxflags += ['-std=c++17']
