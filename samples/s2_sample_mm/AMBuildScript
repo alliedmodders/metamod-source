@@ -1,6 +1,7 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
-import os, json, re, subprocess
+import os, json, re, subprocess, shutil, sys
 from ambuild2.frontend.v2_2.cpp.builders import TargetSuffix
+from ambuild2.util import ConsoleRed, ConsoleNormal
 
 # Edit the functions below for the extra functionality, the return should be
 # a list of path's to wanted locations
@@ -22,6 +23,12 @@ def additionalIncludes(context, binary, sdk):
     # os.path.join(sdk['path'], 'public', 'entity2'),
     # 'D:/absolute/path/to/include/folder/'
   ]
+
+def hasLLDLinker():
+  result = shutil.which('lld')
+  if not result:
+    result = shutil.which('ld.lld')
+  return result != None
 
 def getGitHeadPath():
   curr_source = builder.currentSourcePath
@@ -428,6 +435,14 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
       elif cxx.family == 'clang':
         cxx.linkflags += ['-lgcc_eh']
       cxx.linkflags += ['-static-libstdc++']
+      
+      if hasLLDLinker():
+        # This prevents STB_GNU_UNIQUE symbols from appearing in resulting binary
+        # as these cause it to not unload on dlclose which metamod relies on to unload its plugins
+        # as a result this messes with static/global variable destruction & causes other various effects
+        # like server crashes on server exit
+        cxx.linkflags += ['-fuse-ld=lld', '-Wl,--no-gnu-unique']
+      
     elif cxx.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
 
@@ -471,6 +486,13 @@ MMSPlugin = MMSPluginConfig()
 MMSPlugin.detectSDKs()
 MMSPlugin.configurePluginMetadata()
 MMSPlugin.configure()
+
+if os.name == 'posix' and not hasLLDLinker():
+  ConsoleRed(sys.stdout)
+  print('[!] LLD linker not found, using systems default.')
+  print('[!] This might result in a binary that is not unloadable at runtime and will potentially cause issues/crashes!')
+  print('[!] Please do install LLD linker for better binary stability. (apt install lld)')
+  ConsoleNormal(sys.stdout)
 
 BuildScripts = [
   'AMBuilder',

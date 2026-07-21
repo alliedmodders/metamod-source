@@ -115,7 +115,7 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 		META_CONPRINTF( "CConVarRef \"%s\" got value pre = %d [float = %f, bool = %d, string = \"%s\"]\n",
 						ccvar_ref_example.GetName(), ccvar_ref_example.Get(),
 						ccvar_ref_example.GetFloat(), ccvar_ref_example.GetBool(),
-						ccvar_ref_example.GetString() );
+						ccvar_ref_example.GetString().Get() );
 		
 		// By default if you are using CConVar or CConVarRef you should be using Get()/Set()
 		// methods to read/write values, as these are templated for the particular type the cvar is of.
@@ -130,7 +130,7 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 		META_CONPRINTF( "CConVarRef \"%s\" got value after = %d [float = %f, bool = %d, string = \"%s\"]\n",
 						ccvar_ref_example.GetName(), ccvar_ref_example.Get(),
 						ccvar_ref_example.GetFloat(), ccvar_ref_example.GetBool(),
-						ccvar_ref_example.GetString() );
+						ccvar_ref_example.GetString().Get() );
 	}
 
 	// You can also use ConVarRefAbstract class if you don't want typisation support
@@ -142,7 +142,7 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 	if(cvar_ref_example.IsValidRef())
 	{
 		META_CONPRINTF( "ConVarRefAbstract \"%s\" got value pre [float = %f, bool = %d, string = \"%s\"]\n",
-						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString() );
+						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString().Get() );
 
 		// Since the ref is not typed, you can't use direct Get() and Set() methods,
 		// instead you need to use methods with type conversion support.
@@ -167,7 +167,7 @@ bool MMSPlugin::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, boo
 		}
 
 		META_CONPRINTF( "ConVarRefAbstract \"%s\" got value after [float = %f, bool = %d, string = \"%s\"]\n",
-						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString() );
+						cvar_ref_example.GetName(), cvar_ref_example.GetFloat(), cvar_ref_example.GetBool(), cvar_ref_example.GetString().Get() );
 	}
 
 	return true;
