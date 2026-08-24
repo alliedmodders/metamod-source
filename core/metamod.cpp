@@ -653,34 +653,35 @@ void MetamodSource::GetShVersions(int &shvers, int &shimpl)
 int MetamodSource::FormatIface(char iface[], size_t maxlength)
 {
 	size_t length = strlen(iface);
-	size_t i;
+	size_t i = length;
 	int num = 0;
+	char field[16];
 
-	for (i = length - 1; i + 1 > 0; i--)
+	// Walk back over a trailing run of digits; i ends up where the version
+	// field starts, which is the end of the string when there is not one.
+	while (i > 0 && isdigit((unsigned char)iface[i - 1]))
 	{
-		if (!isdigit(iface[i]))
-		{
-			if (i != length - 1)
-			{
-				num = 1;
-			}
-			break;
-		}
+		i--;
 	}
 
-	if ( (num && (maxlength <= length)) || (!num && (maxlength <= length + 3)) )
+	if (i != length)
 	{
-		return -1;
-	}
-
-	if (i != length - 1)
-	{
-		num = atoi(&(iface[++i]));
+		num = atoi(&(iface[i]));
 	}
 
 	num++;
 
-	snprintf(&(iface[i]), 4, "%03d", num);
+	// Three digits and a terminator get written at i.
+	if (i + 4 > maxlength)
+	{
+		return -1;
+	}
+
+	// Through a scratch buffer, so that truncating anything wider than the
+	// three-digit field stays deliberate rather than a warning about it.
+	snprintf(field, sizeof(field), "%03d", num);
+	memcpy(&(iface[i]), field, 3);
+	iface[i + 3] = '\0';
 
 	return num;
 }
