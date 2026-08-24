@@ -719,7 +719,10 @@ void *MetamodSource::InterfaceSearch(CreateInterfaceFn fn, const char *iface, in
 		{
 			break;
 		}
-	} while ((num = FormatIface(_if, len+1)));
+		// FormatIface returns -1 when the version will not fit. -1 is true,
+		// so treating it as "keep going" spins on an unchanged name forever.
+	}
+	while ((num = FormatIface(_if, len+1)) > 0);
 
 	return pf;
 }
