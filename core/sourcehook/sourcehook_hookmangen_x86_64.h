@@ -22,7 +22,6 @@ namespace SourceHook
 		class x64GenContext : public IGenContext
 		{
 		public:
-			x64GenContext();
 			x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr);
 			virtual ~x64GenContext();
 
@@ -35,6 +34,12 @@ namespace SourceHook
 			friend void foo_test();
 
 			static const std::int32_t SIZE_PTR = sizeof(void*);
+
+			// ByVal in the proto, but System V hands the callee a pointer to the
+			// caller's object instead of a copy -> the hook func has to make its own
+			// copy and destroy it again.  Same idea, and same value, as the x86
+			// generator's flag of this name.
+			static const int PassFlag_ForcedByRef = (1<<30);
 
 			std::int32_t AddVarToFrame(std::int32_t size);
 			std::int32_t ComputeVarsSize();
@@ -60,7 +65,14 @@ namespace SourceHook
 			void CallEndContext(int v_pContext);
 			void DoReturn(int v_retptr, int v_memret_outaddr);
 
-			std::int32_t PushParameters(int v_this, int v_ret);
+			std::int32_t PushParameters(int v_this, int v_ret, bool orig_call);
+			void DestroyParams();
+			std::int32_t GetForcedByRefParamOffset(int p);
+			std::int32_t GetForcedByRefParamsSize();
+			int GetFirstParamRegIndex();
+			int GetIntRegForParam(int p);
+			std::int32_t GetNamedArgsStackSize();
+			int GetNumFloatParams();
 			void SaveReturnValue(int v_mem_ret, int v_ret);
 
 			HookManagerPubFunc m_GeneratedPubFunc;
@@ -88,6 +100,10 @@ namespace SourceHook
 			// Placed here temporarily so I don't have to pass it around in function calls...
 			std::int32_t v_sysv_floatreg;
 			std::int32_t v_sysv_reg;
+			std::int32_t v_fbrr_base;
+			std::int32_t v_va_buf;
+			std::int32_t v_va_regsave;
+			std::int32_t v_va_list;
 #endif
 		};
 	}
