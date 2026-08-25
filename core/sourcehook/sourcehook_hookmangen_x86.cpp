@@ -96,10 +96,10 @@ namespace SourceHook
 			m_BuiltPI->retPassInfo2.pAssignOperator = m_Proto.GetRet().pAssignOperator;
 
 			if (m_BuiltPI_Params)
-				delete m_BuiltPI_Params;
+				delete [] m_BuiltPI_Params;
 			m_BuiltPI_Params = new PassInfo[m_BuiltPI->numOfParams + 1];
 			if (m_BuiltPI_Params2)
-				delete m_BuiltPI_Params2;
+				delete [] m_BuiltPI_Params2;
 			m_BuiltPI_Params2 = new PassInfo::V2Info[m_BuiltPI->numOfParams + 1];
 
 			m_BuiltPI_Params[0].size = 1;			// Version 1

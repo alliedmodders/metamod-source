@@ -127,6 +127,10 @@ namespace SourceHook
 			delete m_pHI;
 			delete m_HookfuncVfnptr;
 			delete m_BuiltPI;
+			// Not Clear(): that would also drop the generated code, which outlives
+			// this object. These two do not.
+			delete [] m_BuiltPI_Params;
+			delete [] m_BuiltPI_Params2;
 		}
 
 		void x64GenContext::Clear()
@@ -159,10 +163,10 @@ namespace SourceHook
 			m_BuiltPI->retPassInfo2.pAssignOperator = m_Proto.GetRet().pAssignOperator;
 
 			if (m_BuiltPI_Params)
-				delete m_BuiltPI_Params;
+				delete [] m_BuiltPI_Params;
 			m_BuiltPI_Params = new PassInfo[m_BuiltPI->numOfParams + 1];
 			if (m_BuiltPI_Params2)
-				delete m_BuiltPI_Params2;
+				delete [] m_BuiltPI_Params2;
 			m_BuiltPI_Params2 = new PassInfo::V2Info[m_BuiltPI->numOfParams + 1];
 
 			m_BuiltPI_Params[0].size = 1;			// Version 1
