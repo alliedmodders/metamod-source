@@ -598,6 +598,64 @@ namespace
 		}
 	};
 
+
+	// A return value made only of floats comes back in the SSE registers. A
+	// PassInfo carries sizes but not field types, so the generator cannot tell
+	// that apart from an aggregate of integers, and reads SourceHook's copy of
+	// the value as INTEGER. What it can do, and has to, is carry the registers
+	// the original returned in through untouched. Replacing such a value from a
+	// hook is not covered below because it does not work: the copy a hook writes
+	// is read back as INTEGER as well.
+	struct FloatPair
+	{
+		float a;
+		float b;
+	};
+
+	MAKE_STATE_1(State_FloatPair_Called, int);
+	MAKE_STATE_1(State_FloatPair_PreHook, int);
+
+	class FloatPairTest
+	{
+	public:
+		virtual FloatPair Get(int seed)
+		{
+			ADD_STATE(State_FloatPair_Called(seed));
+			FloatPair ret;
+			ret.a = seed + 0.5f;
+			ret.b = seed + 1.5f;
+			return ret;
+		}
+	};
+
+	MAKE_STATE_1(State_FloatPair_PostHook, int);
+
+	// A post hook that returns a value of the same type leaves it in the SSE
+	// registers, which is what the original's return value has to survive.
+	class FloatPair_PostDeleg : public MyDelegate
+	{
+		virtual FloatPair Call(int seed)
+		{
+			ADD_STATE(State_FloatPair_PostHook(seed));
+			FloatPair scratch;
+			scratch.a = seed * 3.25f;
+			scratch.b = seed * 7.75f;
+			RETURN_META_VALUE(MRES_IGNORED, scratch);
+		}
+	};
+
+	class FloatPair_Deleg : public MyDelegate
+	{
+		virtual FloatPair Call(int seed)
+		{
+			ADD_STATE(State_FloatPair_PreHook(seed));
+			FloatPair unused;
+			unused.a = 0.0f;
+			unused.b = 0.0f;
+			RETURN_META_VALUE(MRES_IGNORED, unused);
+		}
+	};
+
 	bool Tests1(std::string &error)
 	{
 		THGM_DO_TEST_void(0, ());
@@ -1092,6 +1150,60 @@ namespace
 
 		return true;
 	}
+
+	bool Tests6(std::string &error)
+	{
+		FloatPairTest *pFloatPair = new FloatPairTest;
+		CAutoPtrDestruction<FloatPairTest> apdFloatPair(pFloatPair);
+
+		SourceHook::CProtoInfoBuilder floatPairPi(SourceHook::ProtoInfo::CallConv_ThisCall);
+		floatPairPi.AddParam(sizeof(int), SourceHook::PassInfo::PassType_Basic,
+			SourceHook::PassInfo::PassFlag_ByVal, NULL, NULL, NULL, NULL);
+		floatPairPi.SetReturnType(sizeof(FloatPair), SourceHook::PassInfo::PassType_Object,
+			SourceHook::PassInfo::PassFlag_ByVal, NULL, NULL, NULL, NULL);
+
+		// FloatPairTest::Get is the only virtual it has.
+		SourceHook::HookManagerPubFunc floatPairHM = g_HMAGPtr->MakeHookMan(floatPairPi, 0, 0);
+		CHECK_COND(floatPairHM != NULL, "TestFloatPairRet /makehookman");
+		CAutoReleaseHookMan arhm_floatPair(floatPairHM);
+
+		FloatPair unhooked = pFloatPair->Get(10);
+		CHECK_STATES((&g_States,
+			new State_FloatPair_Called(10),
+			NULL), "TestFloatPairRet Part1");
+
+		int floatPairHook = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal,
+			reinterpret_cast<void*>(pFloatPair), 0, floatPairHM, new FloatPair_Deleg, false);
+
+		FloatPair preHooked = pFloatPair->Get(10);
+		CHECK_STATES((&g_States,
+			new State_FloatPair_PreHook(10),
+			new State_FloatPair_Called(10),
+			NULL), "TestFloatPairRet Part2");
+
+		int floatPairPost = g_SHPtr->AddHook(g_PLID, SourceHook::ISourceHook::Hook_Normal,
+			reinterpret_cast<void*>(pFloatPair), 0, floatPairHM, new FloatPair_PostDeleg, true);
+
+		FloatPair bothHooked = pFloatPair->Get(10);
+		CHECK_STATES((&g_States,
+			new State_FloatPair_PreHook(10),
+			new State_FloatPair_Called(10),
+			new State_FloatPair_PostHook(10),
+			NULL), "TestFloatPairRet Part3");
+
+		// The hooks come off before the values are judged: a CHECK that returns
+		// early would leave them installed, and SourceHook shutting down after the
+		// generator has gone takes the process with it.
+		g_SHPtr->RemoveHookByID(floatPairPost);
+		g_SHPtr->RemoveHookByID(floatPairHook);
+
+		CHECK_COND(unhooked.a == 10.5f && unhooked.b == 11.5f, "TestFloatPairRet Part1 /value");
+		CHECK_COND(preHooked.a == 10.5f && preHooked.b == 11.5f, "TestFloatPairRet Part2 /value");
+		CHECK_COND(bothHooked.a == 10.5f && bothHooked.b == 11.5f, "TestFloatPairRet Part3 /value");
+
+		return true;
+	}
+
 }
 
 #if !defined( _M_AMD64 )
@@ -1119,6 +1231,8 @@ bool TestHookManGen(std::string &error)
 	if (!Tests4(error))
 		return false;
 	if (!Tests5(error))
+		return false;
+	if (!Tests6(error))
 		return false;
 
 	// Shutdown now!
