@@ -1094,7 +1094,7 @@ namespace
 	}
 }
 
-#if !defined( _M_AMD64 ) && !defined( __amd64__ ) && !defined(__x86_64__)
+#if !defined( _M_AMD64 )
 bool TestHookManGen(std::string &error)
 {
 	GET_SHPTR(g_SHPtr);

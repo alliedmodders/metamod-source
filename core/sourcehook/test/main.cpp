@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	DO_TEST(RefRet);
 	DO_TEST(VPHooks);
 	DO_TEST(CPageAlloc);
-#if !defined( _M_AMD64 ) && !defined( __amd64__ ) && !defined(__x86_64__)	// TODO: Fix for 64-bit
+#if !defined( _M_AMD64 )	// TODO: the Windows x64 generator is still untested
 	DO_TEST(HookManGen);
 #endif
 	DO_TEST(OddThunks);
@@ -128,7 +128,7 @@ void Test_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
 	static_cast<SourceHook::Impl::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
 }
 
-#if !defined( _M_AMD64 ) && !defined( __amd64__ ) && !defined(__x86_64__)
+#if !defined( _M_AMD64 )
 SourceHook::IHookManagerAutoGen *Test_HMAG_Factory(SourceHook::ISourceHook *shptr)
 {
 	return new SourceHook::Impl::CHookManagerAutoGen(shptr);

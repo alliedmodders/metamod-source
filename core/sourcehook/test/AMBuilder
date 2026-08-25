@@ -4,9 +4,6 @@ import os
 for cxx in MMS.all_targets:
   name = 'test_sourcehook'
   binary = MMS.Program(cxx, name)
-  if binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform == 'linux':
-    continue
-
   binary.compiler.defines += [
     'SOURCEHOOK_TESTS',
   ]
@@ -48,5 +45,8 @@ for cxx in MMS.all_targets:
     binary.sources += ['../sourcehook_hookmangen_x86.cpp']
   elif binary.compiler.target.arch == 'x86_64':
     binary.sources += ['../sourcehook_hookmangen_x86_64.cpp']
+    # sourcehook_hookmangen.cpp picks its generator on this; without it the test
+    # would build the x86 one and fail to link.
+    binary.compiler.defines += ['PLATFORM_64BITS']
 
   builder.Add(binary)

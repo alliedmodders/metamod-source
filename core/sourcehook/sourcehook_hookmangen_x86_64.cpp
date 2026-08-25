@@ -16,13 +16,18 @@
 // https://refspecs.linuxbase.orgz/elf/x86_64-abi-0.99.pdf
 // SystemV AMD64 https://gitlab.com/x86-psABIs/x86-64-ABI/-/jobs/artifacts/master/raw/x86-64-ABI/abi.pdf?job=build
 
-#include <stdio.h>
+#include <cstdio>
+#include <cstdarg>							// we might need the address of vsnprintf
 #include <string>
 #include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
 #include "sourcehook_hookmangen_x86_64.h"
 #include "sourcehook_pibuilder.h"
 
+// PrintDebug below writes through metamod's provider, which the standalone
+// SourceHook test does not link against - and having it here is what kept that
+// test from being built for 64 bit Linux at all.
+#if !defined(SOURCEHOOK_TESTS)
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include <interface.h>
@@ -32,6 +37,7 @@
 
 extern SourceHook::ISourceHook *g_SHPtr;
 extern SourceMM::IMetamodSourceProvider *provider;
+#endif
 
 #if SH_COMP == SH_COMP_MSVC
 # define GCC_ONLY(x)
@@ -51,6 +57,7 @@ namespace SourceHook
 {
 	namespace Impl
 	{
+#if !defined(SOURCEHOOK_TESTS)
 		void PrintDebug(x64JitWriter& jit, const char* message) {
 			static MemFuncInfo mfi = {false, -1, -1, -1};
 			if (mfi.vtblindex == -1)
@@ -100,16 +107,7 @@ namespace SourceHook
 			jit.call(rax);
 		}
 
-		x64GenContext::x64GenContext()
-			: m_GeneratedPubFunc(nullptr), m_VtblOffs(0),
-			  m_VtblIdx(666), m_SHPtr((ISourceHook*)0x1122334455667788), m_pHI(nullptr), m_HookfuncVfnptr(nullptr), m_HookFunc_FrameOffset(0), m_HookFunc_FrameVarsSize(0) {
-			m_pHI = new void*;
-			*m_pHI = (void*)0x77777777;
-			m_HookfuncVfnptr = new void*;
-			m_BuiltPI = new ProtoInfo;
-			m_BuiltPI_Params = nullptr;
-			m_BuiltPI_Params2 = nullptr;
-		}
+#endif
 
 		x64GenContext::x64GenContext(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx, ISourceHook *pSHPtr)
 			: m_GeneratedPubFunc(nullptr), m_OrigProto(proto), m_Proto(proto), m_VtblOffs(vtbl_offs),
@@ -267,6 +265,31 @@ namespace SourceHook
 				}
 			}
 
+#if SH_COMP == SH_COMP_GCC
+			// Both mechanisms below reach for a specific argument register, so a proto
+			// that pushes one of them onto the stack is declined rather than generated
+			// wrong.  It takes six integer args before that happens.
+			const int num_int_reg = 6;
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				if ((m_Proto.GetParam(i).flags & PassFlag_ForcedByRef) &&
+					GetIntRegForParam(i) >= num_int_reg)
+				{
+					return nullptr;
+				}
+			}
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				// The original is called with two arguments in place of the format
+				// string and its varargs, so both slots have to be registers.
+				if (GetIntRegForParam(m_Proto.GetNumOfParams()) + 1 >= num_int_reg ||
+					GetNumFloatParams() > 8)
+				{
+					return nullptr;
+				}
+			}
+#endif
+
 			BuildProtoInfo();
 			GenerateHookFunc();
 			return fastdelegate::detail::horrible_cast<HookManagerPubFunc>(GeneratePubFunc());
@@ -308,7 +331,6 @@ namespace SourceHook
 		void* x64GenContext::GenerateHookFunc()
 		{
 			const auto& retInfo = m_Proto.GetRet();
-			m_HookFunc.breakpoint();
 
 			// For the time being, we only consider xmm0-xmm15 registers
 			// are only used to store 64bits worth of data, despite being
@@ -460,6 +482,25 @@ namespace SourceHook
 			v_sysv_floatreg = AddVarToFrame(num_floatreg * 8);
 			v_sysv_reg = AddVarToFrame(num_reg * 8);
 
+			// Room for one private copy of every forced-by-ref param.  Reused by each
+			// call the hook func makes, since a copy never outlives the call it is
+			// made for.
+			v_fbrr_base = 0;
+			if (GetForcedByRefParamsSize())
+				v_fbrr_base = AddVarToFrame(AlignSize(GetForcedByRefParamsSize(), 16));
+
+			// vafmt: the formatted string, plus the register save area and the cursor
+			// over it that a va_list is on this ABI.
+			v_va_buf = 0;
+			v_va_regsave = 0;
+			v_va_list = 0;
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				v_va_buf = AddVarToFrame(AlignSize(SourceHook::STRBUF_LEN, 16));
+				v_va_regsave = AddVarToFrame(6 * 8 + 8 * 16);
+				v_va_list = AddVarToFrame(32);
+			}
+
 			std::int32_t stack_frame_size = AlignSize(ComputeVarsSize(), 16);
 			m_HookFunc.sub(rsp, stack_frame_size);
 
@@ -468,6 +509,45 @@ namespace SourceHook
 			}
 			for (int i = 0; i < num_floatreg; i++) {
 				m_HookFunc.movsd(rbp(v_sysv_floatreg + i*8), params_floatreg[i]);
+			}
+
+			// vafmt: hooks are handed one already formatted string in place of the
+			// format and its varargs, so the formatting happens here, once, before any
+			// of them run.  Walking the varargs needs a va_list, which on this ABI is a
+			// cursor over a register save area laid out exactly as the ABI describes -
+			// integer registers first, then the SSE ones on a 16 byte stride - followed
+			// by whatever the caller put on the stack.
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				for (int i = 0; i < num_reg; i++) {
+					m_HookFunc.mov(rbp(v_va_regsave + i * 8), params_reg[i]);
+				}
+				for (int i = 0; i < num_floatreg; i++) {
+					m_HookFunc.movsd(rbp(v_va_regsave + 6 * 8 + i * 16), params_floatreg[i]);
+				}
+
+				// gp_offset and fp_offset: how far into each save area the declared
+				// args, the format string included, have already got.
+				int fmt_reg = GetIntRegForParam(m_Proto.GetNumOfParams());
+				std::uint64_t gp_offset = static_cast<std::uint64_t>((fmt_reg + 1) * 8);
+				std::uint64_t fp_offset = static_cast<std::uint64_t>(6 * 8 + GetNumFloatParams() * 16);
+				m_HookFunc.mov(rax, (fp_offset << 32) | gp_offset);
+				m_HookFunc.mov(rbp(v_va_list), rax);
+
+				m_HookFunc.lea(rax, rbp(OffsetToCallerStack + GetNamedArgsStackSize()));
+				m_HookFunc.mov(rbp(v_va_list + 8), rax);
+				m_HookFunc.lea(rax, rbp(v_va_regsave));
+				m_HookFunc.mov(rbp(v_va_list + 16), rax);
+
+				// vsnprintf(va_buf, STRBUF_LEN, fmt, va_list) - it terminates within
+				// the size it is given, so there is nothing to fix up afterwards.
+				m_HookFunc.lea(rdi, rbp(v_va_buf));
+				m_HookFunc.mov(rsi, static_cast<std::int32_t>(SourceHook::STRBUF_LEN));
+				m_HookFunc.mov(rdx, rbp(v_sysv_reg + fmt_reg * 8));
+				m_HookFunc.lea(rcx, rbp(v_va_list));
+				m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(
+					static_cast<int (*)(char *, size_t, const char *, va_list)>(&vsnprintf)));
+				m_HookFunc.call(rax);
 			}
 #endif
 
@@ -528,26 +608,33 @@ namespace SourceHook
 
 			CallEndContext(v_pContext);
 
-			// Call destructors of byval object params which have a destructor
+#if SH_COMP == SH_COMP_MSVC
+			// Call destructors of byval object params which have a destructor.
+			// MSVC only: under the Itanium ABI the caller destroys the arguments it
+			// passed, and the copies this function made are destroyed after the call
+			// they were made for (see DestroyParams).
 			int stack_index = 1; // account this pointer
 			if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				// Non trivial return value
 				stack_index++;
 			}
 
-			// TODO: Linux64...
 			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i, ++stack_index) {
 				const IntPassInfo &pi = m_Proto.GetParam(i);
 				if (pi.type == PassInfo::PassType_Object && (pi.flags & PassInfo::PassFlag_ODtor) &&
 					(pi.flags & PassInfo::PassFlag_ByVal)) {
 					// All non-trivial types are passed as a pointer to a special dedicated space
-					MSVC_ONLY(m_HookFunc.mov(rcx, rbp(OffsetToCallerStack + stack_index * 8)));
-					GCC_ONLY(m_HookFunc.mov(rdi, rbp(OffsetToCallerStack + stack_index * 8)));
+					m_HookFunc.mov(rcx, rbp(OffsetToCallerStack + stack_index * 8));
 
 					m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(pi.pDtor));
 					m_HookFunc.call(rax);
 				}
 			}
+#endif
+
+			// Hand the return value back before the three objects below are destroyed:
+			// the one being returned is one of them.
+			DoReturn(v_ret_ptr, v_memret_ptr);
 
 			// If return value type has a destructor, call it
 			if ((retInfo.flags & PassInfo::PassFlag_ByVal) && retInfo.pDtor != nullptr)
@@ -562,9 +649,12 @@ namespace SourceHook
 					m_HookFunc.mov(r8, reinterpret_cast<std::uint64_t>(retInfo.pDtor));
 					m_HookFunc.call(r8);
 				}
-			}
 
-			DoReturn(v_ret_ptr, v_memret_ptr);
+				// Those calls clobbered what DoReturn left in rax.
+				if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
+					m_HookFunc.mov(rax, rbp(v_memret_ptr));
+				}
+			}
 			// From then on, rax cannot be used as a general register
 			// Use r8 or r9 instead
 
@@ -764,7 +854,7 @@ namespace SourceHook
 			m_HookFunc.mov(rbp(v_prev_res), rax);
 
 			// call
-			std::int32_t stackSpace = PushParameters(v_iter, MemRetWithTempObj() ? v_mem_ret : v_plugin_ret);
+			std::int32_t stackSpace = PushParameters(v_iter, MemRetWithTempObj() ? v_mem_ret : v_plugin_ret, false);
 			m_HookFunc.mov(rax, rbp(v_iter));
 			m_HookFunc.mov(rax, rax()); // *this (vtable)
 			m_HookFunc.mov(rax, rax(callMfi.vtblindex * SIZE_PTR)); // vtable[vtblindex] iter -> Call
@@ -776,6 +866,8 @@ namespace SourceHook
 			}
 
 			SaveReturnValue(v_mem_ret, v_plugin_ret);
+
+			DestroyParams();
 
 			// if (cur_res > status)
 			m_HookFunc.mov(rax, rbp(v_cur_res));
@@ -903,9 +995,24 @@ namespace SourceHook
 			auto shouldCallOff = m_HookFunc.get_outputpos();
 
 			// original call
-			std::int32_t stackSpace = PushParameters(v_this, MemRetWithTempObj() ? v_place_for_memret : v_orig_ret);
-			m_HookFunc.mov(rax, rbp(v_vfnptr_origentry));
-			m_HookFunc.call(rax);
+			std::int32_t stackSpace = PushParameters(v_this, MemRetWithTempObj() ? v_place_for_memret : v_orig_ret, true);
+#if SH_COMP == SH_COMP_GCC
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				// A vafmt original is variadic, and the ABI passes the number of vector
+				// registers used for the variable part in al.  None are: what replaces
+				// the varargs is "%s" and a pointer.  Somewhere other than rax has to
+				// hold the target for al to survive to the call.
+				m_HookFunc.mov(r11, rbp(v_vfnptr_origentry));
+				m_HookFunc.mov(rax, static_cast<std::int32_t>(0));
+				m_HookFunc.call(r11);
+			}
+			else
+#endif
+			{
+				m_HookFunc.mov(rax, rbp(v_vfnptr_origentry));
+				m_HookFunc.call(rax);
+			}
 			if (stackSpace)
 			{
 				// epilog free the stack
@@ -913,6 +1020,8 @@ namespace SourceHook
 			}
 
 			SaveReturnValue(v_place_for_memret, v_orig_ret);
+
+			DestroyParams();
 
 			m_HookFunc.jump(0x0);
 			auto callOriginalOff = m_HookFunc.get_outputpos();
@@ -969,7 +1078,7 @@ namespace SourceHook
 			m_HookFunc.rewrite(callOriginalOff - sizeof(std::int32_t), static_cast<std::int32_t>(m_HookFunc.get_outputpos() - callOriginalOff));
 		}
 
-		std::int32_t x64GenContext::PushParameters(int v_this, int v_ret)
+		std::int32_t x64GenContext::PushParameters(int v_this, int v_ret, bool orig_call)
 		{
 			auto retInfo = m_Proto.GetRet();
 			std::int32_t stackSpace = 0;
@@ -1065,7 +1174,8 @@ namespace SourceHook
 						stackSpace += 8;
 					}
 				} else if (info.type == PassInfo::PassType_Object) {
-					if (info.flags & PassInfo::PassFlag_ByRef) {
+					if (info.flags & (PassInfo::PassFlag_ByRef | PassFlag_ForcedByRef)) {
+						// Both arrive, and are passed on, as a pointer.
 						if (++reg_index >= num_reg) {
 							stackSpace += 8;
 						}
@@ -1079,7 +1189,9 @@ namespace SourceHook
 			{
 				stackSpace = AlignSize(stackSpace, 16);
 				m_HookFunc.sub(rsp, stackSpace);
-	
+			}
+
+			{
 				// Actually push registers to stack...
 				reg_index = orig_reg_index;
 				floatreg_index = 0;
@@ -1102,7 +1214,38 @@ namespace SourceHook
 							stack_offset += 8;
 						}
 					} else if (info.type == PassInfo::PassType_Object) {
-						if (info.flags & PassInfo::PassFlag_ByRef) {
+						if (info.flags & PassFlag_ForcedByRef) {
+							// What arrived is a pointer to the caller's object. Copy it
+							// into our own block so the callee cannot reach back into
+							// the caller's, then pass the copy instead.
+							int src_reg = GetIntRegForParam(i);
+							bool src_on_stack = (src_reg >= num_reg);
+							++reg_index;
+
+							m_HookFunc.lea(rdi, rbp(v_fbrr_base + GetForcedByRefParamOffset(i)));
+							if (src_on_stack) {
+								m_HookFunc.mov(rsi, rbp(OffsetToCallerStack + stack_offset));
+							} else {
+								m_HookFunc.mov(rsi, rbp(v_sysv_reg + src_reg * 8));
+							}
+
+							if (info.pCopyCtor) {
+								// copy->CopyCtor(original)
+								m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(info.pCopyCtor));
+								m_HookFunc.call(rax);
+							} else {
+								m_HookFunc.mov(rcx, info.size);
+								m_HookFunc.rep_movs_bytes();
+							}
+
+							if (src_on_stack) {
+								// The callee reads it off the stack, so the slot has to
+								// hold the copy's address, not the original's.
+								m_HookFunc.lea(rax, rbp(v_fbrr_base + GetForcedByRefParamOffset(i)));
+								m_HookFunc.mov(rsp(stack_offset), rax);
+								stack_offset += 8;
+							}
+						} else if (info.flags & PassInfo::PassFlag_ByRef) {
 							if (++reg_index >= num_reg) {
 								m_HookFunc.lea(rax, rbp(OffsetToCallerStack + stack_offset));
 								m_HookFunc.mov(rax, rax());
@@ -1146,6 +1289,8 @@ namespace SourceHook
 				reg_index++;
 			}
 
+			int this_reg_index = reg_index;
+
 			for (int i = reg_index; i < num_reg; i++) {
 				m_HookFunc.mov(params_reg[i], rbp(v_sysv_reg + i*8));
 			}
@@ -1153,7 +1298,62 @@ namespace SourceHook
 				m_HookFunc.movsd(params_floatreg[i], rbp(v_sysv_floatreg + i*8));
 			}
 
+			// The backup holds the this pointer the hooked function was called with.
+			// That is the right one for the original call, but a hook call has to go to
+			// the delegate, so this always comes from v_this and never from the backup.
+			m_HookFunc.mov(params_reg[this_reg_index], rbp(v_this));
+
+			// Same for a forced-by-ref param: the backup holds the caller's object, and
+			// what goes out is the copy made above.
+			for (int i = 0; i < m_Proto.GetNumOfParams(); i++) {
+				const auto& info = m_Proto.GetParam(i);
+				if ((info.flags & PassFlag_ForcedByRef) == 0)
+					continue;
+
+				int param_reg = GetIntRegForParam(i);
+				if (param_reg < num_reg) {
+					m_HookFunc.lea(params_reg[param_reg], rbp(v_fbrr_base + GetForcedByRefParamOffset(i)));
+				}
+			}
+
+			// vafmt: hooks take the formatted string where the declared params end.
+			// The original is variadic and gets "%s" and that same string, so that it
+			// formats to what the hooks were shown rather than a second time.
+			if (m_Proto.GetConvention() & ProtoInfo::CallConv_HasVafmt)
+			{
+				int fmt_reg = GetIntRegForParam(m_Proto.GetNumOfParams());
+				if (orig_call)
+				{
+					static const char vafmt_passthrough[] = "%s";
+					m_HookFunc.mov(params_reg[fmt_reg], reinterpret_cast<std::uint64_t>(vafmt_passthrough));
+					m_HookFunc.lea(params_reg[fmt_reg + 1], rbp(v_va_buf));
+				}
+				else
+				{
+					m_HookFunc.lea(params_reg[fmt_reg], rbp(v_va_buf));
+				}
+			}
+
 			return stackSpace;
+#endif
+		}
+
+		// Destroys the private copies PushParameters made for the call that has just
+		// returned.  Kept separate from the return value handling: it clobbers rax, so
+		// it has to run after SaveReturnValue.
+		void x64GenContext::DestroyParams()
+		{
+#if SH_COMP == SH_COMP_GCC
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+				if ((pi.flags & PassFlag_ForcedByRef) == 0 || !pi.pDtor)
+					continue;
+
+				m_HookFunc.lea(rdi, rbp(v_fbrr_base + GetForcedByRefParamOffset(i)));
+				m_HookFunc.mov(rax, reinterpret_cast<std::uint64_t>(pi.pDtor));
+				m_HookFunc.call(rax);
+			}
 #endif
 		}
 
@@ -1185,6 +1385,13 @@ namespace SourceHook
 				m_HookFunc.movsd(rbp(v_ret), xmm0);
 			} else if (retInfo.type == PassInfo::PassType_Basic) {
 				m_HookFunc.mov(rbp(v_ret), rax);
+			} else if ((retInfo.flags & PassInfo::PassFlag_RetReg) == PassInfo::PassFlag_RetReg) {
+				// At most two eightbytes, INTEGER class (the SSE case is the size == 12
+				// one handled above).
+				m_HookFunc.mov(rbp(v_ret), rax);
+				if (retInfo.size > 8) {
+					m_HookFunc.mov(rbp(v_ret + 8), rdx);
+				}
 			} else if ((retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem) {
 				if (MemRetWithTempObj()) {
 					if (retInfo.pAssignOperator) {
@@ -1319,6 +1526,9 @@ namespace SourceHook
 			else if (retInfo.type == PassInfo::PassType_Basic || 
 				((retInfo.type == PassInfo::PassType_Object) && (retInfo.flags & PassInfo::PassFlag_RetReg)) ) {
 				m_HookFunc.mov(rax, r8());
+				if (retInfo.type == PassInfo::PassType_Object && retInfo.size > 8) {
+					m_HookFunc.mov(rdx, r8(8));
+				}
 			}
 
 			if (retInfo.flags & PassInfo::PassFlag_RetMem)
@@ -1456,25 +1666,25 @@ namespace SourceHook
 						//
 						// Result: we cannot detect if it should be register or memory without knowing the layout of the object.
 
-						bool tooBig = (pi.size > (8 * 8));
+						// Anything above two eightbytes is MEMORY, and so is anything
+						// non-trivial for the purpose of calls.
+						bool tooBig = (pi.size > 16);
 						bool hasSpecialFunctions = (pi.flags & (PassInfo::PassFlag_ODtor|PassInfo::PassFlag_CCtor)) != 0;
-
-						bool probablyVector = (pi.size == 12);
 
 						if (hasSpecialFunctions || tooBig)
 						{
 							pi.flags |= PassInfo::PassFlag_RetMem;
-							return true;
-						}
-						else if (probablyVector)
-						{
-							pi.flags |= PassInfo::PassFlag_RetReg;
-							return true;
 						}
 						else
 						{
-							return false;
+							// Register return. Which registers depends on whether each
+							// eightbyte is SSE or INTEGER, and a PassInfo carries sizes
+							// but not field types, so it cannot be derived here. The
+							// integer registers are assumed, with the exception below
+							// for the one float aggregate the SDK returns everywhere.
+							pi.flags |= PassInfo::PassFlag_RetReg;
 						}
+						return true;
 #endif
 					}
 				}
@@ -1490,6 +1700,142 @@ namespace SourceHook
 
 		void x64GenContext::AutoDetectParamFlags()
 		{
+#if SH_COMP == SH_COMP_GCC
+			// "If a C++ object is non-trivial for the purpose of calls [...] it is passed
+			// by invisible reference": what arrives is a pointer to the caller's object,
+			// not a copy of it.  The hook func has to copy it itself, once per call, or
+			// every hook and the original would be handed the same object.
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				IntPassInfo &pi = m_Proto.GetParam(i);
+				if (pi.type == PassInfo::PassType_Object &&
+					(pi.flags & PassInfo::PassFlag_ByVal) &&
+					(pi.flags & (PassInfo::PassFlag_ODtor | PassInfo::PassFlag_CCtor)))
+				{
+					pi.flags |= PassFlag_ForcedByRef;
+				}
+			}
+#endif
+		}
+
+		// Offset of param p's private copy, relative to the base of the block, and the
+		// size of the whole block when passed the param count.
+		std::int32_t x64GenContext::GetForcedByRefParamOffset(int p)
+		{
+			std::int32_t offset = 0;
+			for (int i = 0; i < p; ++i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+				if (pi.flags & PassFlag_ForcedByRef)
+					offset += AlignSize(static_cast<std::int32_t>(pi.size), SIZE_PTR);
+			}
+			return offset;
+		}
+
+		std::int32_t x64GenContext::GetForcedByRefParamsSize()
+		{
+			return GetForcedByRefParamOffset(m_Proto.GetNumOfParams());
+		}
+
+		// The integer register the first declared param arrives in: after the hidden
+		// return pointer, if there is one, and after this.
+		int x64GenContext::GetFirstParamRegIndex()
+		{
+			const IntPassInfo &retInfo = m_Proto.GetRet();
+			int reg_index = 0;
+			if (retInfo.size != 0 && (retInfo.flags & PassInfo::PassFlag_RetMem) == PassInfo::PassFlag_RetMem)
+				++reg_index;
+			return reg_index + 1;
+		}
+
+		// Which integer argument register param p arrives in, following the System V
+		// classification: floats take an SSE register instead, an aggregate of at most
+		// two eightbytes takes one integer register per eightbyte, and a larger one is
+		// passed in memory.  A result at or past the register count means the caller
+		// put it on the stack.  Passing the param count gives the slot just after the
+		// declared params, which is where a vafmt format string sits.
+		int x64GenContext::GetIntRegForParam(int p)
+		{
+			int reg_index = GetFirstParamRegIndex();
+			for (int i = 0; i < p; ++i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+
+				// Only a float passed by value goes to the SSE file: a reference to one
+				// is a pointer like any other.
+				if (pi.type == PassInfo::PassType_Float &&
+					(pi.flags & PassInfo::PassFlag_ByRef) == 0)
+					continue;
+
+				if (pi.type == PassInfo::PassType_Object &&
+					(pi.flags & PassInfo::PassFlag_ByVal) &&
+					(pi.flags & PassFlag_ForcedByRef) == 0)
+				{
+					if (pi.size <= 16)
+						reg_index += (static_cast<int>(pi.size) + 7) / 8;
+					continue;
+				}
+
+				++reg_index;
+			}
+			return reg_index;
+		}
+
+		int x64GenContext::GetNumFloatParams()
+		{
+			int count = 0;
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+				if (pi.type == PassInfo::PassType_Float &&
+					(pi.flags & PassInfo::PassFlag_ByRef) == 0)
+					++count;
+			}
+			return count;
+		}
+
+		// How many bytes of the caller's stack the declared params took, so that a
+		// va_list can be pointed past them at the varargs.
+		std::int32_t x64GenContext::GetNamedArgsStackSize()
+		{
+			const int num_reg = 6;
+			const int num_floatreg = 8;
+			int reg_index = GetFirstParamRegIndex();
+			int floatreg_index = 0;
+			std::int32_t bytes = 0;
+
+			for (int i = 0; i < m_Proto.GetNumOfParams(); ++i)
+			{
+				const IntPassInfo &pi = m_Proto.GetParam(i);
+
+				if (pi.type == PassInfo::PassType_Float &&
+					(pi.flags & PassInfo::PassFlag_ByRef) == 0)
+				{
+					if (floatreg_index < num_floatreg)
+						++floatreg_index;
+					else
+						bytes += 8;
+				}
+				else if (pi.type == PassInfo::PassType_Object &&
+					(pi.flags & PassInfo::PassFlag_ByVal) &&
+					(pi.flags & PassFlag_ForcedByRef) == 0)
+				{
+					int eightbytes = (static_cast<int>(pi.size) + 7) / 8;
+					if (pi.size <= 16 && reg_index + eightbytes <= num_reg)
+						reg_index += eightbytes;
+					else
+						bytes += AlignSize(static_cast<std::int32_t>(pi.size), 8);
+				}
+				else if (reg_index < num_reg)
+				{
+					++reg_index;
+				}
+				else
+				{
+					bytes += 8;
+				}
+			}
+			return bytes;
 		}
 
 		void* x64GenContext::GeneratePubFunc()
