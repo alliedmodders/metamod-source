@@ -495,6 +495,17 @@ namespace SourceHook
 
 			// vafmt: the formatted string, plus the register save area and the cursor
 			// over it that a va_list is on this ABI.
+			// An aggregate returned in registers can be SSE or INTEGER class, and a
+			// PassInfo does not say which. Keeping the registers the original left
+			// behind lets the value be handed back untouched when no hook replaced
+			// it, whichever class it really is.
+			v_raw_ret = 0;
+			if (retInfo.size != 0 && retInfo.type == PassInfo::PassType_Object &&
+				(retInfo.flags & PassInfo::PassFlag_RetReg) && retInfo.size != 12)
+			{
+				v_raw_ret = AddVarToFrame(32);
+			}
+
 			v_va_buf = 0;
 			v_va_regsave = 0;
 			v_va_list = 0;
@@ -638,7 +649,7 @@ namespace SourceHook
 
 			// Hand the return value back before the three objects below are destroyed:
 			// the one being returned is one of them.
-			DoReturn(v_ret_ptr, v_memret_ptr);
+			DoReturn(v_ret_ptr, v_memret_ptr, v_status);
 
 			// If return value type has a destructor, call it
 			if ((retInfo.flags & PassInfo::PassFlag_ByVal) && retInfo.pDtor != nullptr)
@@ -1022,6 +1033,16 @@ namespace SourceHook
 				// epilog free the stack
 				m_HookFunc.add(rsp, stackSpace);
 			}
+
+#if SH_COMP == SH_COMP_GCC
+			if (v_raw_ret)
+			{
+				m_HookFunc.mov(rbp(v_raw_ret + 0), rax);
+				m_HookFunc.mov(rbp(v_raw_ret + 8), rdx);
+				m_HookFunc.movsd(rbp(v_raw_ret + 16), xmm0);
+				m_HookFunc.movsd(rbp(v_raw_ret + 24), xmm1);
+			}
+#endif
 
 			SaveReturnValue(v_place_for_memret, v_orig_ret);
 
@@ -1498,7 +1519,7 @@ namespace SourceHook
 			m_HookFunc.mov(rbp(v_retptr), rax);
 		}
 
-		void x64GenContext::DoReturn(int v_retptr, int v_memret_outaddr)
+		void x64GenContext::DoReturn(int v_retptr, int v_memret_outaddr, int v_status)
 		{
 			const auto& retInfo = m_Proto.GetRet();
 			if (retInfo.size == 0) {
@@ -1527,12 +1548,39 @@ namespace SourceHook
 			if (retInfo.type == PassInfo::PassType_Float) {
 				m_HookFunc.movsd(xmm0, r8());
 			}
-			else if (retInfo.type == PassInfo::PassType_Basic || 
-				((retInfo.type == PassInfo::PassType_Object) && (retInfo.flags & PassInfo::PassFlag_RetReg)) ) {
-				m_HookFunc.mov(rax, r8());
-				if (retInfo.type == PassInfo::PassType_Object && retInfo.size > 8) {
-					m_HookFunc.mov(rdx, r8(8));
+			else if (retInfo.type == PassInfo::PassType_Object && (retInfo.flags & PassInfo::PassFlag_RetReg)) {
+#if SH_COMP == SH_COMP_GCC
+				if (v_raw_ret) {
+					// Which registers hold an aggregate depends on the class of each
+					// of its eightbytes, and a PassInfo does not carry field types, so
+					// SourceHook's copy of the value is read as INTEGER. Both files are
+					// loaded so that the caller finds the value wherever its own
+					// classification says to look: the integer ones follow that copy,
+					// including a hook's replacement for it, while the SSE ones carry
+					// through what the original returned. An SSE class aggregate
+					// therefore comes back intact, but a hook cannot replace it.
+					m_HookFunc.lea(r9, rbp(v_raw_ret));
+					m_HookFunc.mov(rax, rbp(v_status));
+					m_HookFunc.cmp(rax, MRES_OVERRIDE);
+					m_HookFunc.cmovge(r9, r8);
+
+					m_HookFunc.mov(rax, r9());
+					m_HookFunc.movsd(xmm0, rbp(v_raw_ret + 16));
+					if (retInfo.size > 8) {
+						m_HookFunc.mov(rdx, r9(8));
+						m_HookFunc.movsd(xmm1, rbp(v_raw_ret + 24));
+					}
+				} else
+#endif
+				{
+					m_HookFunc.mov(rax, r8());
+					if (retInfo.size > 8) {
+						m_HookFunc.mov(rdx, r8(8));
+					}
 				}
+			}
+			else if (retInfo.type == PassInfo::PassType_Basic) {
+				m_HookFunc.mov(rax, r8());
 			}
 
 			if (retInfo.flags & PassInfo::PassFlag_RetMem)

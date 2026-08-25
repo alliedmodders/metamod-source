@@ -63,7 +63,7 @@ namespace SourceHook
 			void GenerateCallOrig(int v_status, int v_pContext, int v_this, int v_vfnptr_origentry, int v_orig_ret, int v_override_ret, int v_place_for_memret);
 			void PrepareReturn(int v_status, int v_pContext, int v_retptr);
 			void CallEndContext(int v_pContext);
-			void DoReturn(int v_retptr, int v_memret_outaddr);
+			void DoReturn(int v_retptr, int v_memret_outaddr, int v_status);
 
 			std::int32_t PushParameters(int v_this, int v_ret, bool orig_call);
 			void DestroyParams();
@@ -104,6 +104,7 @@ namespace SourceHook
 			std::int32_t v_va_buf;
 			std::int32_t v_va_regsave;
 			std::int32_t v_va_list;
+			std::int32_t v_raw_ret;
 #endif
 		};
 	}
