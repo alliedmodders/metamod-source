@@ -586,7 +586,7 @@ static_assert(false, "Missing parameters destruction for linux");
 			if (m_Proto.GetRet().size == 0) // void return function
 			{
 				// nullptr
-				m_HookFunc.xor(rax, rax);
+				m_HookFunc.xorreg(rax, rax);
 				// 9th argument - const void* origRetPtr
 				MSVC_ONLY(m_HookFunc.mov(rsp(0x40), rax));
 				// 10th argument - void* overrideRetPtr
@@ -1102,7 +1102,7 @@ static_assert(false, "Missing registers saving for linux");
 			m_HookFunc.mov(rax, rax(getOrigRetPtrMfi.vtblindex * SIZE_PTR));
 			m_HookFunc.mov(r8, r8(getOverrideRetPtrMfi.vtblindex * SIZE_PTR));
 
-			m_HookFunc.xor(r9, r9);
+			m_HookFunc.xorreg(r9, r9);
 			m_HookFunc.mov(r9, rbp(v_status));
 			m_HookFunc.cmp(r9, MRES_OVERRIDE);
 
@@ -1392,7 +1392,7 @@ static_assert(false, "Missing auto-detect type for linux!");
 			GCC_ONLY(m_PubFunc.pop(rbp));
 
 			// Return 0
-			m_PubFunc.xor(rax, rax);
+			m_PubFunc.xorreg(rax, rax);
 
 			m_PubFunc.retn();
 
