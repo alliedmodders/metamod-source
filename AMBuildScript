@@ -238,6 +238,7 @@ class MMSConfig(object):
       elif cxx.family == 'clang':
         cxx.linkflags += ['-lgcc_eh']
       cxx.linkflags += ['-static-libstdc++']
+      cxx.linkflags += ['-Wl,--exclude-libs,ALL']
     elif cxx.target.platform == 'mac':
       cxx.defines += ['OSX', '_OSX', 'POSIX']
 
