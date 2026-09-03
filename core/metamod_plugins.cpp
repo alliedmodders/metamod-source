@@ -420,7 +420,10 @@ struct Unloader : public SourceHook::Impl::UnloadListener
 
 CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source, char *error, size_t maxlen)
 {
-	std::unique_ptr<FILE, decltype(&::fclose)> fp(nullptr, ::fclose);
+	// Spelled out rather than decltype(&::fclose): glibc attributes fclose
+	// with __nonnull__ and __wur, and GCC refuses an attributed type as a
+	// template argument under -Werror=ignored-attributes.
+	std::unique_ptr<FILE, int (*)(FILE *)> fp(nullptr, ::fclose);
 	CPlugin *pl;
 
 	pl = new CPlugin();
@@ -591,6 +594,13 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 					}
 					else
 					{
+						// A plugin may refuse without saying why. Every other
+						// failure here leaves a reason behind, so say something
+						// rather than report an empty one.
+						if (error && *error == '\0')
+						{
+							UTIL_Format(error, maxlen, "Plugin refused to load without giving a reason");
+						}
 						pl->m_Status = Pl_Refused;
 					}
 				}
