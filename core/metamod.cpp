@@ -150,8 +150,8 @@ public:
 	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
 		return KHook::RemoveHook(id, async);
 	}
-	virtual void* GetContext() override {
-		return KHook::GetContext();
+	virtual void* GetContextPtr() override {
+		return KHook::GetContextPtr();
 	}
 	virtual void* GetOriginalFunction() override {
 		return KHook::GetOriginalFunction();
