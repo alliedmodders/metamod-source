@@ -84,6 +84,7 @@ public: // ISmmAPI
 	IServerPluginCallbacks *GetVSPInfo(int *pVersion) override;
 	size_t Format(char *buffer, size_t maxlength, const char *format, ...) override;
 	size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
+	void* GetDetourInterface(PluginId id) override;
 public:
 	bool IsLoadedAsGameDLL();
 	const char *GetGameBinaryPath();

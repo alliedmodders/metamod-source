@@ -56,7 +56,6 @@ typedef ConCommandBase ProviderConCommand;
 #endif
 #endif
 
-#define MMIFACE_KHOOK			"IKHook"				/**< IKHook Pointer */
 #define	MMIFACE_SOURCEHOOK		"ISourceHook"			/**< ISourceHook Pointer */
 #define	MMIFACE_PLMANAGER		"IPluginManager"		/**< SourceMM Plugin Functions */
 #define MMIFACE_SH_HOOKMANAUTOGEN	"IHookManagerAutoGen"		/**< SourceHook::IHookManagerAutoGen Pointer */
@@ -439,6 +438,11 @@ namespace SourceMM
 		 * @param pCvar			ConVar to unlink.
 		 */
 		virtual void UnregisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) =0;
+
+		/**
+		 * @brief Returns the detour interface
+		*/
+		virtual void* GetDetourInterface(PluginId id) =0;
 	};
 }
 

@@ -94,97 +94,6 @@ MetamodSource g_Metamod;
 PluginId g_PLID = Pl_Console;
 SourceMM::ISmmAPI *g_pMetamod = &g_Metamod;
 
-#ifndef KHOOK_STANDALONE
-static_assert(false, "KHOOK_STANDALONE wasn't defined!");
-#endif
-class KHookImpl : public KHook::IKHook {
-public:
-	virtual KHook::HookID_t SetupHook(
-		void* function,
-		void* context,
-		void* removed_function,
-		void* pre,
-		void* post,
-		void* make_return,
-		void* make_call_original,
-		unsigned int stack_size, 
-		bool async = false
-	) override {
-		return KHook::SetupHook(
-			function,
-			context,
-			removed_function,
-			pre,
-			post,
-			make_return,
-			make_call_original,
-			stack_size,
-			async
-		);
-	}
-	virtual KHook::HookID_t SetupVirtualHook(
-		void** vtable,
-		int index,
-		void* context,
-		void* removed_function,
-		void* pre,
-		void* post,
-		void* make_return,
-		void* make_call_original,
-		unsigned int stack_size,
-		bool async = false
-	) override {
-		return KHook::SetupVirtualHook(
-			vtable,
-			index,
-			context,
-			removed_function,
-			pre,
-			post,
-			make_return,
-			make_call_original,
-			stack_size,
-			async
-		);
-	}
-	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
-		return KHook::RemoveHook(id, async);
-	}
-	virtual void* GetContextPtr() override {
-		return KHook::GetContextPtr();
-	}
-	virtual void* GetOriginalFunction() override {
-		return KHook::GetOriginalFunction();
-	}
-	virtual void* GetOriginalValuePtr() override {
-		return KHook::GetOriginalValuePtr();
-	}
-	virtual void* GetOverrideValuePtr() override {
-		return KHook::GetOverrideValuePtr();
-	}
-	virtual void* GetCurrentValuePtr(bool pop = false) override {
-		return KHook::GetCurrentValuePtr(pop);
-	}
-	virtual void DestroyReturnValue() override {
-		return KHook::DestroyReturnValue();
-	}
-	virtual void* DoRecall(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op) override {
-		return KHook::DoRecall(action, ptr_to_return, return_size, init_op, delete_op);
-	}
-	virtual void SaveReturnValue(KHook::Action action, void* ptr_to_return, std::size_t return_size, void* init_op, void* delete_op, bool original) {
-		return KHook::SaveReturnValue(action, ptr_to_return, return_size, init_op, delete_op, original);
-	}
-	virtual void* FindOriginal(void* function) override {
-		return KHook::FindOriginal(function);
-	}
-	virtual void* FindOriginalVirtual(void** vtable, int index) override {
-		return KHook::FindOriginalVirtual(vtable, index);
-	}
-	virtual void* LookupSignature(void* start, std::size_t size, const char* signature) override {
-		return KHook::LookupSignature(start, size, signature);
-	}
-} g_KHook;
-
 /* Helper Macro */
 #define	IFACE_MACRO(orig,nam) \
 	CPluginManager::CPlugin *pl; \
@@ -898,11 +807,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 	}
 
 	/* First check ours... we get first chance! */
-	if (strcmp(iface, MMIFACE_KHOOK) == 0)
-	{
-		return static_cast<void*>(static_cast<KHook::IKHook*>(&g_KHook));
-	}
-	else if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
+	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
 	{
 		return nullptr;
 	}
@@ -1174,6 +1079,10 @@ size_t MetamodSource::Format(char *buffer, size_t maxlength, const char *format,
 size_t MetamodSource::FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap)
 {
 	return UTIL_FormatArgs(buffer, maxlength, format, ap);
+}
+
+void* MetamodSource::GetDetourInterface(PluginId id) {
+	return static_cast<::KHook::IKHook*>(&(g_PluginMngr.FindById(id)->m_khook));
 }
 
 bool MetamodSource::IsLoadedAsGameDLL()

@@ -513,7 +513,7 @@ using namespace SourceMM;
  */
 #define PLUGIN_SAVEVARS() \
 	g_SMAPI = ismm; \
-	::KHook::__exported__khook = static_cast<::KHook::IKHook*>(ismm->MetaFactory(MMIFACE_KHOOK, nullptr, nullptr)); \
+	::KHook::__exported__khook = static_cast<::KHook::IKHook*>(ismm->GetDetourInterface(id)); \
 	g_PLAPI = static_cast<ISmmPlugin *>(this); \
 	g_PLID = id;
 
