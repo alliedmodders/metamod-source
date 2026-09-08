@@ -63,9 +63,11 @@
  *    12: Orange Box API
  *    13: Breaking of API for next SH version and other API changes
  * MC 14: ABI stability reached for 1.6.0 changes
+ *    ..
+ *    18: Introduction of KHook/Removal of SourceHook
  */
 
-#define PLAPI_MIN_VERSION	14
+#define PLAPI_MIN_VERSION	18
 
 struct CNameAlias
 {

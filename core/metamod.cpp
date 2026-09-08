@@ -806,12 +806,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		return NULL;
 	}
 
-	/* First check ours... we get first chance! */
-	if (strcmp(iface, MMIFACE_SOURCEHOOK) == 0)
-	{
-		return nullptr;
-	}
-	else if (strcmp(iface, MMIFACE_PLMANAGER) == 0)
+	if (strcmp(iface, MMIFACE_PLMANAGER) == 0)
 	{
 		if (ret)
 		{
@@ -819,10 +814,7 @@ void *MetamodSource::MetaFactory(const char *iface, int *ret, PluginId *id)
 		}
 		return static_cast<void *>(static_cast<ISmmPluginManager *>(&g_PluginMngr));
 	}
-	else if (strcmp(iface, MMIFACE_SH_HOOKMANAUTOGEN) == 0)
-	{
-		return nullptr;
-	}
+	
 	CPluginManager::CPlugin *pl;
 	std::list<IMetamodListener *>::iterator event;
 	IMetamodListener *api;

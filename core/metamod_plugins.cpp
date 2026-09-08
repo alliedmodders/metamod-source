@@ -525,6 +525,10 @@ CPluginManager::CPlugin *CPluginManager::_Load(const char *file, PluginId source
 				{
 					if (error)
 					{
+						if (api == 17)
+						{
+							UTIL_Format(error, maxlen, "Plugin uses old SourceHook Metamod build, probably 1.12.x or an early 2.0 version (%d < %d).", api, PLAPI_MIN_VERSION);
+						}
 						if (api == 13)
 						{
 							UTIL_Format(error, maxlen, "Plugin uses experimental Metamod build, probably 1.6.x (%d < %d)", api, PLAPI_MIN_VERSION);
