@@ -35,7 +35,6 @@
 
 #include <cstdarg>
 
-#include "sourcehook.h"
 #include "IPluginManager.h"
 
 #if defined META_NO_HL2SDK
@@ -188,14 +187,6 @@ namespace SourceMM
 		 * 						supported.
 		 */
 		virtual void GetApiVersions(int &major, int &minor, int &plvers, int &plmin) =0;
-	
-		/** 
-		 * @brief Returns sourcehook API version and implementation version.
-		 *
-		 * @param shvers		Filled with the SourceHook API version number.
-		 * @param shimpl		Filled with the SourceHook implementation number.
-		 */
-		virtual void GetShVersions(int &shvers, int &shimpl) =0;
 	
 		/**
 		 * @brief Adds a Metamod listener.
@@ -447,6 +438,11 @@ namespace SourceMM
 		 * @param pCvar			ConVar to unlink.
 		 */
 		virtual void UnregisterConVar(ISmmPlugin *plugin, ProviderConVar *pCvar) =0;
+
+		/**
+		 * @brief Returns the detour interface
+		*/
+		virtual void* GetDetourInterface(PluginId id) =0;
 	};
 }
 
@@ -468,4 +464,3 @@ using namespace SourceMM;
  */
 
 #endif //_INCLUDE_ISMM_API_H
-
