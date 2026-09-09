@@ -129,6 +129,9 @@ public:
 	virtual void* LookupSignature(void* start, std::size_t size, const char* signature) override {
 		return KHook::LookupSignature(start, size, signature);
 	}
+	virtual bool WasOriginalFunctionSkipped() override {
+		return KHook::WasOriginalFunctionSkipped();
+	}
 protected:
 	std::vector<KHook::HookID_t> m_hooks;
 };
