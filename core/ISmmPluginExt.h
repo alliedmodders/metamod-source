@@ -66,7 +66,7 @@
 #define SOURCE_ENGINE_CS2				28				/**< Counter-Strike 2 */
 #define SOURCE_ENGINE_DEADLOCK			29				/**< Deadlock */
 
-#define METAMOD_PLAPI_VERSION			17				/**< Version of this header file */
+#define METAMOD_PLAPI_VERSION			18				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */
 
 namespace SourceMM
@@ -128,8 +128,6 @@ struct MetamodVersionInfo
 {
 	int api_major;			/**< ISmmAPI major version */
 	int api_minor;			/**< ISmmAPI minor version */
-	int sh_iface;			/**< SourceHook interface version */
-	int sh_impl;			/**< SourceHook implementation version */
 	int pl_min;				/**< Plugin API minimum version */
 	int pl_max;				/**< Plugin API maximum version */
 	int source_engine;		/**< Source Engine version (SOURCE_* constants) */

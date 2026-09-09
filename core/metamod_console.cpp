@@ -34,7 +34,6 @@
 #include "metamod_plugins.h"
 
 using namespace SourceMM;
-using namespace SourceHook;
 
 /**
  * @brief Console Command Implementations
@@ -72,7 +71,7 @@ static void ReplyVersion(MMSPlayer_t client = MMSPlayer_INVALID)
 	CMDMSG(client, " Metamod:Source Version Information\n");
 	CMDMSG(client, "    Metamod:Source version %s\n", METAMOD_VERSION);
 	CMDMSG(client, "    Plugin interface version: %d:%d\n", METAMOD_PLAPI_VERSION, PLAPI_MIN_VERSION);
-	CMDMSG(client, "    SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
+	//CMDMSG(client, "    SourceHook version: %d:%d\n", g_SHPtr->GetIfaceVersion(), g_SHPtr->GetImplVersion());
 	if (g_Metamod.IsLoadedAsGameDLL())
 	{
 		CMDMSG(client, "    Loaded As: GameDLL (gameinfo.txt)\n");
@@ -241,7 +240,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				else
 				{
 					CONMSG("Console commands for %s:\n", pl->m_API->GetName());
-					List<ProviderConCommand *>::iterator ci;
+					std::list<ProviderConCommand *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cmds.begin(); ci!=pl->m_Cmds.end(); ci++)
@@ -278,7 +277,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				else
 				{
 					CONMSG("Registered cvars for %s:\n", pl->m_API->GetName());
-					List<ProviderConVar *>::iterator ci;
+					std::list<ProviderConVar *>::iterator ci;
 					size_t count = 0;
 
 					for (ci=pl->m_Cvars.begin(); ci!=pl->m_Cvars.end(); ci++)
@@ -424,7 +423,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				// be in the unload queue. Force them out now. This is not
 				// lowered to CPluginManager because it's not strictly safe
 				// there.
-				g_SourceHook.ResolvePendingUnloads(true);
+				//g_SourceHook.ResolvePendingUnloads(true);
 
 				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error));
 				pl = g_PluginMngr.FindById(id);
@@ -479,7 +478,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			}
 			else
 			{
-				List<CNameAlias *>::iterator iter, end;
+				std::list<CNameAlias *>::iterator iter, end;
 				CNameAlias *p;
 
 				iter = g_PluginMngr._alias_begin();
@@ -525,7 +524,7 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 
 					g_Metamod.GetFullPluginPath(file, full_path, sizeof(full_path));
 
-					List<CPluginManager::CPlugin *>::iterator iter, end;
+					std::list<CPluginManager::CPlugin *>::iterator iter, end;
 					CPluginManager::CPlugin *pl;
 					iter = g_PluginMngr._begin();
 					end = g_PluginMngr._end();

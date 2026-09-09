@@ -35,12 +35,14 @@
 
 #include "interface.h"
 #include "eiface.h"
-#include "sh_list.h"
-#include "sh_string.h"
 #include "ISmmAPI.h"
 #include "IPluginManager.h"
 #include "ISmmPluginExt.h"
 #include "metamod_oslink.h"
+#include "metamod_khook.h"
+
+#include <string>
+#include <list>
 
 /**
  * History of plugin versions: (M=min, C=current)
@@ -61,14 +63,16 @@
  *    12: Orange Box API
  *    13: Breaking of API for next SH version and other API changes
  * MC 14: ABI stability reached for 1.6.0 changes
+ *    ..
+ *    18: Introduction of KHook/Removal of SourceHook
  */
 
-#define PLAPI_MIN_VERSION	14
+#define PLAPI_MIN_VERSION	18
 
 struct CNameAlias
 {
-	SourceHook::String alias;
-	SourceHook::String value;
+	std::string alias;
+	std::string value;
 };
 /**
  * @brief Implements Plugin Manager API
@@ -84,16 +88,17 @@ public:
 	public:
 		CPlugin();
 	public:
+		std::string m_File;
 		PluginId m_Id;
-		SourceHook::String m_File;
 		Pl_Status m_Status;
 		PluginId m_Source;
 		ISmmPlugin *m_API;
 		HINSTANCE m_Lib;
-		SourceHook::List<ProviderConVar *> m_Cvars;
-		SourceHook::List<ProviderConCommand *> m_Cmds;
-		SourceHook::List<IMetamodListener *> m_Events;
+		std::list<ProviderConVar *> m_Cvars;
+		std::list<ProviderConCommand *> m_Cmds;
+		std::list<IMetamodListener *> m_Events;
 		METAMOD_FN_UNLOAD m_UnloadFn;
+		KHookImpl m_khook;
 	};
 public:
 	CPluginManager();
@@ -141,12 +146,12 @@ public:
 
 	//get alias info
 	const char *LookupAlias(const char *alias);
-	SourceHook::List<CNameAlias *>::iterator _alias_begin();
-	SourceHook::List<CNameAlias *>::iterator _alias_end();
+	std::list<CNameAlias *>::iterator _alias_begin();
+	std::list<CNameAlias *>::iterator _alias_end();
 
 	//Internal iterators
-	SourceHook::List<CPluginManager::CPlugin *>::iterator _begin();
-	SourceHook::List<CPluginManager::CPlugin *>::iterator _end();
+	std::list<CPluginManager::CPlugin *>::iterator _begin();
+	std::list<CPluginManager::CPlugin *>::iterator _end();
 private:
 	//These are identical internal functions for the wrappers above.
 	CPlugin *_Load(const char *file, PluginId source, char *error, size_t maxlen);
@@ -156,12 +161,12 @@ private:
 	void UnregAllConCmds(CPlugin *pl);
 private:
 	PluginId m_LastId;
-	SourceHook::List<CPlugin *> m_Plugins;
-	SourceHook::List<CNameAlias *> m_Aliases;
+	std::list<CPlugin *> m_Plugins;
+	std::list<CNameAlias *> m_Aliases;
 	bool m_AllLoaded;
 };
 
-typedef SourceHook::List<CPluginManager::CPlugin *>::iterator PluginIter;
+typedef std::list<CPluginManager::CPlugin *>::iterator PluginIter;
 
 /** @brief Singleton for plugin manager */
 extern CPluginManager g_PluginMngr;

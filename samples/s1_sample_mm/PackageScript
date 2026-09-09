@@ -3,6 +3,7 @@ import os
 import glob
 
 builder.SetBuildFolder('package')
+plugins_vdf = dict()
 
 class SDKPackage:
   sdk_name = None
@@ -26,12 +27,12 @@ class SDKPackage:
     self.metamod = builder.AddFolder(self.metamod_path)
 
     self.addBinFolder(cxx)
-    self.generateVDF()
+    self.generateVDF(cxx.target.arch == 'x86_64')
 
   def addBinFolder(self, cxx):
     platform64_path_map = {
       'windows': 'win64',
-      'linux': 'linuxsteamrt64',
+      'linux': 'linux64',
       'mac': 'osx64'
     }
 
@@ -39,17 +40,16 @@ class SDKPackage:
       self.bin_path = os.path.join(self.plugin_folder_path, 'bin', platform64_path_map[cxx.target.platform])
     else:
       self.bin_path = os.path.join(self.plugin_folder_path, 'bin')
-    
     self.bin = builder.AddFolder(self.bin_path)
 
-  def generateVDF(self):
+  def generateVDF(self, x64):
     vdf_content = '"Metamod Plugin"\n'
     vdf_content += '{\n'
     vdf_content += f'\t"alias"\t"{MMSPlugin.metadata["alias"]}"\n'
     vdf_content += f'\t"file"\t"{os.path.join(os.path.relpath(self.bin_path, self.sdk_name), MMSPlugin.metadata["name"])}"\n'
     vdf_content += '}'
 
-    builder.AddOutputFile(os.path.join(self.metamod_path, f'{MMSPlugin.metadata["name"]}.vdf'), vdf_content.encode('utf8'))
+    plugins_vdf[MMSPlugin.metadata["name"]] = builder.AddOutputFile(os.path.join(self.metamod_path, f'{MMSPlugin.metadata["name"]}{"_x64" if x64 else ""}.vdf'), vdf_content.encode('utf8'))
 
   def addBinary(self, binary):
     (_, plugin_bin_name) = os.path.split(binary.path)
@@ -91,7 +91,9 @@ for sdk_target in MMSPlugin.sdk_targets:
   sdk = sdk_target.sdk
   cxx = sdk_target.cxx
 
-  packages[sdk['name']] = SDKPackage(cxx, sdk['name'])
+  key = sdk['name']
+  key += "_x64" if cxx.target.arch == "x86_64" else ""
+  packages[key] = SDKPackage(cxx, sdk['name'])
 
 pdb_list = []
 for task in MMSPlugin.tasks:
@@ -99,6 +101,7 @@ for task in MMSPlugin.tasks:
   binary_filename = os.path.splitext(os.path.basename(task.binary.path))[0]
   sdk_name = binary_filename.split('.')[-1]
   
+  sdk_name += "_x64" if task.target.arch == "x86_64" else ""
   packages[sdk_name].addBinary(task.binary)
 
   # Add custom stuff here
