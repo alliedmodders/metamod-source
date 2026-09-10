@@ -27,7 +27,7 @@
 #pragma once
 
 #include <khook.hpp>
-#include <vector>
+#include <set>
 
 #ifndef KHOOK_STANDALONE
 static_assert(false, "KHOOK_STANDALONE wasn't defined!");
@@ -35,12 +35,6 @@ static_assert(false, "KHOOK_STANDALONE wasn't defined!");
 
 class KHookImpl : public KHook::IKHook {
 public:
-	~KHookImpl() {
-		for (auto id : m_hooks) {
-			KHook::RemoveHook(id, true);
-		}
-	}
-
 	virtual KHook::HookID_t SetupHook(
 		void* function,
 		void* context,
@@ -89,12 +83,12 @@ public:
 			async
 		);
 		if (id != KHook::INVALID_HOOK) {
-			m_hooks.push_back(id);
+			m_hooks.insert(id);
 		}
 		return id;
 	}
-	virtual void RemoveHook(KHook::HookID_t id, bool async = false) override {
-		return KHook::RemoveHook(id, async);
+	virtual void RemoveHook(KHook::HookID_t id, bool async = false, void (*hook_removal_fn)(KHook::HookID_t, void*) = nullptr, void* context = nullptr) override {
+		return KHook::RemoveHook(id, async, hook_removal_fn, context);
 	}
 	virtual void* GetContextPtr() override {
 		return KHook::GetContextPtr();
@@ -132,6 +126,6 @@ public:
 	virtual bool WasOriginalFunctionSkipped() override {
 		return KHook::WasOriginalFunctionSkipped();
 	}
-protected:
-	std::vector<KHook::HookID_t> m_hooks;
+
+	std::set<KHook::HookID_t> m_hooks;
 };

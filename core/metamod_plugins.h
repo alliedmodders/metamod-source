@@ -87,6 +87,7 @@ public:
 	{
 	public:
 		CPlugin();
+		~CPlugin();
 	public:
 		std::string m_File;
 		PluginId m_Id;

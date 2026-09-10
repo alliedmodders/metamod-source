@@ -553,6 +553,9 @@ mm_UnloadMetamod()
 	/* Unload plugins */
 	g_PluginMngr.UnloadAll();
 
+	/* Shutdown all hooks */
+	KHook::Shutdown();
+
 	provider->Notify_DLLShutdown_Pre();
 }
 

@@ -26,6 +26,8 @@
 #include <cstdio>
 #include <memory>
 #include <list>
+#include <set>
+#include <mutex>
 #include <stdio.h>
 
 #include "amtl/am-string.h"
@@ -40,6 +42,51 @@
  */
 
 using namespace SourceMM;
+
+struct Unloader {
+	Unloader(HINSTANCE module, std::set<KHook::HookID_t> hooks) : _lib(module) {
+		_hooks = hooks;
+
+		// Add invalid hook, so it doesn't delete the class early
+		_hooks.insert(KHook::INVALID_HOOK);
+
+		for (auto id : hooks) {
+			KHook::RemoveHook(id, true, reinterpret_cast<void(*)(KHook::HookID_t,void*)>(&Unloader::HookRemoval), this);
+		}
+	}
+
+	void Check() {
+		_mutex.lock();
+
+		_hooks.erase(KHook::INVALID_HOOK);
+		auto size = _hooks.size();
+
+		_mutex.unlock();
+
+		if (size == 0) {
+			dlclose(_lib);
+			delete this;
+		}
+	}
+
+private:
+	static void HookRemoval(KHook::HookID_t id, Unloader* context) {
+		context->_mutex.lock();
+		context->_hooks.erase(id);
+
+		auto size = context->_hooks.size();
+		context->_mutex.unlock();
+
+		if (size == 0) {
+			dlclose(context->_lib);
+			delete context;
+		}
+	}
+
+	std::mutex _mutex;
+	std::set<KHook::HookID_t> _hooks;
+	HINSTANCE _lib;
+};
 
 #define ITER_PLEVENT(evn, plid) \
 	CPluginManager::CPlugin *_Xpl; \
@@ -149,6 +196,12 @@ void CPluginManager::SetAlias(const char *alias, const char *value)
 CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NULL), m_UnloadFn(NULL)
 {
 
+}
+
+CPluginManager::CPlugin::~CPlugin()
+{
+	auto unloader = new Unloader(m_Lib, std::move(m_khook.m_hooks));
+	unloader->Check();
 }
 
 PluginId CPluginManager::Load(const char *file, PluginId source, bool &already, char *error, size_t maxlen)
@@ -607,8 +660,7 @@ bool CPluginManager::_Unload(CPluginManager::CPlugin *pl, bool force, char *erro
 				}
 			}
 
-			//Make sure to detach it from sourcehook!
-			//g_SourceHook.UnloadPlugin(pl->m_Id, new Unloader(pl, true));
+			delete pl;
 			return true;
 		}
 	} else {
