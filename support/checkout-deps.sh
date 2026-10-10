@@ -66,19 +66,52 @@ if [ -z ${sdks+x} ]; then
   sdks+=( darkm swarm bgt eye contagion )
 fi
 
-# Check out a local copy as a proxy.
-if [ ! -d "hl2sdk-proxy-repo" ]; then
-  git clone --mirror https://github.com/alliedmodders/hl2sdk hl2sdk-proxy-repo
-else
-  cd hl2sdk-proxy-repo
-  git fetch
-  cd ..
-fi
+# The Source 2 SDKs live in s2sdk, which continues their hl2sdk branches.
+s2sdks=( cs2 dota deadlock )
+
+is_s2sdk ()
+{
+  local s
+  for s in "${s2sdks[@]}"; do
+    [ "$s" = "$1" ] && return 0
+  done
+  return 1
+}
+
+# Check out a local copy of each SDK repository as a proxy.
+proxy ()
+{
+  if [ ! -d "$1-proxy-repo" ]; then
+    git clone --mirror https://github.com/alliedmodders/$1 $1-proxy-repo
+  else
+    cd $1-proxy-repo
+    git fetch
+    cd ..
+  fi
+}
+
+need_hl2sdk=0
+need_s2sdk=0
+for sdk in "${sdks[@]}"
+do
+  if is_s2sdk $sdk; then
+    need_s2sdk=1
+  else
+    need_hl2sdk=1
+  fi
+done
+[ $need_hl2sdk -eq 1 ] && proxy hl2sdk
+[ $need_s2sdk -eq 1 ] && proxy s2sdk
 
 for sdk in "${sdks[@]}"
 do
-  repo=hl2sdk-proxy-repo
-  origin="https://github.com/alliedmodders/hl2sdk"
+  if is_s2sdk $sdk; then
+    repo=s2sdk-proxy-repo
+    origin="https://github.com/alliedmodders/s2sdk"
+  else
+    repo=hl2sdk-proxy-repo
+    origin="https://github.com/alliedmodders/hl2sdk"
+  fi
   name=hl2sdk-$sdk
   branch=$sdk
   checkout
