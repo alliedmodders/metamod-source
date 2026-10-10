@@ -33,7 +33,7 @@
 
 #include "../provider_base.h"
 #include "tier1/utlvector.h"
-#if __has_include("engine2/iengineservicemgr.h")
+#if SOURCE_ENGINE == SE_CS2
 // s2sdk moved IEngineService.h to engine2/iengineservicemgr.h
 #include "engine2/iengineservicemgr.h"
 #else

@@ -29,7 +29,7 @@
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include "interface.h"
-#if !defined META_IS_SOURCE2 || !__has_include("engine2/gameshareddefs.h")
+#if SOURCE_ENGINE != SE_CS2
 #include "eiface.h"
 #endif
 #include "metamod_version.h"

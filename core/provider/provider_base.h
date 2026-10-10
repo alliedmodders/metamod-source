@@ -35,13 +35,16 @@
 #if !defined META_IS_SOURCE2
 #include "iserverplugin.h"
 #endif
-#if defined META_IS_SOURCE2 && __has_include("engine2/isource2server.h")
-// s2sdk split eiface.h up under engine2/, ISmmAPI.h no longer brings the interfaces
+#if SOURCE_ENGINE == SE_CS2
+// s2sdk split eiface.h up under engine2/
 #include "engine2/isource2server.h"
 #include "engine2/ivengineserver2.h"
 #include "engine2/inetworkserverservice.h"
 #include "engine2/iengineservicemgr.h"
 #include "icvar.h"
+#elif defined META_IS_SOURCE2
+// ISmmAPI.h no longer brings the interfaces
+#include "eiface.h"
 #endif
 #include "ISmmAPI.h"
 #include "metamod_provider.h"

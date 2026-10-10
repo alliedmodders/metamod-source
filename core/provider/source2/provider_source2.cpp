@@ -30,7 +30,7 @@
 #include "amtl/am-string.h"
 #include "KeyValues.h"
 #include "filesystem.h"
-#if __has_include("engine2/isource2server.h")
+#if SOURCE_ENGINE == SE_CS2
 // s2sdk split eiface.h and iserver.h up under engine2/
 #include "engine2/isource2serverconfig.h"
 #include "engine2/networkgameserverbase.h"
