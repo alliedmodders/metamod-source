@@ -28,10 +28,19 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "amtl/am-string.h"
-#include "eiface.h"
 #include "KeyValues.h"
 #include "filesystem.h"
+#if __has_include("engine2/isource2server.h")
+// s2sdk split eiface.h and iserver.h up under engine2/
+#include "engine2/isource2server.h"
+#include "engine2/ivengineserver2.h"
+#include "engine2/isource2serverconfig.h"
+#include "engine2/networkgameserverbase.h"
+#include "engine2/inetworkserverservice.h"
+#else
+#include "eiface.h"
 #include "iserver.h"
+#endif
 
 
 static Source2Provider g_Source2Provider;

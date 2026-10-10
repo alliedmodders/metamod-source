@@ -29,7 +29,14 @@
 #include "metamod_oslink.h"
 #include "metamod.h"
 #include "interface.h"
+#if defined META_IS_SOURCE2 && __has_include("engine2/isource2server.h")
+// s2sdk split eiface.h up under engine2/
+#include "engine2/isource2server.h"
+#include "engine2/ivengineserver2.h"
+#include "engine2/isource2serverconfig.h"
+#else
 #include "eiface.h"
+#endif
 #include "metamod_version.h"
 #include "metamod_provider.h"
 #include "metamod_plugins.h"
