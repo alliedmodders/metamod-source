@@ -44,19 +44,17 @@ class ConCommandBase;
 typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #else
-#if defined META_IS_SOURCE2 && __has_include("engine2/gameshareddefs.h")
-// s2sdk split eiface.h up under engine2/, what is needed here are the globals and the convars
-#include "engine2/gameshareddefs.h"
-#include "convar.h"
-#else
-#include "eiface.h"
-#endif
 
 #if defined META_IS_SOURCE2
+#include "convar.h"
+
 typedef ConVarRefAbstract ProviderConVar;
 typedef ConCommandRef ProviderConCommand;
 class ConCommandBase;
+class CGlobalVars;
 #else
+#include "eiface.h"
+
 typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #endif
