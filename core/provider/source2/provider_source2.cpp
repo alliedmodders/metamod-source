@@ -28,17 +28,11 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "amtl/am-string.h"
-#include "KeyValues.h"
-#include "filesystem.h"
-#if SOURCE_ENGINE == SE_CS2
-// s2sdk split eiface.h and iserver.h up under engine2/
+#include "tier0/keyvalues.h"
+#include "filesystem/ifilesystem.h"
 #include "engine2/isource2serverconfig.h"
 #include "engine2/networkgameserverbase.h"
 #include "engine2/inetworkserverservice.h"
-#else
-#include "eiface.h"
-#include "iserver.h"
-#endif
 
 
 static Source2Provider g_Source2Provider;

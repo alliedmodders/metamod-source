@@ -28,15 +28,19 @@
 
 #include "../metamod_oslink.h"
 #include "../metamod_util.h"
-#if SOURCE_ENGINE != SE_CS2
+#if !defined META_IS_SOURCE2
 #include "eiface.h"
 #endif
 #include "tier0/icommandline.h"
 #include "provider_base.h"
 #include "metamod_console.h"
+#if !defined META_IS_SOURCE2
 #include "filesystem.h"
+#endif
 #include "metamod.h"
+#if !defined META_IS_SOURCE2
 #include "tier1/KeyValues.h"
+#endif
 
 
 /* Imports */
