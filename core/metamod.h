@@ -33,7 +33,6 @@
 
 #include "interface.h"
 #if defined META_IS_SOURCE2
-// s2sdk split eiface.h up under engine2/
 #include "engine2/isource2server.h"
 #include "engine2/ivengineserver2.h"
 #include "engine2/isource2serverconfig.h"
