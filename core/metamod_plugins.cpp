@@ -195,7 +195,7 @@ void CPluginManager::SetAlias(const char *alias, const char *value)
 	}
 }
 
-CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NULL), m_UnloadFn(NULL)
+CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NULL), m_UnloadFn(NULL), m_khook(new KHookImpl)
 {
 
 }
