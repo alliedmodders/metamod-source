@@ -99,7 +99,7 @@ public:
 		std::list<ProviderConCommand *> m_Cmds;
 		std::list<IMetamodListener *> m_Events;
 		METAMOD_FN_UNLOAD m_UnloadFn;
-		KHookImpl m_khook;
+		KHookImpl *m_khook;
 	};
 public:
 	CPluginManager();

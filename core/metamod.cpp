@@ -1077,7 +1077,7 @@ size_t MetamodSource::FormatArgs(char *buffer, size_t maxlength, const char *for
 }
 
 void* MetamodSource::GetDetourInterface(PluginId id) {
-	return static_cast<::KHook::IKHook*>(&(g_PluginMngr.FindById(id)->m_khook));
+	return static_cast<::KHook::IKHook*>(g_PluginMngr.FindById(id)->m_khook);
 }
 
 bool MetamodSource::IsLoadedAsGameDLL()
