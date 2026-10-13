@@ -14,7 +14,9 @@
 
 #include <stdio.h>
 #include "plugin.h"
-#include "iserver.h"
+#include "engine2/networkgameserverbase.h"
+#include "engine2/inetworkserverservice.h"
+#include "icvar.h"
 
 MMSPlugin g_ThisPlugin;
 IServerGameDLL *server = NULL;

@@ -32,8 +32,8 @@
 #include <vector>
 
 #include "../provider_base.h"
-#include "tier1/utlvector.h"
-#include "IEngineService.h"
+#include "tier0/utlvector.h"
+#include "engine2/iengineservicemgr.h"
 #include "khook.hpp"
 
 // TODO: is this still needed for Dota or CS2 on any platform?

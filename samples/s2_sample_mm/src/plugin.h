@@ -16,6 +16,8 @@
 #define _INCLUDE_METAMOD_SOURCE_PLUGIN_H_
 
 #include <ISmmPlugin.h>
+#include <engine2/isource2server.h>
+#include <engine2/ivengineserver2.h>
 #include <igameevents.h>
 #include "version_gen.h"
 

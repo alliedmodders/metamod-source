@@ -44,13 +44,17 @@ class ConCommandBase;
 typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #else
-#include "eiface.h"
 
 #if defined META_IS_SOURCE2
+#include "convar.h"
+
 typedef ConVarRefAbstract ProviderConVar;
 typedef ConCommandRef ProviderConCommand;
 class ConCommandBase;
+class CGlobalVars;
 #else
+#include "eiface.h"
+
 typedef ConCommandBase ProviderConVar;
 typedef ConCommandBase ProviderConCommand;
 #endif

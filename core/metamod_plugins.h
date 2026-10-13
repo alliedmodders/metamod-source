@@ -34,7 +34,9 @@
  */
 
 #include "interface.h"
+#if !defined META_IS_SOURCE2
 #include "eiface.h"
+#endif
 #include "ISmmAPI.h"
 #include "IPluginManager.h"
 #include "ISmmPluginExt.h"

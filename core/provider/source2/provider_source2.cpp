@@ -28,10 +28,11 @@
 #include "metamod_util.h"
 #include "metamod_console.h"
 #include "amtl/am-string.h"
-#include "eiface.h"
-#include "KeyValues.h"
-#include "filesystem.h"
-#include "iserver.h"
+#include "tier0/keyvalues.h"
+#include "filesystem/ifilesystem.h"
+#include "engine2/isource2serverconfig.h"
+#include "engine2/networkgameserverbase.h"
+#include "engine2/inetworkserverservice.h"
 
 
 static Source2Provider g_Source2Provider;

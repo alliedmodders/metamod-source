@@ -28,13 +28,15 @@
 
 #include "../metamod_oslink.h"
 #include "../metamod_util.h"
-#include "eiface.h"
 #include "tier0/icommandline.h"
 #include "provider_base.h"
 #include "metamod_console.h"
-#include "filesystem.h"
 #include "metamod.h"
+#if !defined META_IS_SOURCE2
+#include "eiface.h"
+#include "filesystem.h"
 #include "tier1/KeyValues.h"
+#endif
 
 
 /* Imports */
