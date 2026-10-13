@@ -47,8 +47,11 @@ checkout ()
     if [ -n "$origin" ]; then
       git remote set-url origin ../$repo
     fi
-    git checkout $branch
-    git pull origin $branch
+    # Reset to the fetched branch rather than pulling, so a clone whose branch
+    # history was replaced (hl2sdk -> s2sdk, e.g. from a CI cache) is updated
+    # too instead of failing on a merge.
+    git fetch origin $branch
+    git checkout -B $branch FETCH_HEAD
     if [ -n "$origin" ]; then
       git remote set-url origin $origin
     fi

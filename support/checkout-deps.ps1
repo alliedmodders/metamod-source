@@ -61,8 +61,11 @@ Function Get-Repository
         {
             & git remote set-url origin ..\$Repo 2>&1 | Write-Host
         }
-        & git checkout $Branch 2>&1 | Write-Host
-        & git pull origin $Branch 2>&1 | Write-Host
+        # Reset to the fetched branch rather than pulling, so a clone whose branch
+        # history was replaced (hl2sdk -> s2sdk, e.g. from a CI cache) is updated
+        # too instead of failing on a merge.
+        & git fetch origin $Branch 2>&1 | Write-Host
+        & git checkout -B $Branch FETCH_HEAD 2>&1 | Write-Host
         If ($Origin)
         {
             & git remote set-url origin $Origin 2>&1 | Write-Host
