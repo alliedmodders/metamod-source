@@ -138,8 +138,6 @@ class MMSConfig(object):
         cxx.cxxflags += ['-fvisibility-inlines-hidden']
       cxx.cxxflags += [
         '-fno-exceptions',
-        '-fno-rtti',
-        '-fno-threadsafe-statics',
         '-Wno-non-virtual-dtor',
         '-Wno-overloaded-virtual',
         '-Wno-register',
@@ -353,8 +351,8 @@ if getattr(builder, 'target', None) is not None:
 
 MMS = MMSConfig()
 MMS.detectProductVersion()
-MMS.detectSDKs()
 MMS.configure()
+MMS.detectSDKs()
 
 if MMS.use_auto_versioning():
   MMS.generated_headers = builder.Build(

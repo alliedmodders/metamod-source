@@ -311,119 +311,9 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
 
   def configureCXX(self, cxx):
     if cxx.behavior == 'gcc':
-      cxx.defines += [
-        'stricmp=strcasecmp',
-        '_stricmp=strcasecmp',
-        '_snprintf=snprintf',
-        '_vsnprintf=vsnprintf',
-        'HAVE_STDINT_H',
-        'GNUC',
-      ]
-      cxx.cflags += [
-        '-pipe',
-        '-fno-strict-aliasing',
-        '-Wall',
-        '-Werror',
-        '-Wno-sign-compare',
-        '-Wno-uninitialized',
-        '-Wno-unused',
-        '-Wno-switch',
-        '-Wno-unknown-pragmas',
-        '-Wno-dangling-else',
-        '-msse',
-        '-fPIC',
-      ]
-
-      cxx.cxxflags += ['-std=c++17']
-      if (cxx.version >= 'gcc-4.0') or cxx.family == 'clang':
-        cxx.cflags += ['-fvisibility=hidden']
-        cxx.cxxflags += ['-fvisibility-inlines-hidden']
-      cxx.cxxflags += [
-        '-fno-exceptions',
-        '-fno-threadsafe-statics',
-        '-Wno-non-virtual-dtor',
-        '-Wno-overloaded-virtual',
-        '-Wno-register',
-      ]
-      if (cxx.version >= 'gcc-4.7' or cxx.family == 'clang'):
-        cxx.cxxflags += ['-Wno-delete-non-virtual-dtor']
-      if cxx.family == 'gcc':
-        cxx.cflags += ['-mfpmath=sse']
-      if cxx.family == 'clang':
-        cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
-        if cxx.version >= 'clang-3.9':
-          cxx.cxxflags += ['-Wno-expansion-to-defined']
-        if cxx.version >= 'clang-3.6':
-          cxx.cxxflags += ['-Wno-inconsistent-missing-override']
-        if cxx.version >= 'clang-3.4':
-          cxx.cxxflags += ['-Wno-deprecated-register']
-        else:
-          cxx.cxxflags += ['-Wno-deprecated']
-      
-      # Work around SDK warnings.
-      if cxx.version >= 'clang-10.0':
-        cxx.cflags += [
-          '-Wno-implicit-int-float-conversion',
-          '-Wno-tautological-overlap-compare',
-        ]
-
+      self.configureGCC(cxx)
     elif cxx.like('msvc'):
-      if builder.options.debug == '1':
-        cxx.cflags += ['/MTd']
-        cxx.linkflags += ['/NODEFAULTLIB:libcmt']
-      else:
-        cxx.cflags += ['/MT']
-      cxx.defines += [
-        '_CRT_SECURE_NO_DEPRECATE',
-        '_CRT_SECURE_NO_WARNINGS',
-        '_CRT_NONSTDC_NO_DEPRECATE',
-      ]
-      cxx.cflags += [
-        '/W3',
-        '/Zi',
-        '/std:c++17',
-      ]
-      cxx.cxxflags += ['/TP']
-      
-      cxx.linkflags += [
-        '/SUBSYSTEM:WINDOWS',
-        'kernel32.lib',
-        'user32.lib',
-        'gdi32.lib',
-        'winspool.lib',
-        'comdlg32.lib',
-        'advapi32.lib',
-        'shell32.lib',
-        'ole32.lib',
-        'oleaut32.lib',
-        'uuid.lib',
-        'odbc32.lib',
-        'odbccp32.lib',
-      ]
-
-    # Optimization
-    if builder.options.opt == '1':
-      cxx.defines += ['NDEBUG']
-      if cxx.behavior == 'gcc':
-        cxx.cflags += ['-O3']
-      elif cxx.behavior == 'msvc':
-        cxx.cflags += ['/Ox', '/Zo']
-        cxx.linkflags += ['/OPT:ICF', '/OPT:REF']
-
-    # Debugging
-    if builder.options.debug == '1':
-      cxx.defines += ['DEBUG', '_DEBUG']
-      if cxx.behavior == 'gcc':
-        cxx.cflags += ['-g3']
-      elif cxx.behavior == 'msvc':
-        cxx.cflags += ['/Od', '/RTC1']
-
-    # Don't omit the frame pointer.
-    # This needs to be after our optimization flags which could otherwise disable it.
-    if cxx.behavior == 'gcc':
-      cxx.cflags += ['-fno-omit-frame-pointer']
-    elif cxx.behavior == 'msvc':
-      cxx.cflags += ['/Oy-']
+      self.configureMSVC(cxx)
 
     # Platform-specifics
     if cxx.target.platform == 'linux':
@@ -443,6 +333,105 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
       
     elif cxx.target.platform == 'windows':
       cxx.defines += ['WIN32', '_WINDOWS']
+
+  def configureGCC(self, cxx):
+    cxx.defines += [
+      'stricmp=strcasecmp',
+      '_stricmp=strcasecmp',
+      '_snprintf=snprintf',
+      '_vsnprintf=vsnprintf',
+      'HAVE_STDINT_H',
+      'GNUC',
+    ]
+
+    cxx.cflags += [
+      '-pipe',
+      '-fno-strict-aliasing',
+      '-fvisibility=hidden',
+      '-Wall',
+      '-Werror',
+      '-Wno-sign-compare',
+      '-Wno-unused',
+      '-Wno-switch',
+      '-Wno-unknown-pragmas',
+      '-Wno-dangling-else',
+      '-msse',
+      '-fPIC',
+    ]
+    
+    cxx.cxxflags += [
+      '-std=c++20',
+      '-fvisibility-inlines-hidden',
+      '-Wno-non-virtual-dtor',
+      '-Wno-overloaded-virtual',
+    ]
+
+    # Clang only flags
+    if cxx.family == 'clang':
+      cxx.cxxflags += [
+        '-Wno-implicit-exception-spec-mismatch',
+        '-Wno-expansion-to-defined',
+        '-Wno-inconsistent-missing-override'
+      ]
+
+    # Optimization
+    if builder.options.opt == '1':
+      cxx.defines += ['NDEBUG']
+      cxx.cflags += ['-O3']
+    # Debugging
+    elif builder.options.debug == '1':
+      cxx.defines += ['DEBUG', '_DEBUG']
+      cxx.cflags += ['-g3']
+
+    # Don't omit the frame pointer.
+    # This needs to be after our optimization flags which could otherwise disable it.
+    cxx.cflags += ['-fno-omit-frame-pointer']
+
+  def configureMSVC(self, cxx):
+    cxx.defines += [
+      '_CRT_SECURE_NO_DEPRECATE',
+      '_CRT_SECURE_NO_WARNINGS',
+      '_CRT_NONSTDC_NO_DEPRECATE',
+    ]
+    cxx.cflags += [
+      '/W3',
+      '/Zi',
+      '/std:c++20',
+    ]
+    cxx.cxxflags += ['/TP']
+    cxx.linkflags += [
+      '/SUBSYSTEM:WINDOWS',
+      'kernel32.lib',
+      'user32.lib',
+      'gdi32.lib',
+      'winspool.lib',
+      'comdlg32.lib',
+      'advapi32.lib',
+      'shell32.lib',
+      'ole32.lib',
+      'oleaut32.lib',
+      'uuid.lib',
+      'odbc32.lib',
+      'odbccp32.lib',
+    ]
+
+    # Optimization
+    if builder.options.opt == '1':
+      cxx.defines += ['NDEBUG']
+      cxx.cflags += ['/Ox', '/Zo']
+      cxx.linkflags += ['/OPT:ICF', '/OPT:REF']
+    
+    # Debugging
+    if builder.options.debug == '1':
+      cxx.defines += ['DEBUG', '_DEBUG']
+      cxx.cflags += ['/Od', '/RTC1', '/MTd']
+      cxx.linkflags += ['/NODEFAULTLIB:libcmt']
+    else:
+      cxx.cflags += ['/MT']
+
+    # Don't omit the frame pointer.
+    # This needs to be after our optimization flags which could otherwise disable it.
+    cxx.cflags += ['/Oy-']
   
   def HL2Library(self, context, compiler, project, sdk):
     binary = project.Configure(compiler, '{0}.{1}'.format(project.name, sdk['extension']), '{0} {1}'.format(sdk['name'], compiler.target.arch))
@@ -476,9 +465,9 @@ const char *PLUGIN_REVISION_COUNT = \"{revision_count}\";
     return binary
 
 MMSPlugin = MMSPluginConfig()
-MMSPlugin.detectSDKs()
 MMSPlugin.configurePluginMetadata()
 MMSPlugin.configure()
+MMSPlugin.detectSDKs()
 
 if os.name == 'posix' and not hasLLDLinker():
   ConsoleRed(sys.stdout)
