@@ -27,6 +27,7 @@
 #include <memory>
 #include <list>
 #include <set>
+#include <vector>
 #include <mutex>
 #include <stdio.h>
 
@@ -45,10 +46,11 @@ using namespace SourceMM;
 
 struct Unloader {
 	Unloader(HINSTANCE module, KHookImpl* khook) : _khook(khook), _lib(module) {
-		// Add invalid hook, so it doesn't delete the class early
+		const std::vector<KHook::HookID_t> hooks(_khook->m_hooks.begin(), _khook->m_hooks.end());
+		// Keep the unloader alive until Check().
 		_khook->m_hooks.insert(KHook::INVALID_HOOK);
 
-		for (auto id : _khook->m_hooks) {
+		for (auto id : hooks) {
 			KHook::RemoveHook(id, true, reinterpret_cast<void(*)(KHook::HookID_t,void*)>(&Unloader::HookRemoval), this);
 		}
 	}
