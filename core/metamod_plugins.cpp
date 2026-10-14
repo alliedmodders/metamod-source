@@ -49,7 +49,9 @@ struct Unloader {
 		_khook->m_hooks.insert(KHook::INVALID_HOOK);
 
 		for (auto id : _khook->m_hooks) {
-			KHook::RemoveHook(id, true, reinterpret_cast<void(*)(KHook::HookID_t,void*)>(&Unloader::HookRemoval), this);
+			if (id != KHook::INVALID_HOOK) {
+				KHook::RemoveHook(id, true, reinterpret_cast<void(*)(KHook::HookID_t,void*)>(&Unloader::HookRemoval), this);
+			}
 		}
 	}
 
