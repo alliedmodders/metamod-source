@@ -1,0 +1,16 @@
+#ifndef _METAMOD_AUTO_VERSION_INFORMATION_H_
+#define _METAMOD_AUTO_VERSION_INFORMATION_H_
+
+#define MMS_BUILD_TAG		"@tag@"
+#define MMS_BUILD_CSET		"@shorthash@"
+#define MMS_BUILD_MAJOR		"@major@"
+#define MMS_BUILD_MINOR		"@minor@"
+#define MMS_BUILD_RELEASE	"@release@"
+#define MMS_BUILD_LOCAL_REV	"@revision@"
+
+#define MMS_BUILD_UNIQUEID	"@revision@:" MMS_BUILD_CSET
+
+#define MMS_VERSION_STRING	"@product@"
+#define MMS_VERSION_FILE	@major@,@minor@,@release@,0
+
+#endif /* _METAMOD_AUTO_VERSION_INFORMATION_H_ */
