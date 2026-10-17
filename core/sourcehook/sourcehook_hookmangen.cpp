@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include "sourcehook_impl.h"
 #include "sourcehook_hookmangen.h"
-#if defined( PLATFORM_64BITS ) && !defined( _LINUX )
+#if defined( PLATFORM_64BITS )
 #include "sourcehook_hookmangen_x86_64.h"
 typedef SourceHook::Impl::x64GenContext SHGenContext;
 #else
@@ -61,9 +61,6 @@ namespace SourceHook
 
 		HookManagerPubFunc CHookManagerAutoGen::MakeHookMan(const ProtoInfo *proto, int vtbl_offs, int vtbl_idx)
 		{
-#if defined( PLATFORM_64BITS ) && defined( _LINUX )
-			return nullptr;
-#else
 			CProto mproto(proto);
 			for (auto iter = m_Contexts.begin(); iter != m_Contexts.end(); ++iter)
 			{
@@ -85,7 +82,6 @@ namespace SourceHook
 				m_Contexts.emplace_back(std::move(sctx));
 			}
 			return pubFunc;
-#endif
 		}
 
 		void CHookManagerAutoGen::ReleaseHookMan(HookManagerPubFunc pubFunc)
