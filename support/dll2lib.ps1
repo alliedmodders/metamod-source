@@ -79,7 +79,7 @@ if ((-not (Test-Path -Path $outLibFullName)) -or $PSCmdlet.ShouldProcess($outLib
         Select-String -Pattern '^\s+\d+\s+[A-Z0-9]+\s+[A-Z0-9]+\s+(.+)$' -CaseSensitive |
         Select-Object -ExpandProperty 'Matches' |
         ForEach-Object -Process {
-            $_.Groups[1].Value
+            $_.Groups[1].Value -replace '\s+\(.*$', ''
         }
 
     Write-Verbose "Found $($funcs.Count) functions in '$InputBinary'"
