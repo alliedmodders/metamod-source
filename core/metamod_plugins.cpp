@@ -204,6 +204,11 @@ CPluginManager::CPlugin::CPlugin() : m_Id(0), m_Source(0), m_API(NULL), m_Lib(NU
 
 CPluginManager::CPlugin::~CPlugin()
 {
+	if (!m_Lib)
+	{
+		delete m_khook;
+		return;
+	}
 	auto unloader = new Unloader(m_Lib, m_khook);
 	unloader->Check();
 }
