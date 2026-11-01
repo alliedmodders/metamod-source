@@ -132,7 +132,8 @@ public:
 			&& mm_backend != MMBackend_Insurgency
 			&& mm_backend != MMBackend_DOI
 			&& mm_backend != MMBackend_CSGO
-			&& mm_backend != MMBackend_MCV)
+			&& mm_backend != MMBackend_MCV
+			&& mm_backend != MMBackend_Outbreak)
 		{
 			auto mfp_fconnect = KHook::GetVtableIndex(&ServerPlugin::ClientFullyConnect);
 

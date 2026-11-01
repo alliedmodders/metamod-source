@@ -258,6 +258,8 @@ int SourceProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_PVKII;
 #elif SOURCE_ENGINE == SE_MCV
 	return SOURCE_ENGINE_MCV;
+#elif SOURCE_ENGINE == SE_OUTBREAK
+	return SOURCE_ENGINE_OUTBREAK;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -320,6 +322,8 @@ const char* SourceProvider::GetEngineDescription() const
 	return "Pirates, Vikings, and Knights II";
 #elif SOURCE_ENGINE == SE_MCV
 	return "Military Combat: Vietnam";
+#elif SOURCE_ENGINE == SE_OUTBREAK
+	return "Left 4 Dead 2: Outbreak (2026)";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -327,7 +331,11 @@ const char* SourceProvider::GetEngineDescription() const
 
 void SourceProvider::GetGamePath(char* pszBuffer, int len)
 {
+#if SOURCE_ENGINE == SE_OUTBREAK
+	UTIL_Format(pszBuffer, len, "%s", engine->GetGameDir());
+#else
 	engine->GetGameDir(pszBuffer, len);
+#endif
 }
 
 const char* SourceProvider::GetGameDescription()
@@ -419,7 +427,11 @@ MetamodSourceConVar* SourceProvider::CreateConVar(const char* name,
 	const char* help,
 	int flags)
 {
+#if SOURCE_ENGINE == SE_OUTBREAK
+	uint64 newflags = 0;
+#else
 	int newflags = 0;
+#endif
 	if (flags & ConVarFlag_Notify)
 	{
 		newflags |= FCVAR_NOTIFY;
@@ -503,7 +515,7 @@ void LocalCommand_Meta()
 	}
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV || SOURCE_ENGINE == SE_OUTBREAK
 
 void SourceProvider::CacheUserMessages()
 {
