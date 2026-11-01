@@ -63,6 +63,7 @@
 #define SOURCE_ENGINE_MOCK				25				/**< Mock source engine */
 #define SOURCE_ENGINE_PVKII				26				/**< Pirates, Vikings, and Knights II */
 #define SOURCE_ENGINE_MCV				27				/**< Military Conflict: Vietnam */
+#define SOURCE_ENGINE_OUTBREAK			30				/**< Left 4 Dead 2: Outbreak (2026) */
 
 #define METAMOD_PLAPI_VERSION			16				/**< Version of this header file */
 #define METAMOD_PLAPI_NAME				"ISmmPlugin"	/**< Name of the plugin interface */

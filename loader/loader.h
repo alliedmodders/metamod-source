@@ -106,6 +106,7 @@ enum MetamodBackend
 	MMBackend_Mock,
 	MMBackend_PVKII,
 	MMBackend_MCV,
+	MMBackend_Outbreak,
 	MMBackend_UNKNOWN
 };
 

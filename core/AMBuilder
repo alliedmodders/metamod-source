@@ -31,5 +31,10 @@ for sdk_target in MMS.sdk_targets:
     binary.sources += ['sourcehook/sourcehook_hookmangen_x86.cpp']
   elif binary.compiler.target.arch == 'x86_64' and binary.compiler.target.platform != 'linux':
     binary.sources += ['sourcehook/sourcehook_hookmangen_x86_64.cpp']
+  
+  if sdk['name'] == 'outbreak':
+    binary.compiler.cxxincludes += [
+      os.path.join(sdk['path'], 'common', 'protobuf-3.17.3', 'src')
+    ]
   nodes = builder.Add(binary)
   MMS.binaries += [nodes]
