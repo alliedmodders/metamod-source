@@ -68,6 +68,16 @@ static bool g_is_source2 = false;
 #define PLATFORM_SUBDIR_S1		"/"
 #define PLATFORM_SUBDIR_S2		"/win32"
 #endif
+#elif defined __APPLE__
+#define SERVER_NAME_S1			"server.dylib"
+#define SERVER_NAME_S2			SERVER_NAME_S1
+#if defined __amd64__
+#define PLATFORM_SUBDIR_S1		"/"
+#define PLATFORM_SUBDIR_S2		"/osx64"
+#else
+#define PLATFORM_SUBDIR_S1		"/"
+#define PLATFORM_SUBDIR_S2		"/osx32"
+#endif
 #elif defined __linux__
 #define SERVER_NAME_S1         "server" LIB_SUFFIX
 #define SERVER_NAME_S2         "libserver" LIB_SUFFIX
