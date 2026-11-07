@@ -33,6 +33,8 @@ for sdk_target in MMS.sdk_targets:
     ]
     binary.custom = [builder.tools.Protoc(protoc = sdk_target.protoc, sources = [
       os.path.join(sdk['path'], 'common', 'network_connection.proto'),
+      os.path.join(sdk['path'], 'common', 'networkbasetypes.proto'),
+      os.path.join(sdk['path'], 'common', 'valveextensions.proto'),
     ])]
   else:
     binary.sources += [
