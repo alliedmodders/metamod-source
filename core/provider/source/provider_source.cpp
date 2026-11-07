@@ -665,12 +665,18 @@ KHook::Return<bool> SourceProvider::Hook_GameInit(IServerGameDLL*)
 	return { KHook::Action::Ignore };
 }
 
+#if SOURCE_ENGINE == SE_OUTBREAK
+KHook::Return<bool> SourceProvider::Hook_LevelInit(IServerGameDLL*, char const* pMapName, void* pMapEntities, char const* pOldLevel,
+	char const* pLandmarkName, bool loadGame, bool background)
+#else
 KHook::Return<bool> SourceProvider::Hook_LevelInit(IServerGameDLL*, char const* pMapName, char const* pMapEntities, char const* pOldLevel,
 	char const* pLandmarkName, bool loadGame, bool background)
+#endif
 {
 	if (nullptr != m_pCallbacks)
 	{
-		m_pCallbacks->OnLevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
+		// pMapEntities isn't a string on Outbreak, but the callback api is what it is
+		m_pCallbacks->OnLevelInit(pMapName, static_cast<char const*>(pMapEntities), pOldLevel, pLandmarkName, loadGame, background);
 	}
 
 	return { KHook::Action::Ignore };
