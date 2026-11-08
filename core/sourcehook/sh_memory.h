@@ -296,7 +296,9 @@ namespace SourceHook
 			{
 				// FreeBSD /proc/curproc/map -> parse
 				// 0x804800 0x805500 13 15 0xc6e18960 r-x 21 0x0 COW NC vnode
-				long rlower, rupper;
+				// Unsigned, both to match the %lx these are scanned with and to
+				// compare against lower/upper without a signed conversion.
+				unsigned long rlower, rupper;
 				while (fscanf(pF, "0x%lx 0x%lx", &rlower, &rupper) != EOF)
 				{
 					// Check whether we're IN THERE!
