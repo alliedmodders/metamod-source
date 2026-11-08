@@ -54,9 +54,6 @@ static QueryValveInterface gamedll_qvi = NULL;
 static char gamedll_iface_name[128] = { 0 };
 static int gamedll_version = 0;
 static int isgd_shutdown_index = -1;
-#if defined _WIN32
-static int is2sc_allowdedi_index = 21;
-#endif
 static char mm_path[PLATFORM_MAX_PATH];
 static bool g_is_source2 = false;
 
