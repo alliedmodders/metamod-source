@@ -45,10 +45,17 @@ using namespace SourceMM;
 
 struct Unloader {
 	Unloader(HINSTANCE module, KHookImpl* khook) : _khook(khook), _lib(module) {
-		// Add invalid hook, so it doesn't delete the class early
-		_khook->m_hooks.insert(KHook::INVALID_HOOK);
+		std::set<KHook::HookID_t> hooks;
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+			// Add invalid hook, so it doesn't delete the class early
+			_khook->m_hooks.insert(KHook::INVALID_HOOK);
+			hooks = _khook->m_hooks;
+		}
 
-		for (auto id : _khook->m_hooks) {
+		// Iterate a copy: HookRemoval erases from m_hooks, either right away inside
+		// RemoveHook (hook already gone from KHook) or later on KHook's delete thread.
+		for (auto id : hooks) {
 			if (id != KHook::INVALID_HOOK) {
 				KHook::RemoveHook(id, true, reinterpret_cast<void(*)(KHook::HookID_t,void*)>(&Unloader::HookRemoval), this);
 			}
