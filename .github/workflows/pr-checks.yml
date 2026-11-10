@@ -64,6 +64,17 @@ jobs:
           cd build
           python3 ../configure.py \
             --enable-optimize \
+            --enable-tests \
             --sdks=${{ join(fromJSON(env.SDKS), ',') }} \
             '--hl2sdk-root=${{ steps.path_helper.outputs.dependencies }}'
           ambuild
+
+      - name: Test
+        working-directory: metamod-source/build
+        shell: bash
+        run: |
+          set -e
+          for test in $(find loader/test -type f \( -name test_loader -o -name test_loader.exe \)); do
+            echo "Running $test"
+            "$test"
+          done
