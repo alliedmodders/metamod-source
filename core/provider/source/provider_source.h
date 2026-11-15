@@ -88,15 +88,9 @@ public: // IConCommandBaseAccessor
 public:
 	KHook::Virtual<IServerGameDLL, bool> m_GameInit;
 	KHook::Return<bool> Hook_GameInit(IServerGameDLL*);
-#if SOURCE_ENGINE == SE_OUTBREAK
-	KHook::Virtual<IServerGameDLL, bool, char const*, void *, char const *, char const*, bool, bool> m_LevelInit;
-	KHook::Return<bool> Hook_LevelInit(IServerGameDLL*, char const* pMapName, void *pMapEntities, char const* pOldLevel,
-		char const* pLandmarkName, bool loadGame, bool background);
-#else
 	KHook::Virtual<IServerGameDLL, bool, char const*, char const*, char const *, char const*, bool, bool> m_LevelInit;
 	KHook::Return<bool> Hook_LevelInit(IServerGameDLL*, char const* pMapName, char const* pMapEntities, char const* pOldLevel,
 		char const* pLandmarkName, bool loadGame, bool background);
-#endif
 	KHook::Virtual<IServerGameDLL, void> m_LevelShutdown;
 	KHook::Return<void> Hook_LevelShutdown(IServerGameDLL*);
 #if SOURCE_ENGINE >= SE_ORANGEBOX
@@ -123,7 +117,7 @@ private:
 	bool KVLoadFromFile(KeyValues* kv, IFileSystem* filesystem, const char* resourceName, const char* pathID = nullptr);
 	inline bool IsUserMessageIterationSupported() const
 	{
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV || SOURCE_ENGINE == SE_OUTBREAK
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 		return false;
 #else
 		return true;
