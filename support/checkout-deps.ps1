@@ -31,7 +31,6 @@ param(
         'doi'
         'pvkii'
         'mcv'
-        'outbreak'
         )
 )
 

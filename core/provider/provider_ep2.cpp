@@ -441,7 +441,7 @@ void BaseProvider::UnregisterConCommandBase(ConCommandBase *pCommand)
 
 int BaseProvider::GetUserMessageCount()
 {
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV || SOURCE_ENGINE == SE_OUTBREAK
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 	return -1;
 #else
 	return (int)usermsgs_list.size();
@@ -482,11 +482,7 @@ const char *BaseProvider::GetUserMessage(int index, int *size)
 
 void BaseProvider::GetGamePath(char *pszBuffer, int len)
 {
-#if SOURCE_ENGINE == SE_OUTBREAK
-	UTIL_Format(pszBuffer, len, "%s", engine->GetGameDir());
-#else
 	engine->GetGameDir(pszBuffer, len);
-#endif
 }
 
 const char *BaseProvider::GetGameDescription()
@@ -550,8 +546,6 @@ int BaseProvider::DetermineSourceEngine()
 	return SOURCE_ENGINE_PVKII;
 #elif SOURCE_ENGINE == SE_MCV
 	return SOURCE_ENGINE_MCV;
-#elif SOURCE_ENGINE == SE_OUTBREAK
-	return SOURCE_ENGINE_OUTBREAK;
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -562,11 +556,7 @@ ConVar *BaseProvider::CreateConVar(const char *name,
 								   const char *help,
 								   int flags)
 {
-#if SOURCE_ENGINE == SE_OUTBREAK
-	uint64 newflags = 0;
-#else
 	int newflags = 0;
-#endif
 	if (flags & ConVarFlag_Notify)
 	{
 		newflags |= FCVAR_NOTIFY;
@@ -693,8 +683,6 @@ const char *BaseProvider::GetEngineDescription() const
 	return "Pirates, Vikings, and Knights II";
 #elif SOURCE_ENGINE == SE_MCV
 	return "Military Combat: Vietnam";
-#elif SOURCE_ENGINE == SE_OUTBREAK
-	return "Left 4 Dead 2: Outbreak (2026)";
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -781,7 +769,7 @@ void ClientCommand(edict_t *client)
 	RETURN_META(MRES_IGNORED);
 }
 
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV || SOURCE_ENGINE == SE_OUTBREAK
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_DOTA || SOURCE_ENGINE == SE_BLADE || SOURCE_ENGINE == SE_MCV
 
 void CacheUserMessages()
 {
