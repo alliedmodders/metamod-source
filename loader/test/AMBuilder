@@ -22,8 +22,8 @@ for cxx in MMS.all_targets:
 
   binary.compiler.cxxincludes += [
     os.path.join(builder.sourcePath, 'core'),
-    os.path.join(builder.sourcePath, 'core', 'sourcehook'),
     os.path.join(builder.sourcePath, 'loader'),
+    os.path.join(builder.sourcePath, 'third_party', 'khook', 'include'),
   ]
 
   if binary.compiler.version >= 'gcc-4.9':
