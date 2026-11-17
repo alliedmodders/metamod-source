@@ -215,7 +215,16 @@ namespace SourceHook
 
 		struct CHookContext : IHookContext
 		{
-			CHookContext() : m_CleanupTask(NULL)
+			// Every member, not just the cleanup task: SetIgnoreHooks pushes a
+			// context with only m_State filled in, and SetupHookLoop writes the
+			// rest before reading them, which the compiler cannot see. Leaving
+			// them indeterminate costs nothing to fix and stops a future reader
+			// of an Ignore context from picking up garbage.
+			CHookContext()
+				: m_State(State_Born), pVfnPtr(NULL), pIface(NULL), pStatus(NULL),
+				  pPrevRes(NULL), pCurRes(NULL), pThisPtr(NULL), pOrigRet(NULL),
+				  pOverrideRet(NULL), pIfacePtr(NULL), m_CallOrig(false),
+				  m_CleanupTask(NULL)
 			{
 			}
 

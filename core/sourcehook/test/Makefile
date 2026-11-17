@@ -5,11 +5,19 @@ OPT_FLAGS = -O3 -funroll-loops -s -pipe
 DEBUG_FLAGS = -g -ggdb3
 CPP = gcc
 LINK = -lstdc++
-INCLUDE = -I. -I..
+INCLUDE = -I. -I.. -I../..
 MAX_PARAMS=20
 
 BINARY = sourcehook_test
-OBJECTS = main.cpp sourcehook.cpp sourcehook_hookmangen.cpp sourcehook_impl_chookmaninfo.cpp sourcehook_impl_chookidman.cpp sourcehook_impl_cproto.cpp sourcehook_impl_cvfnptr.cpp $(shell ls -t test*.cpp)
+# The hook generator is split per architecture; pick what the compiler is
+# actually targeting, so -m32 on an x86_64 host still resolves correctly.
+HOOKMANGEN_ARCH := $(if $(shell echo | $(CPP) $(CFLAGS) -E -dM - 2>/dev/null | grep __x86_64__),sourcehook_hookmangen_x86_64.cpp,sourcehook_hookmangen_x86.cpp)
+
+ifeq ($(HOOKMANGEN_ARCH),sourcehook_hookmangen_x86_64.cpp)
+  $(error The x86_64 hook generator pulls in metamod.h and the HL2SDK, which this standalone build does not have. Build 32-bit, e.g. CPP="gcc -m32" or CPP=i686-linux-gnu-gcc, which is also the only configuration AMBuilder builds these tests in)
+endif
+
+OBJECTS = main.cpp sourcehook.cpp sourcehook_hookmangen.cpp $(HOOKMANGEN_ARCH) sourcehook_impl_chookmaninfo.cpp sourcehook_impl_chookidman.cpp sourcehook_impl_cproto.cpp sourcehook_impl_cvfnptr.cpp $(shell ls -t test*.cpp)
 HEADERS = ../sh_list.h ../sh_tinyhash.h ../sh_memory.h ../sh_string.h ../sh_vector.h ../sourcehook_impl.h ../FastDelegate.h ../sourcehook.h ../sh_memfuncinfo.h ../sh_pagealloc.h
 
 ifeq "$(DEBUG)" "true"
@@ -22,7 +30,11 @@ endif
 
 CFLAGS += -Wall -Wno-non-virtual-dtor
 # Also, enable SH_ASSERT
-CFLAGS += -DSH_DEBUG
+# SourceHook swaps vtable entries out from under the compiler; GCC's
+# devirtualisation assumes it cannot happen (see issue #51). AMBuilder
+# turns it off from gcc-4.9 on, and so must this.
+CFLAGS += -fno-devirtualize
+CFLAGS += -DSH_DEBUG -DSOURCEHOOK_TESTS
 
 OBJ_LINUX := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 	
@@ -48,6 +60,7 @@ all:
 	mkdir -p $(BIN_DIR)
 	ln -sf ../sourcehook.cpp
 	ln -sf ../sourcehook_hookmangen.cpp
+	ln -sf ../$(HOOKMANGEN_ARCH)
 	ln -sf ../sourcehook_impl_chookidman.cpp
 	ln -sf ../sourcehook_impl_chookmaninfo.cpp
 	ln -sf ../sourcehook_impl_cproto.cpp
@@ -56,6 +69,7 @@ all:
 	rm -f $(BINARY)
 	rm -f sourcehook.cpp
 	rm -f sourcehook_hookmangen.cpp
+	rm -f $(HOOKMANGEN_ARCH)
 	rm -f sourcehook_impl_chookidman.cpp
 	rm -f sourcehook_impl_chookmaninfo.cpp
 	rm -f sourcehook_impl_cproto.cpp
