@@ -64,6 +64,22 @@ jobs:
           cd build
           python3 ../configure.py \
             --enable-optimize \
+            --enable-tests \
             --sdks=${{ join(fromJSON(env.SDKS), ',') }} \
             '--hl2sdk-root=${{ steps.path_helper.outputs.dependencies }}'
           ambuild
+
+      - name: Test
+        working-directory: metamod-source/build
+        shell: bash
+        run: |
+          set -e
+          tests=$(find loader/test -type f \( -name test_loader -o -name test_loader.exe \))
+          if [ -z "$tests" ]; then
+            echo "No loader tests were built" >&2
+            exit 1
+          fi
+          for test in $tests; do
+            echo "Running $test"
+            "$test"
+          done
